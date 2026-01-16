@@ -12,15 +12,16 @@ export function ProjectGallery() {
   const { data: projects, isLoading, isError, error } = useProjects();
 
   // Convert projects to CardStackItem format
-  const cardItems: CardStackItem[] = projects?.map((project) => ({
-    id: project.id,
-    title: project.name,
-    description: project.description,
-    tag: project.category,
-    href: "#",
-    ctaLabel: "View Details",
-    imageSrc: getProjectImage(project.id),
-  })) || [];
+  const cardItems: CardStackItem[] =
+    projects?.map((project) => ({
+      id: project.id,
+      title: project.name,
+      description: project.description,
+      tag: project.category,
+      href: "#",
+      ctaLabel: "View Details",
+      imageSrc: getProjectImage(project.id),
+    })) || [];
 
   // Helper function to get project images (using Unsplash stock)
   function getProjectImage(id: string | number): string {
@@ -32,17 +33,21 @@ export function ProjectGallery() {
       "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
     ];
-    
+
     // Use project id to get a consistent image
-    const index = typeof id === 'string' 
-      ? id.charCodeAt(0) % images.length 
-      : id % images.length;
-    
+    const index =
+      typeof id === "string"
+        ? id.charCodeAt(0) % images.length
+        : id % images.length;
+
     return images[index];
   }
 
   // Custom render function for CardStack
-  const renderProjectCard = (item: CardStackItem, _state: { active: boolean }) => {
+  const renderProjectCard = (
+    item: CardStackItem,
+    _state: { active: boolean },
+  ) => {
     return (
       <div className="relative h-full w-full">
         {/* Image */}
@@ -75,7 +80,9 @@ export function ProjectGallery() {
               {item.tag || "Project"}
             </span>
           </div>
-          <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{item.title}</h3>
+          <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+            {item.title}
+          </h3>
           {item.description && (
             <p className="mt-2 line-clamp-2 text-sm sm:text-base text-white/80">
               {item.description}
@@ -104,7 +111,9 @@ export function ProjectGallery() {
       return (
         <div className="flex items-center justify-center py-20 text-red-500">
           <AlertTriangle className="h-8 w-8" />
-          <p className="ml-4 text-lg font-mono">Error: {error?.message || "Failed to load projects"}</p>
+          <p className="ml-4 text-lg font-mono">
+            Error: {error?.message || "Failed to load projects"}
+          </p>
         </div>
       );
     }
@@ -128,37 +137,37 @@ export function ProjectGallery() {
         transition={{ duration: 0.6 }}
       >
         <div className="w-full flex justify-center px-4 sm:px-6 lg:px-8">
-          <div className="w-full" style={{ perspective: '1000px' }}>
+          <div className="w-full" style={{ perspective: "1000px" }}>
             <CardStack
-            items={cardItems}
-          initialIndex={0}
-          maxVisible={3}
-          cardWidth={300}
-          cardHeight={200}
-          cardWidthMd={380}
-          cardHeightMd={240}
-          cardWidthLg={520}
-          cardHeightLg={380}
-          maxVisibleMd={5}
-          maxVisibleLg={5}
-          overlap={0.48}
-          spreadDeg={24}
-          spreadDegMd={36}
-          spreadDegLg={42}
-          perspectivePx={1200}
-          depthPx={120}
-          tiltXDeg={8}
-          activeLiftPx={25}
-          activeScale={1.05}
-          inactiveScale={0.92}
-          springStiffness={300}
-          springDamping={25}
-          loop={true}
-          autoAdvance={true}
-          intervalMs={3500}
-          pauseOnHover={true}
-          showDots={true}
-          renderCard={renderProjectCard}
+              items={cardItems}
+              initialIndex={0}
+              maxVisible={3}
+              cardWidth={300}
+              cardHeight={200}
+              cardWidthMd={380}
+              cardHeightMd={240}
+              cardWidthLg={520}
+              cardHeightLg={380}
+              maxVisibleMd={5}
+              maxVisibleLg={5}
+              overlap={0.48}
+              spreadDeg={24}
+              spreadDegMd={36}
+              spreadDegLg={42}
+              perspectivePx={1200}
+              depthPx={120}
+              tiltXDeg={8}
+              activeLiftPx={25}
+              activeScale={1.05}
+              inactiveScale={0.92}
+              springStiffness={300}
+              springDamping={25}
+              loop={true}
+              autoAdvance={true}
+              intervalMs={3500}
+              pauseOnHover={true}
+              showDots={true}
+              renderCard={renderProjectCard}
             />
           </div>
         </div>
@@ -170,14 +179,13 @@ export function ProjectGallery() {
     <section className="bg-background py-16 sm:py-20 md:py-24 lg:py-32 overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-12 sm:mb-16">
         <div className="mx-auto max-w-3xl text-center">
-        
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary-text tracking-tight">
-              Our Recent Work
-            </h2>
-            <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-gray-400 px-4 sm:px-0">
-              A showcase of digital ecosystems we've engineered. Each project is a testament to our commitment to innovation and quality.
-            </p>
-         
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary-text tracking-tight">
+            Our Recent Work
+          </h2>
+          <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-gray-400 px-4 sm:px-0">
+            A showcase of digital ecosystems we've engineered. Each project is a
+            testament to our commitment to innovation and quality.
+          </p>
         </div>
       </div>
 

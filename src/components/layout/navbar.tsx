@@ -21,24 +21,26 @@ export function Navbar() {
   const isHomePage = pathname === "/";
 
   // Navigation items - use hash for home page, regular paths for other pages
-  const navItems: NavItem[] = isHomePage ? [
-    { href: "#home", label: "Home" },
-    { href: "#projects", label: "Projects" },
-    { href: "#services", label: "Services" },
-    { href: "#contact", label: "Contact" },
-  ] : [
-    { href: "/", label: "Home" },
-    { href: "/projects", label: "Projects" },
-    { href: "/services", label: "Services" },
-    { href: "/contact", label: "Contact" },
-  ];
+  const navItems: NavItem[] = isHomePage
+    ? [
+        { href: "#home", label: "Home" },
+        { href: "#projects", label: "Projects" },
+        { href: "#services", label: "Services" },
+        { href: "#contact", label: "Contact" },
+      ]
+    : [
+        { href: "/", label: "Home" },
+        { href: "/projects", label: "Projects" },
+        { href: "/services", label: "Services" },
+        { href: "/contact", label: "Contact" },
+      ];
 
   // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
-    
+
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -46,13 +48,14 @@ export function Navbar() {
   // Handle navigation
   const handleNavClick = (href: string) => {
     setIsOpen(false);
-    
+
     if (isHomePage && href.startsWith("#")) {
       // Scroll to section on home page
       setTimeout(() => {
         const element = document.querySelector(href);
         if (element) {
-          const offsetTop = element.getBoundingClientRect().top + window.scrollY;
+          const offsetTop =
+            element.getBoundingClientRect().top + window.scrollY;
           window.scrollTo({
             top: offsetTop - 80,
             behavior: "smooth",
@@ -74,9 +77,9 @@ export function Navbar() {
   };
 
   return (
-    <header 
+    <header
       className={`sticky top-0 z-[100] w-full transition-all duration-300 ${
-        scrolled 
+        scrolled
           ? "border-b border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg"
           : "bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm"
       }`}
@@ -84,10 +87,7 @@ export function Navbar() {
     >
       <div className="container mx-auto flex h-16 sm:h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link 
-          href="/" 
-          className="flex items-center gap-2 group"
-        >
+        <Link href="/" className="flex items-center gap-2 group">
           <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
             Dexta
           </span>
@@ -131,8 +131,8 @@ export function Navbar() {
                 )}
               </button>
             </SheetTrigger>
-            <SheetContent 
-              side="right" 
+            <SheetContent
+              side="right"
               className="w-[280px] sm:w-[320px] border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 z-[1000]"
               style={{ zIndex: 1001 }}
             >

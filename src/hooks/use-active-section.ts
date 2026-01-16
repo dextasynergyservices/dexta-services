@@ -27,7 +27,7 @@ export function useActiveSection() {
       {
         threshold: [0.1, 0.25, 0.5, 0.75],
         rootMargin: "-50% 0px -50% 0px", // Trigger when section is in the middle of viewport
-      }
+      },
     );
 
     // Observe all sections

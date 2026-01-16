@@ -37,9 +37,12 @@ function SubmitButton() {
 }
 
 function ContactFormInternal() {
-  const [state, formAction] = useActionState(submitContactForm, initialState) as unknown as [
+  const [state, formAction] = useActionState(
+    submitContactForm,
+    initialState,
+  ) as unknown as [
     typeof initialState & { errors?: Record<string, string[]> },
-    (payload: FormData) => void
+    (payload: FormData) => void,
   ];
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -52,12 +55,12 @@ function ContactFormInternal() {
   return (
     <section className="bg-black text-white py-16 sm:py-20 md:py-24 lg:py-32">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div 
+        <motion.div
           className="max-w-3xl text-center mx-auto"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
-          transition={{ type: 'spring', duration: 1 }}
+          transition={{ type: "spring", duration: 1 }}
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
             Contact Us
@@ -76,42 +79,78 @@ function ContactFormInternal() {
         >
           <div className="relative rounded-lg sm:rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8 backdrop-blur-sm">
             <div className="absolute inset-0 rounded-lg sm:rounded-2xl bg-gradient-to-br from-cyan-900/10 to-transparent" />
-            <form ref={formRef} action={formAction} className="relative z-10 space-y-6 sm:space-y-8">
+            <form
+              ref={formRef}
+              action={formAction}
+              className="relative z-10 space-y-6 sm:space-y-8"
+            >
               <div>
-                <label htmlFor="name" className="block text-xs sm:text-sm font-mono tracking-wider text-gray-400 mb-2">
+                <label
+                  htmlFor="name"
+                  className="block text-xs sm:text-sm font-mono tracking-wider text-gray-400 mb-2"
+                >
                   NAME
                 </label>
                 <input
-                  type="text" id="name" name="name"
-                  className="form-input" required
+                  type="text"
+                  id="name"
+                  name="name"
+                  className="form-input"
+                  required
                 />
-                {state?.errors?.name && <p className="text-red-400 text-xs sm:text-sm mt-2">{state.errors.name.join(", ")}</p>}
+                {state?.errors?.name && (
+                  <p className="text-red-400 text-xs sm:text-sm mt-2">
+                    {state.errors.name.join(", ")}
+                  </p>
+                )}
               </div>
               <div>
-                <label htmlFor="email" className="block text-xs sm:text-sm font-mono tracking-wider text-gray-400 mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-xs sm:text-sm font-mono tracking-wider text-gray-400 mb-2"
+                >
                   EMAIL
                 </label>
                 <input
-                  type="email" id="email" name="email"
-                  className="form-input" required
+                  type="email"
+                  id="email"
+                  name="email"
+                  className="form-input"
+                  required
                 />
-                {state?.errors?.email && <p className="text-red-400 text-xs sm:text-sm mt-2">{state.errors.email.join(", ")}</p>}
+                {state?.errors?.email && (
+                  <p className="text-red-400 text-xs sm:text-sm mt-2">
+                    {state.errors.email.join(", ")}
+                  </p>
+                )}
               </div>
               <div>
-                <label htmlFor="message" className="block text-xs sm:text-sm font-mono tracking-wider text-gray-400 mb-2">
+                <label
+                  htmlFor="message"
+                  className="block text-xs sm:text-sm font-mono tracking-wider text-gray-400 mb-2"
+                >
                   MESSAGE
                 </label>
                 <textarea
-                  id="message" name="message" rows={4}
-                  className="form-input" required
+                  id="message"
+                  name="message"
+                  rows={4}
+                  className="form-input"
+                  required
                 />
-                {state?.errors?.message && <p className="text-red-400 text-xs sm:text-sm mt-2">{state.errors.message.join(", ")}</p>}
+                {state?.errors?.message && (
+                  <p className="text-red-400 text-xs sm:text-sm mt-2">
+                    {state.errors.message.join(", ")}
+                  </p>
+                )}
               </div>
               <div className="text-center pt-4">
                 <SubmitButton />
               </div>
               {state?.message && (
-                <p className={`text-center mt-4 text-xs sm:text-sm font-mono ${state?.errors ? "text-red-400" : "text-green-400"}`}>
+                <p
+                  className={`text-center mt-4 text-xs sm:text-sm font-mono ${state?.errors ? "text-red-400" : "text-green-400"}`}
+                >
                   {state.message}
                 </p>
               )}
@@ -129,7 +168,9 @@ function ContactFormInternal() {
           color: white;
           font-family: var(--font-mono);
           font-size: clamp(0.875rem, 2vw, 1rem);
-          transition: border-color 0.3s, box-shadow 0.3s;
+          transition:
+            border-color 0.3s,
+            box-shadow 0.3s;
           min-height: 2.75rem;
         }
         .form-input:focus {

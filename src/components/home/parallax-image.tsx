@@ -25,11 +25,7 @@ export function ParallaxImage({
   });
 
   // Image moves slower than container for parallax effect
-  const y = useTransform(
-    scrollYProgress,
-    [0, 1],
-    [100 * speed, -100 * speed]
-  );
+  const y = useTransform(scrollYProgress, [0, 1], [100 * speed, -100 * speed]);
 
   return (
     <div ref={ref} className={`overflow-hidden ${className}`}>

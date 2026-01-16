@@ -8,10 +8,7 @@ interface TextRevealProps {
   className?: string;
 }
 
-export function TextReveal({
-  children,
-  className = "",
-}: TextRevealProps) {
+export function TextReveal({ children, className = "" }: TextRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll({

@@ -3,7 +3,10 @@
 import { motion } from "framer-motion";
 import { Github, Linkedin, Twitter, Mail, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { TextHoverEffect, FooterBackgroundGradient } from "@/components/ui/hover-footer";
+import {
+  TextHoverEffect,
+  FooterBackgroundGradient,
+} from "@/components/ui/hover-footer";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -85,7 +88,10 @@ export function Footer() {
           viewport={{ once: true, amount: 0.3 }}
         >
           {/* Brand Section */}
-          <motion.div variants={itemVariants} className="col-span-2 sm:col-span-1 space-y-4">
+          <motion.div
+            variants={itemVariants}
+            className="col-span-2 sm:col-span-1 space-y-4"
+          >
             <div className="inline-block">
               <h3 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 DEXTA
@@ -144,22 +150,20 @@ export function Footer() {
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
         >
-          
-          
           {/* Hover text effect */}
           <div className="flex h-[6rem] sm:h-[8rem] md:h-[10rem] lg:h-[12rem] w-full items-center justify-center">
-            <TextHoverEffect text="DEXTA" className="w-48 sm:w-56 md:w-72 lg:w-80 xl:w-96" />
+            <TextHoverEffect
+              text="DEXTA"
+              className="w-48 sm:w-56 md:w-72 lg:w-80 xl:w-96"
+            />
           </div>
 
           <p className="text-sm text-gray-400 text-center">
             © {currentYear} DEXTA Services. All rights reserved.
           </p>
-          
+
           {/* CTA Button */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             {/* <Link
               href="#contact"
               className="group inline-flex items-center gap-2 rounded-full border border-cyan-400 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 px-6 py-3 text-sm font-medium text-cyan-300 transition-all duration-300 hover:border-cyan-300 hover:from-cyan-500/30 hover:to-purple-500/30 hover:text-cyan-200"

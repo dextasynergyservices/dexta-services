@@ -120,7 +120,8 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
                     transition={{ delay: 0.15 }}
                     className="text-lg lg:text-xl xl:text-2xl text-gray-300 mb-8 leading-relaxed max-w-2xl"
                   >
-                    {project.description || "A showcase of our work and expertise."}
+                    {project.description ||
+                      "A showcase of our work and expertise."}
                   </motion.p>
 
                   {/* Details Grid */}
@@ -135,7 +136,9 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
                         <p className="text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-2">
                           Category
                         </p>
-                        <p className="text-lg text-white font-medium">{project.tag}</p>
+                        <p className="text-lg text-white font-medium">
+                          {project.tag}
+                        </p>
                       </div>
                     )}
                     {project.ctaLabel && (
@@ -143,7 +146,9 @@ export function ProjectModal({ isOpen, onClose, project }: ProjectModalProps) {
                         <p className="text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-2">
                           Type
                         </p>
-                        <p className="text-lg text-white font-medium">{project.ctaLabel}</p>
+                        <p className="text-lg text-white font-medium">
+                          {project.ctaLabel}
+                        </p>
                       </div>
                     )}
                   </motion.div>

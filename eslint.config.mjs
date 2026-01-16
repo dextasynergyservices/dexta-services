@@ -47,6 +47,19 @@ export default defineConfig([
         setInterval: "readonly",
         clearTimeout: "readonly",
         clearInterval: "readonly",
+        // Add IntersectionObserver and other browser APIs here
+        IntersectionObserver: "readonly",
+        IntersectionObserverEntry: "readonly",
+        // Consider adding these common browser APIs too:
+        localStorage: "readonly",
+        sessionStorage: "readonly",
+        fetch: "readonly",
+        navigator: "readonly",
+        location: "readonly",
+        history: "readonly",
+        CustomEvent: "readonly",
+        URL: "readonly",
+        URLSearchParams: "readonly",
       },
     },
     plugins: {

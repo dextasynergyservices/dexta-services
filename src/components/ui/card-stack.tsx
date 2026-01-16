@@ -144,38 +144,38 @@ export function CardStack<T extends CardStackItem>({
     wrapIndex(initialIndex, len),
   );
   const [hovering] = React.useState(false);
-  const [screenSize, setScreenSize] = React.useState<'sm' | 'md' | 'lg'>('sm');
+  const [screenSize, setScreenSize] = React.useState<"sm" | "md" | "lg">("sm");
 
   // Detect screen size for responsive card sizing
   React.useEffect(() => {
     const handleResize = () => {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         if (window.innerWidth >= 1024) {
-          setScreenSize('lg');
+          setScreenSize("lg");
         } else if (window.innerWidth >= 768) {
-          setScreenSize('md');
+          setScreenSize("md");
         } else {
-          setScreenSize('sm');
+          setScreenSize("sm");
         }
       }
     };
 
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Get responsive card dimensions and settings
   const getResponsiveSettings = () => {
     switch (screenSize) {
-      case 'lg':
+      case "lg":
         return {
           width: cardWidthLg,
           height: cardHeightLg,
           visible: maxVisibleLg,
           spread: spreadDegLg,
         };
-      case 'md':
+      case "md":
         return {
           width: cardWidthMd,
           height: cardHeightMd,
@@ -211,7 +211,10 @@ export function CardStack<T extends CardStackItem>({
 
   const maxOffset = Math.max(0, Math.floor(currentMaxVisible / 2));
 
-  const cardSpacing = Math.max(10, Math.round(currentCardWidth * (1 - overlap)));
+  const cardSpacing = Math.max(
+    10,
+    Math.round(currentCardWidth * (1 - overlap)),
+  );
   const stepDeg = maxOffset > 0 ? currentSpreadDeg / maxOffset : 0;
 
   const canGoPrev = loop || active > 0;
@@ -264,8 +267,6 @@ export function CardStack<T extends CardStackItem>({
 
   if (!len) return null;
 
- 
-
   return (
     <>
       {/* Stage */}
@@ -282,119 +283,125 @@ export function CardStack<T extends CardStackItem>({
         >
           <div className="pointer-events-auto">
             <AnimatePresence initial={false}>
-            {items.map((item, i) => {
-              const off = signedOffset(i, active, len, loop);
-              const abs = Math.abs(off);
-              const visible = abs <= maxOffset;
+              {items.map((item, i) => {
+                const off = signedOffset(i, active, len, loop);
+                const abs = Math.abs(off);
+                const visible = abs <= maxOffset;
 
-              // hide far-away cards cleanly
-              if (!visible) return null;
+                // hide far-away cards cleanly
+                if (!visible) return null;
 
-              // fan geometry
-              const rotateZ = off * stepDeg;
-              const x = off * cardSpacing;
-              const y = abs * 10; // subtle arc-down feel
-              const z = -abs * depthPx;
+                // fan geometry
+                const rotateZ = off * stepDeg;
+                const x = off * cardSpacing;
+                const y = abs * 10; // subtle arc-down feel
+                const z = -abs * depthPx;
 
-              const isActive = off === 0;
+                const isActive = off === 0;
 
-              const scale = isActive ? activeScale : inactiveScale;
-              const lift = isActive ? -activeLiftPx : 0;
+                const scale = isActive ? activeScale : inactiveScale;
+                const lift = isActive ? -activeLiftPx : 0;
 
-              const rotateX = isActive ? 0 : tiltXDeg;
+                const rotateX = isActive ? 0 : tiltXDeg;
 
-              const zIndex = 100 - abs;
+                const zIndex = 100 - abs;
 
-              // drag only on the active card
-              const dragProps = isActive
-                ? {
-                    drag: "x" as const,
-                    dragConstraints: { left: 0, right: 0 },
-                    dragElastic: 0.18,
-                    onDragEnd: (
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      _e: any,
-                      info: { offset: { x: number }; velocity: { x: number } },
-                    ) => {
-                      if (reduceMotion) return;
-                      const travel = info.offset.x;
-                      const v = info.velocity.x;
-                      const threshold = Math.min(160, currentCardWidth * 0.22);
+                // drag only on the active card
+                const dragProps = isActive
+                  ? {
+                      drag: "x" as const,
+                      dragConstraints: { left: 0, right: 0 },
+                      dragElastic: 0.18,
+                      onDragEnd: (
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        _e: any,
+                        info: {
+                          offset: { x: number };
+                          velocity: { x: number };
+                        },
+                      ) => {
+                        if (reduceMotion) return;
+                        const travel = info.offset.x;
+                        const v = info.velocity.x;
+                        const threshold = Math.min(
+                          160,
+                          currentCardWidth * 0.22,
+                        );
 
-                      // swipe logic
-                      if (travel > threshold || v > 650) prev();
-                      else if (travel < -threshold || v < -650) next();
-                    },
-                  }
-                : {};
+                        // swipe logic
+                        if (travel > threshold || v > 650) prev();
+                        else if (travel < -threshold || v < -650) next();
+                      },
+                    }
+                  : {};
 
-              return (
-                <motion.div
-                  key={item.id}
-                  className={cn(
-                    "absolute bottom-0 left-1/2 -translate-x-1/2 rounded-2xl border-4 border-black/10 dark:border-white/10 overflow-hidden shadow-xl",
-                    "will-change-transform select-none",
-                    isActive
-                      ? "cursor-grab active:cursor-grabbing"
-                      : "cursor-pointer",
-                  )}
-                  style={{
-                    width: currentCardWidth,
-                    height: currentCardHeight,
-                    zIndex,
-                    transformStyle: "preserve-3d",
-                    transformOrigin: "bottom center",
-                  }}
-                  initial={
-                    reduceMotion
-                      ? false
-                      : {
-                          opacity: 0,
-                          y: y + 40,
-                          x: x,
-                          rotateZ,
-                          rotateX,
-                          scale,
-                        }
-                  }
-                  animate={{
-                    opacity: 1,
-                    x: x,
-                    y: y + lift,
-                    rotateZ,
-                    rotateX,
-                    scale,
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: springStiffness,
-                    damping: springDamping,
-                  }}
-                  // translateZ via style transform (kept stable w/ motion values above)
-                  // We apply translateZ by using a CSS transform in a child wrapper.
-                  onClick={() => {
-                    setActive(i);
-                  }}
-                  {...dragProps}
-                >
-                  <div
-                    className="h-full w-full"
-                    style={{
-                      transform: `translateZ(${z}px)`,
-                      transformStyle: "preserve-3d",
-                    }}
-                  >
-                    {renderCard ? (
-                      renderCard(item, { active: isActive })
-                    ) : (
-                      <DefaultFanCard item={item} active={isActive} />
+                return (
+                  <motion.div
+                    key={item.id}
+                    className={cn(
+                      "absolute bottom-0 left-1/2 -translate-x-1/2 rounded-2xl border-4 border-black/10 dark:border-white/10 overflow-hidden shadow-xl",
+                      "will-change-transform select-none",
+                      isActive
+                        ? "cursor-grab active:cursor-grabbing"
+                        : "cursor-pointer",
                     )}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-            </div>
+                    style={{
+                      width: currentCardWidth,
+                      height: currentCardHeight,
+                      zIndex,
+                      transformStyle: "preserve-3d",
+                      transformOrigin: "bottom center",
+                    }}
+                    initial={
+                      reduceMotion
+                        ? false
+                        : {
+                            opacity: 0,
+                            y: y + 40,
+                            x: x,
+                            rotateZ,
+                            rotateX,
+                            scale,
+                          }
+                    }
+                    animate={{
+                      opacity: 1,
+                      x: x,
+                      y: y + lift,
+                      rotateZ,
+                      rotateX,
+                      scale,
+                    }}
+                    transition={{
+                      type: "spring",
+                      stiffness: springStiffness,
+                      damping: springDamping,
+                    }}
+                    // translateZ via style transform (kept stable w/ motion values above)
+                    // We apply translateZ by using a CSS transform in a child wrapper.
+                    onClick={() => {
+                      setActive(i);
+                    }}
+                    {...dragProps}
+                  >
+                    <div
+                      className="h-full w-full"
+                      style={{
+                        transform: `translateZ(${z}px)`,
+                        transformStyle: "preserve-3d",
+                      }}
+                    >
+                      {renderCard ? (
+                        renderCard(item, { active: isActive })
+                      ) : (
+                        <DefaultFanCard item={item} active={isActive} />
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
@@ -419,7 +426,6 @@ export function CardStack<T extends CardStackItem>({
               );
             })}
           </div>
-          
         </div>
       ) : null}
     </>
