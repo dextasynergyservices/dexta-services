@@ -14,6 +14,8 @@ export default defineConfig([
       "dist/**",
       "next-env.d.ts",
       ".vercel/**",
+      "src/generated/**",
+      "prisma/generated/**",
     ],
   },
   {
