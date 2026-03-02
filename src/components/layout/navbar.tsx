@@ -7,8 +7,9 @@ import { Menu, X } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface NavItem {
-  href: string;
   label: string;
+  pageHref: string;
+  homeHref?: string;
 }
 
 export function Navbar() {
@@ -20,20 +21,19 @@ export function Navbar() {
   // Determine if we're on the home page
   const isHomePage = pathname === "/";
 
-  // Navigation items - use hash for home page, regular paths for other pages
-  const navItems: NavItem[] = isHomePage
-    ? [
-        { href: "#home", label: "Home" },
-        { href: "#projects", label: "Projects" },
-        { href: "#services", label: "Services" },
-        { href: "#contact", label: "Contact" },
-      ]
-    : [
-        { href: "/", label: "Home" },
-        { href: "/projects", label: "Projects" },
-        { href: "/services", label: "Services" },
-        { href: "/contact", label: "Contact" },
-      ];
+  const navItems: NavItem[] = [
+    { label: "Home", pageHref: "/", homeHref: "#home" },
+    { label: "Projects", pageHref: "/projects", homeHref: "#projects" },
+    { label: "Services", pageHref: "/services", homeHref: "#services" },
+    { label: "Offers", pageHref: "/offers" },
+    { label: "About", pageHref: "/about" },
+    { label: "Contact", pageHref: "/contact", homeHref: "#contact" },
+  ];
+
+  const resolvedNavItems = navItems.map((item) => ({
+    label: item.label,
+    href: isHomePage && item.homeHref ? item.homeHref : item.pageHref,
+  }));
 
   // Handle scroll effect
   useEffect(() => {
@@ -98,7 +98,7 @@ export function Navbar() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-1">
-          {navItems.map((item) => {
+          {resolvedNavItems.map((item) => {
             const active = isActive(item.href);
             return (
               <button
@@ -133,7 +133,7 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[280px] sm:w-[320px] border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 z-[1000]"
+              className="w-[280px] sm:w-[320px] border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 z-[1000] overflow-y-auto"
               style={{ zIndex: 1001 }}
             >
               <nav className="flex flex-col gap-2 py-6">
@@ -150,7 +150,7 @@ export function Navbar() {
                 <div className="my-2 border-t border-gray-200 dark:border-gray-800" />
 
                 {/* Mobile Navigation Links */}
-                {navItems.map((item) => {
+                {resolvedNavItems.map((item) => {
                   const active = isActive(item.href);
                   return (
                     <button
