@@ -7,10 +7,10 @@ import {
   Play,
   Cpu,
   Globe,
-  Zap,
-  Hexagon,
   BarChart3,
   Wifi,
+  Printer,
+  Code2
 } from "lucide-react";
 
 export default function Hero() {
@@ -113,7 +113,7 @@ export default function Hero() {
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
                   </span>
                   <span className="text-xs font-mono text-cyan-300 tracking-wider">
-                    NEXT_GEN SYSTEMS
+                    CREATIVE_SYSTEMS
                   </span>
                 </div>
               </div>
@@ -121,24 +121,23 @@ export default function Hero() {
               <h1
                 className={`text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-black tracking-tighter text-white leading-[0.9] mb-4 sm:mb-6 drop-shadow-2xl transition-all duration-1000 ease-out delay-200 ${isLoaded ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-12 blur-sm"}`}
               >
-                FUTURE
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600">
-                  VISION
+                WE DON'T DO
+                <span className="block text-transparent bg-clip-text bg-primary">
+                  ORDINARY
                 </span>
               </h1>
 
               <p
                 className={`max-w-md text-sm sm:text-base md:text-lg lg:text-xl text-gray-400 font-light leading-relaxed mb-6 sm:mb-8 transition-all duration-1000 ease-out delay-300 ${isLoaded ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-12 blur-sm"}`}
               >
-                We engineer digital realities that defy boundaries. Experience
-                the synthesis of design and logic.
+                Dexta Synergy Services is Port Harcourt's most dangerous creative agency. We Design. We Build. We Print. And we make your competition nervous.
               </p>
 
               <div
                 className={`flex flex-wrap gap-3 sm:gap-4 justify-center lg:justify-start transition-all duration-1000 ease-out delay-500 ${isLoaded ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-12 blur-sm"}`}
               >
                 <Button className="h-12 sm:h-14 px-6 sm:px-8 rounded-none border border-cyan-500/50 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 font-mono tracking-widest backdrop-blur-sm transition-all duration-300 group text-sm sm:text-base">
-                  INITIATE
+                  Our Work
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <Button
@@ -146,7 +145,7 @@ export default function Hero() {
                   className="h-12 sm:h-14 px-6 sm:px-8 rounded-none border border-white/10 hover:bg-white/5 text-white font-mono tracking-widest text-sm sm:text-base"
                 >
                   <Play className="mr-2 w-4 h-4" />
-                  SHOWREEL
+                  Let's Talk
                 </Button>
               </div>
             </div>
@@ -178,12 +177,12 @@ export default function Hero() {
                     <div className="flex items-center gap-2">
                       <Wifi className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-500 animate-pulse" />
                       <span className="font-mono text-cyan-500">
-                        NET_Link: ACTIVE
+                        DEXTA: ACTIVE
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                      <span className="font-mono text-blue-500">CPU: 42%</span>
+                      <span className="font-mono text-blue-500">CPU: 100%</span>
                     </div>
                   </div>
 
@@ -214,18 +213,18 @@ export default function Hero() {
             >
               <FeatureItem
                 icon={<Globe />}
-                title="GLOBAL SCALE"
-                desc="Infrastructure that spans across borders."
+                title="DESIGN"
+                desc="We make eyes stop and jaws drop"
               />
               <FeatureItem
-                icon={<Zap />}
-                title="HYPER SPEED"
-                desc="Optimized for millisecond latency."
+                icon={<Code2 />}
+                title="BUILD"
+                desc="Code so clean, your competitors will cry."
               />
               <FeatureItem
-                icon={<Hexagon />}
-                title="AI DRIVEN"
-                desc="Neural networks at the core."
+                icon={<Printer />}
+                title="PRINT"
+                desc="Real world. Real ink. Real impact."
               />
             </div>
           </div>

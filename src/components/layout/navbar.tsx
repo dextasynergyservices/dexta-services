@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import Image from "next/image";
 
 interface NavItem {
   label: string;
@@ -86,15 +87,17 @@ export function Navbar() {
       style={{ zIndex: 1000 }}
     >
       <div className="container mx-auto flex h-16 sm:h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-            Dexta
-          </span>
-          <span className="hidden sm:inline text-xs text-blue-500/70 font-mono tracking-wider">
-            STUDIO
-          </span>
-        </Link>
+       {/* Logo */}
+    <Link href="/" className="flex items-center gap-2 group">
+      <Image
+        src="/images/dexta.png"
+        alt="Dexta Logo"
+        width={140}
+        height={40}
+        priority
+        className="h-8 sm:h-10 w-auto object-contain"
+      />
+    </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-1">
@@ -138,14 +141,24 @@ export function Navbar() {
             >
               <nav className="flex flex-col gap-2 py-6">
                 {/* Logo in mobile menu */}
-                <div className="flex items-center gap-2 px-4 py-2 mb-4">
+                {/* <div className="flex items-center gap-2 px-4 py-2 mb-4">
                   <span className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
                     Dexta
                   </span>
                   <span className="text-xs text-blue-500/70 font-mono">
                     STUDIO
                   </span>
-                </div>
+                </div> */}
+                <Link href="/" className="flex items-center gap-2 px-2">
+                  <Image
+                    src="/images/dexta.png"
+                    alt="Dexta Logo"
+                    width={80}
+                    height={40}
+                    priority
+                    // className="h-8 sm:h-10 w-auto object-contain"
+                  />
+                </Link>
 
                 <div className="my-2 border-t border-gray-200 dark:border-gray-800" />
 

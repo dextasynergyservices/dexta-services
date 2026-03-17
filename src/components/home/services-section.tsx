@@ -1,22 +1,20 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Code,
   Brush,
   Printer,
-  Cpu,
-  Shield,
-  Zap,
   ArrowRight,
 } from "lucide-react";
 
 const services = [
   {
     id: "01",
-    title: "NEURAL DESIGN",
+    title: "DESIGN",
     description:
-      "UI/UX interfaces that adapt to user behavior. We craft aesthetic logic.",
+      "Visual Domination. We don't just make things pretty — we make them impossible to ignore.",
     icon: <Brush className="w-10 h-10" />,
     color: "text-purple-400",
     gradient: "from-purple-900/40 to-black",
@@ -25,9 +23,9 @@ const services = [
   },
   {
     id: "02",
-    title: "HYPER STRUCTURE",
+    title: "BUILD",
     description:
-      "Next.js architecture built for extreme performance and scalability.",
+      "Digital Engineering. Websites and software that work as hard as you do and look better doing it.",
     icon: <Code className="w-10 h-10" />,
     color: "text-cyan-400",
     gradient: "from-cyan-900/40 to-black",
@@ -36,42 +34,21 @@ const services = [
   },
   {
     id: "03",
-    title: "PHYSICAL ASSETS",
+    title: "PRINT",
     description:
-      "Tangible branding that bridges the gap between digital and reality.",
+      "Ink That Speaks. From paper to billboard, we put your brand in the real world, loud and proud.",
     icon: <Printer className="w-10 h-10" />,
     color: "text-pink-400",
     gradient: "from-pink-900/40 to-black",
     border: "border-pink-500/30",
     glow: "shadow-[0_0_50px_-10px_rgba(236,72,153,0.3)]",
   },
-  {
-    id: "04",
-    title: "AI SYNERGY",
-    description:
-      "Integrating LLMs and neural networks directly into your business logic.",
-    icon: <Cpu className="w-10 h-10" />,
-    color: "text-emerald-400",
-    gradient: "from-emerald-900/40 to-black",
-    border: "border-emerald-500/30",
-    glow: "shadow-[0_0_50px_-10px_rgba(52,211,153,0.3)]",
-  },
-  {
-    id: "05",
-    title: "CYBER SECURITY",
-    description:
-      "Fortified digital perimeters ensuring your data remains sovereign.",
-    icon: <Shield className="w-10 h-10" />,
-    color: "text-amber-400",
-    gradient: "from-amber-900/40 to-black",
-    border: "border-amber-500/30",
-    glow: "shadow-[0_0_50px_-10px_rgba(251,191,36,0.3)]",
-  },
 ];
 
 export function ServicesSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -139,12 +116,6 @@ export function ServicesSection() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
         {/* Section Header */}
         <div className="mb-16 sm:mb-24 text-center">
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-6 sm:mb-8">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-            </span>
-          </div>
           <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight">
             SERVICES
           </h2>
@@ -185,9 +156,9 @@ export function ServicesSection() {
                         >
                           {service.icon}
                         </div>
-                        <span className="font-mono text-xs sm:text-sm text-gray-500 tracking-widest">
+                        {/* <span className="font-mono text-xs sm:text-sm text-gray-500 tracking-widest">
                           ID_{service.id}
-                        </span>
+                        </span> */}
                       </div>
                       <h3 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 sm:mb-6">
                         {service.title}
@@ -197,9 +168,9 @@ export function ServicesSection() {
                       </p>
                     </div>
 
-                    <div className="mt-6 sm:mt-8 flex items-center gap-2 text-xs sm:text-sm font-mono text-gray-500 group cursor-pointer hover:text-white transition-colors">
+                    <div className="mt-6 sm:mt-8 flex items-center gap-2 text-xs sm:text-sm font-mono text-gray-500 group cursor-pointer hover:text-white transition-colors" onClick={() => router.push(`/projects?tab=${service.title.toLowerCase()}`)}>
                       <span className="uppercase tracking-widest">
-                        Initialise Module
+                        Explore {service.title}
                       </span>
                       <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                     </div>
@@ -214,8 +185,8 @@ export function ServicesSection() {
                       className={`w-28 h-28 sm:w-40 sm:h-40 lg:w-64 lg:h-64 rounded-full border border-white/10 flex items-center justify-center relative ${service.color}`}
                     >
                       <div className="absolute inset-0 rounded-full border border-current opacity-20 animate-[spin_10s_linear_infinite]" />
-                      <div className="absolute inset-4 rounded-full border border-dashed border-current opacity-30 animate-[spin_15s_linear_infinite_reverse]" />
-                      <Zap className="w-12 h-12 md:w-20 md:h-20 opacity-50" />
+                      {service.icon}
+                      {/* <Zap className="w-12 h-12 md:w-20 md:h-20 opacity-50" /> */}
                     </div>
                   </div>
                 </div>
@@ -225,7 +196,8 @@ export function ServicesSection() {
         </div>
 
         {/* Spacer at bottom to allow the last card to be scrolled past comfortably */}
-        <div className="h-[20vh]" />
+        <div className="h-[20vh]">
+        </div>
       </div>
 
       <style jsx>{`

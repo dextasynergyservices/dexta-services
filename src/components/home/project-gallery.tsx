@@ -183,8 +183,7 @@ export function ProjectGallery() {
             Our Recent Work
           </h2>
           <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-gray-400 px-4 sm:px-0">
-            A showcase of digital ecosystems we've engineered. Each project is a
-            testament to our commitment to innovation and quality.
+           Proof we're not just talking
           </p>
         </div>
       </div>

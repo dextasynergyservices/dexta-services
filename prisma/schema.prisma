@@ -23,3 +23,18 @@ model ContactMessage {
   @@index([email])
   @@index([createdAt])
 }
+
+model DevsDayRegistration {
+  id          String   @id @default(uuid())
+  name        String
+  email       String
+  role        String
+  stack       String?  // optional tech stack
+  expectation String?  // optional what they're looking forward to
+  profile     String?  // optional URL (GitHub/LinkedIn)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([email])
+  @@index([createdAt])
+}
