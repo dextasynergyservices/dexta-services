@@ -24,5 +24,3 @@ export interface AudienceConfig {
   reachPlans: PricingPlan[];
   setupPlans: PricingPlan[];
 }
-
-

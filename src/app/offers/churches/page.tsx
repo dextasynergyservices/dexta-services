@@ -9,7 +9,8 @@ import { PageTransition } from "@/components/layout/page-transition";
 
 export const metadata = {
   title: "For Churches & Organizations | Dexta Synergy Services",
-  description: "Ministry and organization digital solutions. REACH and SET UP offers for churches and non-profit organizations.",
+  description:
+    "Ministry and organization digital solutions. REACH and SET UP offers for churches and non-profit organizations.",
 };
 
 export default function ChurchesOffersPage() {

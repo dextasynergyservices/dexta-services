@@ -1,6 +1,10 @@
 import { Footer } from "@/components/home/footer";
 import { AudienceHero } from "@/components/offers";
-import { businessPlans, schoolsPlans, churchesPlans } from "@/components/offers";
+import {
+  businessPlans,
+  schoolsPlans,
+  churchesPlans,
+} from "@/components/offers";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { PageTransition } from "@/components/layout/page-transition";
@@ -39,8 +43,8 @@ export default function OffersPage() {
                   Choose Your Audience
                 </h2>
                 <p className="mt-4 text-base sm:text-lg text-gray-600">
-                  Each offer bundle is tuned to the needs of a specific group while
-                  keeping Dexta&apos;s Digital Synergy DNA.
+                  Each offer bundle is tuned to the needs of a specific group
+                  while keeping Dexta&apos;s Digital Synergy DNA.
                 </p>
               </div>
 
@@ -78,5 +82,3 @@ export default function OffersPage() {
     </>
   );
 }
-
-

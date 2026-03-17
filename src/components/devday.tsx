@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
   Globe,
@@ -15,25 +15,27 @@ import {
   Loader2,
   Terminal,
   Wifi,
-  Cpu,
   Share2,
-} from 'lucide-react';
-import { registerForDevDay, type RegistrationFormData } from '@/app/devs-day/actions';
-import Image from 'next/image';
+} from "lucide-react";
+import {
+  registerForDevDay,
+  type RegistrationFormData,
+} from "@/app/devs-day/actions";
+import Image from "next/image";
 
 // ─── Form Schema (mirrors server-side, for client validation) ─────────────────
 
 const formSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  role: z.string().min(1, 'Please select your role'),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  role: z.string().min(1, "Please select your role"),
   stack: z.string().max(200).optional(),
   expectation: z.string().max(500).optional(),
   profile: z
     .string()
-    .url('Please enter a valid URL (include https://)')
+    .url("Please enter a valid URL (include https://)")
     .optional()
-    .or(z.literal('')),
+    .or(z.literal("")),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -45,10 +47,10 @@ const fadeUp = {
   visible: (custom: number = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { 
-      duration: 0.5, 
+    transition: {
+      duration: 0.5,
       delay: custom,
-      type: 'tween' as const,
+      type: "tween" as const,
     },
   }),
 };
@@ -124,10 +126,21 @@ export default function DevDayPage() {
   });
 
   const onSubmit = async (data: FormData) => {
-    setSubmitResult(null);
-    const result = await registerForDevDay(data as RegistrationFormData);
-    setSubmitResult(result);
-    if (result.success) reset();
+    try {
+      setSubmitResult(null);
+
+      const result = await registerForDevDay(data as RegistrationFormData);
+      setSubmitResult(result);
+
+      if (result.success) {
+        reset();
+      }
+    } catch {
+      setSubmitResult({
+        success: false,
+        message: "Something went wrong. Please try again.",
+      });
+    }
   };
 
   return (
@@ -140,7 +153,7 @@ export default function DevDayPage() {
             linear-gradient(#00b2ff 1px, transparent 1px),
             linear-gradient(90deg, #00b2ff 1px, transparent 1px)
           `,
-          backgroundSize: '60px 60px',
+          backgroundSize: "60px 60px",
         }}
       />
 
@@ -151,12 +164,10 @@ export default function DevDayPage() {
       </div>
 
       <div className="relative mx-auto max-w-6xl px-5 py-16 sm:px-8 lg:px-12">
-
         {/* ── Two-column layout ────────────────────────────────────────────────── */}
         <div className="grid gap-12 lg:grid-cols-[1fr_420px] lg:gap-16 xl:grid-cols-[1fr_460px]">
           {/* ── LEFT — Hero Info ──────────────────────────────────────────────── */}
           <div>
-            
             <motion.div
               custom={0.02}
               variants={fadeUp}
@@ -171,7 +182,7 @@ export default function DevDayPage() {
                 height={300}
                 className="h-auto w-full object-cover"
                 priority // because it's above the fold
-            />
+              />
             </motion.div>
 
             {/* Title */}
@@ -182,8 +193,7 @@ export default function DevDayPage() {
               animate="visible"
               className="mb-5 font-clash text-5xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl"
             >
-              Devs{' '}
-              <span className="gradient-text">Day</span>
+              Devs <span className="gradient-text">Day</span>
             </motion.h1>
 
             {/* Description */}
@@ -195,13 +205,17 @@ export default function DevDayPage() {
               className="mb-8 max-w-lg text-base leading-relaxed text-[#a0a0a0] sm:text-lg"
             >
               An online gathering for developers to share what they're building,
-              swap tools and experiences, and connect with others who get it.
-              No slides. No pitches. Just real developer talk.
+              swap tools and experiences, and connect with others who get it. No
+              slides. No pitches. Just real developer talk.
             </motion.p>
 
             {/* Stat pills */}
             <div className="mb-10 flex flex-wrap gap-3">
-              <StatPill icon={Globe} label="Online · Free to join" delay={0.22} />
+              <StatPill
+                icon={Globe}
+                label="Online · Free to join"
+                delay={0.22}
+              />
               <StatPill icon={Calendar} label="Date TBA" delay={0.26} />
               <StatPill icon={Users} label="Open to all devs" delay={0.3} />
             </div>
@@ -220,11 +234,14 @@ export default function DevDayPage() {
               </div>
               <div className="space-y-2 text-sm">
                 {[
-                  { prefix: '~', text: 'Developer talks & live demos' },
-                  { prefix: '~', text: 'Tool & tech stack breakdowns' },
-                  { prefix: '~', text: 'Open floor — share what you\'ve built' },
-                  { prefix: '~', text: 'Networking with Nigerian dev community' },
-                  { prefix: '~', text: 'Q&A and candid experience sharing' },
+                  { prefix: "~", text: "Developer talks & live demos" },
+                  { prefix: "~", text: "Tool & tech stack breakdowns" },
+                  { prefix: "~", text: "Open floor — share what you've built" },
+                  {
+                    prefix: "~",
+                    text: "Networking with Nigerian dev community",
+                  },
+                  { prefix: "~", text: "Q&A and candid experience sharing" },
                 ].map(({ prefix, text }, i) => (
                   <div key={i} className="flex gap-3">
                     <span className="text-cyan-500">{prefix}</span>
@@ -265,22 +282,6 @@ export default function DevDayPage() {
             animate="visible"
           >
             <div className="sticky top-24 rounded-2xl border border-[#2a2a2a] bg-[#111] p-6 sm:p-8">
-              {/* Form header */}
-              <div className="mb-6">
-                <div className="mb-2 flex items-center gap-2">
-                  <Cpu className="h-4 w-4 text-cyan-400" />
-                  <span className="font-mono text-xs tracking-[3px] text-[#555] uppercase">
-                    Register
-                  </span>
-                </div>
-                <h2 className="font-clash text-2xl font-bold text-white">
-                  Secure your spot
-                </h2>
-                <p className="mt-1 text-sm text-[#666]">
-                  Takes 30 seconds. We'll send details to your inbox.
-                </p>
-              </div>
-
               {/* ── Success State ──────────────────────────────────────────────── */}
               <AnimatePresence mode="wait">
                 {submitResult?.success ? (
@@ -296,7 +297,7 @@ export default function DevDayPage() {
                       <CheckCircle2 className="h-7 w-7 text-cyan-400" />
                     </div>
                     <h3 className="mb-2 font-clash text-xl font-bold text-white">
-                      You're in! 🎉
+                      You're in!
                     </h3>
                     <p className="text-sm leading-relaxed text-[#a0a0a0]">
                       {submitResult.message}
@@ -318,19 +319,31 @@ export default function DevDayPage() {
                     className="space-y-4"
                     noValidate
                   >
+                    {/* Form header */}
+                    <div className="mb-2">
+                      <h2 className="font-clash text-2xl font-bold text-white">
+                        Secure your spot
+                      </h2>
+                      <p className="mt-1 text-sm text-[#666]">
+                        Takes 30 seconds. We'll send details to your inbox.
+                      </p>
+                    </div>
+
                     {/* Name */}
                     <div>
                       <label className="mb-1.5 block text-xs font-medium text-[#888]">
                         Full Name <span className="text-cyan-500">*</span>
                       </label>
                       <input
-                        {...register('name')}
+                        {...register("name")}
                         type="text"
                         placeholder="Ada Okonkwo"
                         className="w-full rounded-lg border border-[#2a2a2a] bg-[#0d0d0d] px-4 py-3 text-sm text-white placeholder-[#444] outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
                       />
                       {errors.name && (
-                        <p className="mt-1 text-xs text-red-400">{errors.name.message}</p>
+                        <p className="mt-1 text-xs text-red-400">
+                          {errors.name.message}
+                        </p>
                       )}
                     </div>
 
@@ -340,13 +353,15 @@ export default function DevDayPage() {
                         Email Address <span className="text-cyan-500">*</span>
                       </label>
                       <input
-                        {...register('email')}
+                        {...register("email")}
                         type="email"
                         placeholder="ada@example.com"
                         className="w-full rounded-lg border border-[#2a2a2a] bg-[#0d0d0d] px-4 py-3 text-sm text-white placeholder-[#444] outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
                       />
                       {errors.email && (
-                        <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>
+                        <p className="mt-1 text-xs text-red-400">
+                          {errors.email.message}
+                        </p>
                       )}
                     </div>
 
@@ -356,35 +371,49 @@ export default function DevDayPage() {
                         Your Role <span className="text-cyan-500">*</span>
                       </label>
                       <select
-                        {...register('role')}
+                        {...register("role")}
                         className="w-full rounded-lg border border-[#2a2a2a] bg-[#0d0d0d] px-4 py-3 text-sm text-white outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 [&>option]:bg-[#1a1a1a]"
                       >
                         <option value="" disabled>
                           Select your role
                         </option>
-                        <option value="Frontend Developer">Frontend Developer</option>
-                        <option value="Backend Developer">Backend Developer</option>
-                        <option value="Full Stack Developer">Full Stack Developer</option>
-                        <option value="Mobile Developer">Mobile Developer</option>
-                        <option value="DevOps / Cloud Engineer">DevOps / Cloud Engineer</option>
+                        <option value="Frontend Developer">
+                          Frontend Developer
+                        </option>
+                        <option value="Backend Developer">
+                          Backend Developer
+                        </option>
+                        <option value="Full Stack Developer">
+                          Full Stack Developer
+                        </option>
+                        <option value="Mobile Developer">
+                          Mobile Developer
+                        </option>
+                        <option value="DevOps / Cloud Engineer">
+                          DevOps / Cloud Engineer
+                        </option>
                         <option value="UI/UX Designer">UI/UX Designer</option>
                         <option value="Product Manager">Product Manager</option>
-                        <option value="Student / Learner">Student / Learner</option>
+                        <option value="Student / Learner">
+                          Student / Learner
+                        </option>
                         <option value="Other">Other</option>
                       </select>
                       {errors.role && (
-                        <p className="mt-1 text-xs text-red-400">{errors.role.message}</p>
+                        <p className="mt-1 text-xs text-red-400">
+                          {errors.role.message}
+                        </p>
                       )}
                     </div>
 
                     {/* Stack */}
                     <div>
                       <label className="mb-1.5 block text-xs font-medium text-[#888]">
-                        Your Tech Stack{' '}
+                        Your Tech Stack{" "}
                         <span className="text-[#555]">(optional)</span>
                       </label>
                       <input
-                        {...register('stack')}
+                        {...register("stack")}
                         type="text"
                         placeholder="e.g. React, Node.js, PostgreSQL..."
                         className="w-full rounded-lg border border-[#2a2a2a] bg-[#0d0d0d] px-4 py-3 text-sm text-white placeholder-[#444] outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
@@ -394,11 +423,11 @@ export default function DevDayPage() {
                     {/* Expectation */}
                     <div>
                       <label className="mb-1.5 block text-xs font-medium text-[#888]">
-                        What are you looking forward to?{' '}
+                        What are you looking forward to?{" "}
                         <span className="text-[#555]">(optional)</span>
                       </label>
                       <textarea
-                        {...register('expectation')}
+                        {...register("expectation")}
                         rows={3}
                         placeholder="Learning about new tools, connecting with other devs..."
                         className="w-full resize-none rounded-lg border border-[#2a2a2a] bg-[#0d0d0d] px-4 py-3 text-sm text-white placeholder-[#444] outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
@@ -408,17 +437,19 @@ export default function DevDayPage() {
                     {/* Profile */}
                     <div>
                       <label className="mb-1.5 block text-xs font-medium text-[#888]">
-                        GitHub / LinkedIn{' '}
+                        GitHub / LinkedIn{" "}
                         <span className="text-[#555]">(optional)</span>
                       </label>
                       <input
-                        {...register('profile')}
+                        {...register("profile")}
                         type="url"
                         placeholder="https://github.com/yourhandle"
                         className="w-full rounded-lg border border-[#2a2a2a] bg-[#0d0d0d] px-4 py-3 text-sm text-white placeholder-[#444] outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
                       />
                       {errors.profile && (
-                        <p className="mt-1 text-xs text-red-400">{errors.profile.message}</p>
+                        <p className="mt-1 text-xs text-red-400">
+                          {errors.profile.message}
+                        </p>
                       )}
                     </div>
 

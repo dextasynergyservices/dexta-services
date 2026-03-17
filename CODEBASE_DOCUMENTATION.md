@@ -9,6 +9,7 @@
 ## 1. PROJECT OVERVIEW
 
 **Dexta Services** is a premium creative agency portfolio website showcasing three main service categories:
+
 - **Design** - Branding, UI/UX, Mobile App Design
 - **Build** - Web Development, E-commerce, Enterprise Solutions
 - **Print** - Marketing Materials, Large Format, Catalogs
@@ -21,23 +22,24 @@ The website is built with **Next.js 16**, **TypeScript**, **Tailwind CSS**, and 
 
 ## 2. TECHNOLOGY STACK
 
-| Technology | Purpose | Version |
-|-----------|---------|---------|
-| **Next.js** | Full-stack React framework | 16.1.2 |
-| **TypeScript** | Type safety | Latest |
-| **Tailwind CSS** | Utility-first styling | v4 |
-| **React** | UI library | 19.2.3 |
-| **Framer Motion** | Animations & transitions | 12.23.24 |
-| **Lucide React** | Icons | 0.555.0 |
-| **Prisma** | ORM & Database | 7.0.1 |
-| **TanStack Query** | Data fetching | 5.90.11 |
-| **React Hook Form** | Form handling | 7.66.1 |
-| **Zod** | Schema validation | 4.1.13 |
-| **pnpm** | Package manager | Latest |
-| **ESLint** | Code linting | Latest |
-| **Husky** | Git hooks | Latest |
+| Technology          | Purpose                    | Version  |
+| ------------------- | -------------------------- | -------- |
+| **Next.js**         | Full-stack React framework | 16.1.2   |
+| **TypeScript**      | Type safety                | Latest   |
+| **Tailwind CSS**    | Utility-first styling      | v4       |
+| **React**           | UI library                 | 19.2.3   |
+| **Framer Motion**   | Animations & transitions   | 12.23.24 |
+| **Lucide React**    | Icons                      | 0.555.0  |
+| **Prisma**          | ORM & Database             | 7.0.1    |
+| **TanStack Query**  | Data fetching              | 5.90.11  |
+| **React Hook Form** | Form handling              | 7.66.1   |
+| **Zod**             | Schema validation          | 4.1.13   |
+| **pnpm**            | Package manager            | Latest   |
+| **ESLint**          | Code linting               | Latest   |
+| **Husky**           | Git hooks                  | Latest   |
 
 **Key Dependencies:**
+
 - `@google-cloud/recaptcha-enterprise` - reCAPTCHA security
 - `@getbrevo/brevo` - Email service
 - `next-cloudinary` - Image delivery
@@ -179,35 +181,35 @@ c:\Users\DEXTA-BUILD\Documents\dexta-services/
 
 ### Color Scheme
 
-| Color | Hex Value | Usage |
-|-------|-----------|-------|
-| **Cyan/Electric Blue** | `#00b2ff` | Primary action, active states, highlights |
-| **Purple** | `#6b21a8` (or similar) | Gradient accents |
-| **Pink** | `#ec4899` (or similar) | Gradient accents |
-| **Dark Background** | `#0a0a0a` | Dark mode background |
-| **Card Background** | `#1a1a1a` | Card and container backgrounds |
-| **Border Color** | `#333333` | Subtle borders |
-| **Text Primary** | `#ffffff` | Main text |
-| **Text Secondary** | `#a0a0a0` | Secondary text, descriptions |
-| **Text Muted** | `#666666` | Disabled or subtle text |
+| Color                  | Hex Value              | Usage                                     |
+| ---------------------- | ---------------------- | ----------------------------------------- |
+| **Cyan/Electric Blue** | `#00b2ff`              | Primary action, active states, highlights |
+| **Purple**             | `#6b21a8` (or similar) | Gradient accents                          |
+| **Pink**               | `#ec4899` (or similar) | Gradient accents                          |
+| **Dark Background**    | `#0a0a0a`              | Dark mode background                      |
+| **Card Background**    | `#1a1a1a`              | Card and container backgrounds            |
+| **Border Color**       | `#333333`              | Subtle borders                            |
+| **Text Primary**       | `#ffffff`              | Main text                                 |
+| **Text Secondary**     | `#a0a0a0`              | Secondary text, descriptions              |
+| **Text Muted**         | `#666666`              | Disabled or subtle text                   |
 
 ### Typography
 
-| Element | Font | Weight | Size | Usage |
-|---------|------|--------|------|-------|
-| **Headings** | Clash Display (Variable) | Bold | 2xl-4xl | Page titles, section headers |
-| **Subheadings** | Clash Display | Bold | lg-2xl | Section subheadings |
-| **Body** | Inter / Manrope | Regular | sm-base | Body text, descriptions |
-| **Small** | Inter / Manrope | Regular | xs-sm | Tags, metadata, captions |
+| Element         | Font                     | Weight  | Size    | Usage                        |
+| --------------- | ------------------------ | ------- | ------- | ---------------------------- |
+| **Headings**    | Clash Display (Variable) | Bold    | 2xl-4xl | Page titles, section headers |
+| **Subheadings** | Clash Display            | Bold    | lg-2xl  | Section subheadings          |
+| **Body**        | Inter / Manrope          | Regular | sm-base | Body text, descriptions      |
+| **Small**       | Inter / Manrope          | Regular | xs-sm   | Tags, metadata, captions     |
 
 ### Responsive Breakpoints
 
-| Breakpoint | Screen Size | Tailwind |
-|-----------|-----------|----------|
-| Mobile | < 640px | (default) |
-| Tablet | ≥ 640px | `sm:` |
-| Desktop | ≥ 1024px | `lg:` |
-| Large Desktop | ≥ 1280px | `xl:` |
+| Breakpoint    | Screen Size | Tailwind  |
+| ------------- | ----------- | --------- |
+| Mobile        | < 640px     | (default) |
+| Tablet        | ≥ 640px     | `sm:`     |
+| Desktop       | ≥ 1024px    | `lg:`     |
+| Large Desktop | ≥ 1280px    | `xl:`     |
 
 ---
 
@@ -216,6 +218,7 @@ c:\Users\DEXTA-BUILD\Documents\dexta-services/
 ### A. Navigation & Layout
 
 **Navbar Component** (`navbar.tsx`)
+
 - Sticky positioning with `sticky top-0 z-40`
 - Backdrop blur effect for modern look
 - Logo on left, menu items in center, CTA button on right
@@ -223,6 +226,7 @@ c:\Users\DEXTA-BUILD\Documents\dexta-services/
 - Active section highlighting
 
 **Footer Component** (`footer.tsx`)
+
 - Multi-column layout with company info, services, socials
 - Located in `components/home/footer.tsx`
 
@@ -232,6 +236,7 @@ c:\Users\DEXTA-BUILD\Documents\dexta-services/
 **Route:** `/projects` or `/projects?tab=design|build|print`
 
 #### Features:
+
 1. **Tab Navigation**
    - Design, Build, Print tabs
    - URL sync with `useSearchParams`
@@ -292,10 +297,10 @@ interface Project {
   description: string;
   category: string;
   tags: string[];
-  image: string;           // Main thumbnail image
-  gallery: string[];       // Array of 3 images for gallery
-  link: string;            // Internal link
-  websiteUrl?: string;     // External website (for website projects only)
+  image: string; // Main thumbnail image
+  gallery: string[]; // Array of 3 images for gallery
+  link: string; // Internal link
+  websiteUrl?: string; // External website (for website projects only)
 }
 
 const projectsData = {
@@ -323,25 +328,28 @@ const projectsData = {
   websites: [
     // Website projects with websiteUrl field
     // 4 website projects: E-commerce Platform, Corporate Portal, Portfolio Website, Booking System
-  ]
-}
+  ],
+};
 ```
 
 #### Project Categories
 
 **Design Tab (4 projects):**
+
 1. Brand Identity Suite
 2. UI/UX Dashboard
 3. Mobile App Design
 4. Logo & Visual Brand
 
 **Print Tab (4 projects):**
+
 1. Annual Report
 2. Product Catalog
 3. Exhibition Stand
 4. Marketing Brochures
 
 **Build/Website Tab (4 projects):**
+
 1. E-commerce Platform (websiteUrl: "https://example-ecommerce.com")
 2. Corporate Portal (websiteUrl: "https://example-portal.com")
 3. Portfolio Website (websiteUrl: "https://example-portfolio.com")
@@ -361,6 +369,7 @@ const projectsData = {
 ### D. Animations & Effects
 
 **Framer Motion Used For:**
+
 - Page transitions
 - Card entrance animations (opacity fade-in + slide up)
 - Modal opening/closing animations
@@ -368,6 +377,7 @@ const projectsData = {
 - Scroll reveal effects
 
 **Custom CSS Effects:**
+
 - Parallax scrolling
 - Hover zoom on images
 - Gradient overlays
@@ -377,6 +387,7 @@ const projectsData = {
 ### E. Forms & Validation
 
 **Contact Form:**
+
 - Uses React Hook Form + Zod validation
 - Server Action integration
 - reCAPTCHA v3 spam protection
@@ -388,25 +399,25 @@ const projectsData = {
 
 ### App Router Structure
 
-| Route | Component | File | Status |
-|-------|-----------|------|--------|
-| `/` | Home page | `app/page.tsx` | ✅ Active |
-| `/about` | About page | `app/about/page.tsx` | ✅ Active |
-| `/contact` | Contact page | `app/contact/page.tsx` | ✅ Active |
-| `/services` | Services page | `app/services/page.tsx` | ✅ Active |
-| `/projects` | Portfolio (with tabs) | `app/projects/page.tsx` | ✅ Active |
-| `/projects?tab=design` | Design projects | `projectPage.tsx` (Design tab) | ✅ Active |
-| `/projects?tab=build` | Build/Website projects | `projectPage.tsx` (Build tab) | ✅ Active |
-| `/projects?tab=print` | Print projects | `projectPage.tsx` (Print tab) | ✅ Active |
-| `/offers/business` | Business packages | `app/offers/business/page.tsx` | ✅ Active |
-| `/offers/churches` | Church packages | `app/offers/churches/page.tsx` | ✅ Active |
-| `/offers/schools` | School packages | `app/offers/schools/page.tsx` | ✅ Active |
+| Route                  | Component              | File                           | Status    |
+| ---------------------- | ---------------------- | ------------------------------ | --------- |
+| `/`                    | Home page              | `app/page.tsx`                 | ✅ Active |
+| `/about`               | About page             | `app/about/page.tsx`           | ✅ Active |
+| `/contact`             | Contact page           | `app/contact/page.tsx`         | ✅ Active |
+| `/services`            | Services page          | `app/services/page.tsx`        | ✅ Active |
+| `/projects`            | Portfolio (with tabs)  | `app/projects/page.tsx`        | ✅ Active |
+| `/projects?tab=design` | Design projects        | `projectPage.tsx` (Design tab) | ✅ Active |
+| `/projects?tab=build`  | Build/Website projects | `projectPage.tsx` (Build tab)  | ✅ Active |
+| `/projects?tab=print`  | Print projects         | `projectPage.tsx` (Print tab)  | ✅ Active |
+| `/offers/business`     | Business packages      | `app/offers/business/page.tsx` | ✅ Active |
+| `/offers/churches`     | Church packages        | `app/offers/churches/page.tsx` | ✅ Active |
+| `/offers/schools`      | School packages        | `app/offers/schools/page.tsx`  | ✅ Active |
 
 ### Query Parameters
 
-| Parameter | Values | Usage |
-|-----------|--------|-------|
-| `tab` | `design`, `build`, `print` | Switch active tab on projects page |
+| Parameter | Values                     | Usage                              |
+| --------- | -------------------------- | ---------------------------------- |
+| `tab`     | `design`, `build`, `print` | Switch active tab on projects page |
 
 ---
 
@@ -415,11 +426,12 @@ const projectsData = {
 ### React Hooks Used
 
 **projectPage.tsx:**
+
 ```typescript
-const [activeTab, setActiveTab] = useState(tabParam);        // Current tab
-const [searchTerm, setSearchTerm] = useState("");             // Search query
-const [selectedCategory, setSelectedCategory] = useState();   // Filter category
-const [currentPage, setCurrentPage] = useState(1);            // Pagination page
+const [activeTab, setActiveTab] = useState(tabParam); // Current tab
+const [searchTerm, setSearchTerm] = useState(""); // Search query
+const [selectedCategory, setSelectedCategory] = useState(); // Filter category
+const [currentPage, setCurrentPage] = useState(1); // Pagination page
 const [selectedProject, setSelectedProject] = useState(null); // Modal state
 const [currentImageIndex, setCurrentImageIndex] = useState(0); // Gallery image index
 ```
@@ -439,32 +451,36 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0); // Gallery image 
 ### Tailwind Classes Usage
 
 **Responsive Layout:**
+
 ```tsx
 // Mobile first approach
-className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6";
 ```
 
 **Colors:**
+
 ```tsx
 // Use CSS variable names and Tailwind utilities
-className="bg-card border-border text-primary-text"
-className="text-cyan-500 hover:text-cyan-400"
-className="bg-gradient-to-r from-purple-600 to-cyan-500"
+className = "bg-card border-border text-primary-text";
+className = "text-cyan-500 hover:text-cyan-400";
+className = "bg-gradient-to-r from-purple-600 to-cyan-500";
 ```
 
 **Spacing:**
+
 ```tsx
 // Consistent padding/margin system
-className="p-4 sm:p-6 lg:p-8"
-className="mb-3 sm:mb-4 lg:mb-6"
+className = "p-4 sm:p-6 lg:p-8";
+className = "mb-3 sm:mb-4 lg:mb-6";
 ```
 
 **Typography:**
+
 ```tsx
 // Responsive text sizes
-className="text-base sm:text-lg lg:text-xl"
+className = "text-base sm:text-lg lg:text-xl";
 // Font weights
-className="font-bold font-semibold font-normal"
+className = "font-bold font-semibold font-normal";
 ```
 
 ### Custom CSS Classes
@@ -474,8 +490,8 @@ className="font-bold font-semibold font-normal"
 ```css
 /* Font imports */
 @font-face {
-  font-family: 'Clash Display';
-  src: url('/fonts/ClashDisplay-...');
+  font-family: "Clash Display";
+  src: url("/fonts/ClashDisplay-...");
 }
 
 /* Utility classes */
@@ -500,17 +516,17 @@ className="font-bold font-semibold font-normal"
 **Prisma Client Location:** `lib/prisma.ts`
 
 ```typescript
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from "@prisma/client";
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient }
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
-    log: ['query'],
-  })
+    log: ["query"],
+  });
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ```
 
 ### Schema Location
@@ -518,6 +534,7 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 **File:** `prisma/schema.prisma`
 
 Used for:
+
 - User data
 - Contact form submissions
 - Project/service information
@@ -580,10 +597,10 @@ Dynamically generates sitemap based on routes.
 
 ```typescript
 export const metadata: Metadata = {
-  title: 'Dexta Synergy Services',
-  description: 'Creative agency for design, build, and print',
+  title: "Dexta Synergy Services",
+  description: "Creative agency for design, build, and print",
   // ... more metadata
-}
+};
 ```
 
 ### JSON-LD Structured Data
@@ -605,6 +622,7 @@ export const metadata: Metadata = {
 ### Common Patterns
 
 **Responsive Grid:**
+
 ```tsx
 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
   {items.map((item) => (...))}
@@ -612,6 +630,7 @@ export const metadata: Metadata = {
 ```
 
 **Card Component:**
+
 ```tsx
 <div className="rounded-2xl bg-card border border-border p-4 sm:p-6">
   {/* content */}
@@ -619,6 +638,7 @@ export const metadata: Metadata = {
 ```
 
 **Button Styling:**
+
 ```tsx
 <button className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white transition-colors">
   Button Text
@@ -626,6 +646,7 @@ export const metadata: Metadata = {
 ```
 
 **Animation:**
+
 ```tsx
 <motion.div
   initial={{ opacity: 0, y: 20 }}
@@ -684,6 +705,7 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ✅ Responsive modal for mobile and desktop
 
 **Files Modified:**
+
 - `src/components/projectPage.tsx` - Main projects component with gallery modal
 - `src/components/home/services-section.tsx` - Navigation to projects tabs
 - `src/app/projects/page.tsx` - Projects page route

@@ -3,7 +3,16 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, Layout, Palette, Printer, Search, ChevronLeft, ChevronRight, X } from "lucide-react";
+import {
+  ArrowRight,
+  Layout,
+  Palette,
+  Printer,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -253,7 +262,7 @@ const PROJECTS_PER_PAGE = 6;
 export default function ProjectPage() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab") || "design";
-  
+
   const [activeTab, setActiveTab] = useState(tabParam);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -283,10 +292,11 @@ export default function ProjectPage() {
       project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.tags.some((tag) =>
-        tag.toLowerCase().includes(searchTerm.toLowerCase())
+        tag.toLowerCase().includes(searchTerm.toLowerCase()),
       );
 
-    const matchesCategory = !selectedCategory || project.category === selectedCategory;
+    const matchesCategory =
+      !selectedCategory || project.category === selectedCategory;
 
     return matchesSearch && matchesCategory;
   });
@@ -295,7 +305,7 @@ export default function ProjectPage() {
   const startIndex = (currentPage - 1) * PROJECTS_PER_PAGE;
   const paginatedProjects = filteredProjects.slice(
     startIndex,
-    startIndex + PROJECTS_PER_PAGE
+    startIndex + PROJECTS_PER_PAGE,
   );
 
   return (
@@ -405,7 +415,8 @@ export default function ProjectPage() {
               {activeTab === "print" && "Print Projects"}
             </motion.h2>
             <p className="text-gray-400">
-              Showing {filteredProjects.length} of {activeProjects.length} projects
+              Showing {filteredProjects.length} of {activeProjects.length}{" "}
+              projects
             </p>
             <p className="mt-2 text-gray-400">
               {activeTab === "design" &&
@@ -420,63 +431,63 @@ export default function ProjectPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 overflow-x-hidden">
             {paginatedProjects.length > 0 ? (
               paginatedProjects.map((project, index) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="group relative overflow-hidden rounded-2xl bg-card border border-border"
-              >
-                <div 
-                  className="aspect-[16/9] overflow-hidden cursor-pointer"
-                  onClick={() => {
-                    setSelectedProject(project);
-                    setCurrentImageIndex(0);
-                  }}
+                <motion.div
+                  key={project.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="group relative overflow-hidden rounded-2xl bg-card border border-border"
                 >
-                  <Image
-                    src={project.image}
-                    alt={project.title}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-
-                <div className="p-3 sm:p-4">
-                  <div className="mb-2">
-                    <span className="inline-block rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-cyan-300">
-                      {project.category}
-                    </span>
+                  <div
+                    className="aspect-[16/9] overflow-hidden cursor-pointer"
+                    onClick={() => {
+                      setSelectedProject(project);
+                      setCurrentImageIndex(0);
+                    }}
+                  >
+                    <Image
+                      src={project.image}
+                      alt={project.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
 
-                  <h3 className="text-lg sm:text-xl font-bold text-primary-text group-hover:text-cyan-400 transition-colors duration-300 mb-2">
-                    {project.title}
-                  </h3>
-
-                  <p className="text-xs sm:text-sm text-gray-300 line-clamp-2">
-                    {project.description}
-                  </p>
-
-                  <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
-                    {project.tags.slice(0, 2).map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full bg-gray-800/50 px-2 sm:px-3 py-1 text-xs text-gray-300"
-                      >
-                        {tag}
+                  <div className="p-3 sm:p-4">
+                    <div className="mb-2">
+                      <span className="inline-block rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-cyan-300">
+                        {project.category}
                       </span>
-                    ))}
-                  </div>
+                    </div>
 
-                  <Link href={project.link}>
-                    <Button variant="ghost" className="mt-6 w-full group/btn">
-                      View Project Details
-                      <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
-                    </Button>
-                  </Link>
-                </div>
-              </motion.div>
+                    <h3 className="text-lg sm:text-xl font-bold text-primary-text group-hover:text-cyan-400 transition-colors duration-300 mb-2">
+                      {project.title}
+                    </h3>
+
+                    <p className="text-xs sm:text-sm text-gray-300 line-clamp-2">
+                      {project.description}
+                    </p>
+
+                    <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
+                      {project.tags.slice(0, 2).map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full bg-gray-800/50 px-2 sm:px-3 py-1 text-xs text-gray-300"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    <Link href={project.link}>
+                      <Button variant="ghost" className="mt-6 w-full group/btn">
+                        View Project Details
+                        <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+                      </Button>
+                    </Link>
+                  </div>
+                </motion.div>
               ))
             ) : (
               <div className="col-span-full text-center py-12">
@@ -497,21 +508,25 @@ export default function ProjectPage() {
               >
                 Prev
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`px-3 sm:px-4 py-2 rounded-lg text-sm transition-colors ${
-                    page === currentPage
-                      ? "bg-cyan-600 text-white"
-                      : "bg-gray-800 text-white hover:bg-gray-700"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 sm:px-4 py-2 rounded-lg text-sm transition-colors ${
+                      page === currentPage
+                        ? "bg-cyan-600 text-white"
+                        : "bg-gray-800 text-white hover:bg-gray-700"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ),
+              )}
               <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={currentPage === totalPages}
                 className="px-3 sm:px-4 py-2 rounded-lg text-sm bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
               >
@@ -585,7 +600,7 @@ export default function ProjectPage() {
                   <button
                     onClick={() =>
                       setCurrentImageIndex((i) =>
-                        i === 0 ? selectedProject.gallery.length - 1 : i - 1
+                        i === 0 ? selectedProject.gallery.length - 1 : i - 1,
                       )
                     }
                     className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors z-20"
@@ -595,7 +610,7 @@ export default function ProjectPage() {
                   <button
                     onClick={() =>
                       setCurrentImageIndex((i) =>
-                        i === selectedProject.gallery.length - 1 ? 0 : i + 1
+                        i === selectedProject.gallery.length - 1 ? 0 : i + 1,
                       )
                     }
                     className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors z-20"

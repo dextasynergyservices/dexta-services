@@ -126,8 +126,8 @@ export async function submitContactForm(
       message: validatedFields.data.message,
     };
     sendSmtpEmail.sender = {
-      name: "Dexta Synergy",
-      email: "noreply@dexta.synergy",
+      name: process.env.SENDER_NAME!,
+      email: process.env.SENDER_EMAIL!,
     };
 
     await apiInstance.sendTransacEmail(sendSmtpEmail);

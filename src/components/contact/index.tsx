@@ -30,9 +30,7 @@ export function ContactHero() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[color:var(--color-primary)] opacity-30"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[color:var(--color-secondary-foreground)]"></span>
             </span>
-            <span className="text-xs font-mono tracking-wider">
-              CONTACT US
-            </span>
+            <span className="text-xs font-mono tracking-wider">CONTACT US</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6">
@@ -63,7 +61,9 @@ export function ContactInfo() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-2xl sm:text-3xl font-bold mb-8">Where to Find Us</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-8">
+              Where to Find Us
+            </h2>
 
             <div className="space-y-6">
               {/* Address */}

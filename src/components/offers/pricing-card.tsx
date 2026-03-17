@@ -17,7 +17,9 @@ export function PricingCard({
   color: "cyan" | "blue" | "purple";
 }) {
   const price = isQuarterly ? plan.priceQuarterly : plan.priceMonthly;
-  const nairaPrice = isQuarterly ? plan.priceQuarterlyNaira : plan.priceMonthlyNaira;
+  const nairaPrice = isQuarterly
+    ? plan.priceQuarterlyNaira
+    : plan.priceMonthlyNaira;
 
   const colorClasses: Record<typeof color, string> = {
     cyan: "border-cyan-500/50 bg-cyan-500/10",
@@ -45,7 +47,9 @@ export function PricingCard({
       <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
 
       {plan.reachCount && (
-        <p className="text-sm text-gray-400 mb-4">Reach up to {plan.reachCount}</p>
+        <p className="text-sm text-gray-400 mb-4">
+          Reach up to {plan.reachCount}
+        </p>
       )}
 
       <div className="mb-6">
@@ -72,5 +76,3 @@ export function PricingCard({
     </motion.div>
   );
 }
-
-
