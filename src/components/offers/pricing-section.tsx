@@ -14,7 +14,9 @@ function PricingToggle({
 }) {
   return (
     <div className="flex items-center justify-center gap-4 mb-12">
-      <span className={`text-sm font-medium ${!isQuarterly ? "text-white" : "text-gray-500"}`}>
+      <span
+        className={`text-sm font-medium ${!isQuarterly ? "text-white" : "text-gray-500"}`}
+      >
         Monthly
       </span>
       <button
@@ -30,7 +32,9 @@ function PricingToggle({
           }`}
         />
       </button>
-      <span className={`text-sm font-medium ${isQuarterly ? "text-white" : "text-gray-500"}`}>
+      <span
+        className={`text-sm font-medium ${isQuarterly ? "text-white" : "text-gray-500"}`}
+      >
         Quarterly
       </span>
     </div>
@@ -104,12 +108,15 @@ export function SetupPricingSection({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {safePlans.map((plan) => (
-            <PricingCard key={plan.name} plan={plan} isQuarterly={false} color={color} />
+            <PricingCard
+              key={plan.name}
+              plan={plan}
+              isQuarterly={false}
+              color={color}
+            />
           ))}
         </div>
       </div>
     </section>
   );
 }
-
-

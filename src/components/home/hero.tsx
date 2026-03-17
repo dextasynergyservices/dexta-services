@@ -10,7 +10,7 @@ import {
   BarChart3,
   Wifi,
   Printer,
-  Code2
+  Code2,
 } from "lucide-react";
 
 export default function Hero() {
@@ -130,7 +130,9 @@ export default function Hero() {
               <p
                 className={`max-w-md text-sm sm:text-base md:text-lg lg:text-xl text-gray-400 font-light leading-relaxed mb-6 sm:mb-8 transition-all duration-1000 ease-out delay-300 ${isLoaded ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-12 blur-sm"}`}
               >
-                Dexta Synergy Services is Port Harcourt's most dangerous creative agency. We Design. We Build. We Print. And we make your competition nervous.
+                Dexta Synergy Services is Port Harcourt's most dangerous
+                creative agency. We Design. We Build. We Print. And we make your
+                competition nervous.
               </p>
 
               <div

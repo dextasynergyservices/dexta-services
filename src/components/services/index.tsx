@@ -2,7 +2,15 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Brush, Code, Printer, ArrowRight, Building2, GraduationCap, Church } from "lucide-react";
+import {
+  Brush,
+  Code,
+  Printer,
+  ArrowRight,
+  Building2,
+  GraduationCap,
+  Church,
+} from "lucide-react";
 import Link from "next/link";
 
 const services = [
@@ -10,21 +18,24 @@ const services = [
     id: "design",
     title: "Design",
     icon: <Brush className="w-8 h-8" />,
-    description: "Design-as-a-service – Graphics, Video, Web Marketing Design – For Web, For Print",
+    description:
+      "Design-as-a-service – Graphics, Video, Web Marketing Design – For Web, For Print",
     color: "text-[color:var(--color-secondary-foreground)]",
   },
   {
     id: "build",
     title: "Build",
     icon: <Code className="w-8 h-8" />,
-    description: "Web & Software Development – Websites, Web Applications, Mobile Applications. Business Communication Solutions – Professional Email Services, Chatbot, SMS. Digital Marketing – Ads buying, Email Marketing, Social Media marketing, SEO, Content Marketing, Funnel, Lead Generation.",
+    description:
+      "Web & Software Development – Websites, Web Applications, Mobile Applications. Business Communication Solutions – Professional Email Services, Chatbot, SMS. Digital Marketing – Ads buying, Email Marketing, Social Media marketing, SEO, Content Marketing, Funnel, Lead Generation.",
     color: "text-[color:var(--color-secondary-foreground)]",
   },
   {
     id: "print",
     title: "Print",
     icon: <Printer className="w-8 h-8" />,
-    description: "Paper Print – Flyers, brochures, cards etc. Apparel Print - Clothes, Bags etc.",
+    description:
+      "Paper Print – Flyers, brochures, cards etc. Apparel Print - Clothes, Bags etc.",
     color: "text-[color:var(--color-secondary-foreground)]",
   },
 ];
@@ -99,7 +110,8 @@ export function ServicesHero() {
           </h1>
 
           <p className="text-lg sm:text-xl text-white/80 leading-relaxed max-w-2xl mx-auto drop-shadow-[0_6px_24px_rgba(0,0,0,0.5)]">
-            We deliver world class value so that you can Be more. Do more. Have more.
+            We deliver world class value so that you can Be more. Do more. Have
+            more.
           </p>
         </motion.div>
       </div>
@@ -135,13 +147,19 @@ export function ServicesGrid() {
               }}
               transition={{ duration: 0.6, ease: "easeOut" }}
             >
-              <div className={`w-16 h-16 rounded-xl bg-white border border-[color:var(--color-border)] flex items-center justify-center mb-6 ${service.color}`}>
+              <div
+                className={`w-16 h-16 rounded-xl bg-white border border-[color:var(--color-border)] flex items-center justify-center mb-6 ${service.color}`}
+              >
                 {service.icon}
               </div>
 
-              <h3 className="text-2xl sm:text-3xl font-bold mb-4">{service.title}</h3>
-              
-              <p className="text-gray-600 leading-relaxed">{service.description}</p>
+              <h3 className="text-2xl sm:text-3xl font-bold mb-4">
+                {service.title}
+              </h3>
+
+              <p className="text-gray-600 leading-relaxed">
+                {service.description}
+              </p>
             </motion.div>
           ))}
         </motion.div>
@@ -180,14 +198,20 @@ export function AudienceSection() {
             >
               <Link href={audience.href}>
                 <div className="group relative p-6 rounded-2xl border border-[color:var(--color-border)] bg-white transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer h-full">
-                  <div className={`w-14 h-14 rounded-xl bg-white border border-gray-200 flex items-center justify-center mb-4 ${audience.color}`}>
+                  <div
+                    className={`w-14 h-14 rounded-xl bg-white border border-gray-200 flex items-center justify-center mb-4 ${audience.color}`}
+                  >
                     {audience.icon}
                   </div>
 
                   <h3 className="text-xl font-bold mb-2">{audience.title}</h3>
-                  <p className="text-gray-600 text-sm mb-4">{audience.description}</p>
+                  <p className="text-gray-600 text-sm mb-4">
+                    {audience.description}
+                  </p>
 
-                  <div className={`flex items-center gap-2 text-sm font-medium ${audience.color} group-hover:gap-3 transition-all`}>
+                  <div
+                    className={`flex items-center gap-2 text-sm font-medium ${audience.color} group-hover:gap-3 transition-all`}
+                  >
                     <span>View Offers</span>
                     <ArrowRight className="w-4 h-4" />
                   </div>

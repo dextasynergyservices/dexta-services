@@ -4,7 +4,8 @@ import { PageTransition } from "@/components/layout/page-transition";
 
 export const metadata = {
   title: "Contact Us | Dexta Synergy Services",
-  description: "Get in touch with Dexta Synergy Services. Located at 96 Elioparanwo Road, Port Harcourt, Rivers State, Nigeria.",
+  description:
+    "Get in touch with Dexta Synergy Services. Located at 96 Elioparanwo Road, Port Harcourt, Rivers State, Nigeria.",
 };
 
 export default function ContactPage() {

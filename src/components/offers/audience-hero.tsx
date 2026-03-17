@@ -16,7 +16,8 @@ function AudienceIcon({ iconKey }: { iconKey: AudienceConfig["iconKey"] }) {
 }
 
 export function AudienceHero({ config }: { config: AudienceConfig }) {
-  const colors = "border-[color:var(--color-secondary-foreground)]/20 text-[color:var(--color-secondary-foreground)]";
+  const colors =
+    "border-[color:var(--color-secondary-foreground)]/20 text-[color:var(--color-secondary-foreground)]";
 
   return (
     <section className="relative min-h-[55vh] sm:min-h-[60vh] lg:min-h-[70vh] bg-white text-[#212529] overflow-hidden">
@@ -36,7 +37,9 @@ export function AudienceHero({ config }: { config: AudienceConfig }) {
             className={`inline-flex items-center gap-3 px-4 py-2 rounded-full border bg-white/80 backdrop-blur-md mb-6 ${colors}`}
           >
             <AudienceIcon iconKey={config.iconKey} />
-            <span className="text-sm font-medium">{config.id.toUpperCase()}</span>
+            <span className="text-sm font-medium">
+              {config.id.toUpperCase()}
+            </span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6">
@@ -49,5 +52,3 @@ export function AudienceHero({ config }: { config: AudienceConfig }) {
     </section>
   );
 }
-
-

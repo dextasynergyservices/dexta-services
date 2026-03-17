@@ -9,7 +9,8 @@ import { PageTransition } from "@/components/layout/page-transition";
 
 export const metadata = {
   title: "For Businesses | Dexta Synergy Services",
-  description: "Digital solutions tailored for your business growth. REACH and SET UP offers with competitive pricing.",
+  description:
+    "Digital solutions tailored for your business growth. REACH and SET UP offers with competitive pricing.",
 };
 
 export default function BusinessOffersPage() {

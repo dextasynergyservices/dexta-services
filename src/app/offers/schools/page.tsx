@@ -9,7 +9,8 @@ import { PageTransition } from "@/components/layout/page-transition";
 
 export const metadata = {
   title: "For Schools | Dexta Synergy Services",
-  description: "Educational digital transformation packages. REACH and SET UP offers for schools and educational institutions.",
+  description:
+    "Educational digital transformation packages. REACH and SET UP offers for schools and educational institutions.",
 };
 
 export default function SchoolsOffersPage() {

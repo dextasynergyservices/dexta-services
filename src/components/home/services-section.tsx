@@ -2,12 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Code,
-  Brush,
-  Printer,
-  ArrowRight,
-} from "lucide-react";
+import { Code, Brush, Printer, ArrowRight } from "lucide-react";
 
 const services = [
   {
@@ -168,7 +163,14 @@ export function ServicesSection() {
                       </p>
                     </div>
 
-                    <div className="mt-6 sm:mt-8 flex items-center gap-2 text-xs sm:text-sm font-mono text-gray-500 group cursor-pointer hover:text-white transition-colors" onClick={() => router.push(`/projects?tab=${service.title.toLowerCase()}`)}>
+                    <div
+                      className="mt-6 sm:mt-8 flex items-center gap-2 text-xs sm:text-sm font-mono text-gray-500 group cursor-pointer hover:text-white transition-colors"
+                      onClick={() =>
+                        router.push(
+                          `/projects?tab=${service.title.toLowerCase()}`,
+                        )
+                      }
+                    >
                       <span className="uppercase tracking-widest">
                         Explore {service.title}
                       </span>
@@ -196,8 +198,7 @@ export function ServicesSection() {
         </div>
 
         {/* Spacer at bottom to allow the last card to be scrolled past comfortably */}
-        <div className="h-[20vh]">
-        </div>
+        <div className="h-[20vh]"></div>
       </div>
 
       <style jsx>{`

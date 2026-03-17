@@ -87,17 +87,17 @@ export function Navbar() {
       style={{ zIndex: 1000 }}
     >
       <div className="container mx-auto flex h-16 sm:h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
-       {/* Logo */}
-    <Link href="/" className="flex items-center gap-2 group">
-      <Image
-        src="/images/dexta.png"
-        alt="Dexta Logo"
-        width={140}
-        height={40}
-        priority
-        className="h-8 sm:h-10 w-auto object-contain"
-      />
-    </Link>
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 group">
+          <Image
+            src="/images/dexta.png"
+            alt="Dexta Logo"
+            width={140}
+            height={40}
+            priority
+            className="h-8 sm:h-10 w-auto object-contain"
+          />
+        </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-1">

@@ -76,7 +76,8 @@ export const businessPlans: AudienceConfig = {
       priceQuarterly: "Contact Us",
       priceMonthlyNaira: "₦120,320",
       priceQuarterlyNaira: "Contact Us",
-      description: "Let's set you up for success! Go digital with our set up offers.",
+      description:
+        "Let's set you up for success! Go digital with our set up offers.",
       features: [
         "Landing Page",
         "1 Year Free Domain Name",
@@ -247,5 +248,3 @@ export const churchesPlans: AudienceConfig = {
     },
   ],
 };
-
-
