@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -115,6 +116,7 @@ export default function DevDayPage() {
     success: boolean;
     message: string;
   } | null>(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const {
     register,
@@ -125,23 +127,34 @@ export default function DevDayPage() {
     resolver: zodResolver(formSchema),
   });
 
-  const onSubmit = async (data: FormData) => {
-    try {
-      setSubmitResult(null);
+  const onSubmit = useCallback(
+    async (data: FormData) => {
+      try {
+        setSubmitResult(null);
 
-      const result = await registerForDevDay(data as RegistrationFormData);
-      setSubmitResult(result);
+        let recaptchaToken: string | undefined;
+        if (executeRecaptcha) {
+          recaptchaToken = await executeRecaptcha("devday_registration");
+        }
 
-      if (result.success) {
-        reset();
+        const result = await registerForDevDay(
+          data as RegistrationFormData,
+          recaptchaToken,
+        );
+        setSubmitResult(result);
+
+        if (result.success) {
+          reset();
+        }
+      } catch {
+        setSubmitResult({
+          success: false,
+          message: "Something went wrong. Please try again.",
+        });
       }
-    } catch {
-      setSubmitResult({
-        success: false,
-        message: "Something went wrong. Please try again.",
-      });
-    }
-  };
+    },
+    [executeRecaptcha, reset],
+  );
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#0a0a0a]">

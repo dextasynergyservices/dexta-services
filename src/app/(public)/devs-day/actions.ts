@@ -1,8 +1,11 @@
 "use server";
 
 import { z } from "zod";
+import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
 import { sendPendingEmail, sendTeamNotificationEmail } from "@/lib/email";
+import { verifyRecaptcha } from "@/lib/recaptcha";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 // ─── Validation Schema ────────────────────────────────────────────────────────
 
@@ -30,8 +33,38 @@ export type ActionResult = {
 
 export async function registerForDevDay(
   formData: RegistrationFormData,
+  recaptchaToken?: string,
 ): Promise<ActionResult> {
   try {
+    // Rate limit by IP
+    const headersList = await headers();
+    const ip =
+      headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      headersList.get("x-real-ip") ??
+      "unknown";
+
+    const limit = rateLimit(`devday-reg:${ip}`, RATE_LIMITS.form);
+    if (!limit.success) {
+      return {
+        success: false,
+        message: "Too many requests. Please try again later.",
+      };
+    }
+
+    // Verify reCAPTCHA
+    if (recaptchaToken) {
+      const recaptchaResult = await verifyRecaptcha(
+        recaptchaToken,
+        "devday_registration",
+      );
+      if (!recaptchaResult.success) {
+        return {
+          success: false,
+          message: "reCAPTCHA verification failed. Please try again.",
+        };
+      }
+    }
+
     const result = registrationSchema.safeParse(formData);
 
     if (!result.success) {
@@ -101,10 +134,17 @@ export async function registerForDevDay(
     });
 
     // ── Send emails (don't block registration on email failure) ────────────
+    const eventInfo = {
+      title: event.title,
+      dateTime: event.dateTime,
+      timezone: event.timezone,
+      location: event.location,
+    };
+
     try {
       await sendPendingEmail(
         { name: registration.name, email: registration.email },
-        event,
+        eventInfo,
       );
 
       await sendTeamNotificationEmail(
@@ -118,7 +158,7 @@ export async function registerForDevDay(
             profile: profile || "",
           },
         },
-        event,
+        eventInfo,
       );
     } catch (emailError) {
       console.error("[Dev Day Registration] Email sending failed:", emailError);

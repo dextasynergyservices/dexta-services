@@ -1,14 +1,47 @@
 "use server";
 
+import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
 import { createRegistrationValidator } from "@/lib/validators";
 import { sendPendingEmail, sendTeamNotificationEmail } from "@/lib/email";
+import { verifyRecaptcha } from "@/lib/recaptcha";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function registerForEvent(
   slug: string,
   formData: Record<string, string>,
 ): Promise<{ success: boolean; message: string }> {
   try {
+    // Rate limit by IP
+    const headersList = await headers();
+    const ip =
+      headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      headersList.get("x-real-ip") ??
+      "unknown";
+
+    const limit = rateLimit(`event-reg:${ip}`, RATE_LIMITS.form);
+    if (!limit.success) {
+      return {
+        success: false,
+        message: "Too many requests. Please try again later.",
+      };
+    }
+
+    // Verify reCAPTCHA
+    const { recaptchaToken, ...formFields } = formData;
+    if (recaptchaToken) {
+      const recaptchaResult = await verifyRecaptcha(
+        recaptchaToken,
+        "event_registration",
+      );
+      if (!recaptchaResult.success) {
+        return {
+          success: false,
+          message: "reCAPTCHA verification failed. Please try again.",
+        };
+      }
+    }
+
     const event = await prisma.event.findUnique({
       where: { slug },
       include: { formFields: { orderBy: { position: "asc" } } },
@@ -30,7 +63,7 @@ export async function registerForEvent(
       })),
     );
 
-    const parsed = schema.safeParse(formData);
+    const parsed = schema.safeParse(formFields);
     if (!parsed.success) {
       return {
         success: false,
@@ -72,10 +105,16 @@ export async function registerForEvent(
       location: event.location,
     };
 
+    let emailSent = true;
     try {
       await sendPendingEmail({ name, email }, eventInfo);
-    } catch {
-      console.error("[Event Registration] Pending email failed for", email);
+    } catch (err) {
+      emailSent = false;
+      console.error(
+        "[Event Registration] Pending email failed for",
+        email,
+        err,
+      );
     }
 
     try {
@@ -83,13 +122,15 @@ export async function registerForEvent(
         { name, email, formData: rest },
         eventInfo,
       );
-    } catch {
-      console.error("[Event Registration] Team notification email failed");
+    } catch (err) {
+      console.error("[Event Registration] Team notification email failed", err);
     }
 
     return {
       success: true,
-      message: "Registration received! Check your inbox for a confirmation.",
+      message: emailSent
+        ? "Registration received! Check your inbox for a confirmation."
+        : "Registration received! However, the confirmation email could not be sent. Please contact us if you don't hear back.",
     };
   } catch (error) {
     console.error("[Event Registration]", error);

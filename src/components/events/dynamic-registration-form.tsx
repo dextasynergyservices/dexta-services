@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { Loader2, CheckCircle } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ export function DynamicRegistrationForm({
 }: DynamicRegistrationFormProps) {
   const [success, setSuccess] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const schema = createRegistrationValidator(
     fields.map((f) => ({
@@ -83,15 +85,26 @@ export function DynamicRegistrationForm({
     resolver: zodResolver(schema),
   });
 
-  const onSubmit = async (data: Record<string, unknown>) => {
-    setServerError(null);
-    const result = await submitAction(data as Record<string, string>);
-    if (result.success) {
-      setSuccess(true);
-    } else {
-      setServerError(result.message);
-    }
-  };
+  const onSubmit = useCallback(
+    async (data: Record<string, unknown>) => {
+      setServerError(null);
+
+      const payload = { ...(data as Record<string, string>) };
+
+      if (executeRecaptcha) {
+        const token = await executeRecaptcha("event_registration");
+        payload.recaptchaToken = token;
+      }
+
+      const result = await submitAction(payload);
+      if (result.success) {
+        setSuccess(true);
+      } else {
+        setServerError(result.message);
+      }
+    },
+    [executeRecaptcha, submitAction],
+  );
 
   if (isClosed) {
     return (

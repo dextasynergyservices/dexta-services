@@ -188,7 +188,7 @@ export function RegistrationTable({
                               size="sm"
                               disabled={isLoading}
                               onClick={() => handleAccept(reg.id)}
-                              className="h-8 w-8 p-0 text-[#666] hover:text-emerald-400"
+                              className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-400"
                               aria-label={`Accept ${reg.name}`}
                             >
                               {isLoading ? (
@@ -202,7 +202,7 @@ export function RegistrationTable({
                               size="sm"
                               disabled={isLoading}
                               onClick={() => setDeclineDialog(reg.id)}
-                              className="h-8 w-8 p-0 text-[#666] hover:text-red-400"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-400"
                               aria-label={`Decline ${reg.name}`}
                             >
                               <X className="h-4 w-4" />
