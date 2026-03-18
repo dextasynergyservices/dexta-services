@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye } from "lucide-react";
+import { Eye, Check, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -14,6 +15,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DetailDialog } from "./detail-dialog";
+import {
+  acceptRegistration,
+  declineRegistration,
+} from "@/app/admin/(dashboard)/events/actions";
 
 interface Registration {
   id: string;
@@ -54,11 +59,36 @@ export function RegistrationsTable({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selected, setSelected] = useState<Registration | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
   const goToPage = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", String(newPage));
     router.push(`?${params.toString()}`);
+  };
+
+  const handleAccept = async (id: string) => {
+    setLoadingId(id);
+    const result = await acceptRegistration(id);
+    if (result.success) {
+      toast.success(result.message);
+      router.refresh();
+    } else {
+      toast.error(result.message);
+    }
+    setLoadingId(null);
+  };
+
+  const handleDecline = async (id: string) => {
+    setLoadingId(id);
+    const result = await declineRegistration(id);
+    if (result.success) {
+      toast.success(result.message);
+      router.refresh();
+    } else {
+      toast.error(result.message);
+    }
+    setLoadingId(null);
   };
 
   return (
@@ -85,7 +115,7 @@ export function RegistrationsTable({
               <TableHead scope="col" className="text-[#888]">
                 Date
               </TableHead>
-              <TableHead scope="col" className="w-12 text-[#888]">
+              <TableHead scope="col" className="w-28 text-[#888]">
                 <span className="sr-only">Actions</span>
               </TableHead>
             </TableRow>
@@ -101,47 +131,82 @@ export function RegistrationsTable({
                 </TableCell>
               </TableRow>
             ) : (
-              registrations.map((reg) => (
-                <TableRow
-                  key={reg.id}
-                  className="border-[#1a1a1a] hover:bg-[#1a1a1a]"
-                >
-                  <TableCell className="font-medium text-white">
-                    {reg.name}
-                  </TableCell>
-                  <TableCell className="text-[#a0a0a0]">{reg.email}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className="bg-[#1a1a1a] text-[#a0a0a0]"
-                    >
-                      {reg.event}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Badge
-                      variant="outline"
-                      className={statusColors[reg.status] ?? "text-[#666]"}
-                    >
-                      {reg.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-[#666]">
-                    {formatDate(reg.createdAt)}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelected(reg)}
-                      className="h-8 w-8 p-0 text-[#666] hover:text-cyan-400"
-                      aria-label={`View details for ${reg.name}`}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
+              registrations.map((reg) => {
+                const isLoading = loadingId === reg.id;
+                return (
+                  <TableRow
+                    key={reg.id}
+                    className="border-[#1a1a1a] hover:bg-[#1a1a1a]"
+                  >
+                    <TableCell className="font-medium text-white">
+                      {reg.name}
+                    </TableCell>
+                    <TableCell className="text-[#a0a0a0]">
+                      {reg.email}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className="bg-[#1a1a1a] text-[#a0a0a0]"
+                      >
+                        {reg.event}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Badge
+                        variant="outline"
+                        className={statusColors[reg.status] ?? "text-[#666]"}
+                      >
+                        {reg.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-[#999]">
+                      {formatDate(reg.createdAt)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelected(reg)}
+                          className="h-8 w-8 p-0 text-[#666] hover:text-cyan-400"
+                          aria-label={`View details for ${reg.name}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {reg.status === "PENDING" && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={isLoading}
+                              onClick={() => handleAccept(reg.id)}
+                              className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-400"
+                              aria-label={`Accept ${reg.name}`}
+                            >
+                              {isLoading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Check className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={isLoading}
+                              onClick={() => handleDecline(reg.id)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-400"
+                              aria-label={`Decline ${reg.name}`}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

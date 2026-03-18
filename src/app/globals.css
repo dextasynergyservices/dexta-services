@@ -89,7 +89,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground overflow-x-hidden;
+    @apply bg-primary-background text-foreground overflow-x-hidden;
   }
 
   .perspective-3d {

@@ -1,7 +1,8 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useCallback } from "react";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { submitContactForm } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -45,12 +46,29 @@ function ContactFormInternal() {
     (payload: FormData) => void,
   ];
   const formRef = useRef<HTMLFormElement>(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   useEffect(() => {
     if (state?.message?.includes("successfully")) {
       formRef.current?.reset();
     }
   }, [state?.message]);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const form = e.currentTarget;
+      const formData = new FormData(form);
+
+      if (executeRecaptcha) {
+        const token = await executeRecaptcha("contact");
+        formData.set("recaptchaToken", token);
+      }
+
+      formAction(formData);
+    },
+    [executeRecaptcha, formAction],
+  );
 
   return (
     <section className="bg-black text-white py-16 sm:py-20 md:py-24 lg:py-32">
@@ -81,7 +99,7 @@ function ContactFormInternal() {
             <div className="absolute inset-0 rounded-lg sm:rounded-2xl bg-gradient-to-br from-cyan-900/10 to-transparent" />
             <form
               ref={formRef}
-              action={formAction}
+              onSubmit={handleSubmit}
               className="relative z-10 space-y-6 sm:space-y-8"
             >
               <div>

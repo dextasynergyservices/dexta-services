@@ -1,12 +1,12 @@
 "use server";
 
+import { headers } from "next/headers";
 import { contactFormSchema, ContactFormState } from "@/lib/validators";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { RecaptchaEnterpriseServiceClient } from "@google-cloud/recaptcha-enterprise";
+import { verifyRecaptcha } from "@/lib/recaptcha";
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import * as brevo from "@getbrevo/brevo";
-
-const recaptchaClient = new RecaptchaEnterpriseServiceClient();
 
 const brevoApiKey = process.env.BREVO_API_KEY;
 if (!brevoApiKey) {
@@ -15,53 +15,24 @@ if (!brevoApiKey) {
 const apiInstance = new brevo.TransactionalEmailsApi();
 apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, brevoApiKey);
 
-async function createAssessment({
-  projectID,
-  recaptchaKey,
-  token,
-}: {
-  projectID: string;
-  recaptchaKey: string;
-  token: string;
-}) {
-  const projectPath = recaptchaClient.projectPath(projectID);
-
-  const request = {
-    assessment: {
-      event: {
-        token: token,
-        siteKey: recaptchaKey,
-      },
-    },
-    parent: projectPath,
-  };
-
-  const [response] = await recaptchaClient.createAssessment(request);
-
-  if (!response.tokenProperties?.valid) {
-    console.log(
-      `The CreateAssessment call failed because the token was: ${response.tokenProperties?.invalidReason}`,
-    );
-    return null;
-  }
-
-  if (
-    response.riskAnalysis?.score === null ||
-    response.riskAnalysis?.score === undefined
-  ) {
-    console.log(
-      `The CreateAssessment call failed because the risk analysis score was not available.`,
-    );
-    return null;
-  }
-
-  return response.riskAnalysis.score;
-}
-
 export async function submitContactForm(
   prevState: ContactFormState,
   formData: FormData,
 ): Promise<ContactFormState> {
+  // Rate limit by IP
+  const headersList = await headers();
+  const ip =
+    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    headersList.get("x-real-ip") ??
+    "unknown";
+
+  const limit = rateLimit(`contact:${ip}`, RATE_LIMITS.contact);
+  if (!limit.success) {
+    return {
+      message: "Too many requests. Please try again later.",
+    };
+  }
+
   const validatedFields = contactFormSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
@@ -75,35 +46,15 @@ export async function submitContactForm(
     };
   }
 
-  const token = formData.get("g-recaptcha-response") as string;
-
-  if (!token) {
-    return {
-      message: "Please complete the reCAPTCHA.",
-    };
-  }
-
-  const projectId = process.env.RECAPTCHA_PROJECT_ID;
-  const recaptchaKey = process.env.RECAPTCHA_SITE_KEY;
-
-  if (!projectId || !recaptchaKey) {
-    return {
-      message: "reCAPTCHA is not configured correctly.",
-    };
-  }
-
-  const score = await createAssessment({
-    projectID: projectId,
-    recaptchaKey: recaptchaKey,
-    token: token,
-  });
-
-  // This is a score from 0.0 to 1.0, where 1.0 is very likely a human
-  // and 0.0 is very likely a bot. We can set a threshold.
-  if (score === null || score < 0.5) {
-    return {
-      message: "reCAPTCHA verification failed.",
-    };
+  // Verify reCAPTCHA v3
+  const recaptchaToken = formData.get("recaptchaToken") as string;
+  if (recaptchaToken) {
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken, "contact");
+    if (!recaptchaResult.success) {
+      return {
+        message: "reCAPTCHA verification failed. Please try again.",
+      };
+    }
   }
 
   try {
@@ -119,7 +70,7 @@ export async function submitContactForm(
     sendSmtpEmail.to = [
       { email: validatedFields.data.email, name: validatedFields.data.name },
     ];
-    sendSmtpEmail.templateId = 1; // Replace with your Brevo template ID
+    sendSmtpEmail.templateId = 1;
     sendSmtpEmail.params = {
       name: validatedFields.data.name,
       email: validatedFields.data.email,

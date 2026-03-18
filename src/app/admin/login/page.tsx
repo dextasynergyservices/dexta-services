@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
@@ -10,11 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginSchema, type LoginFormData } from "@/lib/validators";
+import { verifyLoginRequest } from "./actions";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const {
     register,
@@ -24,23 +27,38 @@ export default function AdminLoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginFormData) => {
-    setError(null);
+  const onSubmit = useCallback(
+    async (data: LoginFormData) => {
+      setError(null);
 
-    const result = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: false,
-    });
+      // Get reCAPTCHA token and verify + rate limit server-side
+      let recaptchaToken: string | undefined;
+      if (executeRecaptcha) {
+        recaptchaToken = await executeRecaptcha("login");
+      }
 
-    if (result?.error) {
-      setError("Invalid email or password.");
-      return;
-    }
+      const check = await verifyLoginRequest(recaptchaToken);
+      if (!check.success) {
+        setError(check.message ?? "Verification failed.");
+        return;
+      }
 
-    router.push("/admin");
-    router.refresh();
-  };
+      const result = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Invalid email or password.");
+        return;
+      }
+
+      router.push("/admin");
+      router.refresh();
+    },
+    [executeRecaptcha, router],
+  );
 
   return (
     <div className="w-full max-w-sm">
