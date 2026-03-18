@@ -43,8 +43,12 @@
   --popover: #ffffff;
   --popover-foreground: #212529;
   --primary: #00b2ff;
+  --dexta: #00abff;
+  --dexta-primary: #000c99;
+  --dexta-secondary: #00075d;
+
   --primary-foreground: #ffffff;
-  --secondary: #212529;
+  --secondary: #00075d;
   --secondary-foreground: #ffffff;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
@@ -81,17 +85,11 @@
 }
 
 @layer base {
-  html {
-    perspective: var(--perspective);
-  }
-
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground overflow-x-hidden;
-    perspective: var(--perspective);
-    transform-style: preserve-3d;
   }
 
   .perspective-3d {

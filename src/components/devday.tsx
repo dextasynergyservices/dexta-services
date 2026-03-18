@@ -20,7 +20,7 @@ import {
 import {
   registerForDevDay,
   type RegistrationFormData,
-} from "@/app/devs-day/actions";
+} from "@/app/(public)/devs-day/actions";
 import Image from "next/image";
 
 // ─── Form Schema (mirrors server-side, for client validation) ─────────────────
