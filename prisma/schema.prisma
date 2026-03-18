@@ -24,6 +24,18 @@ model ContactMessage {
   @@index([createdAt])
 }
 
+model AdminUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+// @deprecated — migrated to Event + EventRegistration
 model DevsDayRegistration {
   id          String   @id @default(uuid())
   name        String
@@ -35,6 +47,86 @@ model DevsDayRegistration {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([email])
+  @@index([createdAt])
+}
+
+// --- Event Management ---
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum RegistrationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum FormFieldType {
+  TEXT
+  EMAIL
+  SELECT
+  TEXTAREA
+  URL
+  CHECKBOX
+}
+
+model Event {
+  id            String      @id @default(uuid())
+  title         String
+  slug          String      @unique
+  description   String
+  dateTime      DateTime
+  timezone      String      @default("Africa/Lagos")
+  location      String
+  imagePublicId String?     // Cloudinary public ID
+  attendeeLimit Int?        // null = unlimited
+  status        EventStatus @default(DRAFT)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  formFields    EventFormField[]
+  registrations EventRegistration[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([dateTime])
+}
+
+model EventFormField {
+  id          String        @id @default(uuid())
+  eventId     String
+  event       Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name        String        // machine key e.g. "tech_stack"
+  label       String        // display e.g. "Tech Stack"
+  type        FormFieldType @default(TEXT)
+  placeholder String?
+  required    Boolean       @default(false)
+  options     String?       // JSON array for SELECT, e.g. '["A","B"]'
+  position    Int           @default(0)
+
+  @@index([eventId])
+  @@unique([eventId, name])
+}
+
+model EventRegistration {
+  id            String             @id @default(uuid())
+  eventId       String
+  event         Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  email         String
+  name          String
+  status        RegistrationStatus @default(PENDING)
+  declineReason String?
+  formData      String             // JSON of field responses keyed by field name
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@unique([eventId, email])
+  @@index([eventId])
+  @@index([status])
   @@index([email])
   @@index([createdAt])
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Manrope, Poppins } from "next/font/google";
-import { Navbar } from "@/components/layout/navbar";
 import { Providers } from "@/components/layout/providers";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import "./globals-3d.css";
 
@@ -79,8 +79,8 @@ export default function RootLayout({
       </head>
       <body>
         <Providers>
-          <Navbar />
           {children}
+          <Toaster theme="dark" />
         </Providers>
       </body>
     </html>
