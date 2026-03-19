@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { slugify } from "@/lib/slugify";
 import { eventFormSchema, type EventFormData } from "@/lib/validators";
 import {
   sendAcceptanceEmail,
@@ -35,8 +34,16 @@ export async function createEvent(
       };
     }
 
-    const { formFields, ...eventData } = parsed.data;
-    const slug = slugify(eventData.title);
+    const { formFields, slug, ...eventData } = parsed.data;
+
+    // Check slug uniqueness
+    const existing = await prisma.event.findUnique({ where: { slug } });
+    if (existing) {
+      return {
+        success: false,
+        message: "This slug is already in use. Please choose a different one.",
+      };
+    }
 
     const event = await prisma.event.create({
       data: {
@@ -58,6 +65,7 @@ export async function createEvent(
     });
 
     revalidatePath("/admin/events");
+    revalidatePath("/events");
     return {
       success: true,
       message: "Event created successfully",
@@ -86,13 +94,25 @@ export async function updateEvent(
       };
     }
 
-    const { formFields, ...eventData } = parsed.data;
+    const { formFields, slug, ...eventData } = parsed.data;
+
+    // Check slug uniqueness (exclude current event)
+    const slugConflict = await prisma.event.findFirst({
+      where: { slug, id: { not: id } },
+    });
+    if (slugConflict) {
+      return {
+        success: false,
+        message: "This slug is already in use. Please choose a different one.",
+      };
+    }
 
     await prisma.$transaction(async (tx) => {
       await tx.event.update({
         where: { id },
         data: {
           ...eventData,
+          slug,
           dateTime: new Date(eventData.dateTime),
         },
       });
@@ -118,6 +138,7 @@ export async function updateEvent(
 
     revalidatePath(`/admin/events/${id}`);
     revalidatePath("/admin/events");
+    revalidatePath("/events");
     return {
       success: true,
       message: "Event updated successfully",
@@ -145,6 +166,7 @@ export async function updateEventStatus(
 
     revalidatePath(`/admin/events/${id}`);
     revalidatePath("/admin/events");
+    revalidatePath("/events");
     return {
       success: true,
       message: `Event ${status.toLowerCase()} successfully`,
@@ -166,6 +188,7 @@ export async function deleteEvent(
     await prisma.event.delete({ where: { id } });
 
     revalidatePath("/admin/events");
+    revalidatePath("/events");
     return { success: true, message: "Event deleted successfully" };
   } catch (error) {
     console.error("[Delete Event]", error);
@@ -252,31 +275,38 @@ export async function acceptRegistration(
       location: registration.event.location,
     };
 
+    let emailFailed = false;
+
     try {
       await sendAcceptanceEmail(
         { name: registration.name, email: registration.email },
         eventInfo,
       );
-    } catch {
-      console.error(`[Accept] Email failed for ${registration.email}`);
+    } catch (err) {
+      emailFailed = true;
+      console.error(`[Accept] Email failed for ${registration.email}`, err);
     }
 
     if (autoDeclinedRegistrations.length > 0) {
       try {
         await sendEventFullEmail(autoDeclinedRegistrations, eventInfo);
-      } catch {
-        console.error("[Accept] Event full emails failed");
+      } catch (err) {
+        console.error("[Accept] Event full emails failed", err);
       }
     }
 
     revalidatePath(`/admin/events/${registration.eventId}`);
-    return {
-      success: true,
-      message:
-        autoDeclinedRegistrations.length > 0
-          ? `Accepted. Event is now full — ${autoDeclinedRegistrations.length} pending registration(s) were auto-declined.`
-          : "Registration accepted",
-    };
+    revalidatePath("/events");
+
+    let message = "Registration accepted";
+    if (autoDeclinedRegistrations.length > 0) {
+      message = `Accepted. Event is now full — ${autoDeclinedRegistrations.length} pending registration(s) were auto-declined.`;
+    }
+    if (emailFailed) {
+      message += " (Note: confirmation email failed to send)";
+    }
+
+    return { success: true, message };
   } catch (error) {
     console.error("[Accept Registration]", error);
     return { success: false, message: "Failed to accept registration" };
@@ -308,6 +338,7 @@ export async function declineRegistration(
       data: { status: "DECLINED", declineReason: reason || null },
     });
 
+    let emailFailed = false;
     try {
       await sendDeclineEmail(
         { name: registration.name, email: registration.email },
@@ -319,12 +350,19 @@ export async function declineRegistration(
         },
         reason,
       );
-    } catch {
-      console.error(`[Decline] Email failed for ${registration.email}`);
+    } catch (err) {
+      emailFailed = true;
+      console.error(`[Decline] Email failed for ${registration.email}`, err);
     }
 
     revalidatePath(`/admin/events/${registration.eventId}`);
-    return { success: true, message: "Registration declined" };
+    revalidatePath("/events");
+    return {
+      success: true,
+      message: emailFailed
+        ? "Registration declined (Note: notification email failed to send)"
+        : "Registration declined",
+    };
   } catch (error) {
     console.error("[Decline Registration]", error);
     return { success: false, message: "Failed to decline registration" };

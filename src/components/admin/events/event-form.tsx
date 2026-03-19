@@ -44,6 +44,16 @@ const TIMEZONE_OPTIONS = [
   { value: "UTC", label: "UTC" },
 ];
 
+function toSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 interface EventFormProps {
   initialData?: EventFormData & { id?: string };
   action: (
@@ -60,10 +70,13 @@ export function EventForm({
   const router = useRouter();
   const [unlimited, setUnlimited] = useState(!initialData?.attendeeLimit);
 
+  const [slugTouched, setSlugTouched] = useState(!!initialData?.slug);
+
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       title: initialData?.title ?? "",
+      slug: initialData?.slug ?? "",
       description: initialData?.description ?? "",
       dateTime: initialData?.dateTime ?? "",
       timezone: initialData?.timezone ?? "Africa/Lagos",
@@ -130,12 +143,57 @@ export function EventForm({
               id="title"
               placeholder="e.g. Dev Day 2025"
               className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444] focus-visible:border-cyan-500/50 focus-visible:ring-cyan-500/20"
-              {...register("title")}
+              {...register("title", {
+                onChange: (e) => {
+                  if (!slugTouched) {
+                    setValue("slug", toSlug(e.target.value), {
+                      shouldValidate: true,
+                    });
+                  }
+                },
+              })}
             />
             {errors.title && (
               <p className="mt-1 text-xs text-red-400">
                 {errors.title.message}
               </p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="slug" className="mb-1.5 text-xs text-[#888]">
+              Slug
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                id="slug"
+                placeholder="e.g. dev-day-2025"
+                className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444] focus-visible:border-cyan-500/50 focus-visible:ring-cyan-500/20"
+                {...register("slug", {
+                  onChange: () => setSlugTouched(true),
+                })}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white"
+                onClick={() => {
+                  const title = watch("title");
+                  if (title) {
+                    setValue("slug", toSlug(title), { shouldValidate: true });
+                    setSlugTouched(false);
+                  }
+                }}
+              >
+                Generate
+              </Button>
+            </div>
+            <p className="mt-1 text-xs text-[#555]">
+              URL: /events/{watch("slug") || "..."}
+            </p>
+            {errors.slug && (
+              <p className="mt-1 text-xs text-red-400">{errors.slug.message}</p>
             )}
           </div>
 

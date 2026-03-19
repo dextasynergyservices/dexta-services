@@ -52,6 +52,14 @@ export type EventFormFieldData = z.infer<typeof eventFormFieldSchema>;
 
 export const eventFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
+  slug: z
+    .string()
+    .min(1, "Slug is required")
+    .max(250)
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Slug must be lowercase letters, numbers, and hyphens only",
+    ),
   description: z.string().min(1, "Description is required").max(5000),
   dateTime: z.string().min(1, "Date and time is required"),
   timezone: z.string().min(1, "Timezone is required"),
