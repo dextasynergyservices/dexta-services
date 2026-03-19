@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
@@ -107,12 +108,12 @@ export default function Hero() {
               <div
                 className={`transition-all duration-1000 ease-out ${isLoaded ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-12 blur-sm"}`}
               >
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-950/30 backdrop-blur-md mb-4 sm:mb-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary backdrop-blur-md mb-4 sm:mb-6">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
                   </span>
-                  <span className="text-xs font-mono text-cyan-300 tracking-wider">
+                  <span className="text-xs font-mono text-transparent bg-clip-text bg-primary tracking-wider">
                     CREATIVE SYSTEMS
                   </span>
                 </div>
@@ -138,17 +139,21 @@ export default function Hero() {
               <div
                 className={`flex flex-wrap gap-3 sm:gap-4 justify-center lg:justify-start transition-all duration-1000 ease-out delay-500 ${isLoaded ? "opacity-100 translate-y-0 blur-0" : "opacity-0 translate-y-12 blur-sm"}`}
               >
-                <Button className="h-12 sm:h-14 px-6 sm:px-8 rounded-none border border-cyan-500/50 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 font-mono tracking-widest backdrop-blur-sm transition-all duration-300 group text-sm sm:text-base">
-                  Our Work
-                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="h-12 sm:h-14 px-6 sm:px-8 rounded-none border border-white/10 hover:bg-white/5 text-white font-mono tracking-widest text-sm sm:text-base"
-                >
-                  <Play className="mr-2 w-4 h-4" />
-                  Let's Talk
-                </Button>
+                <Link href="/projects">
+                  <Button className="h-12 sm:h-14 px-6 sm:px-8 rounded-none border border-primary/50 bg-primary hover:bg-primary/500 text-white font-mono tracking-widest backdrop-blur-sm transition-all duration-300 group text-sm sm:text-base rounded-sm">
+                    Our Work
+                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+                <Link href="/contact">
+                  <Button
+                    variant="ghost"
+                    className="h-12 sm:h-14 px-6 sm:px-8 rounded-none border border-white/10 hover:bg-white/5 text-white font-mono tracking-widest text-sm sm:text-base rounded-sm"
+                  >
+                    <Play className="mr-2 w-4 h-4" />
+                    Let&#39;s Talk
+                  </Button>
+                </Link>
               </div>
             </div>
 
@@ -177,14 +182,14 @@ export default function Hero() {
                   {/* HUD Elements */}
                   <div className="absolute top-3 sm:top-4 lg:top-6 right-3 sm:right-4 lg:right-6 flex flex-col gap-1 sm:gap-2 items-end text-[9px] sm:text-[10px]">
                     <div className="flex items-center gap-2">
-                      <Wifi className="w-3 h-3 sm:w-4 sm:h-4 text-cyan-500 animate-pulse" />
-                      <span className="font-mono text-cyan-500">
+                      <Wifi className="w-3 h-3 sm:w-4 sm:h-4 text-primary animate-pulse" />
+                      <span className="font-mono text-primary">
                         DEXTA: ACTIVE
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                      <span className="font-mono text-blue-500">CPU: 100%</span>
+                      <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+                      <span className="font-mono text-primary">CPU: 100%</span>
                     </div>
                   </div>
 

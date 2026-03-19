@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 
-const text = "WE DON'T JUST BUILD WEBSITES. WE ENGINEER DIGITAL DOMINANCE.";
+const text = "IF YOU'VE GOT A VISION, WE'VE GOT THE CREATIVE AUDACITY";
 const words = text.split(" ");
 
 export function TextParallaxSection() {
