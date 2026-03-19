@@ -153,7 +153,7 @@ export async function sendAcceptanceEmail(
           <p style="color:#666;font-size:11px;letter-spacing:2px;margin:0 0 8px;">EVENT DETAILS</p>
           <p style="color:#fff;font-size:14px;margin:0 0 4px;">${event.title}</p>
           <p style="color:#a0a0a0;font-size:13px;margin:0 0 4px;">${formatEventDate(event.dateTime, event.timezone)}</p>
-          <p style="color:#a0a0a0;font-size:13px;margin:0;">${event.location}</p>
+          <p style="color:#a0a0a0;font-size:13px;margin:0;">No. 149 NTA road, Opp. Sumec Firman Mgbuogba, Port Harcourt, Rivers state</p>
         </div>
         <p style="color:#a0a0a0;font-size:13px;margin:0 0 4px;">
           We'll send you the final details closer to the date. In the meantime, keep building great things.
