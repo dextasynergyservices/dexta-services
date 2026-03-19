@@ -84,12 +84,22 @@
   --ring: #00b2ff;
 }
 
+html,
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
-    @apply bg-primary-background text-foreground overflow-x-hidden;
+    @apply bg-primary-background text-foreground;
+  }
+  body[data-scroll-locked] {
+    padding-right: 0 !important;
   }
 
   .perspective-3d {

@@ -115,7 +115,7 @@ export function RegistrationsTable({
               <TableHead scope="col" className="text-[#888]">
                 Date
               </TableHead>
-              <TableHead scope="col" className="w-28 text-[#888]">
+              <TableHead scope="col" className="w-52 text-[#888]">
                 <span className="sr-only">Actions</span>
               </TableHead>
             </TableRow>
@@ -164,7 +164,7 @@ export function RegistrationsTable({
                       {formatDate(reg.createdAt)}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -177,28 +177,29 @@ export function RegistrationsTable({
                         {reg.status === "PENDING" && (
                           <>
                             <Button
-                              variant="ghost"
                               size="sm"
                               disabled={isLoading}
                               onClick={() => handleAccept(reg.id)}
-                              className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-400"
+                              className="h-7 bg-emerald-600 text-white hover:bg-emerald-500 text-xs"
                               aria-label={`Accept ${reg.name}`}
                             >
                               {isLoading ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
                               ) : (
-                                <Check className="h-4 w-4" />
+                                <Check className="mr-1 h-3.5 w-3.5" />
                               )}
+                              Accept
                             </Button>
                             <Button
-                              variant="ghost"
                               size="sm"
+                              variant="outline"
                               disabled={isLoading}
                               onClick={() => handleDecline(reg.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-400"
-                              aria-label={`Decline ${reg.name}`}
+                              className="h-7 border-red-800 text-red-400 hover:bg-red-950/30 text-xs"
+                              aria-label={`Reject ${reg.name}`}
                             >
-                              <X className="h-4 w-4" />
+                              <X className="mr-1 h-3.5 w-3.5" />
+                              Reject
                             </Button>
                           </>
                         )}

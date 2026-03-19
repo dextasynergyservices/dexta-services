@@ -10,7 +10,6 @@ import { fetchProjects } from "@/lib/api";
 import { ContactForm } from "@/components/home/contact-form";
 import { FloatingElements } from "@/components/home/floating-elements";
 import TextParallaxSection from "@/components/home/textParallaxSection";
-import { Footer } from "@/components/home/footer";
 
 export default async function Home() {
   const queryClient = new QueryClient();
@@ -38,7 +37,6 @@ export default async function Home() {
       <section id="contact">
         <ContactForm />
       </section>
-      <Footer />
     </>
   );
 }

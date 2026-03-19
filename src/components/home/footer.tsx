@@ -1,12 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Github, Linkedin, Twitter, Mail, ArrowRight } from "lucide-react";
+import { Linkedin, Twitter, Mail, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import {
-  TextHoverEffect,
-  FooterBackgroundGradient,
-} from "@/components/ui/hover-footer";
+import { FooterBackgroundGradient } from "@/components/ui/hover-footer";
+import Image from "next/image";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -36,7 +34,6 @@ export function Footer() {
   };
 
   const socialLinks = [
-    { icon: Github, label: "GitHub", href: "#" },
     { icon: Linkedin, label: "LinkedIn", href: "#" },
     { icon: Twitter, label: "Twitter", href: "#" },
     { icon: Mail, label: "Email", href: "mailto:contact@dexta.dev" },
@@ -49,15 +46,12 @@ export function Footer() {
         { label: "Services", href: "#services" },
         { label: "Portfolio", href: "#portfolio" },
         { label: "Pricing", href: "#pricing" },
-        { label: "Docs", href: "#docs" },
       ],
     },
     {
       title: "Company",
       links: [
         { label: "About Us", href: "#about" },
-        { label: "Blog", href: "#blog" },
-        { label: "Careers", href: "#careers" },
         { label: "Contact", href: "#contact" },
       ],
     },
@@ -66,7 +60,6 @@ export function Footer() {
       links: [
         { label: "Privacy Policy", href: "#privacy" },
         { label: "Terms of Service", href: "#terms" },
-        { label: "Cookie Policy", href: "#cookies" },
       ],
     },
   ];
@@ -93,9 +86,13 @@ export function Footer() {
             className="col-span-2 sm:col-span-1 space-y-4"
           >
             <div className="inline-block">
-              <h3 className="text-xl sm:text-2xl font-bold text-[#000c99]">
-                DEXTA
-              </h3>
+              <Image
+                src="/images/dexta1.png"
+                alt="DEXTA"
+                width={120}
+                height={40}
+                className="h-10 w-auto"
+              />
               <p className="mt-2 text-xs sm:text-sm text-gray-400">
                 Engineered digital ecosystems for the future.
               </p>
@@ -150,14 +147,6 @@ export function Footer() {
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
         >
-          {/* Hover text effect */}
-          <div className="flex h-[6rem] sm:h-[8rem] md:h-[10rem] lg:h-[12rem] w-full items-center justify-center">
-            <TextHoverEffect
-              text="DEXTA"
-              className="w-48 sm:w-56 md:w-72 lg:w-80 xl:w-96"
-            />
-          </div>
-
           <p className="text-sm text-gray-400 text-center">
             © {currentYear} DEXTA Services. All rights reserved.
           </p>

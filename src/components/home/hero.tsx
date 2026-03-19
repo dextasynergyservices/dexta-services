@@ -98,7 +98,7 @@ export default function Hero() {
       <section ref={containerRef} className="relative h-[300vh] w-full">
         <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col items-center justify-center perspective-container">
           {/* --- MAIN CONTENT LAYER --- */}
-          <div className="relative z-10 w-full max-w-[1600px] px-4 sm:px-6 md:px-12 h-full flex flex-col lg:flex-row items-center justify-center gap-6 sm:gap-8 md:gap-12">
+          <div className="relative z-10 w-full max-w-[1600px] py-6 px-4 sm:px-6 md:px-12 h-full flex flex-col lg:flex-row items-center justify-center gap-6 sm:gap-8 md:gap-12">
             {/* LEFT TEXT (Title) */}
             <div
               ref={textLeftRef}
@@ -113,7 +113,7 @@ export default function Hero() {
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
                   </span>
                   <span className="text-xs font-mono text-cyan-300 tracking-wider">
-                    CREATIVE_SYSTEMS
+                    CREATIVE SYSTEMS
                   </span>
                 </div>
               </div>
@@ -156,7 +156,7 @@ export default function Hero() {
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
               <div
                 ref={videoContainerRef}
-                className={`will-change-transform relative w-[90vw] sm:w-[70vw] md:w-[500px] lg:w-[600px] xl:w-[800px] aspect-video bg-black rounded-lg sm:rounded-xl overflow-hidden border border-white/10 shadow-[0_0_50px_-12px_rgba(6,182,212,0.5)] transition-all duration-1000 ease-out ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"}`}
+                className={`will-change-transform relative w-[90%] sm:w-[70%] md:w-[500px] lg:w-[600px] xl:w-[800px] aspect-video bg-black rounded-lg sm:rounded-xl overflow-hidden border border-white/10 shadow-[0_0_50px_-12px_rgba(6,182,212,0.5)] transition-all duration-1000 ease-out ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"}`}
                 style={{
                   transformStyle: "preserve-3d",
                   transform: "perspective(1000px) rotateX(25deg) scale(1)",

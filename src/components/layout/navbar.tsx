@@ -80,7 +80,7 @@ export function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-[100] w-full transition-all duration-300 ${
+      className={`fixed top-0 z-[100] w-full isolate transition-all duration-300 ${
         scrolled
           ? "border-b border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg"
           : "bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm"
@@ -140,7 +140,7 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[280px] sm:w-[320px] border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-y-auto"
+              className="w-full max-w-[400px] border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-y-auto"
             >
               <nav
                 className="flex flex-col gap-2 py-6"
