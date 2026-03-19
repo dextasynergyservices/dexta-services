@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, Check, X, Loader2 } from "lucide-react";
+import { Eye, Check, X, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -14,10 +14,21 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DetailDialog } from "./detail-dialog";
 import {
   acceptRegistration,
   declineRegistration,
+  deleteRegistration,
 } from "@/app/admin/(dashboard)/events/actions";
 
 interface Registration {
@@ -60,6 +71,7 @@ export function RegistrationsTable({
   const searchParams = useSearchParams();
   const [selected, setSelected] = useState<Registration | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const goToPage = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -89,6 +101,18 @@ export function RegistrationsTable({
       toast.error(result.message);
     }
     setLoadingId(null);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const result = await deleteRegistration(deleteId);
+    if (result.success) {
+      toast.success(result.message);
+      router.refresh();
+    } else {
+      toast.error(result.message);
+    }
+    setDeleteId(null);
   };
 
   return (
@@ -203,6 +227,15 @@ export function RegistrationsTable({
                             </Button>
                           </>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteId(reg.id)}
+                          className="h-8 w-8 p-0 text-[#666] hover:text-red-400"
+                          aria-label={`Delete ${reg.name}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -244,6 +277,35 @@ export function RegistrationsTable({
 
       {/* Detail Dialog */}
       <DetailDialog registration={selected} onClose={() => setSelected(null)} />
+
+      {/* Delete Confirmation */}
+      <AlertDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+      >
+        <AlertDialogContent className="border-[#2a2a2a] bg-[#111] text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">
+              Delete Registration
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[#888]">
+              This will permanently delete this registration. This action cannot
+              be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 text-white hover:bg-red-500"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

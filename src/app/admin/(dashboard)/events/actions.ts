@@ -368,3 +368,32 @@ export async function declineRegistration(
     return { success: false, message: "Failed to decline registration" };
   }
 }
+
+// ─── Delete Registration ────────────────────────────────────────────────────
+
+export async function deleteRegistration(
+  registrationId: string,
+): Promise<{ success: boolean; message: string }> {
+  try {
+    await requireAuth();
+
+    const registration = await prisma.eventRegistration.findUnique({
+      where: { id: registrationId },
+      select: { eventId: true },
+    });
+
+    if (!registration)
+      return { success: false, message: "Registration not found" };
+
+    await prisma.eventRegistration.delete({
+      where: { id: registrationId },
+    });
+
+    revalidatePath(`/admin/events/${registration.eventId}`);
+    revalidatePath("/admin/registrations");
+    return { success: true, message: "Registration deleted" };
+  } catch (error) {
+    console.error("[Delete Registration]", error);
+    return { success: false, message: "Failed to delete registration" };
+  }
+}
