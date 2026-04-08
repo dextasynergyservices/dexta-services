@@ -51,7 +51,8 @@ import type { PortfolioItemInput } from "@/lib/validators";
 
 function getThumbnailSrc(item: PortfolioItemRow): string | null {
   const coverAsset =
-    item.assets.find((asset) => asset.id === item.coverAssetId) ?? item.assets[0];
+    item.assets.find((asset) => asset.id === item.coverAssetId) ??
+    item.assets[0];
 
   if (coverAsset) {
     if (coverAsset.mediaType === "VIDEO") {
@@ -79,19 +80,43 @@ function getThumbnailSrc(item: PortfolioItemRow): string | null {
 
   if (item.mediaType === "VIDEO") {
     if (item.thumbnailPublicId) {
-      return getCloudinaryUrl(item.thumbnailPublicId, { w: 160, h: 100, c: "fill", f: "auto", q: "auto" });
+      return getCloudinaryUrl(item.thumbnailPublicId, {
+        w: 160,
+        h: 100,
+        c: "fill",
+        f: "auto",
+        q: "auto",
+      });
     }
     return null;
   }
-  return getCloudinaryUrl(item.mediaPublicId, { w: 160, h: 100, c: "fill", f: "auto", q: "auto" });
+  return getCloudinaryUrl(item.mediaPublicId, {
+    w: 160,
+    h: 100,
+    c: "fill",
+    f: "auto",
+    q: "auto",
+  });
 }
 
 // ─── Tab config ───────────────────────────────────────────────────────────────
 
 const TABS: { type: ServiceType; label: string; accent: string }[] = [
-  { type: "DESIGN", label: "Design", accent: "text-purple-400 border-purple-500/40 bg-purple-500/10" },
-  { type: "BUILD", label: "Build", accent: "text-cyan-400 border-cyan-500/40 bg-cyan-500/10" },
-  { type: "PRINT", label: "Print", accent: "text-pink-400 border-pink-500/40 bg-pink-500/10" },
+  {
+    type: "DESIGN",
+    label: "Design",
+    accent: "text-purple-400 border-purple-500/40 bg-purple-500/10",
+  },
+  {
+    type: "BUILD",
+    label: "Build",
+    accent: "text-cyan-400 border-cyan-500/40 bg-cyan-500/10",
+  },
+  {
+    type: "PRINT",
+    label: "Print",
+    accent: "text-pink-400 border-pink-500/40 bg-pink-500/10",
+  },
 ];
 
 // ─── Portfolio Manager ────────────────────────────────────────────────────────
@@ -116,14 +141,20 @@ export function PortfolioManager({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [reordering, setReordering] = useState(false);
 
-  useEffect(() => { setItems(initialItems); }, [initialItems]);
-  useEffect(() => { setFeaturedCounts(initialCounts); }, [initialCounts]);
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
+  useEffect(() => {
+    setFeaturedCounts(initialCounts);
+  }, [initialCounts]);
 
   const tabItems = items.filter((i) => i.serviceType === activeTab);
 
   const handleTabChange = (type: ServiceType) => {
     setActiveTab(type);
-    router.push(`/admin/portfolio?tab=${type.toLowerCase()}`, { scroll: false });
+    router.push(`/admin/portfolio?tab=${type.toLowerCase()}`, {
+      scroll: false,
+    });
   };
 
   // ── Reorder ──────────────────────────────────────────────────────────────────
@@ -132,7 +163,10 @@ export function PortfolioManager({
     if (targetIndex < 0 || targetIndex >= tabItems.length) return;
 
     const reordered = [...tabItems];
-    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+    [reordered[index], reordered[targetIndex]] = [
+      reordered[targetIndex],
+      reordered[index],
+    ];
 
     const updated = items.map((item) => {
       const found = reordered.find((r) => r.id === item.id);
@@ -143,13 +177,18 @@ export function PortfolioManager({
 
     const result = await reorderPortfolioItems(reordered.map((i) => i.id));
     setReordering(false);
-    if (!result.success) { toast.error(result.message); setItems(initialItems); }
+    if (!result.success) {
+      toast.error(result.message);
+      setItems(initialItems);
+    }
   };
 
   // ── Toggle Featured ──────────────────────────────────────────────────────────
   const handleToggleFeatured = async (item: PortfolioItemRow) => {
     setItems((prev) =>
-      prev.map((i) => i.id === item.id ? { ...i, isFeatured: !i.isFeatured } : i),
+      prev.map((i) =>
+        i.id === item.id ? { ...i, isFeatured: !i.isFeatured } : i,
+      ),
     );
     setFeaturedCounts((prev) => ({
       ...prev,
@@ -169,7 +208,9 @@ export function PortfolioManager({
   // ── Toggle Visibility ────────────────────────────────────────────────────────
   const handleToggleVisibility = async (item: PortfolioItemRow) => {
     setItems((prev) =>
-      prev.map((i) => i.id === item.id ? { ...i, isVisible: !i.isVisible } : i),
+      prev.map((i) =>
+        i.id === item.id ? { ...i, isVisible: !i.isVisible } : i,
+      ),
     );
 
     const result = await toggleVisibility(item.id, item.isVisible);
@@ -241,12 +282,14 @@ export function PortfolioManager({
             )}
           >
             {tab.label}
-            <span className={cn(
-              "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
-              featuredCounts[tab.type] > 0
-                ? "bg-amber-500/20 text-amber-400"
-                : "bg-[#1a1a1a] text-[#555]",
-            )}>
+            <span
+              className={cn(
+                "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                featuredCounts[tab.type] > 0
+                  ? "bg-amber-500/20 text-amber-400"
+                  : "bg-[#1a1a1a] text-[#555]",
+              )}
+            >
               {featuredCounts[tab.type]} featured
             </span>
           </button>
@@ -325,9 +368,18 @@ export function PortfolioManager({
                         ? "text-amber-400 hover:text-amber-300"
                         : "text-[#444] hover:text-amber-400",
                     )}
-                    aria-label={item.isFeatured ? "Remove from featured" : "Mark as featured"}
+                    aria-label={
+                      item.isFeatured
+                        ? "Remove from featured"
+                        : "Mark as featured"
+                    }
                   >
-                    <Star className={cn("h-4 w-4", item.isFeatured && "fill-amber-400")} />
+                    <Star
+                      className={cn(
+                        "h-4 w-4",
+                        item.isFeatured && "fill-amber-400",
+                      )}
+                    />
                   </button>
 
                   {/* Visibility toggle */}
@@ -342,10 +394,11 @@ export function PortfolioManager({
                     )}
                     aria-label={item.isVisible ? "Hide" : "Show"}
                   >
-                    {item.isVisible
-                      ? <Eye className="h-4 w-4" />
-                      : <EyeOff className="h-4 w-4" />
-                    }
+                    {item.isVisible ? (
+                      <Eye className="h-4 w-4" />
+                    ) : (
+                      <EyeOff className="h-4 w-4" />
+                    )}
                   </button>
 
                   {/* Reorder arrows */}
@@ -437,7 +490,9 @@ export function PortfolioManager({
           onPointerDownOutside={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle className="text-white">Edit Portfolio Item</DialogTitle>
+            <DialogTitle className="text-white">
+              Edit Portfolio Item
+            </DialogTitle>
           </DialogHeader>
           {editingItem && (
             <PortfolioItemForm

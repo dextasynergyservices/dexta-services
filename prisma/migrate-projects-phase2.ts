@@ -133,7 +133,8 @@ async function main() {
       }
 
       const nextSlug = item.slug?.trim() || slugifyWithSuffix(item.title);
-      const shouldUpdate = nextSlug !== item.slug || coverAssetId !== item.coverAssetId;
+      const shouldUpdate =
+        nextSlug !== item.slug || coverAssetId !== item.coverAssetId;
 
       if (shouldUpdate) {
         await prisma.portfolioItem.update({
@@ -151,7 +152,9 @@ async function main() {
     console.log(`Projects hero singleton ensured.`);
     console.log(`Service rows normalized: ${updatedServices}`);
     console.log(`Portfolio assets created from legacy media: ${createdAssets}`);
-    console.log(`Portfolio items updated with slug/cover asset: ${updatedItems}`);
+    console.log(
+      `Portfolio items updated with slug/cover asset: ${updatedItems}`,
+    );
   } finally {
     await prisma.$disconnect();
   }

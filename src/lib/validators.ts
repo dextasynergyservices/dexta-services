@@ -23,17 +23,14 @@ const hexColorSchema = z
     "Enter a valid hex color like #000c99",
   );
 
-const optionalHexColorSchema = z.preprocess(
-  (value) => {
-    if (typeof value !== "string") {
-      return value;
-    }
+const optionalHexColorSchema = z.preprocess((value) => {
+  if (typeof value !== "string") {
+    return value;
+  }
 
-    const trimmed = value.trim();
-    return trimmed.length === 0 ? null : trimmed;
-  },
-  hexColorSchema.nullable().optional(),
-);
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? null : trimmed;
+}, hexColorSchema.nullable().optional());
 
 const optionalUrlSchema = z
   .string()
@@ -72,31 +69,38 @@ function requiredHeroRichText(label: string, max: number) {
     .max(max, `${label} is too long`);
 }
 
-function jsonStringArraySchema(label: string, maxItems: number, maxItemLength: number) {
-  return z.string().trim().refine(
-    (value) => {
-      try {
-        const parsed = JSON.parse(value);
+function jsonStringArraySchema(
+  label: string,
+  maxItems: number,
+  maxItemLength: number,
+) {
+  return z
+    .string()
+    .trim()
+    .refine(
+      (value) => {
+        try {
+          const parsed = JSON.parse(value);
 
-        return (
-          Array.isArray(parsed) &&
-          parsed.length > 0 &&
-          parsed.length <= maxItems &&
-          parsed.every(
-            (item) =>
-              typeof item === "string" &&
-              item.trim().length > 0 &&
-              item.trim().length <= maxItemLength,
-          )
-        );
-      } catch {
-        return false;
-      }
-    },
-    {
-      message: `${label} must be a JSON array of 1 to ${maxItems} non-empty strings`,
-    },
-  );
+          return (
+            Array.isArray(parsed) &&
+            parsed.length > 0 &&
+            parsed.length <= maxItems &&
+            parsed.every(
+              (item) =>
+                typeof item === "string" &&
+                item.trim().length > 0 &&
+                item.trim().length <= maxItemLength,
+            )
+          );
+        } catch {
+          return false;
+        }
+      },
+      {
+        message: `${label} must be a JSON array of 1 to ${maxItems} non-empty strings`,
+      },
+    );
 }
 
 export const contactFormSchema = z.object({
@@ -258,7 +262,9 @@ export const portfolioTabContentSchema = z.object({
     .max(2000, "Description must be 2000 characters or less"),
 });
 
-export type PortfolioTabContentInput = z.infer<typeof portfolioTabContentSchema>;
+export type PortfolioTabContentInput = z.infer<
+  typeof portfolioTabContentSchema
+>;
 
 export const portfolioAssetSchema = z
   .object({
@@ -289,45 +295,45 @@ export type PortfolioAssetInput = z.infer<typeof portfolioAssetSchema>;
 
 export const portfolioItemSchema = z
   .object({
-  serviceType: serviceTypeSchema,
-  title: requiredTrimmedString("Title", 200),
-  clientName: z
-    .string()
-    .trim()
-    .max(120, "Client name must be 120 characters or less")
-    .optional()
-    .nullable(),
-  slug: optionalSlugSchema,
-  description: z
-    .string()
-    .trim()
-    .max(2000, "Description must be 2000 characters or less")
-    .optional()
-    .nullable(),
-  tags: z.string().default("[]"), // JSON array string
-  websiteUrl: optionalUrlSchema,
-  objectPosition: z
-    .string()
-    .trim()
-    .max(100, "Object position must be 100 characters or less")
-    .optional()
-    .or(z.literal("")),
-  mediaPublicId: z
-    .string()
-    .trim()
-    .min(1, "Media is required")
-    .max(500, "Media public ID must be 500 characters or less"),
-  mediaType: mediaTypeSchema,
-  thumbnailPublicId: optionalCloudinaryPublicIdSchema,
-  coverAssetId: z
-    .string()
-    .trim()
-    .max(100, "Cover asset ID must be 100 characters or less")
-    .optional()
-    .nullable(),
-  assets: z.array(portfolioAssetSchema).default([]),
-  isFeatured: z.boolean(),
-  isVisible: z.boolean(),
+    serviceType: serviceTypeSchema,
+    title: requiredTrimmedString("Title", 200),
+    clientName: z
+      .string()
+      .trim()
+      .max(120, "Client name must be 120 characters or less")
+      .optional()
+      .nullable(),
+    slug: optionalSlugSchema,
+    description: z
+      .string()
+      .trim()
+      .max(2000, "Description must be 2000 characters or less")
+      .optional()
+      .nullable(),
+    tags: z.string().default("[]"), // JSON array string
+    websiteUrl: optionalUrlSchema,
+    objectPosition: z
+      .string()
+      .trim()
+      .max(100, "Object position must be 100 characters or less")
+      .optional()
+      .or(z.literal("")),
+    mediaPublicId: z
+      .string()
+      .trim()
+      .min(1, "Media is required")
+      .max(500, "Media public ID must be 500 characters or less"),
+    mediaType: mediaTypeSchema,
+    thumbnailPublicId: optionalCloudinaryPublicIdSchema,
+    coverAssetId: z
+      .string()
+      .trim()
+      .max(100, "Cover asset ID must be 100 characters or less")
+      .optional()
+      .nullable(),
+    assets: z.array(portfolioAssetSchema).default([]),
+    isFeatured: z.boolean(),
+    isVisible: z.boolean(),
   })
   .refine(
     (value) => value.mediaType !== "VIDEO" || Boolean(value.thumbnailPublicId),
@@ -420,9 +426,20 @@ export function createRegistrationValidator(
 
 // ─── Offers Page ──────────────────────────────────────────────────────────────
 
-const audienceTypeSchema = z.enum(["FOR_YOU", "BUSINESS", "SCHOOLS", "CHURCHES"]);
+const audienceTypeSchema = z.enum([
+  "FOR_YOU",
+  "BUSINESS",
+  "SCHOOLS",
+  "CHURCHES",
+]);
 const audienceColorSchema = z.enum(["cyan", "blue", "purple", "green"]);
-const billingDurationSchema = z.enum(["DAILY", "WEEKLY", "MONTHLY", "QUARTERLY", "YEARLY"]);
+const billingDurationSchema = z.enum([
+  "DAILY",
+  "WEEKLY",
+  "MONTHLY",
+  "QUARTERLY",
+  "YEARLY",
+]);
 const contactSocialPlatformSchema = z.enum([
   "LINKEDIN",
   "INSTAGRAM",
@@ -536,7 +553,11 @@ export type PlanBillingOptionInput = z.infer<typeof planBillingOptionSchema>;
 
 // ─── Contact Page ─────────────────────────────────────────────────────────────
 
-function lineListSchema(label: string, maxItems: number, maxItemLength: number) {
+function lineListSchema(
+  label: string,
+  maxItems: number,
+  maxItemLength: number,
+) {
   return z
     .string()
     .trim()

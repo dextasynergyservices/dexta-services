@@ -40,7 +40,11 @@ async function getContactNotificationEmail() {
     }
 
     const emails = parseJsonStringArray(row.emails);
-    return emails[0] ?? CONTACT_PAGE_CONTENT_DEFAULTS.emails[0] ?? "info@dexta.services";
+    return (
+      emails[0] ??
+      CONTACT_PAGE_CONTENT_DEFAULTS.emails[0] ??
+      "info@dexta.services"
+    );
   } catch {
     return CONTACT_PAGE_CONTENT_DEFAULTS.emails[0] ?? "info@dexta.services";
   }
@@ -94,11 +98,7 @@ function buildAdminContactEmailHtml({
 </html>`;
 }
 
-function buildContactConfirmationEmailHtml({
-  name,
-}: {
-  name: string;
-}) {
+function buildContactConfirmationEmailHtml({ name }: { name: string }) {
   const safeName = escapeHtml(name);
 
   return `<!DOCTYPE html>
@@ -198,7 +198,9 @@ export async function submitContactForm(
     });
 
     const adminEmail = new brevo.SendSmtpEmail();
-    adminEmail.to = [{ email: adminNotificationEmail, name: "Dexta Contact Inbox" }];
+    adminEmail.to = [
+      { email: adminNotificationEmail, name: "Dexta Contact Inbox" },
+    ];
     adminEmail.subject = `New contact message from ${validatedFields.data.name}`;
     adminEmail.sender = {
       name: process.env.SENDER_NAME!,

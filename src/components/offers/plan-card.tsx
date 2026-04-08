@@ -153,7 +153,10 @@ export function PlanCard({
     [plan.billingOptions],
   );
   const defaultOption = useMemo(
-    () => billingOptions.find((option) => option.isDefault) ?? billingOptions[0] ?? null,
+    () =>
+      billingOptions.find((option) => option.isDefault) ??
+      billingOptions[0] ??
+      null,
     [billingOptions],
   );
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(
@@ -192,12 +195,15 @@ export function PlanCard({
         ? "#ffffff"
         : null;
   const hasCustomHighlightColors = hasCustomHighlightOverride;
-  const customSoftBorderColor =
-    customHighlightText ? withAlpha(customHighlightText, 0.22) : undefined;
-  const customSoftSurfaceColor =
-    customHighlightText ? withAlpha(customHighlightText, 0.12) : undefined;
-  const customMutedColor =
-    customHighlightText ? withAlpha(customHighlightText, 0.76) : undefined;
+  const customSoftBorderColor = customHighlightText
+    ? withAlpha(customHighlightText, 0.22)
+    : undefined;
+  const customSoftSurfaceColor = customHighlightText
+    ? withAlpha(customHighlightText, 0.12)
+    : undefined;
+  const customMutedColor = customHighlightText
+    ? withAlpha(customHighlightText, 0.76)
+    : undefined;
   const selectedBillingLabel = selectedOption
     ? selectedOption.label || getDurationLabel(selectedOption.duration)
     : null;
@@ -260,9 +266,7 @@ export function PlanCard({
           : "border-[var(--offers-page-border)] bg-white text-[var(--offers-page-fg-strong)]",
       )}
     >
-      <div
-        className="-mx-6 -mt-6 mb-5 overflow-hidden sm:-mx-7 sm:-mt-7"
-      >
+      <div className="-mx-6 -mt-6 mb-5 overflow-hidden sm:-mx-7 sm:-mt-7">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={planImageSrc}

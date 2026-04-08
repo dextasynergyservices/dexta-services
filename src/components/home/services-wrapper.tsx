@@ -126,7 +126,9 @@ async function fetchServicesData(): Promise<{
     if (!bucket) continue;
 
     const preferredAsset =
-      row.assets.find((asset) => asset.id === row.coverAssetId) ?? row.assets[0] ?? null;
+      row.assets.find((asset) => asset.id === row.coverAssetId) ??
+      row.assets[0] ??
+      null;
 
     bucket.push({
       id: row.id,
@@ -140,8 +142,8 @@ async function fetchServicesData(): Promise<{
   }
 
   const sectionBackgroundImagePublicId =
-    contentRows.find((row) => row.backgroundImagePublicId)?.backgroundImagePublicId ??
-    null;
+    contentRows.find((row) => row.backgroundImagePublicId)
+      ?.backgroundImagePublicId ?? null;
 
   return {
     services: SERVICE_ORDER.map((type) => ({

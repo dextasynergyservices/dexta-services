@@ -57,7 +57,6 @@ export function ContactManager({
   }));
 
   const unreadCount = messageCounts.unreadCount;
-  const totalMessages = messageCounts.totalCount;
 
   useEffect(() => {
     setSection(initialSection);
@@ -117,7 +116,9 @@ export function ContactManager({
         </div>
       </div>
 
-      {section === "content" ? <ContactContentForm content={data.content} /> : null}
+      {section === "content" ? (
+        <ContactContentForm content={data.content} />
+      ) : null}
       {section === "socials" ? (
         <ContactSocialsManager items={data.socialLinks} />
       ) : null}

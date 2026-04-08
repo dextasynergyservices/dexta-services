@@ -197,7 +197,9 @@ export function ContactContentForm({
         icon={<MapPin className="h-5 w-5" />}
       >
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Info eyebrow</Label>
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Info eyebrow
+          </Label>
           <Input className={fieldClassName()} {...register("infoEyebrow")} />
           <FieldError message={errors.infoEyebrow?.message} />
         </div>
@@ -241,9 +243,7 @@ export function ContactContentForm({
           <FieldError message={errors.address?.message} />
         </div>
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">
-            Emails
-          </Label>
+          <Label className="mb-1.5 block text-xs text-[#888]">Emails</Label>
           <Textarea
             rows={4}
             placeholder="One email per line"

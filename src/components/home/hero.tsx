@@ -774,7 +774,6 @@ export default function Hero({ content, cards }: HeroProps) {
                     transform: "translate3d(0, 42px, 0) scale(0.92)",
                   }}
                 >
-
                   <div className="relative h-full w-full overflow-hidden">
                     {/* Left card*/}
                     <HeroCardImage
@@ -816,8 +815,6 @@ export default function Hero({ content, cards }: HeroProps) {
                     </div>
                   </div>
                 </Link>
-
-
 
                 <Link
                   href={cards[1]?.href ?? "#"}
@@ -888,7 +885,6 @@ export default function Hero({ content, cards }: HeroProps) {
                   }}
                 >
                   <div className="relative h-full w-full overflow-hidden">
-
                     {/* Right card*/}
                     <HeroCardImage
                       src={rightCardImage}

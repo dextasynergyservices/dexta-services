@@ -102,7 +102,10 @@ export function OffersHero({
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/50">
               Choose your audience path
             </p>
-            <div className="mt-4 flex flex-wrap gap-3" aria-label="Audience paths">
+            <div
+              className="mt-4 flex flex-wrap gap-3"
+              aria-label="Audience paths"
+            >
               {audiences.map((audience) => {
                 const meta = OFFERS_AUDIENCE_META[audience.slug];
                 const Icon = meta.icon;

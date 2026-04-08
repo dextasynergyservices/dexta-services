@@ -3,7 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, Loader2, Mail, MessageSquareText, Send, Trash2 } from "lucide-react";
+import {
+  Eye,
+  Loader2,
+  Mail,
+  MessageSquareText,
+  Send,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -73,15 +80,15 @@ export function ContactMessagesManager({
   }) => void;
 }) {
   const router = useRouter();
-  const [messageItems, setMessageItems] = useState<ContactMessageRow[]>(messages.items);
+  const [messageItems, setMessageItems] = useState<ContactMessageRow[]>(
+    messages.items,
+  );
   const [unreadCount, setUnreadCount] = useState(messages.unreadCount);
   const [totalCount, setTotalCount] = useState(messages.totalCount);
-  const [selectedMessage, setSelectedMessage] = useState<ContactMessageRow | null>(
-    null,
-  );
-  const [deletingMessage, setDeletingMessage] = useState<ContactMessageRow | null>(
-    null,
-  );
+  const [selectedMessage, setSelectedMessage] =
+    useState<ContactMessageRow | null>(null);
+  const [deletingMessage, setDeletingMessage] =
+    useState<ContactMessageRow | null>(null);
   const [replySubject, setReplySubject] = useState("");
   const [replyBody, setReplyBody] = useState("");
   const [isReplying, setIsReplying] = useState(false);
@@ -265,11 +272,21 @@ export function ContactMessagesManager({
             <Table>
               <TableHeader>
                 <TableRow className="border-[#222] hover:bg-transparent">
-                  <TableHead className="px-4 py-3 text-[#8d8d8d]">Sender</TableHead>
-                  <TableHead className="px-4 py-3 text-[#8d8d8d]">Email</TableHead>
-                  <TableHead className="px-4 py-3 text-[#8d8d8d]">Status</TableHead>
-                  <TableHead className="px-4 py-3 text-[#8d8d8d]">Preview</TableHead>
-                  <TableHead className="px-4 py-3 text-[#8d8d8d]">Received</TableHead>
+                  <TableHead className="px-4 py-3 text-[#8d8d8d]">
+                    Sender
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-[#8d8d8d]">
+                    Email
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-[#8d8d8d]">
+                    Status
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-[#8d8d8d]">
+                    Preview
+                  </TableHead>
+                  <TableHead className="px-4 py-3 text-[#8d8d8d]">
+                    Received
+                  </TableHead>
                   <TableHead className="px-4 py-3 text-right text-[#8d8d8d]">
                     Actions
                   </TableHead>
@@ -294,10 +311,18 @@ export function ContactMessagesManager({
                           }`}
                         />
                         <div>
-                          <p className={item.isRead ? "font-medium text-white" : "font-semibold text-white"}>
+                          <p
+                            className={
+                              item.isRead
+                                ? "font-medium text-white"
+                                : "font-semibold text-white"
+                            }
+                          >
                             {item.name}
                           </p>
-                          <p className="mt-1 text-xs text-[#666]">Message #{item.id}</p>
+                          <p className="mt-1 text-xs text-[#666]">
+                            Message #{item.id}
+                          </p>
                         </div>
                       </div>
                     </TableCell>
@@ -315,7 +340,9 @@ export function ContactMessagesManager({
                     </TableCell>
                     <TableCell
                       className={`px-4 py-4 text-sm ${
-                        item.isRead ? "text-[#8d8d8d]" : "font-medium text-[#e8f9ff]"
+                        item.isRead
+                          ? "text-[#8d8d8d]"
+                          : "font-medium text-[#e8f9ff]"
                       }`}
                     >
                       {getPreview(item.message)}
@@ -324,7 +351,9 @@ export function ContactMessagesManager({
                       <div>
                         <p>{formatDate(item.createdAt)}</p>
                         {!item.isRead ? (
-                          <p className="mt-1 text-xs text-cyan-400">New message</p>
+                          <p className="mt-1 text-xs text-cyan-400">
+                            New message
+                          </p>
                         ) : null}
                       </div>
                     </TableCell>
@@ -379,7 +408,9 @@ export function ContactMessagesManager({
                   variant="outline"
                   className="border-[#2a2a2a] bg-transparent text-white hover:bg-[#1a1a1a]"
                 >
-                  <Link href={`/admin/contact?section=messages&page=${messages.page - 1}`}>
+                  <Link
+                    href={`/admin/contact?section=messages&page=${messages.page - 1}`}
+                  >
                     Previous
                   </Link>
                 </Button>
@@ -398,7 +429,9 @@ export function ContactMessagesManager({
                   variant="outline"
                   className="border-[#2a2a2a] bg-transparent text-white hover:bg-[#1a1a1a]"
                 >
-                  <Link href={`/admin/contact?section=messages&page=${messages.page + 1}`}>
+                  <Link
+                    href={`/admin/contact?section=messages&page=${messages.page + 1}`}
+                  >
                     Next
                   </Link>
                 </Button>

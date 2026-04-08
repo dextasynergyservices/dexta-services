@@ -16,7 +16,6 @@ import {
   EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -148,16 +147,15 @@ function ExpressionForm({
           ) : (
             <span />
           )}
-          <p className="text-xs text-[#555]">{descriptionValue.length} / 1000</p>
+          <p className="text-xs text-[#555]">
+            {descriptionValue.length} / 1000
+          </p>
         </div>
       </div>
 
       {/* Website URL */}
       <div>
-        <Label
-          htmlFor="expr-url"
-          className="mb-1.5 block text-xs text-[#888]"
-        >
+        <Label htmlFor="expr-url" className="mb-1.5 block text-xs text-[#888]">
           Website URL
         </Label>
         <div className="relative">
@@ -342,6 +340,7 @@ export function ExpressionsManager({
               {/* Logo thumbnail */}
               <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#2a2a2a] bg-[#0d0d0d]">
                 {item.logoPublicId ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={getCloudinaryUrl(item.logoPublicId, {
                       w: 80,
@@ -363,7 +362,9 @@ export function ExpressionsManager({
                 <p className="truncate text-sm font-semibold text-white">
                   {item.name}
                 </p>
-                <p className="truncate text-xs text-[#555]">{item.websiteUrl}</p>
+                <p className="truncate text-xs text-[#555]">
+                  {item.websiteUrl}
+                </p>
               </div>
 
               {/* Visibility indicator */}

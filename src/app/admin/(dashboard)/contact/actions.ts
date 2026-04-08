@@ -60,9 +60,15 @@ type ContactPageContentDelegate = {
 };
 
 type ContactSocialLinkDelegate = {
-  findMany: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>;
-  findUnique: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>;
-  findFirst: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>;
+  findMany: (
+    args: Record<string, unknown>,
+  ) => Promise<Array<Record<string, unknown>>>;
+  findUnique: (
+    args: Record<string, unknown>,
+  ) => Promise<Record<string, unknown> | null>;
+  findFirst: (
+    args: Record<string, unknown>,
+  ) => Promise<Record<string, unknown> | null>;
   create: (args: Record<string, unknown>) => Promise<unknown>;
   update: (args: Record<string, unknown>) => Promise<unknown>;
   delete: (args: Record<string, unknown>) => Promise<unknown>;
@@ -70,8 +76,12 @@ type ContactSocialLinkDelegate = {
 
 type ContactMessageDelegate = {
   count: (args?: Record<string, unknown>) => Promise<number>;
-  findMany: (args: Record<string, unknown>) => Promise<Array<Record<string, unknown>>>;
-  findUnique: (args: Record<string, unknown>) => Promise<Record<string, unknown> | null>;
+  findMany: (
+    args: Record<string, unknown>,
+  ) => Promise<Array<Record<string, unknown>>>;
+  findUnique: (
+    args: Record<string, unknown>,
+  ) => Promise<Record<string, unknown> | null>;
   update: (args: Record<string, unknown>) => Promise<unknown>;
   delete: (args: Record<string, unknown>) => Promise<unknown>;
 };
@@ -158,13 +168,15 @@ function getTableMissingMessage(error: unknown, fallback: string) {
 }
 
 function getContactPageContentDelegate() {
-  return (prisma as unknown as { contactPageContent?: ContactPageContentDelegate })
-    .contactPageContent;
+  return (
+    prisma as unknown as { contactPageContent?: ContactPageContentDelegate }
+  ).contactPageContent;
 }
 
 function getContactSocialLinkDelegate() {
-  return (prisma as unknown as { contactSocialLink?: ContactSocialLinkDelegate })
-    .contactSocialLink;
+  return (
+    prisma as unknown as { contactSocialLink?: ContactSocialLinkDelegate }
+  ).contactSocialLink;
 }
 
 function getContactMessageDelegate() {
@@ -205,8 +217,8 @@ function isContactReadStateUnavailableError(error: unknown) {
     message.includes("Unknown argument `readAt`") ||
     (message.includes("isRead") && message.includes("does not exist")) ||
     (message.includes("readAt") && message.includes("does not exist")) ||
-    message.includes("column \"isRead\" does not exist") ||
-    message.includes("column \"readAt\" does not exist")
+    message.includes('column "isRead" does not exist') ||
+    message.includes('column "readAt" does not exist')
   );
 }
 
@@ -283,15 +295,20 @@ async function getPrimaryContactInboxEmail() {
     }
 
     const emails = parseJsonStringArray(row.emails);
-    return emails[0] ?? CONTACT_PAGE_CONTENT_DEFAULTS.emails[0] ?? "info@dexta.services";
+    return (
+      emails[0] ??
+      CONTACT_PAGE_CONTENT_DEFAULTS.emails[0] ??
+      "info@dexta.services"
+    );
   } catch {
     return CONTACT_PAGE_CONTENT_DEFAULTS.emails[0] ?? "info@dexta.services";
   }
 }
 
-function normalizeContactPageContent(
-  data: ContactPageContentInput,
-): Omit<ContactPageContentRow, "emails" | "phones"> & {
+function normalizeContactPageContent(data: ContactPageContentInput): Omit<
+  ContactPageContentRow,
+  "emails" | "phones"
+> & {
   emails: string;
   phones: string;
 } {
@@ -325,7 +342,9 @@ export async function getContactPageContent(): Promise<ContactPageContentRow> {
     const contactPageContent = getContactPageContentDelegate();
 
     if (!contactPageContent) {
-      throw new Error("Contact models are missing from the running Prisma client.");
+      throw new Error(
+        "Contact models are missing from the running Prisma client.",
+      );
     }
 
     const row = await contactPageContent.findUnique({
@@ -369,10 +388,12 @@ export async function getContactSocialLinks(): Promise<ContactSocialLinkRow[]> {
     const contactSocialLink = getContactSocialLinkDelegate();
 
     if (!contactSocialLink) {
-      throw new Error("Contact models are missing from the running Prisma client.");
+      throw new Error(
+        "Contact models are missing from the running Prisma client.",
+      );
     }
 
-    return await contactSocialLink.findMany({
+    return (await contactSocialLink.findMany({
       orderBy: [{ position: "asc" }, { createdAt: "asc" }],
       select: {
         id: true,
@@ -382,7 +403,7 @@ export async function getContactSocialLinks(): Promise<ContactSocialLinkRow[]> {
         isVisible: true,
         position: true,
       },
-    }) as ContactSocialLinkRow[];
+    })) as ContactSocialLinkRow[];
   } catch {
     return [];
   }
@@ -457,9 +478,7 @@ export async function getContactMessages(
   }
 }
 
-export async function getContactAdminData(
-  page = 1,
-): Promise<ContactAdminData> {
+export async function getContactAdminData(page = 1): Promise<ContactAdminData> {
   const [content, socialLinks, messages] = await Promise.all([
     getContactPageContent(),
     getContactSocialLinks(),
@@ -489,7 +508,9 @@ export async function updateContactPageContent(
     const contactPageContent = getContactPageContentDelegate();
 
     if (!contactPageContent) {
-      throw new Error("Contact models are missing from the running Prisma client.");
+      throw new Error(
+        "Contact models are missing from the running Prisma client.",
+      );
     }
 
     await contactPageContent.upsert({
@@ -537,7 +558,9 @@ export async function createContactSocialLink(
     const contactSocialLink = getContactSocialLinkDelegate();
 
     if (!contactSocialLink) {
-      throw new Error("Contact models are missing from the running Prisma client.");
+      throw new Error(
+        "Contact models are missing from the running Prisma client.",
+      );
     }
 
     const existing = await contactSocialLink.findUnique({
@@ -548,7 +571,8 @@ export async function createContactSocialLink(
     if (existing) {
       return {
         success: false,
-        message: "That social platform already exists. Edit the existing one instead.",
+        message:
+          "That social platform already exists. Edit the existing one instead.",
       };
     }
 
@@ -601,7 +625,9 @@ export async function updateContactSocialLink(
     const contactSocialLink = getContactSocialLinkDelegate();
 
     if (!contactSocialLink) {
-      throw new Error("Contact models are missing from the running Prisma client.");
+      throw new Error(
+        "Contact models are missing from the running Prisma client.",
+      );
     }
 
     const existing = await contactSocialLink.findFirst({
@@ -615,7 +641,8 @@ export async function updateContactSocialLink(
     if (existing) {
       return {
         success: false,
-        message: "That social platform already exists. Choose another platform.",
+        message:
+          "That social platform already exists. Choose another platform.",
       };
     }
 
@@ -638,20 +665,26 @@ export async function updateContactSocialLink(
       success: false,
       message: getTableMissingMessage(
         error,
-        error instanceof Error ? error.message : "Failed to update social link.",
+        error instanceof Error
+          ? error.message
+          : "Failed to update social link.",
       ),
     };
   }
 }
 
-export async function deleteContactSocialLink(id: string): Promise<ActionResult> {
+export async function deleteContactSocialLink(
+  id: string,
+): Promise<ActionResult> {
   try {
     await requireAuth();
 
     const contactSocialLink = getContactSocialLinkDelegate();
 
     if (!contactSocialLink) {
-      throw new Error("Contact models are missing from the running Prisma client.");
+      throw new Error(
+        "Contact models are missing from the running Prisma client.",
+      );
     }
 
     await contactSocialLink.delete({
@@ -668,7 +701,9 @@ export async function deleteContactSocialLink(id: string): Promise<ActionResult>
       success: false,
       message: getTableMissingMessage(
         error,
-        error instanceof Error ? error.message : "Failed to remove social link.",
+        error instanceof Error
+          ? error.message
+          : "Failed to remove social link.",
       ),
     };
   }
@@ -684,7 +719,9 @@ export async function moveContactSocialLink(
     const contactSocialLink = getContactSocialLinkDelegate();
 
     if (!contactSocialLink) {
-      throw new Error("Contact models are missing from the running Prisma client.");
+      throw new Error(
+        "Contact models are missing from the running Prisma client.",
+      );
     }
 
     const items = (await contactSocialLink.findMany({
@@ -746,7 +783,9 @@ export async function deleteContactMessage(id: number): Promise<ActionResult> {
     const contactMessage = getContactMessageDelegate();
 
     if (!contactMessage) {
-      throw new Error("Contact models are missing from the running Prisma client.");
+      throw new Error(
+        "Contact models are missing from the running Prisma client.",
+      );
     }
 
     await contactMessage.delete({
@@ -769,7 +808,9 @@ export async function deleteContactMessage(id: number): Promise<ActionResult> {
   }
 }
 
-export async function markContactMessageRead(id: number): Promise<ActionResult> {
+export async function markContactMessageRead(
+  id: number,
+): Promise<ActionResult> {
   try {
     await requireAuth();
 
@@ -826,10 +867,12 @@ export async function replyToContactMessage(
     const contactMessage = getContactMessageDelegate();
 
     if (!contactMessage) {
-      throw new Error("Contact models are missing from the running Prisma client.");
+      throw new Error(
+        "Contact models are missing from the running Prisma client.",
+      );
     }
 
-    const message = await contactMessage.findUnique({
+    const message = (await contactMessage.findUnique({
       where: { id },
       select: {
         id: true,
@@ -837,7 +880,7 @@ export async function replyToContactMessage(
         email: true,
         message: true,
       },
-    }) as { id: number; name: string; email: string; message: string } | null;
+    })) as { id: number; name: string; email: string; message: string } | null;
 
     if (!message) {
       return {
@@ -902,10 +945,7 @@ export async function replyToContactMessage(
 
     return {
       success: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "Failed to send reply.",
+      message: error instanceof Error ? error.message : "Failed to send reply.",
     };
   }
 }

@@ -33,22 +33,37 @@ const EMPTY_COUNTS: PortfolioTabCounts = {
 
 const EMPTY_HERO: ProjectsHeroData = {
   eyebrow: "Portfolio selection",
-  headline: "Work that looks sharp, moves with intent, and lands where it matters.",
+  headline:
+    "Work that looks sharp, moves with intent, and lands where it matters.",
   body: "",
   backgroundImagePublicId: null,
   ctaText: "Start a Project",
   ctaHref: "/contact",
   ctaSectionLabel: "Start something precise",
-  ctaSectionHeadline: "If the work feels close to what you need, we should talk.",
-  ctaSectionBody: "We take ideas from early direction through execution, across digital, print, and the spaces in between.",
+  ctaSectionHeadline:
+    "If the work feels close to what you need, we should talk.",
+  ctaSectionBody:
+    "We take ideas from early direction through execution, across digital, print, and the spaces in between.",
   cta2Text: "Explore Services",
   cta2Href: "/#services",
 };
 
 const EMPTY_TAB_CONTENT: PortfolioTabContentMap = {
-  design: { portfolioEyebrow: "Identity systems, campaigns, and visual direction", portfolioDescription: "Brand worlds, interfaces, and design systems shaped to feel sharp, intentional, and unmistakably on-message." },
-  build: { portfolioEyebrow: "Web platforms, products, and digital experiences", portfolioDescription: "High-performance sites and software products built to convert, scale, and stay elegant under pressure." },
-  print: { portfolioEyebrow: "Physical touchpoints with real-world presence", portfolioDescription: "Editorial layouts, signage, packaging, and production-ready print work that carries the brand with confidence." },
+  design: {
+    portfolioEyebrow: "Identity systems, campaigns, and visual direction",
+    portfolioDescription:
+      "Brand worlds, interfaces, and design systems shaped to feel sharp, intentional, and unmistakably on-message.",
+  },
+  build: {
+    portfolioEyebrow: "Web platforms, products, and digital experiences",
+    portfolioDescription:
+      "High-performance sites and software products built to convert, scale, and stay elegant under pressure.",
+  },
+  print: {
+    portfolioEyebrow: "Physical touchpoints with real-world presence",
+    portfolioDescription:
+      "Editorial layouts, signage, packaging, and production-ready print work that carries the brand with confidence.",
+  },
 };
 
 async function fetchProjectsPageData(

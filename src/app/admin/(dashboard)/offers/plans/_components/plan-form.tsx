@@ -51,19 +51,27 @@ export function PlanForm({ initialData, onSubmit, onCancel }: Props) {
   });
 
   const [featureRows, setFeatureRows] = useState<string[]>(() => {
-    const parsed = initialData ? parseJsonStringArray(JSON.stringify(initialData.features)) : [];
+    const parsed = initialData
+      ? parseJsonStringArray(JSON.stringify(initialData.features))
+      : [];
     return parsed.length ? parsed : [""];
   });
 
   useEffect(() => {
     reset(toFormValues(initialData));
-    const parsed = initialData ? parseJsonStringArray(JSON.stringify(initialData.features)) : [];
+    const parsed = initialData
+      ? parseJsonStringArray(JSON.stringify(initialData.features))
+      : [];
     setFeatureRows(parsed.length ? parsed : [""]);
   }, [initialData, reset]);
 
   const syncFeatures = (rows: string[], shouldDirty: boolean) => {
     setFeatureRows(rows);
-    setValue("features", JSON.stringify(rows.map((r) => r.trim()).filter(Boolean)), { shouldDirty, shouldValidate: shouldDirty });
+    setValue(
+      "features",
+      JSON.stringify(rows.map((r) => r.trim()).filter(Boolean)),
+      { shouldDirty, shouldValidate: shouldDirty },
+    );
   };
 
   const billingEnabled = watch("billingEnabled");
@@ -74,13 +82,13 @@ export function PlanForm({ initialData, onSubmit, onCancel }: Props) {
   const highlightBgColor =
     typeof highlightBgColorValue === "string" ? highlightBgColorValue : "";
   const highlightTextColor =
-    typeof highlightTextColorValue === "string"
-      ? highlightTextColorValue
-      : "";
+    typeof highlightTextColorValue === "string" ? highlightTextColorValue : "";
 
   return (
     <form
-      onSubmit={handleSubmit(async (data) => { await onSubmit(data); })}
+      onSubmit={handleSubmit(async (data) => {
+        await onSubmit(data);
+      })}
       className="max-h-[78vh] space-y-5 overflow-y-auto pr-1"
     >
       <input type="hidden" {...register("imagePublicId")} />
@@ -89,15 +97,37 @@ export function PlanForm({ initialData, onSubmit, onCancel }: Props) {
       <input type="hidden" {...register("highlightTextColor")} />
 
       <div>
-        <Label htmlFor="plan-name" className="mb-1.5 block text-xs text-[#888]">Offer name</Label>
-        <Input id="plan-name" placeholder="e.g. Reach Pro" className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444] focus-visible:border-cyan-500/50 focus-visible:ring-cyan-500/20" {...register("name")} />
-        {errors.name ? <p className="mt-1 text-xs text-red-400">{errors.name.message}</p> : null}
+        <Label htmlFor="plan-name" className="mb-1.5 block text-xs text-[#888]">
+          Offer name
+        </Label>
+        <Input
+          id="plan-name"
+          placeholder="e.g. Reach Pro"
+          className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444] focus-visible:border-cyan-500/50 focus-visible:ring-cyan-500/20"
+          {...register("name")}
+        />
+        {errors.name ? (
+          <p className="mt-1 text-xs text-red-400">{errors.name.message}</p>
+        ) : null}
       </div>
 
       <div>
-        <Label htmlFor="plan-subtitle" className="mb-1.5 block text-xs text-[#888]">Offer subtitle <span className="text-[#555]">(optional)</span></Label>
-        <Textarea id="plan-subtitle" rows={2} placeholder="Short description under the offer name." className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444] focus-visible:border-cyan-500/50 focus-visible:ring-cyan-500/20" {...register("subtitle")} />
-        {errors.subtitle ? <p className="mt-1 text-xs text-red-400">{errors.subtitle.message}</p> : null}
+        <Label
+          htmlFor="plan-subtitle"
+          className="mb-1.5 block text-xs text-[#888]"
+        >
+          Offer subtitle <span className="text-[#555]">(optional)</span>
+        </Label>
+        <Textarea
+          id="plan-subtitle"
+          rows={2}
+          placeholder="Short description under the offer name."
+          className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444] focus-visible:border-cyan-500/50 focus-visible:ring-cyan-500/20"
+          {...register("subtitle")}
+        />
+        {errors.subtitle ? (
+          <p className="mt-1 text-xs text-red-400">{errors.subtitle.message}</p>
+        ) : null}
       </div>
 
       <div>
@@ -133,7 +163,13 @@ export function PlanForm({ initialData, onSubmit, onCancel }: Props) {
       <div>
         <div className="mb-2 flex items-center justify-between gap-3">
           <Label className="block text-xs text-[#888]">Features</Label>
-          <Button type="button" variant="outline" size="sm" onClick={() => syncFeatures([...featureRows, ""], true)} className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => syncFeatures([...featureRows, ""], true)}
+            className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white"
+          >
             <Plus className="mr-1.5 h-3.5 w-3.5" /> Add
           </Button>
         </div>
@@ -154,7 +190,12 @@ export function PlanForm({ initialData, onSubmit, onCancel }: Props) {
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={() => syncFeatures(featureRows.filter((_, i) => i !== index), true)}
+                onClick={() =>
+                  syncFeatures(
+                    featureRows.filter((_, i) => i !== index),
+                    true,
+                  )
+                }
                 className="shrink-0 text-[#666] hover:bg-red-950/30 hover:text-red-400"
                 aria-label={`Remove feature ${index + 1}`}
               >
@@ -163,25 +204,53 @@ export function PlanForm({ initialData, onSubmit, onCancel }: Props) {
             </div>
           ))}
         </div>
-        {errors.features ? <p className="mt-2 text-xs text-red-400">{errors.features.message}</p> : null}
+        {errors.features ? (
+          <p className="mt-2 text-xs text-red-400">{errors.features.message}</p>
+        ) : null}
       </div>
 
       {/* Toggles */}
       <div className="space-y-3">
         <div className="flex items-center gap-3 rounded-lg border border-[#222] bg-[#0d0d0d] px-4 py-3">
-          <Switch id="plan-billing" checked={billingEnabled} onCheckedChange={(c) => setValue("billingEnabled", c, { shouldDirty: true })} />
+          <Switch
+            id="plan-billing"
+            checked={billingEnabled}
+            onCheckedChange={(c) =>
+              setValue("billingEnabled", c, { shouldDirty: true })
+            }
+          />
           <div>
-            <Label htmlFor="plan-billing" className="text-xs text-[#888]">Enable billing options</Label>
-            <p className="text-[11px] text-[#555]">Show a billing cycle selector inside this offer card.</p>
+            <Label htmlFor="plan-billing" className="text-xs text-[#888]">
+              Enable billing options
+            </Label>
+            <p className="text-[11px] text-[#555]">
+              Show a billing cycle selector inside this offer card.
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-lg border border-[#222] bg-[#0d0d0d] px-4 py-3">
-          <Switch id="plan-highlighted" checked={isHighlighted} onCheckedChange={(c) => setValue("isHighlighted", c, { shouldDirty: true })} />
-          <Label htmlFor="plan-highlighted" className="text-xs text-[#888]">Mark as recommended offer</Label>
+          <Switch
+            id="plan-highlighted"
+            checked={isHighlighted}
+            onCheckedChange={(c) =>
+              setValue("isHighlighted", c, { shouldDirty: true })
+            }
+          />
+          <Label htmlFor="plan-highlighted" className="text-xs text-[#888]">
+            Mark as recommended offer
+          </Label>
         </div>
         <div className="flex items-center gap-3 rounded-lg border border-[#222] bg-[#0d0d0d] px-4 py-3">
-          <Switch id="plan-visible" checked={isVisible} onCheckedChange={(c) => setValue("isVisible", c, { shouldDirty: true })} />
-          <Label htmlFor="plan-visible" className="text-xs text-[#888]">Visible on /offers</Label>
+          <Switch
+            id="plan-visible"
+            checked={isVisible}
+            onCheckedChange={(c) =>
+              setValue("isVisible", c, { shouldDirty: true })
+            }
+          />
+          <Label htmlFor="plan-visible" className="text-xs text-[#888]">
+            Visible on /offers
+          </Label>
         </div>
       </div>
 
@@ -192,13 +261,17 @@ export function PlanForm({ initialData, onSubmit, onCancel }: Props) {
               Recommended card colors
             </Label>
             <p className="text-[11px] text-[#555]">
-              Choose the background and text color for this recommended offer card.
+              Choose the background and text color for this recommended offer
+              card.
             </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="offer-highlight-bg" className="mb-1.5 block text-xs text-[#888]">
+              <Label
+                htmlFor="offer-highlight-bg"
+                className="mb-1.5 block text-xs text-[#888]"
+              >
                 Background color
               </Label>
               <div className="flex items-center gap-3">
@@ -226,11 +299,18 @@ export function PlanForm({ initialData, onSubmit, onCancel }: Props) {
                   className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444] focus-visible:border-cyan-500/50 focus-visible:ring-cyan-500/20"
                 />
               </div>
-              {errors.highlightBgColor ? <p className="mt-1 text-xs text-red-400">{errors.highlightBgColor.message}</p> : null}
+              {errors.highlightBgColor ? (
+                <p className="mt-1 text-xs text-red-400">
+                  {errors.highlightBgColor.message}
+                </p>
+              ) : null}
             </div>
 
             <div>
-              <Label htmlFor="offer-highlight-text" className="mb-1.5 block text-xs text-[#888]">
+              <Label
+                htmlFor="offer-highlight-text"
+                className="mb-1.5 block text-xs text-[#888]"
+              >
                 Text color
               </Label>
               <div className="flex items-center gap-3">
@@ -258,16 +338,39 @@ export function PlanForm({ initialData, onSubmit, onCancel }: Props) {
                   className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444] focus-visible:border-cyan-500/50 focus-visible:ring-cyan-500/20"
                 />
               </div>
-              {errors.highlightTextColor ? <p className="mt-1 text-xs text-red-400">{errors.highlightTextColor.message}</p> : null}
+              {errors.highlightTextColor ? (
+                <p className="mt-1 text-xs text-red-400">
+                  {errors.highlightTextColor.message}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
       ) : null}
 
       <div className="flex justify-end gap-3 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white">Cancel</Button>
-        <Button type="submit" disabled={isSubmitting} className="bg-cyan-500 text-black hover:bg-cyan-400 disabled:opacity-60">
-          {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : initialData ? "Save Changes" : "Create Offer"}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="bg-cyan-500 text-black hover:bg-cyan-400 disabled:opacity-60"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+            </>
+          ) : initialData ? (
+            "Save Changes"
+          ) : (
+            "Create Offer"
+          )}
         </Button>
       </div>
     </form>

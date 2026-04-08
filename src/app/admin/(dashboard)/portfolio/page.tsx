@@ -13,7 +13,9 @@ interface PortfolioPageProps {
   searchParams: Promise<{ tab?: string }>;
 }
 
-export default async function PortfolioPage({ searchParams }: PortfolioPageProps) {
+export default async function PortfolioPage({
+  searchParams,
+}: PortfolioPageProps) {
   const { tab } = await searchParams;
   const activeTab: ServiceType =
     VALID_TABS.find((t) => t === tab?.toUpperCase()) ?? "DESIGN";

@@ -40,14 +40,17 @@ export type PortfolioTabRow = {
 
 const HERO_DEFAULTS: ProjectsHeroRow = {
   eyebrow: "Portfolio selection",
-  headline: "Work that looks sharp, moves with intent, and lands where it matters.",
+  headline:
+    "Work that looks sharp, moves with intent, and lands where it matters.",
   body: "Explore selected projects across design, build, and print — all curated to show how ideas become real, useful, and memorable.",
   backgroundImagePublicId: null,
   ctaText: "Start a Project",
   ctaHref: "/contact",
   ctaSectionLabel: "Start something precise",
-  ctaSectionHeadline: "If the work feels close to what you need, we should talk.",
-  ctaSectionBody: "We take ideas from early direction through execution, across digital, print, and the spaces in between.",
+  ctaSectionHeadline:
+    "If the work feels close to what you need, we should talk.",
+  ctaSectionBody:
+    "We take ideas from early direction through execution, across digital, print, and the spaces in between.",
   cta2Text: "Explore Services",
   cta2Href: "/#services",
 };
@@ -89,7 +92,9 @@ async function requireAuth() {
 
 export async function getProjectsHeroContent(): Promise<ProjectsHeroRow> {
   try {
-    const row = await prisma.projectsHeroContent.findUnique({ where: { id: 1 } });
+    const row = await prisma.projectsHeroContent.findUnique({
+      where: { id: 1 },
+    });
     if (!row) return HERO_DEFAULTS;
     return {
       eyebrow: row.eyebrow,
@@ -161,13 +166,18 @@ export async function updateProjectsHeroContent(
     });
 
     revalidate();
-    return { success: true, message: "Portfolio page hero updated successfully" };
+    return {
+      success: true,
+      message: "Portfolio page hero updated successfully",
+    };
   } catch (error) {
     console.error("[Update Projects Hero]", error);
     return {
       success: false,
       message:
-        error instanceof Error ? error.message : "Failed to update hero content",
+        error instanceof Error
+          ? error.message
+          : "Failed to update hero content",
     };
   }
 }
@@ -203,15 +213,16 @@ export async function updatePortfolioTabContent(
     });
 
     revalidate();
-    return { success: true, message: `${type} tab content updated successfully` };
+    return {
+      success: true,
+      message: `${type} tab content updated successfully`,
+    };
   } catch (error) {
     console.error("[Update Portfolio Tab Content]", error);
     return {
       success: false,
       message:
-        error instanceof Error
-          ? error.message
-          : "Failed to update tab content",
+        error instanceof Error ? error.message : "Failed to update tab content",
     };
   }
 }

@@ -87,7 +87,11 @@ export function AdminSidebar({
       icon: ImageIcon,
       basePaths: ["/admin/projects-hero", "/admin/portfolio"],
       items: [
-        { href: "/admin/projects-hero", label: "Portfolio Page", icon: PanelTop },
+        {
+          href: "/admin/projects-hero",
+          label: "Portfolio Page",
+          icon: PanelTop,
+        },
         { href: "/admin/portfolio", label: "Portfolio", icon: ImageIcon },
       ],
     },
@@ -98,9 +102,17 @@ export function AdminSidebar({
       items: [
         { href: "/admin/about/hero", label: "Hero Section", icon: PanelTop },
         { href: "/admin/about/story", label: "Story Section", icon: Quote },
-        { href: "/admin/about/expertise", label: "Expertise Section", icon: Layers },
+        {
+          href: "/admin/about/expertise",
+          label: "Expertise Section",
+          icon: Layers,
+        },
         { href: "/admin/about/team", label: "Team Section", icon: Users },
-        { href: "/admin/about/values", label: "Values Section", icon: Sparkles },
+        {
+          href: "/admin/about/values",
+          label: "Values Section",
+          icon: Sparkles,
+        },
         { href: "/admin/about/cta", label: "Bottom CTA", icon: HandCoins },
       ],
     },
@@ -110,8 +122,18 @@ export function AdminSidebar({
       basePaths: ["/admin/contact"],
       badgeCount: unreadContactMessages,
       items: [
-        { href: "/admin/contact?section=content", label: "Page Content", icon: PanelTop, section: "content" },
-        { href: "/admin/contact?section=socials", label: "Social Links", icon: ExternalLink, section: "socials" },
+        {
+          href: "/admin/contact?section=content",
+          label: "Page Content",
+          icon: PanelTop,
+          section: "content",
+        },
+        {
+          href: "/admin/contact?section=socials",
+          label: "Social Links",
+          icon: ExternalLink,
+          section: "socials",
+        },
         {
           href: "/admin/contact?section=messages",
           label: "Messages Inbox",
@@ -126,7 +148,11 @@ export function AdminSidebar({
       icon: Layers,
       basePaths: ["/admin/offers"],
       items: [
-        { href: "/admin/offers/content", label: "Page Content", icon: PanelTop },
+        {
+          href: "/admin/offers/content",
+          label: "Page Content",
+          icon: PanelTop,
+        },
         { href: "/admin/offers/plans", label: "Offers", icon: HandCoins },
       ],
     },
@@ -174,7 +200,9 @@ export function AdminSidebar({
   // Lock body scroll when mobile menu is open
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [mobileOpen]);
 
   // Close profile dropdown on outside click
@@ -278,7 +306,10 @@ export function AdminSidebar({
                           : "text-[#666] hover:bg-[#1a1a1a] hover:text-white",
                       )}
                     >
-                      <item.icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      <item.icon
+                        className="h-3.5 w-3.5 shrink-0"
+                        aria-hidden="true"
+                      />
                       <span className="flex-1">{item.label}</span>
                       {item.badgeCount ? (
                         <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-cyan-500 px-1.5 py-0.5 text-[10px] font-semibold text-black">

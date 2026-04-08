@@ -34,12 +34,7 @@ type SectionCardProps = {
   icon?: React.ReactNode;
 };
 
-function SectionCard({
-  title,
-  description,
-  children,
-  icon,
-}: SectionCardProps) {
+function SectionCard({ title, description, children, icon }: SectionCardProps) {
   return (
     <div className="rounded-xl border border-[#222] bg-[#111] p-6">
       <div className="mb-5 flex items-start gap-3">
@@ -218,9 +213,7 @@ export function OffersContentForm({ content }: OffersContentFormProps) {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">
-              CTA text
-            </Label>
+            <Label className="mb-1.5 block text-xs text-[#888]">CTA text</Label>
             <Input
               className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444] focus-visible:border-cyan-500/50 focus-visible:ring-cyan-500/20"
               {...register("heroCtaText")}
@@ -228,9 +221,7 @@ export function OffersContentForm({ content }: OffersContentFormProps) {
             <FieldError message={errors.heroCtaText?.message} />
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">
-              CTA href
-            </Label>
+            <Label className="mb-1.5 block text-xs text-[#888]">CTA href</Label>
             <Input
               className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444] focus-visible:border-cyan-500/50 focus-visible:ring-cyan-500/20"
               {...register("heroCtaHref")}

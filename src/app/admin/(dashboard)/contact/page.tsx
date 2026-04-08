@@ -1,5 +1,8 @@
 import { AdminHeader } from "@/components/admin/header";
-import { ContactManager, type ContactSectionKey } from "./_components/contact-manager";
+import {
+  ContactManager,
+  type ContactSectionKey,
+} from "./_components/contact-manager";
 import { getContactAdminData } from "./actions";
 
 export const metadata = {
@@ -34,7 +37,10 @@ function normalizePage(value: string | string[] | undefined) {
 }
 
 interface ContactAdminPageProps {
-  searchParams: Promise<{ section?: string | string[]; page?: string | string[] }>;
+  searchParams: Promise<{
+    section?: string | string[];
+    page?: string | string[];
+  }>;
 }
 
 export default async function ContactAdminPage({

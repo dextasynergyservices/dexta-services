@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import {
-  MapPin,
-  Mail,
-  Phone,
-  ArrowRight,
-} from "lucide-react";
+import { MapPin, Mail, Phone, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type {
   ContactPageContentData,
@@ -68,7 +63,6 @@ export function ContactSection({
           <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[var(--dexta-primary)]/40 blur-3xl" />
 
           <div className="relative grid gap-12 lg:grid-cols-2 lg:items-center">
-
             {/* ── Left: CTA text ── */}
             <div>
               {/* Eyebrow */}
@@ -85,7 +79,10 @@ export function ContactSection({
               {/* Heading — word-by-word slide-up */}
               <h2 className="mt-4 flex flex-wrap gap-x-[0.28em] font-display text-4xl leading-tight tracking-[-0.04em] sm:text-5xl">
                 {headingWords.map((word, i) => (
-                  <span key={`${word}-${i}`} className="overflow-hidden inline-block">
+                  <span
+                    key={`${word}-${i}`}
+                    className="overflow-hidden inline-block"
+                  >
                     <motion.span
                       className="inline-block"
                       initial={{ y: "110%", opacity: 0 }}
@@ -140,7 +137,11 @@ export function ContactSection({
                   initial={{ opacity: 0, x: 28 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.45, delay: 0.3 + i * 0.11, ease: "easeOut" }}
+                  transition={{
+                    duration: 0.45,
+                    delay: 0.3 + i * 0.11,
+                    ease: "easeOut",
+                  }}
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
                     <Icon className="h-4 w-4 text-[var(--dexta)]" />
@@ -187,7 +188,8 @@ export function ContactSection({
                   </p>
                   <div className="flex gap-3">
                     {socialLinks.map((social, i) => {
-                      const Icon = CONTACT_SOCIAL_PLATFORM_META[social.platform].icon;
+                      const Icon =
+                        CONTACT_SOCIAL_PLATFORM_META[social.platform].icon;
 
                       return (
                         <motion.a

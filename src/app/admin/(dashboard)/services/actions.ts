@@ -109,7 +109,9 @@ export async function getServicesContent(): Promise<ServiceContentRow[]> {
   }
 }
 
-export async function getProjectSectionBackgroundImage(): Promise<string | null> {
+export async function getProjectSectionBackgroundImage(): Promise<
+  string | null
+> {
   try {
     const row = await prisma.serviceContent.findFirst({
       where: {
@@ -192,12 +194,14 @@ export async function updateProjectSectionBackgroundImage(
         prisma.serviceContent.upsert({
           where: { type },
           update: {
-            backgroundImagePublicId: parsed.data.backgroundImagePublicId ?? null,
+            backgroundImagePublicId:
+              parsed.data.backgroundImagePublicId ?? null,
           },
           create: {
             ...DEFAULTS[type],
             type,
-            backgroundImagePublicId: parsed.data.backgroundImagePublicId ?? null,
+            backgroundImagePublicId:
+              parsed.data.backgroundImagePublicId ?? null,
           },
         }),
       ),

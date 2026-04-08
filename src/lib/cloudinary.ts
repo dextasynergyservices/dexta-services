@@ -56,7 +56,10 @@ export function getCloudinaryPublicId(value: string) {
     const segments = uploadPath.split("/").filter(Boolean);
     let publicIdSegments = segments;
 
-    if (publicIdSegments[0]?.includes("_") || publicIdSegments[0]?.includes(",")) {
+    if (
+      publicIdSegments[0]?.includes("_") ||
+      publicIdSegments[0]?.includes(",")
+    ) {
       publicIdSegments = publicIdSegments.slice(1);
     }
 

@@ -49,7 +49,10 @@ export const CONTACT_SOCIAL_PLATFORM_META: Record<
 
 export const CONTACT_SOCIAL_PLATFORM_OPTIONS = (
   Object.entries(CONTACT_SOCIAL_PLATFORM_META) as Array<
-    [ContactSocialPlatform, (typeof CONTACT_SOCIAL_PLATFORM_META)[ContactSocialPlatform]]
+    [
+      ContactSocialPlatform,
+      (typeof CONTACT_SOCIAL_PLATFORM_META)[ContactSocialPlatform],
+    ]
   >
 ).map(([value, meta]) => ({
   value,

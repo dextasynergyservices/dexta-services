@@ -123,7 +123,8 @@ export function Footer({
             {socialLinks.length ? (
               <div className="flex gap-4 pt-4">
                 {socialLinks.map((social) => {
-                  const Icon = CONTACT_SOCIAL_PLATFORM_META[social.platform].icon;
+                  const Icon =
+                    CONTACT_SOCIAL_PLATFORM_META[social.platform].icon;
 
                   return (
                     <motion.a

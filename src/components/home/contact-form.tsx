@@ -1,7 +1,13 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { startTransition, useActionState, useEffect, useRef, useCallback } from "react";
+import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { submitContactForm } from "@/app/actions";
 import { Button } from "@/components/ui/button";
@@ -101,7 +107,9 @@ function ContactFormCard({ light = false }: { light?: boolean }) {
   const labelClass = light
     ? "block text-xs font-semibold uppercase tracking-[0.24em] text-[var(--dexta-primary)] mb-2"
     : "block text-xs font-mono tracking-wider text-gray-400 mb-2";
-  const errorClass = light ? "text-red-500 text-xs mt-2" : "text-red-400 text-xs mt-2";
+  const errorClass = light
+    ? "text-red-500 text-xs mt-2"
+    : "text-red-400 text-xs mt-2";
 
   return (
     <>
@@ -170,7 +178,7 @@ function ContactFormCard({ light = false }: { light?: boolean }) {
           </div>
           {state?.message && (
             <p
-              className={`text-sm ${state?.errors ? (light ? "text-red-500" : "text-red-400") : (light ? "text-green-600" : "text-green-400")}`}
+              className={`text-sm ${state?.errors ? (light ? "text-red-500" : "text-red-400") : light ? "text-green-600" : "text-green-400"}`}
             >
               {state.message}
             </p>

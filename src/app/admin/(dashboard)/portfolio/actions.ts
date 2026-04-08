@@ -76,9 +76,14 @@ function toLegacyPortfolioMutation(data: PortfolioItemInput) {
   };
 }
 
-async function deleteCloudinaryAsset(publicId: string, resourceType: "image" | "video") {
+async function deleteCloudinaryAsset(
+  publicId: string,
+  resourceType: "image" | "video",
+) {
   try {
-    await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
+    await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType,
+    });
   } catch {
     // Best-effort cleanup — do not block the DB delete
   }
@@ -131,7 +136,9 @@ function resolveCoverAssetPosition(
   }
 
   const assetPosition = galleryIndex + 1;
-  return assetPosition >= 0 && assetPosition < assets.length ? assetPosition : 0;
+  return assetPosition >= 0 && assetPosition < assets.length
+    ? assetPosition
+    : 0;
 }
 
 async function syncPortfolioAssets(
@@ -179,7 +186,7 @@ export async function getPortfolioItems(
   serviceType?: ServiceType,
 ): Promise<PortfolioItemRow[]> {
   try {
-    return await prisma.portfolioItem.findMany({
+    return (await prisma.portfolioItem.findMany({
       where: serviceType ? { serviceType } : undefined,
       orderBy: { position: "asc" },
       select: {
@@ -208,7 +215,7 @@ export async function getPortfolioItems(
         isVisible: true,
         position: true,
       },
-    }) as PortfolioItemRow[];
+    })) as PortfolioItemRow[];
   } catch (error) {
     console.warn("[Get Portfolio Items] Failed:", error);
     return [];
@@ -224,7 +231,11 @@ export async function getPortfolioFeaturedCounts(): Promise<
       where: { isFeatured: true },
       _count: true,
     });
-    const result: Record<ServiceType, number> = { DESIGN: 0, BUILD: 0, PRINT: 0 };
+    const result: Record<ServiceType, number> = {
+      DESIGN: 0,
+      BUILD: 0,
+      PRINT: 0,
+    };
     for (const row of counts) {
       result[row.serviceType as ServiceType] = row._count;
     }

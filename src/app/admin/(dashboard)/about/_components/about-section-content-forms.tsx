@@ -2,13 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  FileText,
-  Layers3,
-  Loader2,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
+import { FileText, Layers3, Loader2, ShieldCheck, Users } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -46,7 +40,9 @@ function SectionCard({
   return (
     <section className="rounded-2xl border border-[#222] bg-[#111] p-6">
       <div className="mb-6 flex items-start gap-3">
-        <div className="rounded-xl bg-cyan-500/10 p-2 text-cyan-400">{icon}</div>
+        <div className="rounded-xl bg-cyan-500/10 p-2 text-cyan-400">
+          {icon}
+        </div>
         <div>
           <h2 className="text-base font-semibold text-white">{title}</h2>
           <p className="mt-1 text-sm text-[#666]">{description}</p>
@@ -178,12 +174,19 @@ export function AboutStoryContentForm({ content }: SectionFormProps) {
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Section label</Label>
-            <Input className="border-[#2a2a2a] bg-[#0d0d0d] text-white" {...register("storyLabel")} />
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Section label
+            </Label>
+            <Input
+              className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
+              {...register("storyLabel")}
+            />
             <FieldError message={errors.storyLabel?.message} />
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Trusted label</Label>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Trusted label
+            </Label>
             <Input
               className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
               {...register("storyTrustedLabel")}
@@ -193,7 +196,9 @@ export function AboutStoryContentForm({ content }: SectionFormProps) {
         </div>
 
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Story title</Label>
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Story title
+          </Label>
           <Textarea
             rows={3}
             className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
@@ -204,7 +209,9 @@ export function AboutStoryContentForm({ content }: SectionFormProps) {
 
         <div className="grid gap-4 lg:grid-cols-2">
           <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Paragraph 1</Label>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Paragraph 1
+            </Label>
             <Textarea
               rows={6}
               className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
@@ -213,7 +220,9 @@ export function AboutStoryContentForm({ content }: SectionFormProps) {
             <FieldError message={errors.storyBody1?.message} />
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Paragraph 2</Label>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Paragraph 2
+            </Label>
             <Textarea
               rows={6}
               className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
@@ -225,7 +234,9 @@ export function AboutStoryContentForm({ content }: SectionFormProps) {
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Highlight label</Label>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Highlight label
+            </Label>
             <Input
               className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
               {...register("storyHighlightLabel")}
@@ -233,7 +244,9 @@ export function AboutStoryContentForm({ content }: SectionFormProps) {
             <FieldError message={errors.storyHighlightLabel?.message} />
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Highlight title</Label>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Highlight title
+            </Label>
             <Input
               className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
               {...register("storyHighlightTitle")}
@@ -243,7 +256,9 @@ export function AboutStoryContentForm({ content }: SectionFormProps) {
         </div>
 
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Highlight body</Label>
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Highlight body
+          </Label>
           <Textarea
             rows={4}
             className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
@@ -253,7 +268,9 @@ export function AboutStoryContentForm({ content }: SectionFormProps) {
         </div>
 
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Trusted items</Label>
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Trusted items
+          </Label>
           <Textarea
             rows={5}
             value={trustedItemsText}
@@ -328,7 +345,9 @@ export function AboutExpertiseContentForm({ content }: SectionFormProps) {
         icon={<Layers3 className="h-5 w-5" />}
       >
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Section label</Label>
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Section label
+          </Label>
           <Input
             className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
             {...register("expertiseLabel")}
@@ -432,7 +451,9 @@ export function AboutTeamSectionForm({ content }: SectionFormProps) {
       >
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Section label</Label>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Section label
+            </Label>
             <Input
               className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
               {...register("teamLabel")}
@@ -440,7 +461,9 @@ export function AboutTeamSectionForm({ content }: SectionFormProps) {
             <FieldError message={errors.teamLabel?.message} />
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Culture title</Label>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Culture title
+            </Label>
             <Input
               className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
               {...register("cultureTitle")}
@@ -450,7 +473,9 @@ export function AboutTeamSectionForm({ content }: SectionFormProps) {
         </div>
 
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Section title</Label>
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Section title
+          </Label>
           <Textarea
             rows={3}
             className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
@@ -460,7 +485,9 @@ export function AboutTeamSectionForm({ content }: SectionFormProps) {
         </div>
 
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Section body</Label>
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Section body
+          </Label>
           <Textarea
             rows={5}
             className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
@@ -470,7 +497,9 @@ export function AboutTeamSectionForm({ content }: SectionFormProps) {
         </div>
 
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Culture body</Label>
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Culture body
+          </Label>
           <Textarea
             rows={4}
             className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
@@ -481,7 +510,9 @@ export function AboutTeamSectionForm({ content }: SectionFormProps) {
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Team note label</Label>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Team note label
+            </Label>
             <Input
               className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
               {...register("teamNoteLabel")}
@@ -563,7 +594,9 @@ export function AboutValuesContentForm({ content }: SectionFormProps) {
         icon={<ShieldCheck className="h-5 w-5" />}
       >
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Section label</Label>
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Section label
+          </Label>
           <Input
             className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
             {...register("valuesLabel")}
@@ -669,7 +702,9 @@ export function AboutCtaContentForm({ content }: SectionFormProps) {
             <FieldError message={errors.ctaLabel?.message} />
           </div>
           <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Button text</Label>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Button text
+            </Label>
             <Input
               className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
               {...register("ctaText")}
@@ -699,7 +734,9 @@ export function AboutCtaContentForm({ content }: SectionFormProps) {
         </div>
 
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Button link</Label>
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Button link
+          </Label>
           <Input
             className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
             {...register("ctaHref")}

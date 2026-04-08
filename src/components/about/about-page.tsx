@@ -12,7 +12,11 @@ import {
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getCloudinaryUrl, isCloudinaryUrl, type TransformOptions } from "@/lib/cloudinary";
+import {
+  getCloudinaryUrl,
+  isCloudinaryUrl,
+  type TransformOptions,
+} from "@/lib/cloudinary";
 import type {
   AboutExpertiseItemData,
   AboutIconKey,
@@ -77,20 +81,24 @@ function AboutVisual({
   }
 
   return (
-    <Image
-      src={src}
-      alt={alt}
-      fill
-      priority={priority}
-      className={className}
-    />
+    <Image src={src} alt={alt} fill priority={priority} className={className} />
   );
 }
 
 function TeamPortrait({ member }: { member: AboutTeamMemberData }) {
   if (member.imagePublicId) {
-    const src = resolveImage(member.imagePublicId, HERO_IMAGE_FALLBACK, CARD_IMAGE_TRANSFORMS);
-    return <AboutVisual src={src} alt={member.name} className="h-full w-full object-cover" />;
+    const src = resolveImage(
+      member.imagePublicId,
+      HERO_IMAGE_FALLBACK,
+      CARD_IMAGE_TRANSFORMS,
+    );
+    return (
+      <AboutVisual
+        src={src}
+        alt={member.name}
+        className="h-full w-full object-cover"
+      />
+    );
   }
 
   return (
@@ -315,7 +323,9 @@ export function AboutPageView({
             <h2 className="mt-4 font-display text-4xl leading-tight tracking-[-0.04em] text-[var(--about-brand-deep)]">
               {content.teamTitle}
             </h2>
-            <p className="mt-5 text-base leading-8 text-[var(--about-brand-deep)]">{content.teamBody}</p>
+            <p className="mt-5 text-base leading-8 text-[var(--about-brand-deep)]">
+              {content.teamBody}
+            </p>
 
             <div className="mt-7 rounded-[24px] border border-[var(--about-brand)] bg-white p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--about-accent)]">
@@ -417,7 +427,9 @@ export function AboutPageView({
                   <h3 className="mt-6 text-xl font-semibold text-[var(--about-brand-deep)]">
                     {item.title}
                   </h3>
-                  <p className="mt-3 text-sm leading-7 text-[var(--about-brand-deep)]">{item.description}</p>
+                  <p className="mt-3 text-sm leading-7 text-[var(--about-brand-deep)]">
+                    {item.description}
+                  </p>
                 </article>
               );
             })}

@@ -26,7 +26,12 @@ export function OffersServicesSection({
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-4 motion-safe:duration-700 motion-reduce:animate-none">
-          <OffersSectionIntro label={label} title={title} body={body} align="left" />
+          <OffersSectionIntro
+            label={label}
+            title={title}
+            body={body}
+            align="left"
+          />
         </div>
 
         <div className="mt-12 grid gap-4 md:grid-cols-3">

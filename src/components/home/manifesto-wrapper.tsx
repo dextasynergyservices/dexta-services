@@ -16,9 +16,10 @@ const getCachedManifestoText = unstable_cache(
 );
 
 export default async function ManifestoWrapper() {
-  const text = await (process.env.NODE_ENV === "development"
-    ? fetchManifestoText()
-    : getCachedManifestoText()
+  const text = await (
+    process.env.NODE_ENV === "development"
+      ? fetchManifestoText()
+      : getCachedManifestoText()
   ).catch(() => DEFAULT_TEXT);
 
   return <TextParallaxSection text={text} />;

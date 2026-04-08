@@ -1,7 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "WebFetch(domain:www.bookprinta.com)"
-    ]
+    "allow": ["WebFetch(domain:www.bookprinta.com)"]
   }
 }

@@ -16,7 +16,10 @@ import {
   type PortfolioTabContentInput,
 } from "@/lib/validators";
 import type { ProjectsHeroRow, PortfolioTabRow, ServiceType } from "../actions";
-import { updateProjectsHeroContent, updatePortfolioTabContent } from "../actions";
+import {
+  updateProjectsHeroContent,
+  updatePortfolioTabContent,
+} from "../actions";
 
 // ─── Tab Config ───────────────────────────────────────────────────────────────
 
@@ -121,8 +124,6 @@ function HeroContentForm({ hero }: HeroContentFormProps) {
           The badge, headline, and CTA for the top of the portfolio page.
         </p>
         <div className="space-y-4">
-         
-
           <div>
             <Label className="mb-1.5 block text-xs text-[#888]">
               Headline (H1)
@@ -134,7 +135,9 @@ function HeroContentForm({ hero }: HeroContentFormProps) {
               {...register("headline")}
             />
             {errors.headline && (
-              <p className="mt-1 text-xs text-red-400">{errors.headline.message}</p>
+              <p className="mt-1 text-xs text-red-400">
+                {errors.headline.message}
+              </p>
             )}
           </div>
         </div>
@@ -142,7 +145,9 @@ function HeroContentForm({ hero }: HeroContentFormProps) {
 
       {/* ── Bottom CTA Section ───────────────────────────────────────── */}
       <div className="rounded-xl border border-[#222] bg-[#111] p-6">
-        <h3 className="mb-1 text-sm font-bold text-white">Bottom CTA Section</h3>
+        <h3 className="mb-1 text-sm font-bold text-white">
+          Bottom CTA Section
+        </h3>
         <p className="mb-5 text-xs text-[#555]">
           The call-to-action panel at the bottom of the portfolio page.
         </p>
@@ -208,7 +213,9 @@ function HeroContentForm({ hero }: HeroContentFormProps) {
                 {...register("ctaText")}
               />
               {errors.ctaText && (
-                <p className="mt-1 text-xs text-red-400">{errors.ctaText.message}</p>
+                <p className="mt-1 text-xs text-red-400">
+                  {errors.ctaText.message}
+                </p>
               )}
             </div>
             <div>
@@ -221,7 +228,9 @@ function HeroContentForm({ hero }: HeroContentFormProps) {
                 {...register("ctaHref")}
               />
               {errors.ctaHref && (
-                <p className="mt-1 text-xs text-red-400">{errors.ctaHref.message}</p>
+                <p className="mt-1 text-xs text-red-400">
+                  {errors.ctaHref.message}
+                </p>
               )}
             </div>
             <div>
@@ -234,7 +243,9 @@ function HeroContentForm({ hero }: HeroContentFormProps) {
                 {...register("cta2Text")}
               />
               {errors.cta2Text && (
-                <p className="mt-1 text-xs text-red-400">{errors.cta2Text.message}</p>
+                <p className="mt-1 text-xs text-red-400">
+                  {errors.cta2Text.message}
+                </p>
               )}
             </div>
             <div>
@@ -247,7 +258,9 @@ function HeroContentForm({ hero }: HeroContentFormProps) {
                 {...register("cta2Href")}
               />
               {errors.cta2Href && (
-                <p className="mt-1 text-xs text-red-400">{errors.cta2Href.message}</p>
+                <p className="mt-1 text-xs text-red-400">
+                  {errors.cta2Href.message}
+                </p>
               )}
             </div>
           </div>

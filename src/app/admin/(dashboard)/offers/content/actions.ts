@@ -37,8 +37,8 @@ function normalizeOffersPageContent(
     heroHeadline: data.heroHeadline,
     heroBody: data.heroBody,
     heroBgImagePublicId: data.heroBgImagePublicId
-      ? getCloudinaryPublicId(data.heroBgImagePublicId) ??
-        data.heroBgImagePublicId
+      ? (getCloudinaryPublicId(data.heroBgImagePublicId) ??
+        data.heroBgImagePublicId)
       : null,
     heroCtaText: data.heroCtaText,
     heroCtaHref: data.heroCtaHref,
@@ -66,7 +66,7 @@ function normalizeOffersPageContent(
 }
 
 function normalizeStoredHeroImageValue(value: string | null | undefined) {
-  return value ? getCloudinaryPublicId(value) ?? value : null;
+  return value ? (getCloudinaryPublicId(value) ?? value) : null;
 }
 
 function normalizeStoredHeroCtaText(value: string) {
@@ -96,7 +96,9 @@ export async function getOffersPageContent(): Promise<OffersPageContentRow> {
       heroEyebrow: row.heroEyebrow,
       heroHeadline: row.heroHeadline,
       heroBody: row.heroBody,
-      heroBgImagePublicId: normalizeStoredHeroImageValue(row.heroBgImagePublicId),
+      heroBgImagePublicId: normalizeStoredHeroImageValue(
+        row.heroBgImagePublicId,
+      ),
       heroCtaText: normalizeStoredHeroCtaText(row.heroCtaText),
       heroCtaHref: row.heroCtaHref,
       servicesSectionLabel: row.servicesSectionLabel,
@@ -145,7 +147,10 @@ export async function updateOffersPageContent(
     });
 
     revalidateOffersContent();
-    return { success: true, message: "Offers page content updated successfully" };
+    return {
+      success: true,
+      message: "Offers page content updated successfully",
+    };
   } catch (error) {
     console.error("[Update Offers Page Content]", error);
     return {

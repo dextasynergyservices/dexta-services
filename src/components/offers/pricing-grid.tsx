@@ -43,12 +43,11 @@ export function PricingGrid({
   }
 
   const isSinglePlan = plans.length === 1;
-  const gridCols =
-    isSinglePlan
-      ? "grid-cols-1"
-      : plans.length === 2
-        ? "grid-cols-1 lg:grid-cols-2"
-        : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
+  const gridCols = isSinglePlan
+    ? "grid-cols-1"
+    : plans.length === 2
+      ? "grid-cols-1 lg:grid-cols-2"
+      : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
 
   return (
     <div className="space-y-6">

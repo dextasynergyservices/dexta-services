@@ -61,7 +61,9 @@ function SectionCard({
   );
 }
 
-function buildDefaultValues(content: AboutPageContentRow): AboutHeroContentValues {
+function buildDefaultValues(
+  content: AboutPageContentRow,
+): AboutHeroContentValues {
   return {
     heroEyebrow: content.heroEyebrow,
     heroHeadline: content.heroHeadline,
@@ -74,7 +76,11 @@ function buildDefaultValues(content: AboutPageContentRow): AboutHeroContentValue
   };
 }
 
-export function AboutContentForm({ content }: { content: AboutPageContentRow }) {
+export function AboutContentForm({
+  content,
+}: {
+  content: AboutPageContentRow;
+}) {
   const {
     register,
     handleSubmit,

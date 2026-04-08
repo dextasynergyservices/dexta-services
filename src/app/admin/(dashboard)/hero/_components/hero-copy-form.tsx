@@ -80,8 +80,8 @@ export function HeroCopyForm({ content }: HeroCopyFormProps) {
       <div className="rounded-xl border border-[#222] bg-[#111] p-6">
         <h2 className="mb-1 text-sm font-semibold text-white">Hero Images</h2>
         <p className="mb-5 text-xs text-[#555]">
-          Upload via Cloudinary. Existing backend images will preview here so you
-          can see what is live before replacing it.
+          Upload via Cloudinary. Existing backend images will preview here so
+          you can see what is live before replacing it.
         </p>
         <div className="grid gap-6 sm:grid-cols-2">
           <div>

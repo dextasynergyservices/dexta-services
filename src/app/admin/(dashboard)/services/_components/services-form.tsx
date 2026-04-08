@@ -74,7 +74,8 @@ function ProjectSectionBackgroundForm({
     },
   });
 
-  const currentBackgroundImagePublicId = watch("backgroundImagePublicId") ?? null;
+  const currentBackgroundImagePublicId =
+    watch("backgroundImagePublicId") ?? null;
 
   const onSubmit = async (data: ProjectSectionBackgroundInput) => {
     const result = await updateProjectSectionBackgroundImage(data);
@@ -166,7 +167,10 @@ function ServiceCardForm({ service }: ServiceCardFormProps) {
       title: service.title,
       description: service.description,
       iconPublicId: service.iconPublicId,
-      cardColor: resolveProjectSectionCardColor(service.type, service.cardColor),
+      cardColor: resolveProjectSectionCardColor(
+        service.type,
+        service.cardColor,
+      ),
     },
   });
 
@@ -214,7 +218,9 @@ function ServiceCardForm({ service }: ServiceCardFormProps) {
           <Icon className="h-5 w-5" />
         </div>
         <div>
-          <h3 className={`text-sm font-bold ${config.accent}`}>{service.type}</h3>
+          <h3 className={`text-sm font-bold ${config.accent}`}>
+            {service.type}
+          </h3>
           <p className="text-xs text-[#555]">Project card settings</p>
         </div>
       </div>
@@ -288,9 +294,7 @@ function ServiceCardForm({ service }: ServiceCardFormProps) {
         </div>
 
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">
-            Card color
-          </Label>
+          <Label className="mb-1.5 block text-xs text-[#888]">Card color</Label>
           <div className="flex items-center gap-3">
             <input
               type="color"
@@ -311,7 +315,9 @@ function ServiceCardForm({ service }: ServiceCardFormProps) {
             />
           </div>
           {errors.cardColor && (
-            <p className="mt-1 text-xs text-red-400">{errors.cardColor.message}</p>
+            <p className="mt-1 text-xs text-red-400">
+              {errors.cardColor.message}
+            </p>
           )}
         </div>
 

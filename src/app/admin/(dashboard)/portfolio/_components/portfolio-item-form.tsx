@@ -47,7 +47,9 @@ interface PortfolioItemFormProps {
 
 const PRIMARY_COVER_SELECTION = "__PRIMARY__";
 
-function getInitialGalleryAssets(initialData?: PortfolioItemRow): PortfolioAssetInput[] {
+function getInitialGalleryAssets(
+  initialData?: PortfolioItemRow,
+): PortfolioAssetInput[] {
   if (!initialData?.assets?.length) {
     return [];
   }
@@ -56,7 +58,8 @@ function getInitialGalleryAssets(initialData?: PortfolioItemRow): PortfolioAsset
   const coverMatchesFirstAsset =
     firstAsset.publicId === initialData.mediaPublicId &&
     firstAsset.mediaType === initialData.mediaType &&
-    (firstAsset.thumbnailPublicId ?? null) === (initialData.thumbnailPublicId ?? null);
+    (firstAsset.thumbnailPublicId ?? null) ===
+      (initialData.thumbnailPublicId ?? null);
 
   const sourceAssets = coverMatchesFirstAsset ? restAssets : initialData.assets;
 
@@ -69,7 +72,9 @@ function getInitialGalleryAssets(initialData?: PortfolioItemRow): PortfolioAsset
   }));
 }
 
-function getInitialCoverAssetSelection(initialData?: PortfolioItemRow): string | null {
+function getInitialCoverAssetSelection(
+  initialData?: PortfolioItemRow,
+): string | null {
   if (!initialData?.assets?.length || !initialData.coverAssetId) {
     return null;
   }
@@ -140,7 +145,11 @@ export function PortfolioItemForm({
   );
   const tagsJson = watch("tags") ?? "[]";
   const tags: string[] = (() => {
-    try { return JSON.parse(tagsJson); } catch { return []; }
+    try {
+      return JSON.parse(tagsJson);
+    } catch {
+      return [];
+    }
   })();
 
   const addTag = () => {
@@ -208,15 +217,20 @@ export function PortfolioItemForm({
           ? {
               value: `gallery:${index}`,
               label: `Gallery item ${index + 1}`,
-              description: asset.mediaType === "VIDEO" ? "Video asset" : "Image asset",
+              description:
+                asset.mediaType === "VIDEO" ? "Video asset" : "Image asset",
             }
           : null,
       )
-      .filter((option): option is {
-        value: string;
-        label: string;
-        description: string;
-      } => option !== null),
+      .filter(
+        (
+          option,
+        ): option is {
+          value: string;
+          label: string;
+          description: string;
+        } => option !== null,
+      ),
   ];
 
   useEffect(() => {
@@ -244,7 +258,9 @@ export function PortfolioItemForm({
 
   return (
     <form
-      onSubmit={handleSubmit(async (data) => { await onSubmit(data); })}
+      onSubmit={handleSubmit(async (data) => {
+        await onSubmit(data);
+      })}
       className="max-h-[75vh] space-y-5 overflow-y-auto pr-1"
     >
       {/* Service type */}
@@ -259,7 +275,11 @@ export function PortfolioItemForm({
           </SelectTrigger>
           <SelectContent className="border-[#2a2a2a] bg-[#111]">
             {(["DESIGN", "BUILD", "PRINT"] as ServiceType[]).map((t) => (
-              <SelectItem key={t} value={t} className="text-white focus:bg-[#1a1a1a]">
+              <SelectItem
+                key={t}
+                value={t}
+                className="text-white focus:bg-[#1a1a1a]"
+              >
                 {t}
               </SelectItem>
             ))}
@@ -300,7 +320,9 @@ export function PortfolioItemForm({
             previewAlt={watch("title") || "Portfolio image"}
           />
           {errors.mediaPublicId && (
-            <p className="mt-1 text-xs text-red-400">{errors.mediaPublicId.message}</p>
+            <p className="mt-1 text-xs text-red-400">
+              {errors.mediaPublicId.message}
+            </p>
           )}
         </div>
       ) : (
@@ -324,7 +346,11 @@ export function PortfolioItemForm({
                 singleUploadAutoClose: true,
               }}
               onSuccess={(result) => {
-                if (typeof result.info === "object" && result.info !== null && "public_id" in result.info) {
+                if (
+                  typeof result.info === "object" &&
+                  result.info !== null &&
+                  "public_id" in result.info
+                ) {
                   setValue("mediaPublicId", result.info.public_id as string);
                   toast.success("Video uploaded successfully");
                 }
@@ -343,8 +369,12 @@ export function PortfolioItemForm({
                 >
                   {mediaPublicId ? (
                     <>
-                      <span className="text-xs font-mono truncate max-w-[90%]">{mediaPublicId}</span>
-                      <span className="text-xs text-[#555]">Click to replace</span>
+                      <span className="text-xs font-mono truncate max-w-[90%]">
+                        {mediaPublicId}
+                      </span>
+                      <span className="text-xs text-[#555]">
+                        Click to replace
+                      </span>
                     </>
                   ) : (
                     <span>Click to upload video</span>
@@ -353,7 +383,9 @@ export function PortfolioItemForm({
               )}
             </CldUploadWidget>
             {errors.mediaPublicId && (
-              <p className="mt-1 text-xs text-red-400">{errors.mediaPublicId.message}</p>
+              <p className="mt-1 text-xs text-red-400">
+                {errors.mediaPublicId.message}
+              </p>
             )}
           </div>
 
@@ -376,7 +408,8 @@ export function PortfolioItemForm({
               </p>
             ) : (
               <p className="mt-1 text-xs text-[#555]">
-                Every video needs a thumbnail so the project viewer has a proper preview frame.
+                Every video needs a thumbnail so the project viewer has a proper
+                preview frame.
               </p>
             )}
           </div>
@@ -388,7 +421,8 @@ export function PortfolioItemForm({
           <div>
             <Label className="block text-xs text-[#888]">Project gallery</Label>
             <p className="mt-1 text-xs text-[#555]">
-              Add extra images and videos for this project. The main media above is always included in the project gallery.
+              Add extra images and videos for this project. The main media above
+              is always included in the project gallery.
             </p>
           </div>
           <div className="flex gap-2">
@@ -466,7 +500,10 @@ export function PortfolioItemForm({
                         syncGalleryAssets((current) => {
                           if (index === 0) return current;
                           const next = [...current];
-                          [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                          [next[index - 1], next[index]] = [
+                            next[index],
+                            next[index - 1],
+                          ];
                           return next;
                         })
                       }
@@ -482,7 +519,10 @@ export function PortfolioItemForm({
                         syncGalleryAssets((current) => {
                           if (index === current.length - 1) return current;
                           const next = [...current];
-                          [next[index], next[index + 1]] = [next[index + 1], next[index]];
+                          [next[index], next[index + 1]] = [
+                            next[index + 1],
+                            next[index],
+                          ];
                           return next;
                         })
                       }
@@ -496,7 +536,9 @@ export function PortfolioItemForm({
                       type="button"
                       onClick={() =>
                         syncGalleryAssets((current) =>
-                          current.filter((_, assetIndex) => assetIndex !== index),
+                          current.filter(
+                            (_, assetIndex) => assetIndex !== index,
+                          ),
                         )
                       }
                       className="rounded p-1.5 text-[#666] transition-colors hover:bg-red-950/30 hover:text-red-400"
@@ -509,20 +551,26 @@ export function PortfolioItemForm({
 
                 {asset.mediaType === "IMAGE" ? (
                   <div>
-                    <Label className="mb-1.5 block text-xs text-[#888]">Image asset</Label>
+                    <Label className="mb-1.5 block text-xs text-[#888]">
+                      Image asset
+                    </Label>
                     <ImageUpload
                       value={asset.publicId || undefined}
                       onChange={(id) =>
                         syncGalleryAssets((current) =>
                           current.map((entry, assetIndex) =>
-                            assetIndex === index ? { ...entry, publicId: id } : entry,
+                            assetIndex === index
+                              ? { ...entry, publicId: id }
+                              : entry,
                           ),
                         )
                       }
                       onRemove={() =>
                         syncGalleryAssets((current) =>
                           current.map((entry, assetIndex) =>
-                            assetIndex === index ? { ...entry, publicId: "" } : entry,
+                            assetIndex === index
+                              ? { ...entry, publicId: "" }
+                              : entry,
                           ),
                         )
                       }
@@ -533,11 +581,14 @@ export function PortfolioItemForm({
                 ) : (
                   <div className="space-y-3">
                     <div>
-                      <Label className="mb-1.5 block text-xs text-[#888]">Video asset</Label>
+                      <Label className="mb-1.5 block text-xs text-[#888]">
+                        Video asset
+                      </Label>
                       <CldUploadWidget
                         config={{
                           cloud: {
-                            cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+                            cloudName:
+                              process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
                             apiKey: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
                           },
                         }}
@@ -586,7 +637,9 @@ export function PortfolioItemForm({
                                 <span className="max-w-[90%] truncate text-xs font-mono">
                                   {asset.publicId}
                                 </span>
-                                <span className="text-xs text-[#555]">Click to replace</span>
+                                <span className="text-xs text-[#555]">
+                                  Click to replace
+                                </span>
                               </>
                             ) : (
                               <span>Click to upload video</span>
@@ -664,12 +717,14 @@ export function PortfolioItemForm({
           </Label>
           {featurePreviewOptions.length <= 1 ? (
             <p className="mt-2 text-xs leading-6 text-[#555]">
-              This project currently has one usable media item, so it will be picked automatically anywhere the project is featured.
+              This project currently has one usable media item, so it will be
+              picked automatically anywhere the project is featured.
             </p>
           ) : (
             <>
               <p className="mt-2 text-xs leading-6 text-[#555]">
-                Choose which image or video should represent this project on the homepage and project cards.
+                Choose which image or video should represent this project on the
+                homepage and project cards.
               </p>
               <Select
                 value={coverAssetId ?? PRIMARY_COVER_SELECTION}
@@ -702,7 +757,9 @@ export function PortfolioItemForm({
 
       {/* Title */}
       <div>
-        <Label htmlFor="pf-title" className="mb-1.5 block text-xs text-[#888]">Title</Label>
+        <Label htmlFor="pf-title" className="mb-1.5 block text-xs text-[#888]">
+          Title
+        </Label>
         <Input
           id="pf-title"
           placeholder="e.g. Brand Identity Suite"
@@ -733,8 +790,12 @@ export function PortfolioItemForm({
 
       {serviceType === "BUILD" ? (
         <div>
-          <Label htmlFor="pf-website" className="mb-1.5 block text-xs text-[#888]">
-            Project link <span className="text-[#555]">(for build projects)</span>
+          <Label
+            htmlFor="pf-website"
+            className="mb-1.5 block text-xs text-[#888]"
+          >
+            Project link{" "}
+            <span className="text-[#555]">(for build projects)</span>
           </Label>
           <Input
             id="pf-website"
@@ -744,10 +805,13 @@ export function PortfolioItemForm({
             {...register("websiteUrl")}
           />
           {errors.websiteUrl ? (
-            <p className="mt-1 text-xs text-red-400">{errors.websiteUrl.message}</p>
+            <p className="mt-1 text-xs text-red-400">
+              {errors.websiteUrl.message}
+            </p>
           ) : (
             <p className="mt-1 text-xs text-[#555]">
-              This link powers the public "Visit Website" button in the project viewer.
+              This link powers the public "Visit Website" button in the project
+              viewer.
             </p>
           )}
         </div>
@@ -762,7 +826,12 @@ export function PortfolioItemForm({
           <Input
             value={tagInput}
             onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addTag();
+              }
+            }}
             placeholder="e.g. Branding"
             className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444] focus-visible:border-cyan-500/50 focus-visible:ring-cyan-500/20"
           />

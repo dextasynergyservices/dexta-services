@@ -44,8 +44,8 @@ export function ManifestoForm({ text }: ManifestoFormProps) {
         </h2>
         <p className="mb-5 text-xs text-[#555]">
           This text reveals word-by-word as the visitor scrolls through the
-          manifesto section on the homepage. Write it as a single bold
-          statement — all caps is applied automatically.
+          manifesto section on the homepage. Write it as a single bold statement
+          — all caps is applied automatically.
         </p>
 
         <div className="space-y-2">
@@ -74,7 +74,9 @@ export function ManifestoForm({ text }: ManifestoFormProps) {
           <p className="mb-2 text-xs text-[#555]">Preview</p>
           <p className="text-sm font-black leading-snug tracking-tight text-[#333]">
             {currentText || (
-              <span className="text-[#2a2a2a]">Your statement will appear here…</span>
+              <span className="text-[#2a2a2a]">
+                Your statement will appear here…
+              </span>
             )}
           </p>
         </div>

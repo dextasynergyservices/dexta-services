@@ -83,7 +83,9 @@ export function OffersAudienceTabs({
 
         <Tabs
           value={activeAudience}
-          onValueChange={(value) => onAudienceChange(value as OffersAudienceSlug)}
+          onValueChange={(value) =>
+            onAudienceChange(value as OffersAudienceSlug)
+          }
           className="mt-10 gap-10 sm:mt-12"
         >
           <TabsList

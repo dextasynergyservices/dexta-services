@@ -1,13 +1,11 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getCloudinaryPublicId } from "@/lib/cloudinary";
-import {
-  OFFERS_AUDIENCES_TAG,
-  OFFERS_GROUPS_TAG,
-} from "@/lib/offers-cache";
+import { OFFERS_AUDIENCES_TAG, OFFERS_GROUPS_TAG } from "@/lib/offers-cache";
 import {
   OFFERS_AUDIENCE_DEFAULTS,
   OFFERS_AUDIENCE_ORDER,
@@ -175,7 +173,9 @@ async function getNextOfferPositionRaw(groupId: string): Promise<number> {
   return Number(rows[0]?.nextPosition ?? 0);
 }
 
-async function getNextBillingOptionPositionRaw(planId: string): Promise<number> {
+async function getNextBillingOptionPositionRaw(
+  planId: string,
+): Promise<number> {
   const rows = await prisma.$queryRaw<Array<{ nextPosition: number | bigint }>>`
     SELECT COALESCE(MAX("position"), -1) + 1 AS "nextPosition"
     FROM "PlanBillingOption"
@@ -219,7 +219,7 @@ async function createOfferGroupRaw(
       "updatedAt"
     )
     VALUES (
-      ${crypto.randomUUID()},
+      ${randomUUID()},
       CAST(${audienceType} AS "AudienceType"),
       ${data.name},
       ${data.description ?? null},
@@ -270,13 +270,15 @@ async function createPricingPlanRaw(groupId: string, data: PricingPlanInput) {
       "updatedAt"
     )
     VALUES (
-      ${crypto.randomUUID()},
+      ${randomUUID()},
       ${groupId},
       ${data.name},
       ${data.subtitle ?? null},
-      ${data.imagePublicId
-        ? getCloudinaryPublicId(data.imagePublicId) ?? data.imagePublicId
-        : null},
+      ${
+        data.imagePublicId
+          ? (getCloudinaryPublicId(data.imagePublicId) ?? data.imagePublicId)
+          : null
+      },
       ${serializeJsonStringArray(parseJsonStringArray(data.features))},
       ${data.billingEnabled},
       ${data.isHighlighted},
@@ -296,9 +298,11 @@ async function updatePricingPlanRaw(id: string, data: PricingPlanInput) {
     SET
       "name" = ${data.name},
       "subtitle" = ${data.subtitle ?? null},
-      "imagePublicId" = ${data.imagePublicId
-        ? getCloudinaryPublicId(data.imagePublicId) ?? data.imagePublicId
-        : null},
+      "imagePublicId" = ${
+        data.imagePublicId
+          ? (getCloudinaryPublicId(data.imagePublicId) ?? data.imagePublicId)
+          : null
+      },
       "features" = ${serializeJsonStringArray(parseJsonStringArray(data.features))},
       "billingEnabled" = ${data.billingEnabled},
       "isHighlighted" = ${data.isHighlighted},
@@ -319,8 +323,9 @@ async function deletePricingPlanRaw(id: string) {
 
 async function reorderPricingPlansRaw(groupId: string, orderedIds: string[]) {
   await prisma.$transaction(
-    orderedIds.map((planId, index) =>
-      prisma.$executeRaw`
+    orderedIds.map(
+      (planId, index) =>
+        prisma.$executeRaw`
         UPDATE "PricingPlan"
         SET "position" = ${index}, "updatedAt" = NOW()
         WHERE "id" = ${planId} AND "offerGroupId" = ${groupId}
@@ -355,7 +360,7 @@ async function createBillingOptionRaw(
       "updatedAt"
     )
     VALUES (
-      ${crypto.randomUUID()},
+      ${randomUUID()},
       ${planId},
       CAST(${data.duration} AS "BillingDuration"),
       ${data.priceNGN ?? null},
@@ -369,7 +374,10 @@ async function createBillingOptionRaw(
   `;
 }
 
-async function updateBillingOptionRaw(id: string, data: PlanBillingOptionInput) {
+async function updateBillingOptionRaw(
+  id: string,
+  data: PlanBillingOptionInput,
+) {
   const rows = await prisma.$queryRaw<Array<{ planId: string }>>`
     SELECT "planId"
     FROM "PlanBillingOption"
@@ -564,7 +572,7 @@ async function readOfferGroupsViaSql(): Promise<OfferGroupRow[]> {
       name: offer.name,
       subtitle: offer.subtitle ?? null,
       imagePublicId: offer.imagePublicId
-        ? getCloudinaryPublicId(offer.imagePublicId) ?? offer.imagePublicId
+        ? (getCloudinaryPublicId(offer.imagePublicId) ?? offer.imagePublicId)
         : null,
       features: parseJsonStringArray(offer.features),
       billingEnabled: offer.billingEnabled,
@@ -637,18 +645,31 @@ export async function getAudienceSettings(): Promise<AudienceRow[]> {
 
     const rows = await client.audience.findMany({
       orderBy: { type: "asc" },
-      select: { type: true, tabLabel: true, emptyTitle: true, emptyBody: true, color: true, isVisible: true, updatedAt: true },
+      select: {
+        type: true,
+        tabLabel: true,
+        emptyTitle: true,
+        emptyBody: true,
+        color: true,
+        isVisible: true,
+        updatedAt: true,
+      },
     });
-    const rowMap = new Map(rows.map((r) => [r.type as OffersAudienceType, r as AudienceRow]));
-    return OFFERS_AUDIENCE_ORDER.map((type) => rowMap.get(type) ?? {
-      type,
-      tabLabel: OFFERS_AUDIENCE_DEFAULTS[type].tabLabel,
-      emptyTitle: OFFERS_AUDIENCE_DEFAULTS[type].emptyTitle,
-      emptyBody: OFFERS_AUDIENCE_DEFAULTS[type].emptyBody,
-      color: OFFERS_AUDIENCE_DEFAULTS[type].color as AudienceRow["color"],
-      isVisible: OFFERS_AUDIENCE_DEFAULTS[type].isVisible,
-      updatedAt: new Date(0),
-    });
+    const rowMap = new Map(
+      rows.map((r) => [r.type as OffersAudienceType, r as AudienceRow]),
+    );
+    return OFFERS_AUDIENCE_ORDER.map(
+      (type) =>
+        rowMap.get(type) ?? {
+          type,
+          tabLabel: OFFERS_AUDIENCE_DEFAULTS[type].tabLabel,
+          emptyTitle: OFFERS_AUDIENCE_DEFAULTS[type].emptyTitle,
+          emptyBody: OFFERS_AUDIENCE_DEFAULTS[type].emptyBody,
+          color: OFFERS_AUDIENCE_DEFAULTS[type].color as AudienceRow["color"],
+          isVisible: OFFERS_AUDIENCE_DEFAULTS[type].isVisible,
+          updatedAt: new Date(0),
+        },
+    );
   } catch (error) {
     if (isOffersSchemaMismatch(error)) {
       try {
@@ -762,7 +783,15 @@ export async function getOfferGroups(): Promise<OfferGroupRow[]> {
             updatedAt: true,
             billingOptions: {
               orderBy: { position: "asc" },
-              select: { id: true, duration: true, priceNGN: true, priceUSD: true, label: true, isDefault: true, position: true },
+              select: {
+                id: true,
+                duration: true,
+                priceNGN: true,
+                priceUSD: true,
+                label: true,
+                isDefault: true,
+                position: true,
+              },
             },
           },
         },
@@ -776,12 +805,15 @@ export async function getOfferGroups(): Promise<OfferGroupRow[]> {
         ...p,
         subtitle: p.subtitle ?? null,
         imagePublicId: p.imagePublicId
-          ? getCloudinaryPublicId(p.imagePublicId) ?? p.imagePublicId
+          ? (getCloudinaryPublicId(p.imagePublicId) ?? p.imagePublicId)
           : null,
         features: parseJsonStringArray(p.features),
         highlightBgColor: p.highlightBgColor ?? null,
         highlightTextColor: p.highlightTextColor ?? null,
-        billingOptions: p.billingOptions.map((o) => ({ ...o, label: o.label ?? null })),
+        billingOptions: p.billingOptions.map((o) => ({
+          ...o,
+          label: o.label ?? null,
+        })),
       })),
     }));
   } catch (error) {
@@ -819,7 +851,11 @@ export async function createOfferGroup(
       return { success: true, message: "Offer group created." };
     }
 
-    const last = await client.offerGroup.findFirst({ where: { audienceType }, orderBy: { position: "desc" }, select: { position: true } });
+    const last = await client.offerGroup.findFirst({
+      where: { audienceType },
+      orderBy: { position: "desc" },
+      select: { position: true },
+    });
     await client.offerGroup.create({
       data: {
         audienceType,
@@ -851,7 +887,10 @@ export async function createOfferGroup(
   }
 }
 
-export async function updateOfferGroup(id: string, data: OfferGroupInput): Promise<ActionResult> {
+export async function updateOfferGroup(
+  id: string,
+  data: OfferGroupInput,
+): Promise<ActionResult> {
   const parsed = offerGroupSchema.safeParse(data);
   if (!parsed.success) {
     return {
@@ -871,7 +910,11 @@ export async function updateOfferGroup(id: string, data: OfferGroupInput): Promi
 
     await client.offerGroup.update({
       where: { id },
-      data: { name: parsed.data.name, description: parsed.data.description ?? null, isVisible: parsed.data.isVisible },
+      data: {
+        name: parsed.data.name,
+        description: parsed.data.description ?? null,
+        isVisible: parsed.data.isVisible,
+      },
     });
     revalidateOffers();
     return { success: true, message: "Offer group updated." };
@@ -930,7 +973,10 @@ export async function deleteOfferGroup(id: string): Promise<ActionResult> {
 
 // ── Pricing plans ─────────────────────────────────────────────────────────────
 
-export async function createPricingPlan(groupId: string, data: PricingPlanInput): Promise<ActionResult> {
+export async function createPricingPlan(
+  groupId: string,
+  data: PricingPlanInput,
+): Promise<ActionResult> {
   const parsed = pricingPlanSchema.safeParse(data);
   if (!parsed.success) {
     return {
@@ -948,17 +994,23 @@ export async function createPricingPlan(groupId: string, data: PricingPlanInput)
       return { success: true, message: "Offer created." };
     }
 
-    const last = await client.pricingPlan.findFirst({ where: { offerGroupId: groupId }, orderBy: { position: "desc" }, select: { position: true } });
+    const last = await client.pricingPlan.findFirst({
+      where: { offerGroupId: groupId },
+      orderBy: { position: "desc" },
+      select: { position: true },
+    });
     await client.pricingPlan.create({
       data: {
         offerGroupId: groupId,
         name: parsed.data.name,
         subtitle: parsed.data.subtitle ?? null,
         imagePublicId: parsed.data.imagePublicId
-          ? getCloudinaryPublicId(parsed.data.imagePublicId) ??
-            parsed.data.imagePublicId
+          ? (getCloudinaryPublicId(parsed.data.imagePublicId) ??
+            parsed.data.imagePublicId)
           : null,
-        features: serializeJsonStringArray(parseJsonStringArray(parsed.data.features)),
+        features: serializeJsonStringArray(
+          parseJsonStringArray(parsed.data.features),
+        ),
         billingEnabled: parsed.data.billingEnabled,
         isHighlighted: parsed.data.isHighlighted,
         highlightBgColor: parsed.data.highlightBgColor ?? null,
@@ -989,7 +1041,10 @@ export async function createPricingPlan(groupId: string, data: PricingPlanInput)
   }
 }
 
-export async function updatePricingPlan(id: string, data: PricingPlanInput): Promise<ActionResult> {
+export async function updatePricingPlan(
+  id: string,
+  data: PricingPlanInput,
+): Promise<ActionResult> {
   const parsed = pricingPlanSchema.safeParse(data);
   if (!parsed.success) {
     return {
@@ -1013,10 +1068,12 @@ export async function updatePricingPlan(id: string, data: PricingPlanInput): Pro
         name: parsed.data.name,
         subtitle: parsed.data.subtitle ?? null,
         imagePublicId: parsed.data.imagePublicId
-          ? getCloudinaryPublicId(parsed.data.imagePublicId) ??
-            parsed.data.imagePublicId
+          ? (getCloudinaryPublicId(parsed.data.imagePublicId) ??
+            parsed.data.imagePublicId)
           : null,
-        features: serializeJsonStringArray(parseJsonStringArray(parsed.data.features)),
+        features: serializeJsonStringArray(
+          parseJsonStringArray(parsed.data.features),
+        ),
         billingEnabled: parsed.data.billingEnabled,
         isHighlighted: parsed.data.isHighlighted,
         highlightBgColor: parsed.data.highlightBgColor ?? null,
@@ -1079,7 +1136,10 @@ export async function deletePricingPlan(id: string): Promise<ActionResult> {
   }
 }
 
-export async function reorderPlans(groupId: string, orderedIds: string[]): Promise<ActionResult> {
+export async function reorderPlans(
+  groupId: string,
+  orderedIds: string[],
+): Promise<ActionResult> {
   try {
     const client = getOffersPrisma();
     await requireAuth();
@@ -1090,7 +1150,12 @@ export async function reorderPlans(groupId: string, orderedIds: string[]): Promi
     }
 
     await prisma.$transaction(
-      orderedIds.map((planId, index) => client.pricingPlan!.update({ where: { id: planId }, data: { position: index } })),
+      orderedIds.map((planId, index) =>
+        client.pricingPlan!.update({
+          where: { id: planId },
+          data: { position: index },
+        }),
+      ),
     );
     revalidateOffers();
     return { success: true, message: "Offers reordered." };
@@ -1116,7 +1181,10 @@ export async function reorderPlans(groupId: string, orderedIds: string[]): Promi
 
 // ── Billing options ───────────────────────────────────────────────────────────
 
-export async function createBillingOption(planId: string, data: PlanBillingOptionInput): Promise<ActionResult> {
+export async function createBillingOption(
+  planId: string,
+  data: PlanBillingOptionInput,
+): Promise<ActionResult> {
   const parsed = planBillingOptionSchema.safeParse(data);
   if (!parsed.success) {
     return {
@@ -1134,9 +1202,16 @@ export async function createBillingOption(planId: string, data: PlanBillingOptio
       return { success: true, message: "Billing option added." };
     }
 
-    const last = await client.planBillingOption.findFirst({ where: { planId }, orderBy: { position: "desc" }, select: { position: true } });
+    const last = await client.planBillingOption.findFirst({
+      where: { planId },
+      orderBy: { position: "desc" },
+      select: { position: true },
+    });
     if (parsed.data.isDefault) {
-      await client.planBillingOption.updateMany({ where: { planId }, data: { isDefault: false } });
+      await client.planBillingOption.updateMany({
+        where: { planId },
+        data: { isDefault: false },
+      });
     }
     await client.planBillingOption.create({
       data: {
@@ -1171,7 +1246,10 @@ export async function createBillingOption(planId: string, data: PlanBillingOptio
   }
 }
 
-export async function updateBillingOption(id: string, data: PlanBillingOptionInput): Promise<ActionResult> {
+export async function updateBillingOption(
+  id: string,
+  data: PlanBillingOptionInput,
+): Promise<ActionResult> {
   const parsed = planBillingOptionSchema.safeParse(data);
   if (!parsed.success) {
     return {
@@ -1189,10 +1267,17 @@ export async function updateBillingOption(id: string, data: PlanBillingOptionInp
       return { success: true, message: "Billing option updated." };
     }
 
-    const existing = await client.planBillingOption.findUnique({ where: { id }, select: { planId: true } });
-    if (!existing) return { success: false, message: "Billing option not found." };
+    const existing = await client.planBillingOption.findUnique({
+      where: { id },
+      select: { planId: true },
+    });
+    if (!existing)
+      return { success: false, message: "Billing option not found." };
     if (parsed.data.isDefault) {
-      await client.planBillingOption.updateMany({ where: { planId: existing.planId }, data: { isDefault: false } });
+      await client.planBillingOption.updateMany({
+        where: { planId: existing.planId },
+        data: { isDefault: false },
+      });
     }
     await client.planBillingOption.update({
       where: { id },

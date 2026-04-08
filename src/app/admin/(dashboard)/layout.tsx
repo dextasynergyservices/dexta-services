@@ -15,7 +15,9 @@ export default async function DashboardLayout({
   let unreadContactMessages = 0;
 
   try {
-    const rows = await prisma.$queryRaw<Array<{ count: bigint | number | string }>>(Prisma.sql`
+    const rows = await prisma.$queryRaw<
+      Array<{ count: bigint | number | string }>
+    >(Prisma.sql`
       SELECT COUNT(*)::bigint AS count
       FROM "ContactMessage"
       WHERE "isRead" = FALSE
@@ -27,7 +29,7 @@ export default async function DashboardLayout({
         ? Number(rawCount)
         : typeof rawCount === "string"
           ? Number(rawCount) || 0
-          : rawCount ?? 0;
+          : (rawCount ?? 0);
   } catch {
     try {
       unreadContactMessages = await prisma.contactMessage.count();

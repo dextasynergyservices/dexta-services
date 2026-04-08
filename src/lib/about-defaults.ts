@@ -95,7 +95,8 @@ export type AboutValueItemData = {
 
 export const ABOUT_PAGE_CONTENT_DEFAULTS: AboutPageContentData = {
   heroEyebrow: "About Dexta",
-  heroHeadline: "We build brand clarity, digital confidence, and public presence that lasts.",
+  heroHeadline:
+    "We build brand clarity, digital confidence, and public presence that lasts.",
   heroBody:
     "Dexta is a design-led creative and digital studio helping ambitious businesses, schools, and institutions communicate with more precision. We bring strategy, design, build, and rollout into one connected system so every touchpoint feels intentional.",
   heroBackgroundImagePublicId: null,
@@ -112,7 +113,8 @@ export const ABOUT_PAGE_CONTENT_DEFAULTS: AboutPageContentData = {
   heroStat4Value: "50+",
   heroStat4Label: "Brands and teams supported",
   storyLabel: "Our Story",
-  storyTitle: "A modern studio built to help good ideas look sharper and move faster.",
+  storyTitle:
+    "A modern studio built to help good ideas look sharper and move faster.",
   storyBody1:
     "Dexta started from a simple belief: strong organisations deserve better creative thinking, cleaner execution, and a more credible public-facing presence. We built the studio to bridge the usual gaps between strategy, design, digital delivery, and print rollout.",
   storyBody2:
@@ -124,11 +126,13 @@ export const ABOUT_PAGE_CONTENT_DEFAULTS: AboutPageContentData = {
   storyTrustedLabel: "Trusted across",
   storyTrustedItems: ["Business", "Education", "Healthcare", "Community"],
   expertiseLabel: "What We Bring",
-  expertiseTitle: "Integrated expertise across strategy, design, digital, and rollout.",
+  expertiseTitle:
+    "Integrated expertise across strategy, design, digital, and rollout.",
   expertiseBody:
     "Our work is strongest when every layer supports the next. That means the brand, the product, and the public presence all move in the same direction.",
   teamLabel: "Our Team",
-  teamTitle: "The people shaping the thinking, systems, and execution behind the work.",
+  teamTitle:
+    "The people shaping the thinking, systems, and execution behind the work.",
   teamBody:
     "We are a multidisciplinary team built around clarity, collaboration, and standards that hold up beyond launch day.",
   cultureTitle: "How We Work",
@@ -137,11 +141,13 @@ export const ABOUT_PAGE_CONTENT_DEFAULTS: AboutPageContentData = {
   teamNoteLabel: "Professional note",
   teamPortfolioButtonText: "View Portfolio",
   valuesLabel: "Our Values",
-  valuesTitle: "The principles that define how Dexta thinks, builds, and partners.",
+  valuesTitle:
+    "The principles that define how Dexta thinks, builds, and partners.",
   valuesBody:
     "These values guide our decisions across strategy, design, development, and the way we show up for the people we work with.",
   ctaLabel: "Let’s build something deliberate.",
-  ctaTitle: "If you need work that feels clearer, stronger, and more joined up, we should talk.",
+  ctaTitle:
+    "If you need work that feels clearer, stronger, and more joined up, we should talk.",
   ctaBody:
     "Tell us what you are building, where you feel stuck, and what kind of presence you want to create. We will help shape the next move.",
   ctaText: "Book a Discovery Call",
@@ -232,7 +238,8 @@ export const ABOUT_TEAM_MEMBER_DEFAULTS: AboutTeamMemberData[] = [
     role: "Creative Director",
     bio: "Daniel leads brand direction, visual systems, and the creative decisions that give each Dexta project its edge and clarity.",
     expertise: ["Brand Systems", "Creative Direction", "Design Leadership"],
-    funFact: "Known for turning scattered ideas into clear, high-conviction creative systems.",
+    funFact:
+      "Known for turning scattered ideas into clear, high-conviction creative systems.",
     portfolioUrl: "/projects",
     showPortfolioButton: true,
     imagePublicId: null,
@@ -244,7 +251,8 @@ export const ABOUT_TEAM_MEMBER_DEFAULTS: AboutTeamMemberData[] = [
     role: "Technical Lead",
     bio: "Alison leads technical architecture and delivery, translating design ambition into dependable digital products and platforms.",
     expertise: ["Architecture", "Product Delivery", "Engineering Systems"],
-    funFact: "Focused on building digital experiences that stay elegant under real-world pressure.",
+    funFact:
+      "Focused on building digital experiences that stay elegant under real-world pressure.",
     portfolioUrl: "/projects",
     showPortfolioButton: true,
     imagePublicId: null,
@@ -268,7 +276,8 @@ export const ABOUT_TEAM_MEMBER_DEFAULTS: AboutTeamMemberData[] = [
     role: "Product Engineer",
     bio: "Temi focuses on clean implementation, frontend systems, and digital experiences that feel fast, polished, and robust.",
     expertise: ["Frontend Systems", "Performance", "Experience Quality"],
-    funFact: "Obsessed with the details that make digital products feel effortless to use.",
+    funFact:
+      "Obsessed with the details that make digital products feel effortless to use.",
     portfolioUrl: "/projects",
     showPortfolioButton: true,
     imagePublicId: null,

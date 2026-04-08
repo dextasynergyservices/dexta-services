@@ -146,9 +146,10 @@ function getContainUrl(publicId: string) {
 }
 
 function getThumbUrl(item: GalleryItem) {
-  const srcId = item.mediaType === "VIDEO"
-    ? (item.thumbnailPublicId ?? item.publicId)
-    : item.publicId;
+  const srcId =
+    item.mediaType === "VIDEO"
+      ? (item.thumbnailPublicId ?? item.publicId)
+      : item.publicId;
   return getImageUrl(srcId, 160, 160);
 }
 
@@ -182,7 +183,9 @@ function getTabMeta(activeTab: PortfolioTab) {
 }
 
 function getGalleryItemLabel(item: GalleryItem, index: number) {
-  return item.mediaType === "VIDEO" ? `Video ${index + 1}` : `Image ${index + 1}`;
+  return item.mediaType === "VIDEO"
+    ? `Video ${index + 1}`
+    : `Image ${index + 1}`;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -212,7 +215,9 @@ export default function ProjectPage({
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
+    null,
+  );
   const [activeAssetIndex, setActiveAssetIndex] = useState(0);
   const [imageZoom, setImageZoom] = useState(1);
 
@@ -246,17 +251,27 @@ export default function ProjectPage({
   );
 
   const selectedProject =
-    filteredProjects.find((project) => project.id === selectedProjectId) ?? null;
+    filteredProjects.find((project) => project.id === selectedProjectId) ??
+    null;
 
   const gallery = selectedProject ? getProjectGallery(selectedProject) : [];
-  const safeAssetIndex = Math.min(activeAssetIndex, Math.max(0, gallery.length - 1));
+  const safeAssetIndex = Math.min(
+    activeAssetIndex,
+    Math.max(0, gallery.length - 1),
+  );
   const activeAsset = gallery[safeAssetIndex] ?? null;
 
   // Scroll active thumbnail into view
   useEffect(() => {
     if (!thumbStripRef.current) return;
-    const active = thumbStripRef.current.children[safeAssetIndex] as HTMLElement | undefined;
-    active?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    const active = thumbStripRef.current.children[safeAssetIndex] as
+      | HTMLElement
+      | undefined;
+    active?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
   }, [safeAssetIndex]);
 
   useEffect(() => {
@@ -269,7 +284,9 @@ export default function ProjectPage({
 
   useEffect(() => {
     if (!selectedProjectId) return;
-    const stillExists = filteredProjects.some((p) => p.id === selectedProjectId);
+    const stillExists = filteredProjects.some(
+      (p) => p.id === selectedProjectId,
+    );
     if (!stillExists) {
       setSelectedProjectId(null);
       setActiveAssetIndex(0);
@@ -289,14 +306,22 @@ export default function ProjectPage({
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         setActiveAssetIndex((index) =>
-          gallery.length <= 1 ? index : index === 0 ? gallery.length - 1 : index - 1,
+          gallery.length <= 1
+            ? index
+            : index === 0
+              ? gallery.length - 1
+              : index - 1,
         );
         setImageZoom(1);
       }
       if (e.key === "ArrowRight") {
         e.preventDefault();
         setActiveAssetIndex((index) =>
-          gallery.length <= 1 ? index : index === gallery.length - 1 ? 0 : index + 1,
+          gallery.length <= 1
+            ? index
+            : index === gallery.length - 1
+              ? 0
+              : index + 1,
         );
         setImageZoom(1);
       }
@@ -312,7 +337,8 @@ export default function ProjectPage({
   };
 
   const handleOpenProject = (projectId: string) => {
-    const project = filteredProjects.find((item) => item.id === projectId) ?? null;
+    const project =
+      filteredProjects.find((item) => item.id === projectId) ?? null;
     setSelectedProjectId(projectId);
     setActiveAssetIndex(project ? getInitialGalleryIndex(project) : 0);
     setImageZoom(1);
@@ -455,13 +481,14 @@ export default function ProjectPage({
                 {activeTabMeta.label} archive
               </p>
               <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#09162f] sm:text-4xl">
-                Curated pieces from the {activeTabMeta.label.toLowerCase()}{" "}
-                side of the studio.
+                Curated pieces from the {activeTabMeta.label.toLowerCase()} side
+                of the studio.
               </h2>
               <p className="mt-3 text-sm text-[#55657f] sm:text-base">
                 Showing {filteredProjects.length} result
-                {filteredProjects.length === 1 ? "" : "s"} from {counts[activeTab]}{" "}
-                published {activeTabMeta.label.toLowerCase()} item
+                {filteredProjects.length === 1 ? "" : "s"} from{" "}
+                {counts[activeTab]} published{" "}
+                {activeTabMeta.label.toLowerCase()} item
                 {counts[activeTab] === 1 ? "" : "s"}.
               </p>
             </div>
@@ -548,7 +575,8 @@ export default function ProjectPage({
 
                       <div className="flex flex-1 flex-col p-5">
                         <p className="line-clamp-2 text-sm leading-6 text-[#55657f]">
-                          {project.description || "No additional description provided."}
+                          {project.description ||
+                            "No additional description provided."}
                         </p>
                         <div className="mt-4 flex flex-wrap gap-2">
                           {project.tags.length > 0 ? (
@@ -569,15 +597,22 @@ export default function ProjectPage({
                         <div className="mt-auto pt-4">
                           <div className="flex items-center justify-between border-t border-[#e9f1f8] pt-4 text-xs text-[#6a7a93]">
                             <span>
-                              {assetCount > 1 ? `${assetCount} media items` : project.mediaType === "VIDEO" ? "Single video" : "Single image"}
+                              {assetCount > 1
+                                ? `${assetCount} media items`
+                                : project.mediaType === "VIDEO"
+                                  ? "Single video"
+                                  : "Single image"}
                             </span>
-                            {project.serviceType === "BUILD" && project.websiteUrl ? (
+                            {project.serviceType === "BUILD" &&
+                            project.websiteUrl ? (
                               <span className="inline-flex items-center gap-1 font-medium text-[#000c99]">
                                 Live link
                                 <ArrowUpRight className="h-3.5 w-3.5" />
                               </span>
                             ) : (
-                              <span className="font-medium text-[#000c99]">Open project</span>
+                              <span className="font-medium text-[#000c99]">
+                                Open project
+                              </span>
                             )}
                           </div>
                         </div>
@@ -593,7 +628,8 @@ export default function ProjectPage({
                 No projects match your current search.
               </p>
               <p className="mt-2 text-sm text-[#6a7a93]">
-                Try a different keyword or switch to another tab to explore more work.
+                Try a different keyword or switch to another tab to explore more
+                work.
               </p>
             </div>
           )}
@@ -609,24 +645,28 @@ export default function ProjectPage({
               >
                 Prev
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  type="button"
-                  onClick={() => setCurrentPage(page)}
-                  className={cn(
-                    "h-10 min-w-10 rounded-full border px-3 text-sm transition-colors",
-                    page === safeCurrentPage
-                      ? "border-[#000c99] bg-[#000c99] text-white"
-                      : "border-[#dbe8f4] bg-white text-[#51627b] hover:border-[#00abff]/30 hover:text-[#000c99]",
-                  )}
-                >
-                  {page}
-                </button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setCurrentPage(page)}
+                    className={cn(
+                      "h-10 min-w-10 rounded-full border px-3 text-sm transition-colors",
+                      page === safeCurrentPage
+                        ? "border-[#000c99] bg-[#000c99] text-white"
+                        : "border-[#dbe8f4] bg-white text-[#51627b] hover:border-[#00abff]/30 hover:text-[#000c99]",
+                    )}
+                  >
+                    {page}
+                  </button>
+                ),
+              )}
               <button
                 type="button"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
                 disabled={safeCurrentPage === totalPages}
                 className="rounded-full border border-[#dbe8f4] bg-white px-4 py-2 text-sm text-[#51627b] transition-colors hover:border-[#00abff]/30 hover:text-[#000c99] disabled:cursor-not-allowed disabled:opacity-35"
               >
@@ -680,349 +720,358 @@ export default function ProjectPage({
           >
             <div className="min-h-full p-2 sm:p-4 lg:flex lg:h-full lg:items-stretch lg:p-6">
               <div className="mx-auto flex min-h-[calc(100svh-1rem)] max-w-[1600px] flex-col overflow-hidden rounded-[24px] border border-white/10 bg-[#08101e] text-white shadow-[0_40px_140px_-60px_rgba(0,0,0,0.78)] sm:h-full sm:min-h-0 sm:rounded-[32px] lg:h-[calc(100vh-3rem)] lg:min-h-0 lg:w-full">
-              {/* Header */}
-              <div className="flex flex-shrink-0 flex-col items-start gap-3 border-b border-white/10 bg-[#0b1425] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                <div className="min-w-0">
-                  <p className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-white/55">
-                    <span>{selectedProject.serviceLabel}</span>
-                    <span className="text-white/30">/</span>
-                    <span>{getGalleryItemLabel(activeAsset, safeAssetIndex)}</span>
-                    <span className="text-white/30">/</span>
-                    <span>
-                      {safeAssetIndex + 1} of {gallery.length}
-                    </span>
-                  </p>
-                  <h3 className="mt-2 truncate text-lg font-semibold text-white sm:text-xl">
-                    {selectedProject.title}
-                  </h3>
-                </div>
-
-                <div className="flex w-full flex-shrink-0 items-center justify-end gap-2 sm:ml-3 sm:w-auto">
-                  {activeAsset.mediaType === "IMAGE" && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={decreaseZoom}
-                        disabled={imageZoom <= IMAGE_ZOOM_MIN}
-                        className="hidden rounded-full border border-white/10 bg-white/5 p-2 text-white/70 transition-colors hover:border-[#00abff]/40 hover:text-white disabled:opacity-30 sm:inline-flex"
-                        aria-label="Zoom out"
-                      >
-                        <ZoomOut className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={increaseZoom}
-                        disabled={imageZoom >= IMAGE_ZOOM_MAX}
-                        className="hidden rounded-full border border-white/10 bg-white/5 p-2 text-white/70 transition-colors hover:border-[#00abff]/40 hover:text-white disabled:opacity-30 sm:inline-flex"
-                        aria-label="Zoom in"
-                      >
-                        <ZoomIn className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setImageZoom(1)}
-                        disabled={imageZoom === 1}
-                        className="hidden rounded-full border border-white/10 bg-white/5 p-2 text-white/70 transition-colors hover:border-[#00abff]/40 hover:text-white disabled:opacity-30 sm:inline-flex"
-                        aria-label="Reset zoom"
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                      </button>
-                    </>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleCloseProject}
-                    className="rounded-full border border-white/10 bg-white/5 p-2 text-white/70 transition-colors hover:border-[#00abff]/40 hover:text-white"
-                    aria-label="Close preview"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Body: media + sidebar */}
-              <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1.15fr)_380px]">
-                {/* Media column */}
-                <div className="flex min-h-0 flex-col border-b border-white/10 lg:border-b-0">
-                  {/* Media frame — bounded, never overscales */}
-                  <div className="relative flex min-h-[42svh] flex-1 items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,rgba(0,171,255,0.14),transparent_32%),linear-gradient(180deg,#09101d_0%,#040915_100%)] sm:min-h-[48vh] lg:min-h-0">
-                    <button
-                      type="button"
-                      onClick={() => goToAdjacentAsset("prev")}
-                      disabled={gallery.length <= 1}
-                      className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/10 bg-[#071120]/88 p-2.5 text-white/75 backdrop-blur-sm transition-colors hover:border-[#00abff]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 sm:left-4 sm:p-3"
-                      aria-label="Previous media"
-                    >
-                      <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => goToAdjacentAsset("next")}
-                      disabled={gallery.length <= 1}
-                      className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/10 bg-[#071120]/88 p-2.5 text-white/75 backdrop-blur-sm transition-colors hover:border-[#00abff]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 sm:right-4 sm:p-3"
-                      aria-label="Next media"
-                    >
-                      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
-                    </button>
-
-                    {/* The media itself */}
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={`${selectedProject.id}-${safeAssetIndex}`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="flex h-full min-h-[42svh] w-full items-center justify-center sm:min-h-[46vh] lg:min-h-0"
-                      >
-                        {activeAsset.mediaType === "VIDEO" ? (
-                          <div className="flex h-full w-full items-center justify-center p-3 sm:p-6 lg:p-8">
-                            <video
-                              key={activeAsset.publicId}
-                              src={getVideoUrl(activeAsset.publicId)}
-                              poster={
-                                activeAsset.thumbnailPublicId
-                                  ? getImageUrl(activeAsset.thumbnailPublicId, 1200, 900)
-                                  : undefined
-                              }
-                              controls
-                              autoPlay
-                              playsInline
-                              className="h-full max-h-full w-full rounded-[24px] border border-white/10 bg-[#020611] object-contain"
-                            />
-                          </div>
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center overflow-hidden p-3 sm:p-6 lg:p-8">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              key={activeAsset.publicId}
-                              src={getContainUrl(activeAsset.publicId)}
-                              alt={
-                                activeAsset.caption ??
-                                `${selectedProject.title} — image ${safeAssetIndex + 1}`
-                              }
-                              className="max-h-full max-w-full rounded-[24px] border border-white/10 object-contain transition-transform duration-300"
-                              style={{ transform: `scale(${imageZoom})` }}
-                              onDoubleClick={() =>
-                                setImageZoom((z) => (z === 1 ? 1.75 : 1))
-                              }
-                            />
-                          </div>
-                        )}
-                      </motion.div>
-                    </AnimatePresence>
+                {/* Header */}
+                <div className="flex flex-shrink-0 flex-col items-start gap-3 border-b border-white/10 bg-[#0b1425] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                  <div className="min-w-0">
+                    <p className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-white/55">
+                      <span>{selectedProject.serviceLabel}</span>
+                      <span className="text-white/30">/</span>
+                      <span>
+                        {getGalleryItemLabel(activeAsset, safeAssetIndex)}
+                      </span>
+                      <span className="text-white/30">/</span>
+                      <span>
+                        {safeAssetIndex + 1} of {gallery.length}
+                      </span>
+                    </p>
+                    <h3 className="mt-2 truncate text-lg font-semibold text-white sm:text-xl">
+                      {selectedProject.title}
+                    </h3>
                   </div>
 
-                  {/* Thumbnail strip — shown when project has multiple assets */}
-                  {gallery.length > 1 && (
-                    <div
-                      ref={thumbStripRef}
-                      className="flex gap-2 overflow-x-auto border-t border-white/10 bg-[#0b1425] p-2.5 sm:gap-3 sm:p-3"
+                  <div className="flex w-full flex-shrink-0 items-center justify-end gap-2 sm:ml-3 sm:w-auto">
+                    {activeAsset.mediaType === "IMAGE" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={decreaseZoom}
+                          disabled={imageZoom <= IMAGE_ZOOM_MIN}
+                          className="hidden rounded-full border border-white/10 bg-white/5 p-2 text-white/70 transition-colors hover:border-[#00abff]/40 hover:text-white disabled:opacity-30 sm:inline-flex"
+                          aria-label="Zoom out"
+                        >
+                          <ZoomOut className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={increaseZoom}
+                          disabled={imageZoom >= IMAGE_ZOOM_MAX}
+                          className="hidden rounded-full border border-white/10 bg-white/5 p-2 text-white/70 transition-colors hover:border-[#00abff]/40 hover:text-white disabled:opacity-30 sm:inline-flex"
+                          aria-label="Zoom in"
+                        >
+                          <ZoomIn className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setImageZoom(1)}
+                          disabled={imageZoom === 1}
+                          className="hidden rounded-full border border-white/10 bg-white/5 p-2 text-white/70 transition-colors hover:border-[#00abff]/40 hover:text-white disabled:opacity-30 sm:inline-flex"
+                          aria-label="Reset zoom"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleCloseProject}
+                      className="rounded-full border border-white/10 bg-white/5 p-2 text-white/70 transition-colors hover:border-[#00abff]/40 hover:text-white"
+                      aria-label="Close preview"
                     >
-                      {gallery.map((item, idx) => {
-                        const thumbSrc = getThumbUrl(item);
-                        const isActive = idx === safeAssetIndex;
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => {
-                              setActiveAssetIndex(idx);
-                              setImageZoom(1);
-                            }}
-                            className={cn(
-                              "group flex min-w-[140px] items-center gap-2.5 rounded-2xl border p-2 text-left transition-all sm:min-w-[180px] sm:gap-3 sm:p-2.5",
-                              isActive
-                                ? "border-[#00abff]/55 bg-[#0e1a31] text-white"
-                                : "border-white/10 bg-white/[0.03] text-white/72 hover:border-white/20 hover:text-white",
-                            )}
-                            aria-label={`View ${getGalleryItemLabel(item, idx)}`}
-                          >
-                            <div className="relative h-14 w-16 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#030814]">
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Body: media + sidebar */}
+                <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1.15fr)_380px]">
+                  {/* Media column */}
+                  <div className="flex min-h-0 flex-col border-b border-white/10 lg:border-b-0">
+                    {/* Media frame — bounded, never overscales */}
+                    <div className="relative flex min-h-[42svh] flex-1 items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,rgba(0,171,255,0.14),transparent_32%),linear-gradient(180deg,#09101d_0%,#040915_100%)] sm:min-h-[48vh] lg:min-h-0">
+                      <button
+                        type="button"
+                        onClick={() => goToAdjacentAsset("prev")}
+                        disabled={gallery.length <= 1}
+                        className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/10 bg-[#071120]/88 p-2.5 text-white/75 backdrop-blur-sm transition-colors hover:border-[#00abff]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 sm:left-4 sm:p-3"
+                        aria-label="Previous media"
+                      >
+                        <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => goToAdjacentAsset("next")}
+                        disabled={gallery.length <= 1}
+                        className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/10 bg-[#071120]/88 p-2.5 text-white/75 backdrop-blur-sm transition-colors hover:border-[#00abff]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 sm:right-4 sm:p-3"
+                        aria-label="Next media"
+                      >
+                        <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                      </button>
+
+                      {/* The media itself */}
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={`${selectedProject.id}-${safeAssetIndex}`}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="flex h-full min-h-[42svh] w-full items-center justify-center sm:min-h-[46vh] lg:min-h-0"
+                        >
+                          {activeAsset.mediaType === "VIDEO" ? (
+                            <div className="flex h-full w-full items-center justify-center p-3 sm:p-6 lg:p-8">
+                              <video
+                                key={activeAsset.publicId}
+                                src={getVideoUrl(activeAsset.publicId)}
+                                poster={
+                                  activeAsset.thumbnailPublicId
+                                    ? getImageUrl(
+                                        activeAsset.thumbnailPublicId,
+                                        1200,
+                                        900,
+                                      )
+                                    : undefined
+                                }
+                                controls
+                                autoPlay
+                                playsInline
+                                className="h-full max-h-full w-full rounded-[24px] border border-white/10 bg-[#020611] object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center overflow-hidden p-3 sm:p-6 lg:p-8">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={thumbSrc}
-                                alt=""
-                                className="h-full w-full object-cover"
+                                key={activeAsset.publicId}
+                                src={getContainUrl(activeAsset.publicId)}
+                                alt={
+                                  activeAsset.caption ??
+                                  `${selectedProject.title} — image ${safeAssetIndex + 1}`
+                                }
+                                className="max-h-full max-w-full rounded-[24px] border border-white/10 object-contain transition-transform duration-300"
+                                style={{ transform: `scale(${imageZoom})` }}
+                                onDoubleClick={() =>
+                                  setImageZoom((z) => (z === 1 ? 1.75 : 1))
+                                }
                               />
-                              {item.mediaType === "VIDEO" && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/35">
-                                  <Play className="h-3.5 w-3.5 fill-white text-white" />
-                                </div>
+                            </div>
+                          )}
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Thumbnail strip — shown when project has multiple assets */}
+                    {gallery.length > 1 && (
+                      <div
+                        ref={thumbStripRef}
+                        className="flex gap-2 overflow-x-auto border-t border-white/10 bg-[#0b1425] p-2.5 sm:gap-3 sm:p-3"
+                      >
+                        {gallery.map((item, idx) => {
+                          const thumbSrc = getThumbUrl(item);
+                          const isActive = idx === safeAssetIndex;
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => {
+                                setActiveAssetIndex(idx);
+                                setImageZoom(1);
+                              }}
+                              className={cn(
+                                "group flex min-w-[140px] items-center gap-2.5 rounded-2xl border p-2 text-left transition-all sm:min-w-[180px] sm:gap-3 sm:p-2.5",
+                                isActive
+                                  ? "border-[#00abff]/55 bg-[#0e1a31] text-white"
+                                  : "border-white/10 bg-white/[0.03] text-white/72 hover:border-white/20 hover:text-white",
                               )}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55">
-                                {getGalleryItemLabel(item, idx)}
-                              </p>
-                              <p className="mt-1 line-clamp-2 text-sm">
-                                {item.caption || `View ${selectedProject.title} ${idx + 1}`}
-                              </p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                              aria-label={`View ${getGalleryItemLabel(item, idx)}`}
+                            >
+                              <div className="relative h-14 w-16 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#030814]">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={thumbSrc}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                                {item.mediaType === "VIDEO" && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/35">
+                                    <Play className="h-3.5 w-3.5 fill-white text-white" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55">
+                                  {getGalleryItemLabel(item, idx)}
+                                </p>
+                                <p className="mt-1 line-clamp-2 text-sm">
+                                  {item.caption ||
+                                    `View ${selectedProject.title} ${idx + 1}`}
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
 
-                {/* Details sidebar */}
-                <aside className="border-white/10 bg-[#0c1527] p-4 sm:p-7 lg:border-l">
-                  <div className="space-y-5">
-                    {/* Description */}
-                    <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
-                      <p className="text-[10px] uppercase tracking-[0.24em] text-white/45">
-                        About this project
-                      </p>
-                      <p className="mt-3 text-sm leading-7 text-white/78">
-                        {selectedProject.description ||
-                          "No description was added for this project yet."}
-                      </p>
-                    </div>
-
-                    {/* Caption (shown when active asset has one) */}
-                    {activeAsset.caption && (
+                  {/* Details sidebar */}
+                  <aside className="border-white/10 bg-[#0c1527] p-4 sm:p-7 lg:border-l">
+                    <div className="space-y-5">
+                      {/* Description */}
                       <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
                         <p className="text-[10px] uppercase tracking-[0.24em] text-white/45">
-                          Selected media note
+                          About this project
                         </p>
-                        <p className="mt-3 text-sm italic leading-6 text-white/70">
-                          {activeAsset.caption}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Tags */}
-                    <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
-                      <p className="text-[10px] uppercase tracking-[0.24em] text-white/45">
-                        Tags
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {selectedProject.tags.length > 0 ? (
-                          selectedProject.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/78"
-                            >
-                              {tag}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/45">
-                            Untagged
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Meta grid */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                        <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">
-                          Type
-                        </p>
-                        <p className="mt-2 text-sm font-medium text-white">
-                          {selectedProject.serviceLabel}
+                        <p className="mt-3 text-sm leading-7 text-white/78">
+                          {selectedProject.description ||
+                            "No description was added for this project yet."}
                         </p>
                       </div>
-                      <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
-                        <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">
-                          {gallery.length > 1 ? "Gallery" : "Format"}
-                        </p>
-                        <p className="mt-2 text-sm font-medium text-white">
-                          {gallery.length > 1
-                            ? `${gallery.length} assets`
-                            : activeAsset.mediaType === "VIDEO"
-                              ? "Video"
-                              : "Image"}
-                        </p>
-                      </div>
-                    </div>
 
-                    {gallery.length > 1 && (
-                      <div className="hidden rounded-[24px] border border-white/10 bg-white/[0.03] p-5 lg:block">
-                        <p className="text-[10px] uppercase tracking-[0.24em] text-white/45">
-                          Project media
-                        </p>
-                        <div className="mt-3 space-y-2">
-                          {gallery.map((item, idx) => {
-                            const isActive = idx === safeAssetIndex;
-
-                            return (
-                              <button
-                                key={`${item.id}-sidebar`}
-                                type="button"
-                                onClick={() => {
-                                  setActiveAssetIndex(idx);
-                                  setImageZoom(1);
-                                }}
-                                className={cn(
-                                  "flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-all",
-                                  isActive
-                                    ? "border-[#00abff]/55 bg-[#0e1a31] text-white"
-                                    : "border-white/10 bg-[#0a1221] text-white/72 hover:border-white/20 hover:text-white",
-                                )}
-                              >
-                                <div className="relative h-12 w-14 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#030814]">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
-                                    src={getThumbUrl(item)}
-                                    alt=""
-                                    className="h-full w-full object-cover"
-                                  />
-                                  {item.mediaType === "VIDEO" && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/35">
-                                      <Play className="h-3.5 w-3.5 fill-white text-white" />
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">
-                                    {getGalleryItemLabel(item, idx)}
-                                  </p>
-                                  <p className="mt-1 line-clamp-2 text-sm">
-                                    {item.caption || `Select ${getGalleryItemLabel(item, idx).toLowerCase()}`}
-                                  </p>
-                                </div>
-                              </button>
-                            );
-                          })}
+                      {/* Caption (shown when active asset has one) */}
+                      {activeAsset.caption && (
+                        <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                          <p className="text-[10px] uppercase tracking-[0.24em] text-white/45">
+                            Selected media note
+                          </p>
+                          <p className="mt-3 text-sm italic leading-6 text-white/70">
+                            {activeAsset.caption}
+                          </p>
                         </div>
-                      </div>
-                    )}
-
-                    {/* Visit Website — BUILD projects only */}
-                    {selectedProject.serviceType === "BUILD" &&
-                      selectedProject.websiteUrl && (
-                        <a
-                          href={selectedProject.websiteUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex w-full items-center justify-center gap-2 rounded-full bg-[#000c99] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#000a7a]"
-                        >
-                          Visit Website
-                          <ArrowUpRight className="h-4 w-4" />
-                        </a>
                       )}
 
-                    {/* Navigation hint */}
-                    <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
-                      <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">
-                        Navigation
-                      </p>
-                      <p className="mt-3 text-xs leading-6 text-white/62">
-                        Use the left and right arrows to move through this project's images and videos.
-                        {gallery.length > 1 &&
-                          " Select any media tile to switch between images and videos in this project."}
-                        {activeAsset.mediaType === "IMAGE" &&
-                          " Double-click to toggle zoom."}
-                      </p>
+                      {/* Tags */}
+                      <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                        <p className="text-[10px] uppercase tracking-[0.24em] text-white/45">
+                          Tags
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {selectedProject.tags.length > 0 ? (
+                            selectedProject.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/78"
+                              >
+                                {tag}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-white/45">
+                              Untagged
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Meta grid */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                          <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">
+                            Type
+                          </p>
+                          <p className="mt-2 text-sm font-medium text-white">
+                            {selectedProject.serviceLabel}
+                          </p>
+                        </div>
+                        <div className="rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                          <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">
+                            {gallery.length > 1 ? "Gallery" : "Format"}
+                          </p>
+                          <p className="mt-2 text-sm font-medium text-white">
+                            {gallery.length > 1
+                              ? `${gallery.length} assets`
+                              : activeAsset.mediaType === "VIDEO"
+                                ? "Video"
+                                : "Image"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {gallery.length > 1 && (
+                        <div className="hidden rounded-[24px] border border-white/10 bg-white/[0.03] p-5 lg:block">
+                          <p className="text-[10px] uppercase tracking-[0.24em] text-white/45">
+                            Project media
+                          </p>
+                          <div className="mt-3 space-y-2">
+                            {gallery.map((item, idx) => {
+                              const isActive = idx === safeAssetIndex;
+
+                              return (
+                                <button
+                                  key={`${item.id}-sidebar`}
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveAssetIndex(idx);
+                                    setImageZoom(1);
+                                  }}
+                                  className={cn(
+                                    "flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-all",
+                                    isActive
+                                      ? "border-[#00abff]/55 bg-[#0e1a31] text-white"
+                                      : "border-white/10 bg-[#0a1221] text-white/72 hover:border-white/20 hover:text-white",
+                                  )}
+                                >
+                                  <div className="relative h-12 w-14 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#030814]">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={getThumbUrl(item)}
+                                      alt=""
+                                      className="h-full w-full object-cover"
+                                    />
+                                    {item.mediaType === "VIDEO" && (
+                                      <div className="absolute inset-0 flex items-center justify-center bg-black/35">
+                                        <Play className="h-3.5 w-3.5 fill-white text-white" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">
+                                      {getGalleryItemLabel(item, idx)}
+                                    </p>
+                                    <p className="mt-1 line-clamp-2 text-sm">
+                                      {item.caption ||
+                                        `Select ${getGalleryItemLabel(item, idx).toLowerCase()}`}
+                                    </p>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Visit Website — BUILD projects only */}
+                      {selectedProject.serviceType === "BUILD" &&
+                        selectedProject.websiteUrl && (
+                          <a
+                            href={selectedProject.websiteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex w-full items-center justify-center gap-2 rounded-full bg-[#000c99] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#000a7a]"
+                          >
+                            Visit Website
+                            <ArrowUpRight className="h-4 w-4" />
+                          </a>
+                        )}
+
+                      {/* Navigation hint */}
+                      <div className="rounded-[24px] border border-white/10 bg-white/[0.03] p-5">
+                        <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">
+                          Navigation
+                        </p>
+                        <p className="mt-3 text-xs leading-6 text-white/62">
+                          Use the left and right arrows to move through this
+                          project's images and videos.
+                          {gallery.length > 1 &&
+                            " Select any media tile to switch between images and videos in this project."}
+                          {activeAsset.mediaType === "IMAGE" &&
+                            " Double-click to toggle zoom."}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </aside>
+                  </aside>
+                </div>
               </div>
             </div>
-          </div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -96,7 +96,9 @@ async function main() {
     })),
   });
 
-  console.log("Seeded About page content, timeline, expertise, team, and values.");
+  console.log(
+    "Seeded About page content, timeline, expertise, team, and values.",
+  );
 
   await prisma.$disconnect();
 }

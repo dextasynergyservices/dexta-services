@@ -36,8 +36,7 @@ export const projectsHeroDefaults = {
   eyebrow: "Dexta Project Archive",
   headline:
     "Work that looks sharp, moves with intent, and lands where it matters.",
-  body:
-    "Explore selected projects across design, build, and print — all curated to show how ideas become real, useful, and memorable.",
+  body: "Explore selected projects across design, build, and print — all curated to show how ideas become real, useful, and memorable.",
   backgroundImagePublicId: null,
   ctaText: "Start a Project",
   ctaHref: "/contact",

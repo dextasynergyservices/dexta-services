@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowDown, ArrowUp, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -94,13 +101,21 @@ function MilestoneForm({
 
       <div className="grid gap-4 md:grid-cols-[160px_minmax(0,1fr)]">
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Year / Label</Label>
-          <Input className="border-[#2a2a2a] bg-[#0d0d0d] text-white" {...register("year")} />
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Year / Label
+          </Label>
+          <Input
+            className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
+            {...register("year")}
+          />
           <FormError message={errors.year?.message} />
         </div>
         <div>
           <Label className="mb-1.5 block text-xs text-[#888]">Title</Label>
-          <Input className="border-[#2a2a2a] bg-[#0d0d0d] text-white" {...register("title")} />
+          <Input
+            className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
+            {...register("title")}
+          />
           <FormError message={errors.title?.message} />
         </div>
       </div>
@@ -118,12 +133,17 @@ function MilestoneForm({
       <label className="flex items-center justify-between rounded-xl border border-[#222] bg-[#0d0d0d] px-4 py-3">
         <div>
           <p className="text-sm font-medium text-white">Visible on page</p>
-          <p className="text-xs text-[#666]">Hide this milestone without deleting it.</p>
+          <p className="text-xs text-[#666]">
+            Hide this milestone without deleting it.
+          </p>
         </div>
         <Switch
           checked={watch("isVisible")}
           onCheckedChange={(checked) =>
-            setValue("isVisible", checked, { shouldDirty: true, shouldValidate: true })
+            setValue("isVisible", checked, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
           }
         />
       </label>
@@ -137,19 +157,34 @@ function MilestoneForm({
         >
           Cancel
         </Button>
-        <Button type="submit" className="bg-cyan-500 text-[#03131d] hover:bg-cyan-400">
-          {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Milestone"}
+        <Button
+          type="submit"
+          className="bg-cyan-500 text-[#03131d] hover:bg-cyan-400"
+        >
+          {isSubmitting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            "Save Milestone"
+          )}
         </Button>
       </div>
     </form>
   );
 }
 
-export function StoryTimelineManager({ items }: { items: AboutMilestoneRow[] }) {
+export function StoryTimelineManager({
+  items,
+}: {
+  items: AboutMilestoneRow[];
+}) {
   const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<AboutMilestoneRow | null>(null);
-  const [deletingItem, setDeletingItem] = useState<AboutMilestoneRow | null>(null);
+  const [editingItem, setEditingItem] = useState<AboutMilestoneRow | null>(
+    null,
+  );
+  const [deletingItem, setDeletingItem] = useState<AboutMilestoneRow | null>(
+    null,
+  );
   const [movingKey, setMovingKey] = useState<string | null>(null);
 
   const handleCreate = async (data: AboutMilestoneInput) => {
@@ -216,19 +251,28 @@ export function StoryTimelineManager({ items }: { items: AboutMilestoneRow[] }) 
       >
         <div className="grid gap-4 lg:grid-cols-2">
           {items.map((item, index) => (
-            <article key={item.id} className="rounded-2xl border border-[#222] bg-[#111] p-5">
+            <article
+              key={item.id}
+              className="rounded-2xl border border-[#222] bg-[#111] p-5"
+            >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="inline-flex rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-semibold tracking-[0.2em] text-cyan-400">
                     {item.year}
                   </div>
-                  <h3 className="mt-3 text-lg font-semibold text-white">{item.title}</h3>
+                  <h3 className="mt-3 text-lg font-semibold text-white">
+                    {item.title}
+                  </h3>
                 </div>
                 <VisibilityPill visible={item.isVisible} />
               </div>
-              <p className="mt-3 text-sm leading-6 text-[#9d9d9d]">{item.description}</p>
+              <p className="mt-3 text-sm leading-6 text-[#9d9d9d]">
+                {item.description}
+              </p>
               <div className="mt-4 flex items-center justify-between">
-                <p className="text-xs uppercase tracking-[0.22em] text-[#555]">Position {index + 1}</p>
+                <p className="text-xs uppercase tracking-[0.22em] text-[#555]">
+                  Position {index + 1}
+                </p>
                 <div className="flex items-center gap-2">
                   <CardActionButton
                     onClick={() => handleMove(item.id, "up")}
@@ -240,14 +284,23 @@ export function StoryTimelineManager({ items }: { items: AboutMilestoneRow[] }) 
                   <CardActionButton
                     onClick={() => handleMove(item.id, "down")}
                     label="Move milestone down"
-                    disabled={index === items.length - 1 || movingKey === `${item.id}:down`}
+                    disabled={
+                      index === items.length - 1 ||
+                      movingKey === `${item.id}:down`
+                    }
                   >
                     <ArrowDown className="h-4 w-4" />
                   </CardActionButton>
-                  <CardActionButton onClick={() => setEditingItem(item)} label="Edit milestone">
+                  <CardActionButton
+                    onClick={() => setEditingItem(item)}
+                    label="Edit milestone"
+                  >
                     <Pencil className="h-4 w-4" />
                   </CardActionButton>
-                  <CardActionButton onClick={() => setDeletingItem(item)} label="Delete milestone">
+                  <CardActionButton
+                    onClick={() => setDeletingItem(item)}
+                    label="Delete milestone"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </CardActionButton>
                 </div>
@@ -262,11 +315,17 @@ export function StoryTimelineManager({ items }: { items: AboutMilestoneRow[] }) 
           <DialogHeader>
             <DialogTitle>Add Milestone</DialogTitle>
           </DialogHeader>
-          <MilestoneForm onSubmit={handleCreate} onCancel={() => setIsCreateOpen(false)} />
+          <MilestoneForm
+            onSubmit={handleCreate}
+            onCancel={() => setIsCreateOpen(false)}
+          />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
+      <Dialog
+        open={!!editingItem}
+        onOpenChange={(open) => !open && setEditingItem(null)}
+      >
         <DialogContent className="border-[#222] bg-[#111] text-white sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Milestone</DialogTitle>
@@ -279,10 +338,15 @@ export function StoryTimelineManager({ items }: { items: AboutMilestoneRow[] }) 
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deletingItem} onOpenChange={(open) => !open && setDeletingItem(null)}>
+      <AlertDialog
+        open={!!deletingItem}
+        onOpenChange={(open) => !open && setDeletingItem(null)}
+      >
         <AlertDialogContent className="border-[#222] bg-[#111]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete milestone?</AlertDialogTitle>
+            <AlertDialogTitle className="text-white">
+              Delete milestone?
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-[#666]">
               This removes the milestone from the About page timeline.
             </AlertDialogDescription>
@@ -291,7 +355,10 @@ export function StoryTimelineManager({ items }: { items: AboutMilestoneRow[] }) 
             <AlertDialogCancel className="border-[#2a2a2a] bg-transparent text-[#aaa] hover:bg-[#1a1a1a] hover:text-white">
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction className="bg-red-500 text-white hover:bg-red-400" onClick={handleDelete}>
+            <AlertDialogAction
+              className="bg-red-500 text-white hover:bg-red-400"
+              onClick={handleDelete}
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

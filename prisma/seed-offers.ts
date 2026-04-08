@@ -101,7 +101,9 @@ async function main() {
     }
 
     if (groups.length === 0) {
-      console.log(`No offer groups seeded for ${audienceType} (empty audience).`);
+      console.log(
+        `No offer groups seeded for ${audienceType} (empty audience).`,
+      );
     }
   }
 

@@ -1,5 +1,14 @@
-export type OffersAudienceType = "FOR_YOU" | "BUSINESS" | "SCHOOLS" | "CHURCHES";
-export type BillingDuration = "DAILY" | "WEEKLY" | "MONTHLY" | "QUARTERLY" | "YEARLY";
+export type OffersAudienceType =
+  | "FOR_YOU"
+  | "BUSINESS"
+  | "SCHOOLS"
+  | "CHURCHES";
+export type BillingDuration =
+  | "DAILY"
+  | "WEEKLY"
+  | "MONTHLY"
+  | "QUARTERLY"
+  | "YEARLY";
 export type AudienceColor = "cyan" | "blue" | "purple" | "green";
 
 // ── Page content ──────────────────────────────────────────────────────────────
@@ -160,7 +169,8 @@ export const OFFERS_AUDIENCE_DEFAULTS: Record<
 const REACH_PLANS: PricingPlanSeedData[] = [
   {
     name: "Reach Starter",
-    subtitle: "Essential visibility support for teams building a steady public presence.",
+    subtitle:
+      "Essential visibility support for teams building a steady public presence.",
     features: [
       "Up to 8 branded design assets each month",
       "Recurring content publishing support up to 3 times weekly",
@@ -173,8 +183,22 @@ const REACH_PLANS: PricingPlanSeedData[] = [
     isVisible: true,
     position: 0,
     billingOptions: [
-      { duration: "MONTHLY", priceNGN: 25000, priceUSD: null, label: null, isDefault: true, position: 0 },
-      { duration: "QUARTERLY", priceNGN: 65000, priceUSD: null, label: null, isDefault: false, position: 1 },
+      {
+        duration: "MONTHLY",
+        priceNGN: 25000,
+        priceUSD: null,
+        label: null,
+        isDefault: true,
+        position: 0,
+      },
+      {
+        duration: "QUARTERLY",
+        priceNGN: 65000,
+        priceUSD: null,
+        label: null,
+        isDefault: false,
+        position: 1,
+      },
     ],
   },
   {
@@ -194,13 +218,28 @@ const REACH_PLANS: PricingPlanSeedData[] = [
     isVisible: true,
     position: 1,
     billingOptions: [
-      { duration: "MONTHLY", priceNGN: 45000, priceUSD: null, label: null, isDefault: true, position: 0 },
-      { duration: "QUARTERLY", priceNGN: 120000, priceUSD: null, label: null, isDefault: false, position: 1 },
+      {
+        duration: "MONTHLY",
+        priceNGN: 45000,
+        priceUSD: null,
+        label: null,
+        isDefault: true,
+        position: 0,
+      },
+      {
+        duration: "QUARTERLY",
+        priceNGN: 120000,
+        priceUSD: null,
+        label: null,
+        isDefault: false,
+        position: 1,
+      },
     ],
   },
   {
     name: "Reach Max",
-    subtitle: "High-output visibility support for teams running frequent campaigns.",
+    subtitle:
+      "High-output visibility support for teams running frequent campaigns.",
     features: [
       "Up to 20 branded design assets each month",
       "Recurring content publishing support up to 7 times weekly",
@@ -213,8 +252,22 @@ const REACH_PLANS: PricingPlanSeedData[] = [
     isVisible: true,
     position: 2,
     billingOptions: [
-      { duration: "MONTHLY", priceNGN: 75000, priceUSD: null, label: null, isDefault: true, position: 0 },
-      { duration: "QUARTERLY", priceNGN: 200000, priceUSD: null, label: null, isDefault: false, position: 1 },
+      {
+        duration: "MONTHLY",
+        priceNGN: 75000,
+        priceUSD: null,
+        label: null,
+        isDefault: true,
+        position: 0,
+      },
+      {
+        duration: "QUARTERLY",
+        priceNGN: 200000,
+        priceUSD: null,
+        label: null,
+        isDefault: false,
+        position: 1,
+      },
     ],
   },
   {
@@ -232,8 +285,22 @@ const REACH_PLANS: PricingPlanSeedData[] = [
     isVisible: true,
     position: 3,
     billingOptions: [
-      { duration: "MONTHLY", priceNGN: 120000, priceUSD: null, label: null, isDefault: true, position: 0 },
-      { duration: "QUARTERLY", priceNGN: 320000, priceUSD: null, label: null, isDefault: false, position: 1 },
+      {
+        duration: "MONTHLY",
+        priceNGN: 120000,
+        priceUSD: null,
+        label: null,
+        isDefault: true,
+        position: 0,
+      },
+      {
+        duration: "QUARTERLY",
+        priceNGN: 320000,
+        priceUSD: null,
+        label: null,
+        isDefault: false,
+        position: 1,
+      },
     ],
   },
 ];
@@ -249,20 +316,23 @@ export const OFFERS_GROUP_DEFAULTS: Record<
   BUSINESS: [
     {
       name: "Communication Reach",
-      description: "Ongoing visibility support — design assets, SMS campaigns, and content publishing.",
+      description:
+        "Ongoing visibility support — design assets, SMS campaigns, and content publishing.",
       position: 0,
       isVisible: true,
       plans: REACH_PLANS,
     },
     {
       name: "Digital Setup",
-      description: "One-time setup packages for web presence, email, and brand launch.",
+      description:
+        "One-time setup packages for web presence, email, and brand launch.",
       position: 1,
       isVisible: true,
       plans: [
         {
           name: "Business Launch",
-          subtitle: "A focused setup for small businesses that need a credible digital foundation.",
+          subtitle:
+            "A focused setup for small businesses that need a credible digital foundation.",
           features: [
             "High-converting single-page business website",
             "1 year domain registration included",
@@ -277,12 +347,20 @@ export const OFFERS_GROUP_DEFAULTS: Record<
           isVisible: true,
           position: 0,
           billingOptions: [
-            { duration: "MONTHLY", priceNGN: 180000, priceUSD: null, label: "Project-based", isDefault: true, position: 0 },
+            {
+              duration: "MONTHLY",
+              priceNGN: 180000,
+              priceUSD: null,
+              label: "Project-based",
+              isDefault: true,
+              position: 0,
+            },
           ],
         },
         {
           name: "Business Growth",
-          subtitle: "A fuller web and brand setup for businesses ready to scale.",
+          subtitle:
+            "A fuller web and brand setup for businesses ready to scale.",
           features: [
             "Multipage business website",
             "1 year domain registration included",
@@ -300,12 +378,20 @@ export const OFFERS_GROUP_DEFAULTS: Record<
           isVisible: true,
           position: 1,
           billingOptions: [
-            { duration: "MONTHLY", priceNGN: 320000, priceUSD: null, label: "Project-based", isDefault: true, position: 0 },
+            {
+              duration: "MONTHLY",
+              priceNGN: 320000,
+              priceUSD: null,
+              label: "Project-based",
+              isDefault: true,
+              position: 0,
+            },
           ],
         },
         {
           name: "Business Scale",
-          subtitle: "Custom setup for advanced products, platforms, or campaign systems.",
+          subtitle:
+            "Custom setup for advanced products, platforms, or campaign systems.",
           features: [
             "Custom web platform or mobile app delivery",
             "Information architecture and conversion planning",
@@ -326,20 +412,23 @@ export const OFFERS_GROUP_DEFAULTS: Record<
   SCHOOLS: [
     {
       name: "Communication Reach",
-      description: "Ongoing visibility support — design assets, SMS campaigns, and content publishing.",
+      description:
+        "Ongoing visibility support — design assets, SMS campaigns, and content publishing.",
       position: 0,
       isVisible: true,
       plans: REACH_PLANS,
     },
     {
       name: "Digital Setup",
-      description: "One-time setup packages for school websites, email systems, and parent-facing digital presence.",
+      description:
+        "One-time setup packages for school websites, email systems, and parent-facing digital presence.",
       position: 1,
       isVisible: true,
       plans: [
         {
           name: "School Launch",
-          subtitle: "A clean first-step web presence for schools building public trust.",
+          subtitle:
+            "A clean first-step web presence for schools building public trust.",
           features: [
             "Single-page school website with admissions essentials",
             "1 year domain registration included",
@@ -354,12 +443,20 @@ export const OFFERS_GROUP_DEFAULTS: Record<
           isVisible: true,
           position: 0,
           billingOptions: [
-            { duration: "MONTHLY", priceNGN: 220000, priceUSD: null, label: "Project-based", isDefault: true, position: 0 },
+            {
+              duration: "MONTHLY",
+              priceNGN: 220000,
+              priceUSD: null,
+              label: "Project-based",
+              isDefault: true,
+              position: 0,
+            },
           ],
         },
         {
           name: "School Growth",
-          subtitle: "A stronger web and communication setup for growing schools.",
+          subtitle:
+            "A stronger web and communication setup for growing schools.",
           features: [
             "Multipage school website",
             "1 year domain registration included",
@@ -377,12 +474,20 @@ export const OFFERS_GROUP_DEFAULTS: Record<
           isVisible: true,
           position: 1,
           billingOptions: [
-            { duration: "MONTHLY", priceNGN: 420000, priceUSD: null, label: "Project-based", isDefault: true, position: 0 },
+            {
+              duration: "MONTHLY",
+              priceNGN: 420000,
+              priceUSD: null,
+              label: "Project-based",
+              isDefault: true,
+              position: 0,
+            },
           ],
         },
         {
           name: "School Digital Campus",
-          subtitle: "Custom delivery for institutions needing portals, apps, or larger digital systems.",
+          subtitle:
+            "Custom delivery for institutions needing portals, apps, or larger digital systems.",
           features: [
             "Student portal, LMS, or custom web app planning",
             "Advanced information architecture for institutional pages",
@@ -403,20 +508,23 @@ export const OFFERS_GROUP_DEFAULTS: Record<
   CHURCHES: [
     {
       name: "Communication Reach",
-      description: "Ongoing visibility support — design assets, SMS campaigns, and content publishing.",
+      description:
+        "Ongoing visibility support — design assets, SMS campaigns, and content publishing.",
       position: 0,
       isVisible: true,
       plans: REACH_PLANS,
     },
     {
       name: "Digital Setup",
-      description: "One-time setup packages for ministry websites, email, and community-facing digital presence.",
+      description:
+        "One-time setup packages for ministry websites, email, and community-facing digital presence.",
       position: 1,
       isVisible: true,
       plans: [
         {
           name: "Ministry Launch",
-          subtitle: "A simple digital starting point for churches and community organizations.",
+          subtitle:
+            "A simple digital starting point for churches and community organizations.",
           features: [
             "Single-page ministry website",
             "1 year domain registration included",
@@ -431,12 +539,20 @@ export const OFFERS_GROUP_DEFAULTS: Record<
           isVisible: true,
           position: 0,
           billingOptions: [
-            { duration: "MONTHLY", priceNGN: 160000, priceUSD: null, label: "Project-based", isDefault: true, position: 0 },
+            {
+              duration: "MONTHLY",
+              priceNGN: 160000,
+              priceUSD: null,
+              label: "Project-based",
+              isDefault: true,
+              position: 0,
+            },
           ],
         },
         {
           name: "Ministry Growth",
-          subtitle: "A stronger ministry foundation for recurring programs and multiple teams.",
+          subtitle:
+            "A stronger ministry foundation for recurring programs and multiple teams.",
           features: [
             "Multipage ministry website",
             "1 year domain registration included",
@@ -454,12 +570,20 @@ export const OFFERS_GROUP_DEFAULTS: Record<
           isVisible: true,
           position: 1,
           billingOptions: [
-            { duration: "MONTHLY", priceNGN: 280000, priceUSD: null, label: "Project-based", isDefault: true, position: 0 },
+            {
+              duration: "MONTHLY",
+              priceNGN: 280000,
+              priceUSD: null,
+              label: "Project-based",
+              isDefault: true,
+              position: 0,
+            },
           ],
         },
         {
           name: "Ministry Platform",
-          subtitle: "Custom setup for ministries needing apps, portals, or broader communication systems.",
+          subtitle:
+            "Custom setup for ministries needing apps, portals, or broader communication systems.",
           features: [
             "Custom ministry portal, app, or media platform planning",
             "Department and communication workflow setup",

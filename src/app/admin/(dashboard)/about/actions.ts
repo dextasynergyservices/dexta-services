@@ -461,25 +461,20 @@ export async function getAboutAdminData(): Promise<AboutAdminData> {
   await requireAuth();
   await ensureAboutSeeded();
 
-  const [
-    content,
-    milestones,
-    expertiseItems,
-    teamMembers,
-    valueItems,
-  ] = (await Promise.all([
-    aboutPrisma.aboutPageContent.findUnique({ where: { id: 1 } }),
-    aboutPrisma.aboutMilestone.findMany({ orderBy: { position: "asc" } }),
-    aboutPrisma.aboutExpertiseItem.findMany({ orderBy: { position: "asc" } }),
-    aboutPrisma.aboutTeamMember.findMany({ orderBy: { position: "asc" } }),
-    aboutPrisma.aboutValueItem.findMany({ orderBy: { position: "asc" } }),
-  ])) as [
-    AboutPageContentRecord | null,
-    AboutMilestoneRow[],
-    AboutExpertiseItemRow[],
-    AboutTeamMemberRecord[],
-    AboutValueItemRow[],
-  ];
+  const [content, milestones, expertiseItems, teamMembers, valueItems] =
+    (await Promise.all([
+      aboutPrisma.aboutPageContent.findUnique({ where: { id: 1 } }),
+      aboutPrisma.aboutMilestone.findMany({ orderBy: { position: "asc" } }),
+      aboutPrisma.aboutExpertiseItem.findMany({ orderBy: { position: "asc" } }),
+      aboutPrisma.aboutTeamMember.findMany({ orderBy: { position: "asc" } }),
+      aboutPrisma.aboutValueItem.findMany({ orderBy: { position: "asc" } }),
+    ])) as [
+      AboutPageContentRecord | null,
+      AboutMilestoneRow[],
+      AboutExpertiseItemRow[],
+      AboutTeamMemberRecord[],
+      AboutValueItemRow[],
+    ];
 
   return {
     content: mapAboutPageContentRecord(content),
@@ -517,7 +512,10 @@ export async function updateAboutPageContent(
 
   const parsed = aboutPageContentSchema.safeParse(data);
   if (!parsed.success) {
-    return { success: false, message: parsed.error.issues[0]?.message ?? "Invalid content data." };
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid content data.",
+    };
   }
 
   const normalized = normalizeAboutPageContent(parsed.data);
@@ -610,7 +608,10 @@ export async function createAboutMilestone(
   const position = await aboutPrisma.aboutMilestone.count();
   const parsed = aboutMilestoneSchema.safeParse({ ...data, position });
   if (!parsed.success) {
-    return { success: false, message: parsed.error.issues[0]?.message ?? "Invalid milestone data." };
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid milestone data.",
+    };
   }
 
   await aboutPrisma.aboutMilestone.create({ data: parsed.data });
@@ -624,7 +625,9 @@ export async function updateAboutMilestone(
 ): Promise<ActionResult> {
   await requireAuth();
 
-  const existing = await aboutPrisma.aboutMilestone.findUnique({ where: { id } });
+  const existing = await aboutPrisma.aboutMilestone.findUnique({
+    where: { id },
+  });
   if (!existing) {
     return { success: false, message: "Milestone not found." };
   }
@@ -634,7 +637,10 @@ export async function updateAboutMilestone(
     position: existing.position,
   });
   if (!parsed.success) {
-    return { success: false, message: parsed.error.issues[0]?.message ?? "Invalid milestone data." };
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid milestone data.",
+    };
   }
 
   await aboutPrisma.aboutMilestone.update({
@@ -649,14 +655,18 @@ export async function updateAboutMilestone(
 export async function deleteAboutMilestone(id: string): Promise<ActionResult> {
   await requireAuth();
 
-  const existing = await aboutPrisma.aboutMilestone.findUnique({ where: { id } });
+  const existing = await aboutPrisma.aboutMilestone.findUnique({
+    where: { id },
+  });
   if (!existing) {
     return { success: false, message: "Milestone not found." };
   }
 
   await aboutPrisma.aboutMilestone.delete({ where: { id } });
 
-  const rows = await aboutPrisma.aboutMilestone.findMany({ orderBy: { position: "asc" } });
+  const rows = await aboutPrisma.aboutMilestone.findMany({
+    orderBy: { position: "asc" },
+  });
   await prisma.$transaction(
     rows.map((row: { id: string }, index: number) =>
       aboutPrisma.aboutMilestone.update({
@@ -676,7 +686,9 @@ export async function reorderAboutMilestones(
 ): Promise<ActionResult> {
   await requireAuth();
 
-  const rows = await aboutPrisma.aboutMilestone.findMany({ orderBy: { position: "asc" } });
+  const rows = await aboutPrisma.aboutMilestone.findMany({
+    orderBy: { position: "asc" },
+  });
   const swap = getReorderSwap(rows, id, direction);
   if (!swap) {
     return { success: false, message: "Unable to move this milestone." };
@@ -705,7 +717,10 @@ export async function createAboutExpertiseItem(
   const position = await aboutPrisma.aboutExpertiseItem.count();
   const parsed = aboutExpertiseItemSchema.safeParse({ ...data, position });
   if (!parsed.success) {
-    return { success: false, message: parsed.error.issues[0]?.message ?? "Invalid expertise item." };
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid expertise item.",
+    };
   }
 
   await aboutPrisma.aboutExpertiseItem.create({ data: parsed.data });
@@ -719,7 +734,9 @@ export async function updateAboutExpertiseItem(
 ): Promise<ActionResult> {
   await requireAuth();
 
-  const existing = await aboutPrisma.aboutExpertiseItem.findUnique({ where: { id } });
+  const existing = await aboutPrisma.aboutExpertiseItem.findUnique({
+    where: { id },
+  });
   if (!existing) {
     return { success: false, message: "Expertise item not found." };
   }
@@ -729,7 +746,10 @@ export async function updateAboutExpertiseItem(
     position: existing.position,
   });
   if (!parsed.success) {
-    return { success: false, message: parsed.error.issues[0]?.message ?? "Invalid expertise item." };
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid expertise item.",
+    };
   }
 
   await aboutPrisma.aboutExpertiseItem.update({
@@ -741,10 +761,14 @@ export async function updateAboutExpertiseItem(
   return { success: true, message: "Expertise item updated." };
 }
 
-export async function deleteAboutExpertiseItem(id: string): Promise<ActionResult> {
+export async function deleteAboutExpertiseItem(
+  id: string,
+): Promise<ActionResult> {
   await requireAuth();
 
-  const existing = await aboutPrisma.aboutExpertiseItem.findUnique({ where: { id } });
+  const existing = await aboutPrisma.aboutExpertiseItem.findUnique({
+    where: { id },
+  });
   if (!existing) {
     return { success: false, message: "Expertise item not found." };
   }
@@ -822,7 +846,10 @@ export async function createAboutTeamMember(
   const position = await aboutPrisma.aboutTeamMember.count();
   const parsed = aboutTeamMemberSchema.safeParse({ ...data, position });
   if (!parsed.success) {
-    return { success: false, message: parsed.error.issues[0]?.message ?? "Invalid team member." };
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid team member.",
+    };
   }
 
   if (!parsed.data.imagePublicId?.trim()) {
@@ -848,7 +875,9 @@ export async function updateAboutTeamMember(
 ): Promise<ActionResult> {
   await requireAuth();
 
-  const existing = await aboutPrisma.aboutTeamMember.findUnique({ where: { id } });
+  const existing = await aboutPrisma.aboutTeamMember.findUnique({
+    where: { id },
+  });
   if (!existing) {
     return { success: false, message: "Team member not found." };
   }
@@ -858,7 +887,10 @@ export async function updateAboutTeamMember(
     position: existing.position,
   });
   if (!parsed.success) {
-    return { success: false, message: parsed.error.issues[0]?.message ?? "Invalid team member." };
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid team member.",
+    };
   }
 
   const normalized = normalizeTeamMember(parsed.data, existing.position);
@@ -878,14 +910,18 @@ export async function updateAboutTeamMember(
 export async function deleteAboutTeamMember(id: string): Promise<ActionResult> {
   await requireAuth();
 
-  const existing = await aboutPrisma.aboutTeamMember.findUnique({ where: { id } });
+  const existing = await aboutPrisma.aboutTeamMember.findUnique({
+    where: { id },
+  });
   if (!existing) {
     return { success: false, message: "Team member not found." };
   }
 
   await aboutPrisma.aboutTeamMember.delete({ where: { id } });
 
-  const rows = await aboutPrisma.aboutTeamMember.findMany({ orderBy: { position: "asc" } });
+  const rows = await aboutPrisma.aboutTeamMember.findMany({
+    orderBy: { position: "asc" },
+  });
   await prisma.$transaction(
     rows.map((row: { id: string }, index: number) =>
       aboutPrisma.aboutTeamMember.update({
@@ -905,7 +941,9 @@ export async function reorderAboutTeamMembers(
 ): Promise<ActionResult> {
   await requireAuth();
 
-  const rows = await aboutPrisma.aboutTeamMember.findMany({ orderBy: { position: "asc" } });
+  const rows = await aboutPrisma.aboutTeamMember.findMany({
+    orderBy: { position: "asc" },
+  });
   const swap = getReorderSwap(rows, id, direction);
   if (!swap) {
     return { success: false, message: "Unable to move this team member." };
@@ -934,7 +972,10 @@ export async function createAboutValueItem(
   const position = await aboutPrisma.aboutValueItem.count();
   const parsed = aboutValueItemSchema.safeParse({ ...data, position });
   if (!parsed.success) {
-    return { success: false, message: parsed.error.issues[0]?.message ?? "Invalid value item." };
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid value item.",
+    };
   }
 
   await aboutPrisma.aboutValueItem.create({ data: parsed.data });
@@ -948,7 +989,9 @@ export async function updateAboutValueItem(
 ): Promise<ActionResult> {
   await requireAuth();
 
-  const existing = await aboutPrisma.aboutValueItem.findUnique({ where: { id } });
+  const existing = await aboutPrisma.aboutValueItem.findUnique({
+    where: { id },
+  });
   if (!existing) {
     return { success: false, message: "Value item not found." };
   }
@@ -958,7 +1001,10 @@ export async function updateAboutValueItem(
     position: existing.position,
   });
   if (!parsed.success) {
-    return { success: false, message: parsed.error.issues[0]?.message ?? "Invalid value item." };
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid value item.",
+    };
   }
 
   await aboutPrisma.aboutValueItem.update({
@@ -973,14 +1019,18 @@ export async function updateAboutValueItem(
 export async function deleteAboutValueItem(id: string): Promise<ActionResult> {
   await requireAuth();
 
-  const existing = await aboutPrisma.aboutValueItem.findUnique({ where: { id } });
+  const existing = await aboutPrisma.aboutValueItem.findUnique({
+    where: { id },
+  });
   if (!existing) {
     return { success: false, message: "Value item not found." };
   }
 
   await aboutPrisma.aboutValueItem.delete({ where: { id } });
 
-  const rows = await aboutPrisma.aboutValueItem.findMany({ orderBy: { position: "asc" } });
+  const rows = await aboutPrisma.aboutValueItem.findMany({
+    orderBy: { position: "asc" },
+  });
   await prisma.$transaction(
     rows.map((row: { id: string }, index: number) =>
       aboutPrisma.aboutValueItem.update({
@@ -1000,7 +1050,9 @@ export async function reorderAboutValueItems(
 ): Promise<ActionResult> {
   await requireAuth();
 
-  const rows = await aboutPrisma.aboutValueItem.findMany({ orderBy: { position: "asc" } });
+  const rows = await aboutPrisma.aboutValueItem.findMany({
+    orderBy: { position: "asc" },
+  });
   const swap = getReorderSwap(rows, id, direction);
   if (!swap) {
     return { success: false, message: "Unable to move this value item." };

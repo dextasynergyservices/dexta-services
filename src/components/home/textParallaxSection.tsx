@@ -8,7 +8,9 @@ interface TextParallaxSectionProps {
   text?: string;
 }
 
-export function TextParallaxSection({ text = DEFAULT_TEXT }: TextParallaxSectionProps) {
+export function TextParallaxSection({
+  text = DEFAULT_TEXT,
+}: TextParallaxSectionProps) {
   const words = text.split(" ");
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);

@@ -35,7 +35,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { contactSocialLinkSchema, type ContactSocialLinkInput } from "@/lib/validators";
+import {
+  contactSocialLinkSchema,
+  type ContactSocialLinkInput,
+} from "@/lib/validators";
 import {
   CONTACT_SOCIAL_PLATFORM_META,
   CONTACT_SOCIAL_PLATFORM_OPTIONS,
@@ -69,18 +72,20 @@ function SocialLinkForm({
     formState: { errors, isSubmitting },
   } = useForm<ContactSocialLinkInput>({
     resolver: zodResolver(contactSocialLinkSchema),
-    defaultValues:
-      initialValues ?? {
-        platform: "LINKEDIN",
-        label: CONTACT_SOCIAL_PLATFORM_META.LINKEDIN.label,
-        href: "",
-      },
+    defaultValues: initialValues ?? {
+      platform: "LINKEDIN",
+      label: CONTACT_SOCIAL_PLATFORM_META.LINKEDIN.label,
+      href: "",
+    },
   });
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <Label htmlFor="social-platform" className="mb-1.5 block text-xs text-[#888]">
+        <Label
+          htmlFor="social-platform"
+          className="mb-1.5 block text-xs text-[#888]"
+        >
           Platform
         </Label>
         <select
@@ -100,7 +105,10 @@ function SocialLinkForm({
       </div>
 
       <div>
-        <Label htmlFor="social-label" className="mb-1.5 block text-xs text-[#888]">
+        <Label
+          htmlFor="social-label"
+          className="mb-1.5 block text-xs text-[#888]"
+        >
           Label
         </Label>
         <Input
@@ -115,7 +123,10 @@ function SocialLinkForm({
       </div>
 
       <div>
-        <Label htmlFor="social-href" className="mb-1.5 block text-xs text-[#888]">
+        <Label
+          htmlFor="social-href"
+          className="mb-1.5 block text-xs text-[#888]"
+        >
           Link
         </Label>
         <Input
@@ -176,8 +187,12 @@ export function ContactSocialsManager({
 }) {
   const router = useRouter();
   const [createOpen, setCreateOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<ContactSocialLinkRow | null>(null);
-  const [deletingItem, setDeletingItem] = useState<ContactSocialLinkRow | null>(null);
+  const [editingItem, setEditingItem] = useState<ContactSocialLinkRow | null>(
+    null,
+  );
+  const [deletingItem, setDeletingItem] = useState<ContactSocialLinkRow | null>(
+    null,
+  );
   const [movingKey, setMovingKey] = useState<string | null>(null);
 
   const existingPlatforms = useMemo(
@@ -277,7 +292,9 @@ export function ContactSocialsManager({
             <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
               Active socials
             </p>
-            <p className="mt-2 text-2xl font-semibold text-white">{items.length}</p>
+            <p className="mt-2 text-2xl font-semibold text-white">
+              {items.length}
+            </p>
           </div>
           <div className="rounded-2xl border border-[#222] bg-[#0d0d0d] p-4 sm:col-span-2 xl:col-span-3">
             <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
@@ -322,7 +339,9 @@ export function ContactSocialsManager({
                           type="button"
                           size="icon-sm"
                           variant="outline"
-                          disabled={index === 0 || movingKey === `${item.id}-up`}
+                          disabled={
+                            index === 0 || movingKey === `${item.id}-up`
+                          }
                           onClick={() => moveItem(item.id, "up")}
                           className="border-[#2a2a2a] bg-transparent text-white hover:bg-[#1a1a1a]"
                         >

@@ -13,11 +13,7 @@ function toPhoneHref(value: string) {
   return `tel:${value.replace(/[^\d+]/g, "")}`;
 }
 
-export function ContactHero({
-  content,
-}: {
-  content: ContactPageContentData;
-}) {
+export function ContactHero({ content }: { content: ContactPageContentData }) {
   return (
     <section className="relative overflow-hidden bg-[var(--dexta-secondary)] text-white">
       {/* Subtle radial glow */}
@@ -57,7 +53,6 @@ export function ContactInfo({
     <section className="bg-[var(--background)] py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
         <div className="grid gap-12 lg:gap-16 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-
           {/* ── Left: contact details ── */}
           <motion.div
             initial={{ opacity: 0, x: -24 }}
@@ -145,7 +140,8 @@ export function ContactInfo({
                   </p>
                   <div className="mt-3 flex gap-3">
                     {socialLinks.map((social) => {
-                      const Icon = CONTACT_SOCIAL_PLATFORM_META[social.platform].icon;
+                      const Icon =
+                        CONTACT_SOCIAL_PLATFORM_META[social.platform].icon;
 
                       return (
                         <a

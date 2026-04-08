@@ -106,6 +106,7 @@ export function ServiceMediaRotator({
                 style={{ objectPosition: item.objectPosition ?? "center" }}
               />
             ) : imgSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={imgSrc}
                 alt={item.title}

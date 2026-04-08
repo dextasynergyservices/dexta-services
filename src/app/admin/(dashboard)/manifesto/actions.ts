@@ -5,8 +5,7 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { manifestoSchema, type ManifestoInput } from "@/lib/validators";
 
-const DEFAULT_TEXT =
-  "IF YOU'VE GOT A VISION, WE'VE GOT THE CREATIVE AUDACITY";
+const DEFAULT_TEXT = "IF YOU'VE GOT A VISION, WE'VE GOT THE CREATIVE AUDACITY";
 
 type ActionResult = { success: boolean; message: string };
 

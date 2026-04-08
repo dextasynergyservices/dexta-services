@@ -9,7 +9,12 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-const VALID_TABS: OffersAudienceType[] = ["FOR_YOU", "BUSINESS", "SCHOOLS", "CHURCHES"];
+const VALID_TABS: OffersAudienceType[] = [
+  "FOR_YOU",
+  "BUSINESS",
+  "SCHOOLS",
+  "CHURCHES",
+];
 
 interface OffersPlansPageProps {
   searchParams: Promise<{ tab?: string }>;

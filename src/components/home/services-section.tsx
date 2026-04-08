@@ -48,7 +48,13 @@ function DecorativeServicePanel({
 }
 
 function getIconSrc(publicId: string) {
-  return getCloudinaryUrl(publicId, { w: 80, h: 80, c: "fill", f: "auto", q: "auto" });
+  return getCloudinaryUrl(publicId, {
+    w: 80,
+    h: 80,
+    c: "fill",
+    f: "auto",
+    q: "auto",
+  });
 }
 
 function getSectionBackgroundImageSrc(publicId: string) {
@@ -133,11 +139,17 @@ export function ServicesSection({
               loading="lazy"
             />
           ) : (
-            <div className="h-full w-full" style={{ backgroundColor: "var(--primary-background)" }} />
+            <div
+              className="h-full w-full"
+              style={{ backgroundColor: "var(--primary-background)" }}
+            />
           )}
           <div
             className="absolute inset-0"
-            style={{ backgroundColor: "var(--primary-background)", opacity: 0.95 }}
+            style={{
+              backgroundColor: "var(--primary-background)",
+              opacity: 0.95,
+            }}
           />
         </div>
       </div>
@@ -168,11 +180,15 @@ export function ServicesSection({
                 >
                   <div
                     className="relative flex h-[calc(100vh-8rem)] w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#050505] sm:h-[60vh] sm:rounded-3xl lg:h-[500px] lg:flex-row lg:rounded-[32px]"
-                    style={{ boxShadow: `0 0 50px -10px ${hexToRgba(cardColor, 0.3)}` }}
+                    style={{
+                      boxShadow: `0 0 50px -10px ${hexToRgba(cardColor, 0.3)}`,
+                    }}
                   >
                     <div
                       className="absolute inset-0 opacity-20"
-                      style={{ background: `linear-gradient(to bottom right, ${hexToRgba(cardColor, 0.4)}, transparent)` }}
+                      style={{
+                        background: `linear-gradient(to bottom right, ${hexToRgba(cardColor, 0.4)}, transparent)`,
+                      }}
                     />
 
                     <div className="relative z-10 flex flex-1 flex-col justify-between p-6 sm:p-8 lg:p-12">
@@ -209,7 +225,9 @@ export function ServicesSection({
                         type="button"
                         className="mt-6 flex items-center gap-2 text-xs font-mono text-gray-500 transition-colors hover:text-white sm:mt-8 sm:text-sm"
                         onClick={() =>
-                          router.push(`/projects?tab=${service.type.toLowerCase()}`)
+                          router.push(
+                            `/projects?tab=${service.type.toLowerCase()}`,
+                          )
                         }
                       >
                         <span className="uppercase tracking-widest">
@@ -236,10 +254,7 @@ export function ServicesSection({
                           </div>
                         </>
                       ) : (
-                        <DecorativeServicePanel
-                          icon={Icon}
-                          color={cardColor}
-                        />
+                        <DecorativeServicePanel icon={Icon} color={cardColor} />
                       )}
                     </div>
                   </div>

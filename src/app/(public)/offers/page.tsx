@@ -5,10 +5,7 @@ import {
   toAudienceHref,
 } from "@/components/offers/offers-constants";
 import { OffersPage } from "@/components/offers/offers-page";
-import {
-  fetchUnifiedOffersPage,
-  type OffersAudienceSlug,
-} from "@/lib/api";
+import { fetchUnifiedOffersPage, type OffersAudienceSlug } from "@/lib/api";
 
 export const metadata = {
   title: "Offers | Dexta Synergy Services",
@@ -51,8 +48,9 @@ export default async function OffersPageRoute({
   const pageData = await fetchUnifiedOffersPage();
 
   const fallbackAudience =
-    pageData.audiences.find((audience) => audience.slug === DEFAULT_OFFERS_AUDIENCE)
-      ?.slug ??
+    pageData.audiences.find(
+      (audience) => audience.slug === DEFAULT_OFFERS_AUDIENCE,
+    )?.slug ??
     pageData.initialAudience ??
     pageData.audiences[0]?.slug ??
     DEFAULT_OFFERS_AUDIENCE;

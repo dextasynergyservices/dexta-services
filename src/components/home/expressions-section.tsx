@@ -42,7 +42,6 @@ export function ExpressionsSection({ expressions }: ExpressionsSectionProps) {
   return (
     <section className="bg-background px-4 py-20 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-
         {/* ── Section header ─────────────────────────────────────────────── */}
         <div className="mb-12 text-center">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-500">
@@ -70,6 +69,7 @@ export function ExpressionsSection({ expressions }: ExpressionsSectionProps) {
               {/* Logo area */}
               <div className="flex h-16 w-full items-center justify-center sm:h-20">
                 {item.logoPublicId ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={getLogoSrc(item.logoPublicId)}
                     alt={`${item.name} logo`}
@@ -106,6 +106,7 @@ export function ExpressionsSection({ expressions }: ExpressionsSectionProps) {
               {/* Logo banner */}
               <div className="flex items-center justify-center border-b border-gray-100 bg-gray-50 px-8 py-8">
                 {selected.logoPublicId ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={getModalLogoSrc(selected.logoPublicId)}
                     alt={`${selected.name} logo`}

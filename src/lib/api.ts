@@ -58,7 +58,10 @@ export type OffersServiceCardData = {
 
 const OFFERS_SERVICE_ORDER: OffersServiceType[] = ["DESIGN", "BUILD", "PRINT"];
 
-const OFFERS_SERVICE_DEFAULTS: Record<OffersServiceType, OffersServiceCardData> = {
+const OFFERS_SERVICE_DEFAULTS: Record<
+  OffersServiceType,
+  OffersServiceCardData
+> = {
   DESIGN: {
     id: "default-design",
     type: "DESIGN",
@@ -132,7 +135,9 @@ const fetchOffersServiceCardsCached = unstable_cache(
   { tags: ["services-content"] },
 );
 
-export async function fetchOffersServiceCards(): Promise<OffersServiceCardData[]> {
+export async function fetchOffersServiceCards(): Promise<
+  OffersServiceCardData[]
+> {
   return fetchOffersServiceCardsCached();
 }
 
@@ -226,13 +231,16 @@ export async function fetchPortfolioTabContent(): Promise<PortfolioTabContentMap
       },
     });
 
-    const result: PortfolioTabContentMap = { ...PORTFOLIO_TAB_CONTENT_DEFAULTS };
+    const result: PortfolioTabContentMap = {
+      ...PORTFOLIO_TAB_CONTENT_DEFAULTS,
+    };
 
     for (const row of rows) {
       const tab = SERVICE_TYPE_TO_TAB[row.type as PortfolioServiceType];
       result[tab] = {
         portfolioEyebrow:
-          row.portfolioEyebrow || PORTFOLIO_TAB_CONTENT_DEFAULTS[tab].portfolioEyebrow,
+          row.portfolioEyebrow ||
+          PORTFOLIO_TAB_CONTENT_DEFAULTS[tab].portfolioEyebrow,
         portfolioDescription:
           row.portfolioDescription ||
           PORTFOLIO_TAB_CONTENT_DEFAULTS[tab].portfolioDescription,
@@ -306,9 +314,7 @@ function parseTags(tags: string): string[] {
   }
 }
 
-export function normalizePortfolioTab(
-  tab?: string | null,
-): PortfolioTab {
+export function normalizePortfolioTab(tab?: string | null): PortfolioTab {
   const normalized = tab?.toLowerCase();
 
   return PORTFOLIO_TABS.find((value) => value === normalized) ?? "design";
@@ -511,7 +517,7 @@ type SqlOffersBillingRow = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function normalizeStoredCloudinaryValue(value: string | null | undefined) {
-  return value ? getCloudinaryPublicId(value) ?? value : null;
+  return value ? (getCloudinaryPublicId(value) ?? value) : null;
 }
 
 function normalizeOfferCtaText(value: string) {
@@ -537,7 +543,9 @@ const AUDIENCE_TYPE_TO_SLUG: Record<OffersAudienceType, OffersAudienceSlug> = {
 };
 
 function orderVisibleAudiences(audiences: OffersAudienceData[]) {
-  const audienceMap = new Map(audiences.map((audience) => [audience.type, audience]));
+  const audienceMap = new Map(
+    audiences.map((audience) => [audience.type, audience]),
+  );
 
   return OFFERS_AUDIENCE_ORDER.flatMap((type) => {
     const audience = audienceMap.get(type);
@@ -685,7 +693,9 @@ async function readOffersPageContent(): Promise<OffersPageContentData> {
       heroEyebrow: row.heroEyebrow,
       heroHeadline: row.heroHeadline,
       heroBody: row.heroBody,
-      heroBgImagePublicId: normalizeStoredCloudinaryValue(row.heroBgImagePublicId),
+      heroBgImagePublicId: normalizeStoredCloudinaryValue(
+        row.heroBgImagePublicId,
+      ),
       heroCtaText: normalizeHeroOfferText(row.heroCtaText),
       heroCtaHref: row.heroCtaHref,
       servicesSectionLabel: row.servicesSectionLabel,
@@ -693,7 +703,9 @@ async function readOffersPageContent(): Promise<OffersPageContentData> {
       servicesSectionBody: row.servicesSectionBody,
       audienceSectionLabel: row.audienceSectionLabel,
       audienceSectionTitle: row.audienceSectionTitle,
-      audienceSectionBody: normalizeAudienceSectionBody(row.audienceSectionBody),
+      audienceSectionBody: normalizeAudienceSectionBody(
+        row.audienceSectionBody,
+      ),
       popularBadgeText: row.popularBadgeText,
       featuresLabel: row.featuresLabel,
       choosePlanText: normalizeOfferCtaText(row.choosePlanText),
@@ -760,7 +772,9 @@ export async function fetchAudiences(): Promise<OffersAudienceData[]> {
 
 // ── Offer groups (with plans + billing options) ───────────────────────────────
 
-async function readOfferGroups(audienceType: OffersAudienceType): Promise<OffersGroupData[]> {
+async function readOfferGroups(
+  audienceType: OffersAudienceType,
+): Promise<OffersGroupData[]> {
   try {
     const rows = await prisma.offerGroup.findMany({
       where: { audienceType, isVisible: true },
@@ -809,15 +823,15 @@ async function readOfferGroups(audienceType: OffersAudienceType): Promise<Offers
       description: g.description ?? null,
       position: g.position,
       plans: g.plans.map((p) => ({
-            id: p.id,
-            name: p.name,
-            subtitle: p.subtitle ?? null,
-            imagePublicId: normalizeStoredCloudinaryValue(p.imagePublicId),
-            features: parseJsonStringArray(p.features),
-            billingEnabled: p.billingEnabled,
-            isHighlighted: p.isHighlighted,
-            highlightBgColor: p.highlightBgColor ?? null,
-            highlightTextColor: p.highlightTextColor ?? null,
+        id: p.id,
+        name: p.name,
+        subtitle: p.subtitle ?? null,
+        imagePublicId: normalizeStoredCloudinaryValue(p.imagePublicId),
+        features: parseJsonStringArray(p.features),
+        billingEnabled: p.billingEnabled,
+        isHighlighted: p.isHighlighted,
+        highlightBgColor: p.highlightBgColor ?? null,
+        highlightTextColor: p.highlightTextColor ?? null,
         position: p.position,
         billingOptions: p.billingOptions.map((o) => ({
           id: o.id,
@@ -971,7 +985,9 @@ const fetchContactSocialLinksCached = unstable_cache(
   { tags: [CONTACT_SOCIALS_TAG] },
 );
 
-export async function fetchContactSocialLinks(): Promise<ContactSocialLinkData[]> {
+export async function fetchContactSocialLinks(): Promise<
+  ContactSocialLinkData[]
+> {
   return fetchContactSocialLinksCached();
 }
 
@@ -1058,19 +1074,21 @@ async function readAboutMilestones(): Promise<AboutMilestoneData[]> {
       return ABOUT_MILESTONE_DEFAULTS.filter((item) => item.isVisible);
     }
 
-    return rows.map((row: {
-      year: string;
-      title: string;
-      description: string;
-      isVisible: boolean;
-      position: number;
-    }) => ({
-      year: row.year,
-      title: row.title,
-      description: row.description,
-      isVisible: row.isVisible,
-      position: row.position,
-    }));
+    return rows.map(
+      (row: {
+        year: string;
+        title: string;
+        description: string;
+        isVisible: boolean;
+        position: number;
+      }) => ({
+        year: row.year,
+        title: row.title,
+        description: row.description,
+        isVisible: row.isVisible,
+        position: row.position,
+      }),
+    );
   } catch {
     return ABOUT_MILESTONE_DEFAULTS.filter((item) => item.isVisible);
   }
@@ -1097,23 +1115,25 @@ async function readAboutExpertiseItems(): Promise<AboutExpertiseItemData[]> {
       return ABOUT_EXPERTISE_DEFAULTS.filter((item) => item.isVisible);
     }
 
-    return rows.map((row: {
-      icon: AboutIconKey;
-      title: string;
-      description: string;
-      metricLabel: string;
-      metricValue: string;
-      isVisible: boolean;
-      position: number;
-    }) => ({
-      icon: row.icon as AboutIconKey,
-      title: row.title,
-      description: row.description,
-      metricLabel: row.metricLabel,
-      metricValue: row.metricValue,
-      isVisible: row.isVisible,
-      position: row.position,
-    }));
+    return rows.map(
+      (row: {
+        icon: AboutIconKey;
+        title: string;
+        description: string;
+        metricLabel: string;
+        metricValue: string;
+        isVisible: boolean;
+        position: number;
+      }) => ({
+        icon: row.icon as AboutIconKey,
+        title: row.title,
+        description: row.description,
+        metricLabel: row.metricLabel,
+        metricValue: row.metricValue,
+        isVisible: row.isVisible,
+        position: row.position,
+      }),
+    );
   } catch {
     return ABOUT_EXPERTISE_DEFAULTS.filter((item) => item.isVisible);
   }
@@ -1142,29 +1162,31 @@ async function readAboutTeamMembers(): Promise<AboutTeamMemberData[]> {
       return ABOUT_TEAM_MEMBER_DEFAULTS.filter((item) => item.isVisible);
     }
 
-    return rows.map((row: {
-      name: string;
-      role: string;
-      bio: string;
-      expertise: string;
-      funFact: string;
-      portfolioUrl: string;
-      showPortfolioButton: boolean;
-      imagePublicId: string | null;
-      isVisible: boolean;
-      position: number;
-    }) => ({
-      name: row.name,
-      role: row.role,
-      bio: row.bio,
-      expertise: parseAboutJsonStringArray(row.expertise),
-      funFact: row.funFact,
-      portfolioUrl: row.portfolioUrl,
-      showPortfolioButton: row.showPortfolioButton,
-      imagePublicId: row.imagePublicId,
-      isVisible: row.isVisible,
-      position: row.position,
-    }));
+    return rows.map(
+      (row: {
+        name: string;
+        role: string;
+        bio: string;
+        expertise: string;
+        funFact: string;
+        portfolioUrl: string;
+        showPortfolioButton: boolean;
+        imagePublicId: string | null;
+        isVisible: boolean;
+        position: number;
+      }) => ({
+        name: row.name,
+        role: row.role,
+        bio: row.bio,
+        expertise: parseAboutJsonStringArray(row.expertise),
+        funFact: row.funFact,
+        portfolioUrl: row.portfolioUrl,
+        showPortfolioButton: row.showPortfolioButton,
+        imagePublicId: row.imagePublicId,
+        isVisible: row.isVisible,
+        position: row.position,
+      }),
+    );
   } catch {
     return ABOUT_TEAM_MEMBER_DEFAULTS.filter((item) => item.isVisible);
   }
@@ -1191,19 +1213,21 @@ async function readAboutValueItems(): Promise<AboutValueItemData[]> {
       return ABOUT_VALUE_DEFAULTS.filter((item) => item.isVisible);
     }
 
-    return rows.map((row: {
-      icon: AboutIconKey;
-      title: string;
-      description: string;
-      isVisible: boolean;
-      position: number;
-    }) => ({
-      icon: row.icon as AboutIconKey,
-      title: row.title,
-      description: row.description,
-      isVisible: row.isVisible,
-      position: row.position,
-    }));
+    return rows.map(
+      (row: {
+        icon: AboutIconKey;
+        title: string;
+        description: string;
+        isVisible: boolean;
+        position: number;
+      }) => ({
+        icon: row.icon as AboutIconKey,
+        title: row.title,
+        description: row.description,
+        isVisible: row.isVisible,
+        position: row.position,
+      }),
+    );
   } catch {
     return ABOUT_VALUE_DEFAULTS.filter((item) => item.isVisible);
   }
