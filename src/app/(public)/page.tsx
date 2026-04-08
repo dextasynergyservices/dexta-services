@@ -1,41 +1,35 @@
-import {
-  HydrationBoundary,
-  QueryClient,
-  dehydrate,
-} from "@tanstack/react-query";
-import Hero from "@/components/home/hero";
-import { ServicesSection } from "@/components/home/services-section";
-import { ProjectGallery } from "@/components/home/project-gallery";
-import { fetchProjects } from "@/lib/api";
-import { ContactForm } from "@/components/home/contact-form";
+import HeroWrapper from "@/components/home/hero-wrapper";
+import ServicesWrapper from "@/components/home/services-wrapper";
+import { ContactSection } from "@/components/home/contact-section";
 import { FloatingElements } from "@/components/home/floating-elements";
-import TextParallaxSection from "@/components/home/textParallaxSection";
+import ManifestoWrapper from "@/components/home/manifesto-wrapper";
+import ExpressionsWrapper from "@/components/home/expressions-wrapper";
+import { fetchContactPageContent, fetchContactSocialLinks } from "@/lib/api";
 
 export default async function Home() {
-  const queryClient = new QueryClient();
-
-  await queryClient.prefetchQuery({
-    queryKey: ["projects"],
-    queryFn: fetchProjects,
-  });
+  const [contactContent, contactSocialLinks] = await Promise.all([
+    fetchContactPageContent(),
+    fetchContactSocialLinks(),
+  ]);
 
   return (
     <>
       <FloatingElements />
       <section id="home">
-        <Hero />
+        <HeroWrapper />
       </section>
-      <TextParallaxSection />
+      <ManifestoWrapper />
       <section id="services">
-        <ServicesSection />
+        <ServicesWrapper />
       </section>
-      <section id="projects">
-        <HydrationBoundary state={dehydrate(queryClient)}>
-          <ProjectGallery />
-        </HydrationBoundary>
+      <section id="expressions">
+        <ExpressionsWrapper />
       </section>
       <section id="contact">
-        <ContactForm />
+        <ContactSection
+          content={contactContent}
+          socialLinks={contactSocialLinks}
+        />
       </section>
     </>
   );

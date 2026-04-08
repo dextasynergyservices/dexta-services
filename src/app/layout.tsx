@@ -1,24 +1,12 @@
 import type { Metadata } from "next";
-import { Inter, Manrope, Poppins } from "next/font/google";
-import { Providers } from "@/components/layout/providers";
-import { Toaster } from "@/components/ui/sonner";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 import "./globals-3d.css";
+import { fetchContactPageContent } from "@/lib/api";
 
-const inter = Inter({
+const montserrat = Montserrat({
   subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-manrope",
-});
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
-  variable: "--font-poppins",
+  variable: "--font-montserrat",
 });
 
 export const metadata: Metadata = {
@@ -44,45 +32,33 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const contactContent = await fetchContactPageContent();
+  const primaryEmail = contactContent.emails[0];
+  const primaryPhone = contactContent.phones[0];
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: "Dexta Synergy Services",
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: "123 Main St",
-      addressLocality: "Anytown",
-      addressRegion: "CA",
-      postalCode: "12345",
-      addressCountry: "US",
-    },
-    telephone: "+1-234-567-8901",
-    email: "contact@dextasynergy.com",
+    address: contactContent.address,
+    telephone: primaryPhone,
+    email: primaryEmail,
     url: "https://dexta.synergy",
   };
 
   return (
-    <html
-      lang="en"
-      className={`${poppins.variable} ${manrope.variable} ${inter.variable}`}
-    >
+    <html lang="en" className={montserrat.variable}>
       <head>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body>
-        <Providers>
-          {children}
-          <Toaster theme="dark" />
-        </Providers>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

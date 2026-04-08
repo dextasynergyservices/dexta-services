@@ -1,3 +1,5 @@
+import { Toaster } from "@/components/ui/sonner";
+
 export const metadata = {
   title: {
     default: "Admin | Dexta Synergy Services",
@@ -10,5 +12,10 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="min-h-screen bg-[#0a0a0a]">{children}</div>;
+  return (
+    <div className="min-h-screen bg-[#0a0a0a]">
+      {children}
+      <Toaster theme="dark" />
+    </div>
+  );
 }

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { CalendarDays, MapPin, Users } from "lucide-react";
 import { DynamicRegistrationForm } from "@/components/events/dynamic-registration-form";
+import { RecaptchaProvider } from "@/components/layout/recaptcha-provider";
 import { registerForEvent } from "./actions";
 import prisma from "@/lib/prisma";
 import { formatDateInTimezone } from "@/lib/timezone";
@@ -116,19 +117,21 @@ export default async function EventRegistrationPage({ params }: Props) {
 
           {/* Right — Registration Form */}
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <DynamicRegistrationForm
-              eventSlug={slug}
-              fields={event.formFields.map((f) => ({
-                name: f.name,
-                label: f.label,
-                type: f.type,
-                placeholder: f.placeholder,
-                required: f.required,
-                options: f.options,
-              }))}
-              isClosed={isClosed}
-              submitAction={boundRegister}
-            />
+            <RecaptchaProvider>
+              <DynamicRegistrationForm
+                eventSlug={slug}
+                fields={event.formFields.map((f) => ({
+                  name: f.name,
+                  label: f.label,
+                  type: f.type,
+                  placeholder: f.placeholder,
+                  required: f.required,
+                  options: f.options,
+                }))}
+                isClosed={isClosed}
+                submitAction={boundRegister}
+              />
+            </RecaptchaProvider>
           </div>
         </div>
       </div>

@@ -25,7 +25,6 @@ export function Navbar() {
   const navItems: NavItem[] = [
     { label: "Home", pageHref: "/" },
     { label: "Projects", pageHref: "/projects" },
-    { label: "Services", pageHref: "/services" },
     { label: "Offers", pageHref: "/offers" },
     { label: "Events", pageHref: "/events" },
     { label: "About", pageHref: "/about" },

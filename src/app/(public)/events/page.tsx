@@ -13,18 +13,41 @@ export default async function EventsPage() {
 
   const events = await prisma.event.findMany({
     where: { status: { in: ["PUBLISHED", "CLOSED"] } },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      description: true,
+      dateTime: true,
+      timezone: true,
+      location: true,
+      imagePublicId: true,
+      attendeeLimit: true,
+      status: true,
+    },
     orderBy: { dateTime: "desc" },
   });
 
-  // Get accepted counts
-  const eventsWithCounts = await Promise.all(
-    events.map(async (event) => {
-      const acceptedCount = await prisma.eventRegistration.count({
-        where: { eventId: event.id, status: "ACCEPTED" },
-      });
-      return { ...event, acceptedCount };
-    }),
+  const acceptedCounts =
+    events.length > 0
+      ? await prisma.eventRegistration.groupBy({
+          by: ["eventId"],
+          where: {
+            eventId: { in: events.map((event) => event.id) },
+            status: "ACCEPTED",
+          },
+          _count: { _all: true },
+        })
+      : [];
+
+  const acceptedCountByEventId = new Map(
+    acceptedCounts.map((entry) => [entry.eventId, entry._count._all]),
   );
+
+  const eventsWithCounts = events.map((event) => ({
+    ...event,
+    acceptedCount: acceptedCountByEventId.get(event.id) ?? 0,
+  }));
 
   const upcoming = eventsWithCounts
     .filter((e) => e.dateTime >= now && e.status === "PUBLISHED")

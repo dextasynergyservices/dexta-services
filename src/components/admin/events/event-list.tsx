@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, Pencil, Trash2, Search } from "lucide-react";
@@ -66,17 +66,48 @@ export function EventList({ events, total, page, totalPages }: EventListProps) {
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("search") ?? "");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const updateParams = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
-    params.delete("page");
-    router.push(`/admin/events?${params.toString()}`);
-  };
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setSearch(searchParams.get("search") ?? "");
+  }, [searchParams]);
+
+  const updateParams = useCallback(
+    (key: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+      params.delete("page");
+      router.replace(`/admin/events?${params.toString()}`);
+    },
+    [router, searchParams],
+  );
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearch(value);
+
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+
+      debounceRef.current = setTimeout(() => {
+        updateParams("search", value);
+      }, 300);
+    },
+    [updateParams],
+  );
 
   const goToPage = (p: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -105,14 +136,7 @@ export function EventList({ events, total, page, totalPages }: EventListProps) {
           <Input
             placeholder="Search events..."
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              const timeout = setTimeout(
-                () => updateParams("search", e.target.value),
-                300,
-              );
-              return () => clearTimeout(timeout);
-            }}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="border-[#2a2a2a] bg-[#0d0d0d] pl-9 text-white placeholder-[#444]"
             aria-label="Search events"
           />

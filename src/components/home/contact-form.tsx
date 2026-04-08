@@ -1,10 +1,11 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { useActionState, useEffect, useRef, useCallback } from "react";
+import { startTransition, useActionState, useEffect, useRef, useCallback } from "react";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { submitContactForm } from "@/app/actions";
 import { Button } from "@/components/ui/button";
+import { RecaptchaProvider } from "@/components/layout/recaptcha-provider";
 import { motion } from "framer-motion";
 import { ArrowRight, Loader } from "lucide-react";
 
@@ -12,8 +13,31 @@ const initialState = {
   message: "",
 };
 
-function SubmitButton() {
+function SubmitButton({ light = false }: { light?: boolean }) {
   const { pending } = useFormStatus();
+
+  if (light) {
+    return (
+      <Button
+        type="submit"
+        aria-disabled={pending}
+        disabled={pending}
+        className="h-12 rounded-full bg-[var(--dexta)] px-7 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+      >
+        {pending ? (
+          <>
+            <Loader className="mr-2 h-4 w-4 animate-spin" />
+            Sending...
+          </>
+        ) : (
+          <>
+            Send Message
+            <ArrowRight className="ml-2 w-4 h-4" />
+          </>
+        )}
+      </Button>
+    );
+  }
 
   return (
     <Button
@@ -37,7 +61,8 @@ function SubmitButton() {
   );
 }
 
-function ContactFormInternal() {
+// Shared form card — dark (home page) or light (contact page)
+function ContactFormCard({ light = false }: { light?: boolean }) {
   const [state, formAction] = useActionState(
     submitContactForm,
     initialState,
@@ -65,11 +90,144 @@ function ContactFormInternal() {
         formData.set("recaptchaToken", token);
       }
 
-      formAction(formData);
+      startTransition(() => {
+        formAction(formData);
+      });
     },
     [executeRecaptcha, formAction],
   );
 
+  const inputClass = light ? "form-input-light" : "form-input";
+  const labelClass = light
+    ? "block text-xs font-semibold uppercase tracking-[0.24em] text-[var(--dexta-primary)] mb-2"
+    : "block text-xs font-mono tracking-wider text-gray-400 mb-2";
+  const errorClass = light ? "text-red-500 text-xs mt-2" : "text-red-400 text-xs mt-2";
+
+  return (
+    <>
+      <div
+        className={
+          light
+            ? "rounded-[30px] border border-[var(--dexta-primary)] bg-white p-6 sm:p-8"
+            : "relative border border-white/10 bg-white/5 p-6 sm:p-8 backdrop-blur-sm"
+        }
+      >
+        {!light && (
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/10 to-transparent" />
+        )}
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          className="relative z-10 space-y-6"
+        >
+          <div>
+            <label htmlFor="name" className={labelClass}>
+              Name
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              className={inputClass}
+              required
+            />
+            {state?.errors?.name && (
+              <p className={errorClass}>{state.errors.name.join(", ")}</p>
+            )}
+          </div>
+          <div>
+            <label htmlFor="email" className={labelClass}>
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              className={inputClass}
+              required
+            />
+            {state?.errors?.email && (
+              <p className={errorClass}>{state.errors.email.join(", ")}</p>
+            )}
+          </div>
+          <div>
+            <label htmlFor="message" className={labelClass}>
+              Message
+            </label>
+            <textarea
+              id="message"
+              name="message"
+              rows={5}
+              className={inputClass}
+              required
+            />
+            {state?.errors?.message && (
+              <p className={errorClass}>{state.errors.message.join(", ")}</p>
+            )}
+          </div>
+          <div className="pt-2">
+            <SubmitButton light={light} />
+          </div>
+          {state?.message && (
+            <p
+              className={`text-sm ${state?.errors ? (light ? "text-red-500" : "text-red-400") : (light ? "text-green-600" : "text-green-400")}`}
+            >
+              {state.message}
+            </p>
+          )}
+        </form>
+      </div>
+      <style jsx global>{`
+        /* Dark variant — used on home page */
+        .form-input {
+          width: 100%;
+          padding: 0.65rem 0.875rem;
+          border-radius: 0;
+          border: 1px dotted var(--dexta);
+          background-color: transparent;
+          color: white;
+          font-family: var(--font-sans);
+          font-size: 0.9375rem;
+          transition:
+            border-color 0.3s,
+            box-shadow 0.3s;
+          min-height: 2.75rem;
+        }
+        .form-input:focus {
+          outline: none;
+          box-shadow: 0 0 15px rgba(34, 211, 238, 0.1);
+        }
+
+        /* Light variant — used on contact page */
+        .form-input-light {
+          width: 100%;
+          padding: 0.7rem 1rem;
+          border-radius: 12px;
+          border: 1.5px solid var(--dexta-primary);
+          background-color: #ffffff;
+          color: var(--dexta-secondary);
+          font-family: var(--font-sans);
+          font-size: 0.9375rem;
+          transition:
+            border-color 0.25s,
+            box-shadow 0.25s;
+          min-height: 2.75rem;
+        }
+        .form-input-light::placeholder {
+          color: #9baacf;
+        }
+        .form-input-light:focus {
+          outline: none;
+          border-color: var(--dexta);
+          box-shadow: 0 0 0 3px rgba(0, 171, 255, 0.15);
+        }
+      `}</style>
+    </>
+  );
+}
+
+// Used on the home page — card inside a standalone dark section with heading
+function ContactFormSection() {
   return (
     <section className="bg-black text-white py-16 sm:py-20 md:py-24 lg:py-32">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -95,112 +253,27 @@ function ContactFormInternal() {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <div className="relative rounded-lg sm:rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8 backdrop-blur-sm">
-            <div className="absolute inset-0 rounded-lg sm:rounded-2xl bg-gradient-to-br from-cyan-900/10 to-transparent" />
-            <form
-              ref={formRef}
-              onSubmit={handleSubmit}
-              className="relative z-10 space-y-6 sm:space-y-8"
-            >
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-xs sm:text-sm font-mono tracking-wider text-gray-400 mb-2"
-                >
-                  NAME
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  className="form-input"
-                  required
-                />
-                {state?.errors?.name && (
-                  <p className="text-red-400 text-xs sm:text-sm mt-2">
-                    {state.errors.name.join(", ")}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-xs sm:text-sm font-mono tracking-wider text-gray-400 mb-2"
-                >
-                  EMAIL
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  className="form-input"
-                  required
-                />
-                {state?.errors?.email && (
-                  <p className="text-red-400 text-xs sm:text-sm mt-2">
-                    {state.errors.email.join(", ")}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label
-                  htmlFor="message"
-                  className="block text-xs sm:text-sm font-mono tracking-wider text-gray-400 mb-2"
-                >
-                  MESSAGE
-                </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  rows={4}
-                  className="form-input"
-                  required
-                />
-                {state?.errors?.message && (
-                  <p className="text-red-400 text-xs sm:text-sm mt-2">
-                    {state.errors.message.join(", ")}
-                  </p>
-                )}
-              </div>
-              <div className="text-center pt-4">
-                <SubmitButton />
-              </div>
-              {state?.message && (
-                <p
-                  className={`text-center mt-4 text-xs sm:text-sm font-mono ${state?.errors ? "text-red-400" : "text-green-400"}`}
-                >
-                  {state.message}
-                </p>
-              )}
-            </form>
-          </div>
+          <ContactFormCard light={false} />
         </motion.div>
       </div>
-      <style jsx global>{`
-        .form-input {
-          width: 100%;
-          padding: 0.65rem 0.875rem;
-          border-radius: 0;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          background-color: rgba(255, 255, 255, 0.05);
-          color: white;
-          font-family: var(--font-mono);
-          font-size: clamp(0.875rem, 2vw, 1rem);
-          transition:
-            border-color 0.3s,
-            box-shadow 0.3s;
-          min-height: 2.75rem;
-        }
-        .form-input:focus {
-          outline: none;
-          border-color: rgba(34, 211, 238, 0.5);
-          box-shadow: 0 0 15px rgba(34, 211, 238, 0.1);
-        }
-      `}</style>
     </section>
   );
 }
 
+// For home page — full standalone section
 export function ContactForm() {
-  return <ContactFormInternal />;
+  return (
+    <RecaptchaProvider>
+      <ContactFormSection />
+    </RecaptchaProvider>
+  );
+}
+
+// For embedding inside the contact page layout (light theme, no section wrapper)
+export function ContactFormEmbed() {
+  return (
+    <RecaptchaProvider>
+      <ContactFormCard light={true} />
+    </RecaptchaProvider>
+  );
 }

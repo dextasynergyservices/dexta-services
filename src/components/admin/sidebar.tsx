@@ -1,8 +1,9 @@
 "use client";
 
+import type { ComponentType } from "react";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
@@ -14,6 +15,15 @@ import {
   X,
   User,
   ExternalLink,
+  PanelTop,
+  Home,
+  ChevronDown,
+  Quote,
+  Sparkles,
+  Layers,
+  Image as ImageIcon,
+  HandCoins,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,36 +34,147 @@ interface AdminSidebarProps {
     name?: string | null;
     email?: string | null;
   };
+  unreadContactMessages?: number;
 }
 
-const navItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/events", label: "Events", icon: CalendarDays },
-  { href: "/admin/registrations", label: "Registrations", icon: Users },
-  { href: "/admin/messaging", label: "Messaging", icon: Mail },
-];
+type NavItem = {
+  href: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  section?: string;
+  badgeCount?: number;
+};
 
-export function AdminSidebar({ user }: AdminSidebarProps) {
+type NavGroup = {
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  basePaths: string[];
+  items: NavItem[];
+  badgeCount?: number;
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function AdminSidebar({
+  user,
+  unreadContactMessages = 0,
+}: AdminSidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const profileRef = useRef<HTMLDivElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const profileRef = useRef<HTMLDivElement>(null);
 
-  const isActive = (href: string) => {
-    if (href === "/admin") return pathname === "/admin";
-    return pathname.startsWith(href);
+  const navGroups: NavGroup[] = [
+    {
+      label: "Homepage",
+      icon: Home,
+      basePaths: [
+        "/admin/hero",
+        "/admin/manifesto",
+        "/admin/expressions",
+        "/admin/services",
+      ],
+      items: [
+        { href: "/admin/hero", label: "Hero Section", icon: PanelTop },
+        { href: "/admin/manifesto", label: "Manifesto", icon: Quote },
+        { href: "/admin/expressions", label: "Expressions", icon: Sparkles },
+        { href: "/admin/services", label: "Project Section", icon: Layers },
+      ],
+    },
+    {
+      label: "Projects",
+      icon: ImageIcon,
+      basePaths: ["/admin/projects-hero", "/admin/portfolio"],
+      items: [
+        { href: "/admin/projects-hero", label: "Portfolio Page", icon: PanelTop },
+        { href: "/admin/portfolio", label: "Portfolio", icon: ImageIcon },
+      ],
+    },
+    {
+      label: "About",
+      icon: Info,
+      basePaths: ["/admin/about"],
+      items: [
+        { href: "/admin/about/hero", label: "Hero Section", icon: PanelTop },
+        { href: "/admin/about/story", label: "Story Section", icon: Quote },
+        { href: "/admin/about/expertise", label: "Expertise Section", icon: Layers },
+        { href: "/admin/about/team", label: "Team Section", icon: Users },
+        { href: "/admin/about/values", label: "Values Section", icon: Sparkles },
+        { href: "/admin/about/cta", label: "Bottom CTA", icon: HandCoins },
+      ],
+    },
+    {
+      label: "Contact",
+      icon: Mail,
+      basePaths: ["/admin/contact"],
+      badgeCount: unreadContactMessages,
+      items: [
+        { href: "/admin/contact?section=content", label: "Page Content", icon: PanelTop, section: "content" },
+        { href: "/admin/contact?section=socials", label: "Social Links", icon: ExternalLink, section: "socials" },
+        {
+          href: "/admin/contact?section=messages",
+          label: "Messages Inbox",
+          icon: Mail,
+          section: "messages",
+          badgeCount: unreadContactMessages,
+        },
+      ],
+    },
+    {
+      label: "Offers",
+      icon: Layers,
+      basePaths: ["/admin/offers"],
+      items: [
+        { href: "/admin/offers/content", label: "Page Content", icon: PanelTop },
+        { href: "/admin/offers/plans", label: "Offers", icon: HandCoins },
+      ],
+    },
+    {
+      label: "Events",
+      icon: CalendarDays,
+      basePaths: ["/admin/events", "/admin/registrations", "/admin/messaging"],
+      items: [
+        { href: "/admin/events", label: "Events", icon: CalendarDays },
+        { href: "/admin/registrations", label: "Registrations", icon: Users },
+        { href: "/admin/messaging", label: "Messaging", icon: Mail },
+      ],
+    },
+  ];
+
+  // Auto-expand the group that owns the current page
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    for (const group of navGroups) {
+      initial[group.label] = group.basePaths.some((p) =>
+        pathname.startsWith(p),
+      );
+    }
+    return initial;
+  });
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  const isActive = (item: NavItem) => {
+    const [pathOnly] = item.href.split("?");
+
+    if (!pathname.startsWith(pathOnly)) {
+      return false;
+    }
+
+    if (item.section) {
+      return searchParams.get("section") === item.section;
+    }
+
+    return true;
   };
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
   // Close profile dropdown on outside click
@@ -66,15 +187,13 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
         setProfileOpen(false);
       }
     }
-    if (profileOpen) {
-      document.addEventListener("mousedown", handleClick);
-    }
+    if (profileOpen) document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [profileOpen]);
 
   const sidebar = (
     <div className="flex h-full flex-col">
-      <Link href="/" className="flex items-center py-4 gap-2 px-2">
+      <Link href="/" className="flex items-center gap-2 px-2 py-4">
         <Image
           src="/images/dexta1.png"
           alt="Dexta Logo"
@@ -87,23 +206,92 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4" aria-label="Admin navigation">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={() => setMobileOpen(false)}
-            aria-current={isActive(item.href) ? "page" : undefined}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-              isActive(item.href)
-                ? "bg-cyan-500/10 text-cyan-400"
-                : "text-[#888] hover:bg-[#1a1a1a] hover:text-white",
-            )}
-          >
-            <item.icon className="h-4 w-4" aria-hidden="true" />
-            {item.label}
-          </Link>
-        ))}
+        {/* Dashboard — standalone */}
+        <Link
+          href="/admin"
+          onClick={() => setMobileOpen(false)}
+          aria-current={pathname === "/admin" ? "page" : undefined}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+            pathname === "/admin"
+              ? "bg-cyan-500/10 text-cyan-400"
+              : "text-[#888] hover:bg-[#1a1a1a] hover:text-white",
+          )}
+        >
+          <LayoutDashboard className="h-4 w-4 shrink-0" aria-hidden="true" />
+          Dashboard
+        </Link>
+
+        {navGroups.map((group) => {
+          const isOpen = openGroups[group.label] ?? false;
+          const groupActive = group.basePaths.some((p) =>
+            pathname.startsWith(p),
+          );
+
+          return (
+            <div key={group.label}>
+              {/* Group toggle button */}
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.label)}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  groupActive && !isOpen
+                    ? "bg-cyan-500/10 text-cyan-400"
+                    : "text-[#888] hover:bg-[#1a1a1a] hover:text-white",
+                )}
+              >
+                <group.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="flex-1 text-left">{group.label}</span>
+                {group.badgeCount ? (
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-cyan-500 px-1.5 py-0.5 text-[10px] font-semibold text-black">
+                    {group.badgeCount}
+                  </span>
+                ) : null}
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+                    isOpen ? "rotate-180" : "rotate-0",
+                  )}
+                  aria-hidden="true"
+                />
+              </button>
+
+              {/* Child items */}
+              <div
+                className={cn(
+                  "overflow-hidden transition-all duration-200",
+                  isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0",
+                )}
+              >
+                <div className="ml-3 mt-0.5 space-y-0.5 border-l border-[#222] pl-3 pb-1">
+                  {group.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      aria-current={isActive(item) ? "page" : undefined}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        isActive(item)
+                          ? "bg-cyan-500/10 text-cyan-400"
+                          : "text-[#666] hover:bg-[#1a1a1a] hover:text-white",
+                      )}
+                    >
+                      <item.icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      <span className="flex-1">{item.label}</span>
+                      {item.badgeCount ? (
+                        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-cyan-500 px-1.5 py-0.5 text-[10px] font-semibold text-black">
+                          {item.badgeCount}
+                        </span>
+                      ) : null}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </nav>
 
       {/* User info + Logout */}
@@ -156,7 +344,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
         <div ref={profileRef} className="relative">
           <button
             onClick={() => setProfileOpen(!profileOpen)}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#222] text-white hover:bg-[#333] transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#222] text-white transition-colors hover:bg-[#333]"
             aria-label="Profile menu"
           >
             <User className="h-4 w-4" />
@@ -167,11 +355,11 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
             className={cn(
               "absolute right-0 top-full mt-2 w-56 rounded-xl border border-[#222] bg-[#111] p-2 shadow-2xl transition-all duration-200",
               profileOpen
-                ? "opacity-100 translate-y-0 pointer-events-auto"
-                : "opacity-0 -translate-y-2 pointer-events-none",
+                ? "pointer-events-auto translate-y-0 opacity-100"
+                : "pointer-events-none -translate-y-2 opacity-0",
             )}
           >
-            <div className="border-b border-[#222] px-3 py-2.5 mb-1">
+            <div className="mb-1 border-b border-[#222] px-3 py-2.5">
               <p className="truncate text-sm font-medium text-white">
                 {user?.name ?? "Admin"}
               </p>
@@ -179,7 +367,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
             </div>
             <Link
               href="/"
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#888] hover:bg-[#1a1a1a] hover:text-white transition-colors"
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#888] transition-colors hover:bg-[#1a1a1a] hover:text-white"
               onClick={() => setProfileOpen(false)}
             >
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
@@ -187,7 +375,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
             </Link>
             <button
               onClick={() => signOut({ callbackUrl: "/admin/login" })}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#888] hover:bg-red-950/30 hover:text-red-400 transition-colors"
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#888] transition-colors hover:bg-red-950/30 hover:text-red-400"
             >
               <LogOut className="h-4 w-4" aria-hidden="true" />
               Sign out
@@ -196,13 +384,13 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
         </div>
       </div>
 
-      {/* Mobile sidebar overlay — always mounted, animated with transitions */}
+      {/* Mobile sidebar overlay */}
       <div
         className={cn(
-          "fixed inset-0 z-[60] lg:hidden transition-opacity duration-300",
+          "fixed inset-0 z-[60] transition-opacity duration-300 lg:hidden",
           mobileOpen
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none",
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0",
         )}
       >
         <div

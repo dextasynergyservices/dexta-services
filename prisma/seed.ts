@@ -2,11 +2,18 @@ import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
+import {
+  projectsHeroDefaults,
+  serviceContentDefaults,
+} from "./seed-projects-data";
+
+const connectionString =
+  process.env.DATABASE_URL_UNPOOLED?.trim() || process.env.DATABASE_URL?.trim();
 
 async function main() {
   const prisma = new PrismaClient({
     adapter: new PrismaPg({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
     }),
   });
 
@@ -24,7 +31,23 @@ async function main() {
     },
   });
 
+  for (const service of serviceContentDefaults) {
+    await prisma.serviceContent.upsert({
+      where: { type: service.type },
+      update: service,
+      create: service,
+    });
+  }
+
+  await prisma.projectsHeroContent.upsert({
+    where: { id: projectsHeroDefaults.id },
+    update: projectsHeroDefaults,
+    create: projectsHeroDefaults,
+  });
+
   console.log(`Admin user seeded: ${email}`);
+  console.log("Seeded homepage project section defaults.");
+  console.log("Seeded projects hero defaults.");
   console.log("IMPORTANT: Change the default password after first login!");
 
   await prisma.$disconnect();

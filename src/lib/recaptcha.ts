@@ -18,6 +18,11 @@ export async function verifyRecaptcha(
   token: string,
   expectedAction?: string,
 ): Promise<VerifyResult> {
+  // Skip verification in development — reCAPTCHA always fails on localhost
+  if (process.env.NODE_ENV !== "production") {
+    return { success: true, score: 1, action: expectedAction ?? "" };
+  }
+
   const secret = process.env.RECAPTCHA_SECRET_KEY;
 
   if (!secret) {

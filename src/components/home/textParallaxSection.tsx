@@ -2,10 +2,14 @@
 
 import React, { useEffect, useRef, useState } from "react";
 
-const text = "IF YOU'VE GOT A VISION, WE'VE GOT THE CREATIVE AUDACITY";
-const words = text.split(" ");
+const DEFAULT_TEXT = "IF YOU'VE GOT A VISION, WE'VE GOT THE CREATIVE AUDACITY";
 
-export function TextParallaxSection() {
+interface TextParallaxSectionProps {
+  text?: string;
+}
+
+export function TextParallaxSection({ text = DEFAULT_TEXT }: TextParallaxSectionProps) {
+  const words = text.split(" ");
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
 
@@ -45,7 +49,7 @@ export function TextParallaxSection() {
             {words.map((word, index) => (
               <span
                 key={index}
-                className={`transition-all duration-300 ease-in-out ${index < activeWordIndex ? "text-primary" : ""} ${words[index - 1] === "WEBSITES." ? "mb-8 block" : ""}`}
+                className={`transition-all duration-300 ease-in-out ${index < activeWordIndex ? "text-[var(--dexta-primary)]" : ""} ${words[index - 1] === "WEBSITES." ? "mb-8 block" : ""}`}
               >
                 {word}{" "}
               </span>

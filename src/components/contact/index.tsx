@@ -1,47 +1,44 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MapPin, Mail, Phone, ExternalLink } from "lucide-react";
-import { ContactForm as ContactFormComponent } from "@/components/home/contact-form";
+import { MapPin, Mail, Phone } from "lucide-react";
+import { ContactFormEmbed } from "@/components/home/contact-form";
+import type {
+  ContactPageContentData,
+  ContactSocialLinkData,
+} from "@/lib/contact-defaults";
+import { CONTACT_SOCIAL_PLATFORM_META } from "@/lib/contact-socials";
 
-const contactInfo = {
-  address: "96 Elioparanwo Road, Port Harcourt, Rivers State, Nigeria",
-  emails: ["info@dexta.services", "admin@dexta.services"],
-  phone: "+234 810 320 8287",
-};
+function toPhoneHref(value: string) {
+  return `tel:${value.replace(/[^\d+]/g, "")}`;
+}
 
-export function ContactHero() {
+export function ContactHero({
+  content,
+}: {
+  content: ContactPageContentData;
+}) {
   return (
-    <section className="relative min-h-[55vh] sm:min-h-[60vh] lg:min-h-[70vh] bg-white text-[#212529] overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-white" />
-      <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-[color:var(--color-primary)]/15 blur-3xl" />
-      <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-[color:var(--color-secondary-foreground)]/10 blur-3xl" />
+    <section className="relative overflow-hidden bg-[var(--dexta-secondary)] text-white">
+      {/* Subtle radial glow */}
+      <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-[var(--dexta-primary)]/40 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-[var(--dexta)]/10 blur-3xl pointer-events-none" />
 
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24">
+      <div className="relative mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-28">
         <motion.div
-          className="max-w-4xl mx-auto text-center"
-          initial={{ opacity: 0, y: 30 }}
+          className="max-w-3xl"
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.7 }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[color:var(--color-secondary-foreground)]/20 bg-white/80 backdrop-blur-md mb-6 text-[color:var(--color-secondary-foreground)]">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[color:var(--color-primary)] opacity-30"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[color:var(--color-secondary-foreground)]"></span>
-            </span>
-            <span className="text-xs font-mono tracking-wider">CONTACT US</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6">
-            Get In{" "}
-            <span className="text-[color:var(--color-secondary-foreground)]">
-              Touch
-            </span>
+          <p className="inline-flex rounded-full border border-white bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--dexta-secondary)]">
+            {content.heroEyebrow}
+          </p>
+          <h1 className="mt-6 font-display text-[clamp(2.75rem,7vw,5.75rem)] leading-[0.92] tracking-[-0.05em]">
+            {content.heroTitle}
           </h1>
-
-          <p className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto">
-            Have a project in mind? Let's bring your vision to life.
+          <p className="mt-6 max-w-xl text-base leading-8 text-white/80 sm:text-lg">
+            {content.heroBody}
           </p>
         </motion.div>
       </div>
@@ -49,50 +46,68 @@ export function ContactHero() {
   );
 }
 
-export function ContactInfo() {
+export function ContactInfo({
+  content,
+  socialLinks,
+}: {
+  content: ContactPageContentData;
+  socialLinks: ContactSocialLinkData[];
+}) {
   return (
-    <section className="bg-white text-[#212529] py-16 sm:py-20">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
-          {/* Contact Details */}
+    <section className="bg-[var(--background)] py-20 lg:py-24">
+      <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+        <div className="grid gap-12 lg:gap-16 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+
+          {/* ── Left: contact details ── */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
+            initial={{ opacity: 0, x: -24 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.7 }}
           >
-            <h2 className="text-2xl sm:text-3xl font-bold mb-8">
-              Where to Find Us
+            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--dexta)]">
+              {content.infoEyebrow}
+            </p>
+            <h2 className="mt-4 font-display text-4xl leading-tight tracking-[-0.04em] text-[var(--dexta-secondary)] sm:text-5xl">
+              {content.infoTitle}
             </h2>
+            <p className="mt-5 max-w-sm text-base leading-8 text-[var(--dexta-secondary)]">
+              {content.infoBody}
+            </p>
 
-            <div className="space-y-6">
+            <div className="mt-8 space-y-4">
               {/* Address */}
-              <div className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 bg-white">
-                <div className="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-6 h-6 text-cyan-400" />
+              <div className="flex items-start gap-4 rounded-[24px] border border-[var(--dexta-primary)] bg-white p-5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--dexta-primary)] text-white">
+                  <MapPin className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Address</h3>
-                  <p className="text-gray-600 text-sm">{contactInfo.address}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--dexta)]">
+                    {content.addressLabel}
+                  </p>
+                  <p className="mt-2 text-sm leading-7 text-[var(--dexta-secondary)]">
+                    {content.address}
+                  </p>
                 </div>
               </div>
 
               {/* Email */}
-              <div className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 bg-white">
-                <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-6 h-6 text-blue-400" />
+              <div className="flex items-start gap-4 rounded-[24px] border border-[var(--dexta-primary)] bg-white p-5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--dexta-primary)] text-white">
+                  <Mail className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Email</h3>
-                  <div className="space-y-1">
-                    {contactInfo.emails.map((email) => (
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--dexta)]">
+                    {content.emailLabel}
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    {content.emails.map((email) => (
                       <a
                         key={email}
                         href={`mailto:${email}`}
-                        className="text-gray-600 text-sm hover:text-cyan-600 transition-colors flex items-center gap-1"
+                        className="block text-sm leading-7 text-[var(--dexta-secondary)] underline-offset-2 hover:underline hover:text-[var(--dexta-primary)] transition-colors"
                       >
                         {email}
-                        <ExternalLink className="w-3 h-3" />
                       </a>
                     ))}
                   </div>
@@ -100,33 +115,76 @@ export function ContactInfo() {
               </div>
 
               {/* Phone */}
-              <div className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 bg-white">
-                <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                  <Phone className="w-6 h-6 text-purple-400" />
+              <div className="flex items-start gap-4 rounded-[24px] border border-[var(--dexta-primary)] bg-white p-5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--dexta-primary)] text-white">
+                  <Phone className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Phone</h3>
-                  <a
-                    href={`tel:${contactInfo.phone.replace(/\s/g, "")}`}
-                    className="text-gray-600 text-sm hover:text-cyan-600 transition-colors flex items-center gap-1"
-                  >
-                    {contactInfo.phone}
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--dexta)]">
+                    {content.phoneLabel}
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    {content.phones.map((phone) => (
+                      <a
+                        key={phone}
+                        href={toPhoneHref(phone)}
+                        className="block text-sm leading-7 text-[var(--dexta-secondary)] underline-offset-2 transition-colors hover:text-[var(--dexta-primary)] hover:underline"
+                      >
+                        {phone}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               </div>
+
+              {/* Socials */}
+              {socialLinks.length ? (
+                <div className="rounded-[24px] border border-[var(--dexta-primary)] bg-white p-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--dexta)]">
+                    {content.socialsLabel}
+                  </p>
+                  <div className="mt-3 flex gap-3">
+                    {socialLinks.map((social) => {
+                      const Icon = CONTACT_SOCIAL_PLATFORM_META[social.platform].icon;
+
+                      return (
+                        <a
+                          key={`${social.platform}-${social.href}`}
+                          href={social.href}
+                          title={social.label}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--dexta-primary)] text-[var(--dexta-secondary)] transition-all hover:bg-[var(--dexta-primary)] hover:text-white"
+                        >
+                          <Icon className="h-4 w-4" />
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </motion.div>
 
-          {/* Contact Form */}
+          {/* ── Right: form ── */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
+            initial={{ opacity: 0, x: 24 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="lg:pt-14"
+            transition={{ duration: 0.7 }}
           >
-            <ContactFormComponent />
+            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--dexta)]">
+              {content.formEyebrow}
+            </p>
+            <h2 className="mt-4 font-display text-4xl leading-tight tracking-[-0.04em] text-[var(--dexta-secondary)] sm:text-5xl">
+              {content.formTitle}
+            </h2>
+            <p className="mt-5 text-base leading-8 text-[var(--dexta-secondary)]">
+              {content.formBody}
+            </p>
+            <div className="mt-8">
+              <ContactFormEmbed />
+            </div>
           </motion.div>
         </div>
       </div>

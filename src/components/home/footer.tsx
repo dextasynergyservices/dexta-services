@@ -1,13 +1,26 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Linkedin, Twitter, Mail, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { FooterBackgroundGradient } from "@/components/ui/hover-footer";
 import Image from "next/image";
+import type {
+  ContactPageContentData,
+  ContactSocialLinkData,
+} from "@/lib/contact-defaults";
+import { CONTACT_SOCIAL_PLATFORM_META } from "@/lib/contact-socials";
 
-export function Footer() {
+export function Footer({
+  contact,
+  socialLinks,
+}: {
+  contact: ContactPageContentData;
+  socialLinks: ContactSocialLinkData[];
+}) {
   const currentYear = new Date().getFullYear();
+  const primaryEmail = contact.emails[0] ?? "";
+  const primaryPhone = contact.phones[0] ?? "";
 
   const footerVariants = {
     hidden: { opacity: 0 },
@@ -32,12 +45,6 @@ export function Footer() {
       },
     },
   };
-
-  const socialLinks = [
-    { icon: Linkedin, label: "LinkedIn", href: "#" },
-    { icon: Twitter, label: "Twitter", href: "#" },
-    { icon: Mail, label: "Email", href: "mailto:contact@dexta.dev" },
-  ];
 
   const footerLinks = [
     {
@@ -96,21 +103,45 @@ export function Footer() {
               <p className="mt-2 text-xs sm:text-sm text-gray-400">
                 Engineered digital ecosystems for the future.
               </p>
-            </div>
-            <div className="flex gap-4 pt-4">
-              {socialLinks.map(({ icon: Icon, label, href }) => (
-                <motion.a
-                  key={label}
-                  href={href}
-                  className="group relative p-3 rounded-full border border-[#000c99]/50 bg-[#000c99]/10 transition-all duration-300 hover:border-[#000c99] hover:bg-[#000c99]/20"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  title={label}
+              {primaryEmail ? (
+                <a
+                  href={`mailto:${primaryEmail}`}
+                  className="mt-4 block text-sm text-gray-300 transition-colors hover:text-white"
                 >
-                  <Icon className="h-5 w-5 text-[#4d56cc] transition-colors duration-300 group-hover:text-[#6b73e0]" />
-                </motion.a>
-              ))}
+                  {primaryEmail}
+                </a>
+              ) : null}
+              {primaryPhone ? (
+                <a
+                  href={`tel:${primaryPhone.replace(/[^\d+]/g, "")}`}
+                  className="mt-1 block text-sm text-gray-300 transition-colors hover:text-white"
+                >
+                  {primaryPhone}
+                </a>
+              ) : null}
             </div>
+            {socialLinks.length ? (
+              <div className="flex gap-4 pt-4">
+                {socialLinks.map((social) => {
+                  const Icon = CONTACT_SOCIAL_PLATFORM_META[social.platform].icon;
+
+                  return (
+                    <motion.a
+                      key={`${social.platform}-${social.href}`}
+                      href={social.href}
+                      className="group relative rounded-full border border-[var(--primary)] bg-[var(--primary)]/10 p-3 transition-all duration-300 hover:border-[#000c99] hover:bg-[#000c99]/20"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      title={social.label}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <Icon className="h-5 w-5 text-[var(--primary)] transition-colors duration-300 group-hover:text-[var(--dexta)]" />
+                    </motion.a>
+                  );
+                })}
+              </div>
+            ) : null}
           </motion.div>
 
           {/* Footer Links */}
@@ -124,7 +155,7 @@ export function Footer() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="group flex items-center gap-2 text-sm text-gray-400 transition-colors duration-300 hover:text-[#4d56cc]"
+                      className="group flex items-center gap-2 text-sm text-gray-400 transition-colors duration-300 hover:text-[var(--primary)]"
                     >
                       {link.label}
                       <ArrowRight className="h-3 w-3 opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0" />

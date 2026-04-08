@@ -1,15 +1,20 @@
-import { Suspense } from "react";
-import ProjectPage from "@/components/projectPage";
+import ProjectsWrapper from "@/components/projects-wrapper";
+import { normalizePortfolioTab } from "@/lib/api";
 
 export const metadata = {
   title: "Projects | Our Work",
   description: "Explore our portfolio of design, print, and website projects",
 };
 
-export default function ProjectsPage() {
-  return (
-    <Suspense>
-      <ProjectPage />
-    </Suspense>
-  );
+interface ProjectsPageProps {
+  searchParams: Promise<{ tab?: string }>;
+}
+
+export default async function ProjectsPage({
+  searchParams,
+}: ProjectsPageProps) {
+  const { tab } = await searchParams;
+  const activeTab = normalizePortfolioTab(tab);
+
+  return <ProjectsWrapper activeTab={activeTab} />;
 }

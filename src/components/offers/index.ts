@@ -1,11 +1,15 @@
 export type {
-  AudienceConfig,
-  PricingPlan,
-  AudienceId,
-  OfferType,
-} from "./types";
-export { businessPlans, schoolsPlans, churchesPlans } from "./config";
-export { AudienceHero } from "./audience-hero";
-export { PricingSection, SetupPricingSection } from "./pricing-section";
-export { PricingCard } from "./pricing-card";
-export { FeaturesList } from "./features-list";
+  OffersAudiencePanelData,
+  OffersAudienceSlug,
+  OffersPlanData,
+  UnifiedOffersPageProps,
+} from "@/lib/api";
+export { toAudienceHref } from "./offers-constants";
+export { OffersAudienceTabs } from "./offers-audience-tabs";
+export { OffersAudienceSummary } from "./offers-audience-summary";
+export { OffersBottomCta } from "./offers-bottom-cta";
+export { OffersHero } from "./offers-hero";
+export { OffersPage } from "./offers-page";
+export { OffersServicesSection } from "./offers-services-section";
+export { PricingGrid } from "./pricing-grid";
+export { PlanCard } from "./plan-card";

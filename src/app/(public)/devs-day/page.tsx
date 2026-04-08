@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import DevDayPage from "@/components/devday";
+import { RecaptchaProvider } from "@/components/layout/recaptcha-provider";
 
 export const metadata: Metadata = {
   title: "Dev Day — Dexta Synergy Services",
@@ -22,5 +23,9 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <DevDayPage />;
+  return (
+    <RecaptchaProvider>
+      <DevDayPage />
+    </RecaptchaProvider>
+  );
 }

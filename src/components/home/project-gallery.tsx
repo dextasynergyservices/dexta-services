@@ -1,6 +1,5 @@
 "use client";
 
-import { useProjects } from "@/hooks/use-projects";
 import { AlertTriangle, Loader, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -8,8 +7,22 @@ import Link from "next/link";
 import { CardStack, CardStackItem } from "@/components/ui/card-stack";
 import { Button } from "@/components/ui/button";
 
-export function ProjectGallery() {
-  const { data: projects, isLoading, isError, error } = useProjects();
+interface GalleryProject {
+  image: string;
+  id: number | string;
+  name: string;
+  description: string;
+  category: string;
+}
+
+interface ProjectGalleryProps {
+  projects: GalleryProject[];
+}
+
+export function ProjectGallery({ projects }: ProjectGalleryProps) {
+  const isLoading = false;
+  const isError = false;
+  const error = null as Error | null;
 
   // Convert projects to CardStackItem format
   const cardItems: CardStackItem[] =

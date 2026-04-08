@@ -9,7 +9,7 @@ cloudinary.config({
 
 export async function POST(request: globalThis.Request) {
   try {
-    const { publicId } = await request.json();
+    const { publicId, resourceType } = await request.json();
 
     if (!publicId || typeof publicId !== "string") {
       return NextResponse.json(
@@ -18,7 +18,9 @@ export async function POST(request: globalThis.Request) {
       );
     }
 
-    const result = await cloudinary.uploader.destroy(publicId);
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType === "video" ? "video" : "image",
+    });
 
     return NextResponse.json({ result: result.result });
   } catch (error) {

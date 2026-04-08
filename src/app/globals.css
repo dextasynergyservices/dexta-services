@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "tinymce/skins/ui/oxide/skin.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -26,7 +27,7 @@
   --color-input: #e2e8f0;
   --color-ring: #00b2ff;
   --radius: 0.625rem;
-  --font-sans: var(--font-inter), var(--font-manrope), system-ui, sans-serif;
+  --font-sans: var(--font-montserrat), system-ui, sans-serif;
   --font-display: var(--font-clash-display), system-ui, sans-serif;
 }
 
@@ -90,6 +91,15 @@ body {
   max-width: 100%;
 }
 
+.hero-card-scroller {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hero-card-scroller::-webkit-scrollbar {
+  display: none;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -97,6 +107,7 @@ body {
 
   body {
     @apply bg-primary-background text-foreground;
+    font-family: var(--font-sans);
   }
   body[data-scroll-locked] {
     padding-right: 0 !important;

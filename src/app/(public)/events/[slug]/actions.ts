@@ -105,25 +105,27 @@ export async function registerForEvent(
       location: event.location,
     };
 
-    let emailSent = true;
-    try {
-      await sendPendingEmail({ name, email }, eventInfo);
-    } catch (err) {
-      emailSent = false;
+    const [pendingEmailResult, teamNotificationResult] =
+      await Promise.allSettled([
+        sendPendingEmail({ name, email }, eventInfo),
+        sendTeamNotificationEmail({ name, email, formData: rest }, eventInfo),
+      ]);
+
+    const emailSent = pendingEmailResult.status === "fulfilled";
+
+    if (pendingEmailResult.status === "rejected") {
       console.error(
         "[Event Registration] Pending email failed for",
         email,
-        err,
+        pendingEmailResult.reason,
       );
     }
 
-    try {
-      await sendTeamNotificationEmail(
-        { name, email, formData: rest },
-        eventInfo,
+    if (teamNotificationResult.status === "rejected") {
+      console.error(
+        "[Event Registration] Team notification email failed",
+        teamNotificationResult.reason,
       );
-    } catch (err) {
-      console.error("[Event Registration] Team notification email failed", err);
     }
 
     return {

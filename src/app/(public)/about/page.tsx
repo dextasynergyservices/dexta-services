@@ -1,12 +1,12 @@
-import { Footer } from "@/components/home/footer";
 import { PageTransition } from "@/components/layout/page-transition";
+import { AboutPageView } from "@/components/about/about-page";
 import {
-  AboutHero,
-  StorySection,
-  ExpertiseSection,
-  TeamSection,
-  ValuesSection,
-} from "@/components/about";
+  fetchAboutExpertiseItems,
+  fetchAboutMilestones,
+  fetchAboutPageContent,
+  fetchAboutTeamMembers,
+  fetchAboutValueItems,
+} from "@/lib/api";
 
 export const metadata = {
   title: "About Us | Dexta Synergy Services",
@@ -14,19 +14,27 @@ export const metadata = {
     "We are DEXTA - A super business, saturating our world with imprints of value. Learn about our team and mission.",
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const [content, milestones, expertiseItems, teamMembers, valueItems] =
+    await Promise.all([
+      fetchAboutPageContent(),
+      fetchAboutMilestones(),
+      fetchAboutExpertiseItems(),
+      fetchAboutTeamMembers(),
+      fetchAboutValueItems(),
+    ]);
+
   return (
     <>
       <PageTransition>
-        <main>
-          <AboutHero />
-          <StorySection />
-          <ExpertiseSection />
-          <TeamSection />
-          <ValuesSection />
-        </main>
+        <AboutPageView
+          content={content}
+          milestones={milestones}
+          expertiseItems={expertiseItems}
+          teamMembers={teamMembers}
+          valueItems={valueItems}
+        />
       </PageTransition>
-      <Footer />
     </>
   );
 }

@@ -1,3 +1,5 @@
+import { RecaptchaProvider } from "@/components/layout/recaptcha-provider";
+
 export default function AdminLoginLayout({
   children,
 }: {
@@ -5,7 +7,7 @@ export default function AdminLoginLayout({
 }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
-      {children}
+      <RecaptchaProvider>{children}</RecaptchaProvider>
     </div>
   );
 }

@@ -1,46 +1,71 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Code, Brush, Printer, ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  Brush,
+  Code,
+  Printer,
+  type LucideIcon,
+} from "lucide-react";
+import { hexToRgba } from "@/lib/color-utils";
+import { getCloudinaryUrl } from "@/lib/cloudinary";
+import { cn } from "@/lib/utils";
+import { ServiceMediaRotator } from "./service-media-rotator";
+import type { ServicePanelItem, ServiceType } from "./services-wrapper";
 
-const services = [
-  {
-    id: "01",
-    title: "DESIGN",
-    description:
-      "Visual Domination. We don't just make things pretty — we make them impossible to ignore.",
-    icon: <Brush className="w-10 h-10" />,
-    color: "text-purple-400",
-    gradient: "from-purple-900/40 to-black",
-    border: "border-purple-500/30",
-    glow: "shadow-[0_0_50px_-10px_rgba(168,85,247,0.3)]",
-  },
-  {
-    id: "02",
-    title: "BUILD",
-    description:
-      "Digital Engineering. Websites and software that work as hard as you do and look better doing it.",
-    icon: <Code className="w-10 h-10" />,
-    color: "text-cyan-400",
-    gradient: "from-cyan-900/40 to-black",
-    border: "border-cyan-500/30",
-    glow: "shadow-[0_0_50px_-10px_rgba(34,211,238,0.3)]",
-  },
-  {
-    id: "03",
-    title: "PRINT",
-    description:
-      "Ink That Speaks. From paper to billboard, we put your brand in the real world, loud and proud.",
-    icon: <Printer className="w-10 h-10" />,
-    color: "text-pink-400",
-    gradient: "from-pink-900/40 to-black",
-    border: "border-pink-500/30",
-    glow: "shadow-[0_0_50px_-10px_rgba(236,72,153,0.3)]",
-  },
-];
+type ServicesSectionProps = {
+  services: ServicePanelItem[];
+  sectionBackgroundImagePublicId: string | null;
+};
 
-export function ServicesSection() {
+const SERVICE_ICONS: Record<ServiceType, LucideIcon> = {
+  DESIGN: Brush,
+  BUILD: Code,
+  PRINT: Printer,
+};
+
+function DecorativeServicePanel({
+  icon: Icon,
+  color,
+}: {
+  icon: LucideIcon;
+  color: string;
+}) {
+  return (
+    <>
+      <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.02)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%] animate-[shimmer_3s_infinite]" />
+      <div
+        className="relative flex h-28 w-28 items-center justify-center rounded-full border border-white/10 sm:h-40 sm:w-40 lg:h-64 lg:w-64"
+        style={{ color }}
+      >
+        <div className="absolute inset-0 rounded-full border border-current opacity-20 animate-[spin_10s_linear_infinite]" />
+        <Icon className="h-10 w-10 sm:h-12 sm:w-12 lg:h-16 lg:w-16" />
+      </div>
+    </>
+  );
+}
+
+function getIconSrc(publicId: string) {
+  return getCloudinaryUrl(publicId, { w: 80, h: 80, c: "fill", f: "auto", q: "auto" });
+}
+
+function getSectionBackgroundImageSrc(publicId: string) {
+  return getCloudinaryUrl(publicId, {
+    w: 1800,
+    h: 1200,
+    c: "fill",
+    g: "auto",
+    f: "auto",
+    q: "auto",
+  });
+}
+
+export function ServicesSection({
+  services,
+  sectionBackgroundImagePublicId,
+}: ServicesSectionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
   const router = useRouter();
@@ -51,154 +76,180 @@ export function ServicesSection() {
 
       const viewportHeight = window.innerHeight;
 
-      // Loop through each card to calculate its "Depth" effect
       cardsRef.current.forEach((card, index) => {
         if (!card) return;
 
-        // The transform logic relies on the NEXT card.
-        // As the next card rises up (enters viewport), the current card scales down.
         const nextCard = cardsRef.current[index + 1];
-
-        // Default state
         let scale = 1;
         let brightness = 1;
         let translateY = 0;
 
         if (nextCard) {
           const nextRect = nextCard.getBoundingClientRect();
-
-          // Calculate how far the next card is from the top of the viewport
-          // Range: viewportHeight (just started entering) -> 0 (fully covering current card)
           const distanceToTop = nextRect.top;
 
-          // Only apply effect if the next card is currently sliding up over this one
           if (distanceToTop > 0 && distanceToTop <= viewportHeight) {
-            // progress goes from 0 (next card at bottom) to 1 (next card at top)
             const progress = 1 - distanceToTop / viewportHeight;
-
-            // Effect: Scale down slightly and darken
-            scale = 1 - progress * 0.1; // Scale down to 0.9
-            brightness = 1 - progress * 0.5; // Darken by 50%
-            translateY = progress * -20; // Move up slightly
+            scale = 1 - progress * 0.1;
+            brightness = 1 - progress * 0.5;
+            translateY = progress * -20;
           } else if (distanceToTop <= 0) {
-            // If next card completely covers this one, keep it in the "background" state
             scale = 0.9;
             brightness = 0.5;
             translateY = -20;
           }
         }
 
-        // Apply transforms to the inner content wrapper, not the sticky container
-        const inner = card.querySelector(".card-inner") as HTMLElement;
-        if (inner) {
-          inner.style.transform = `scale(${scale}) translateY(${translateY}px)`;
-          inner.style.filter = `brightness(${brightness})`;
-        }
+        const inner = card.querySelector(".card-inner") as HTMLElement | null;
+        if (!inner) return;
+
+        inner.style.transform = `scale(${scale}) translateY(${translateY}px)`;
+        inner.style.filter = `brightness(${brightness})`;
       });
     };
 
     window.addEventListener("scroll", handleScroll);
-    handleScroll(); // Initial check
+    handleScroll();
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [services.length]);
 
   return (
     <section
       ref={containerRef}
-      className="bg-black relative pt-16 sm:pt-20 pb-32 sm:pb-40"
+      className="relative pb-16 pt-14 sm:pb-20 sm:pt-16"
+      style={{ backgroundColor: "var(--dexta-primary)" }}
     >
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
-        {/* Section Header */}
-        <div className="mb-16 sm:mb-24 text-center">
-          <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-white tracking-tight">
-            SERVICES
+      <div className="pointer-events-none absolute inset-0">
+        <div className="sticky top-0 h-screen overflow-hidden">
+          {sectionBackgroundImagePublicId ? (
+            // We intentionally bypass next/image here because this is a
+            // decorative Cloudinary background behind a motion-heavy section.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={getSectionBackgroundImageSrc(sectionBackgroundImagePublicId)}
+              alt=""
+              className="h-full w-full object-cover opacity-70"
+              loading="lazy"
+            />
+          ) : (
+            <div className="h-full w-full" style={{ backgroundColor: "var(--primary-background)" }} />
+          )}
+          <div
+            className="absolute inset-0"
+            style={{ backgroundColor: "var(--primary-background)", opacity: 0.95 }}
+          />
+        </div>
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="sticky top-3 z-30 mb-2 text-center sm:top-4 sm:mb-3 lg:top-5">
+          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-6xl lg:text-7xl">
+            PROJECTS
           </h2>
         </div>
 
-        {/* Stacking Cards Container */}
         <div className="flex flex-col items-center">
-          {services.map((service, index) => (
-            <div
-              key={service.id}
-              ref={(el) => {
-                cardsRef.current[index] = el;
-              }}
-              className="sticky top-0 h-screen w-full flex items-center justify-center pointer-events-none"
-              // 'pointer-events-none' on container allows clicking through if needed,
-              // but we re-enable on the card-inner
-              style={{ top: "0px" }} // Ensures they stack exactly on top
-            >
+          {services.map((service, index) => {
+            const Icon = SERVICE_ICONS[service.type];
+            const cardColor = service.cardColor;
+
+            return (
               <div
-                className="card-inner pointer-events-auto w-full max-w-4xl p-[1px] rounded-2xl sm:rounded-3xl lg:rounded-[32px] overflow-hidden transition-transform duration-100 ease-linear will-change-transform"
-                style={{ transformOrigin: "top center" }} // Scale from top center for better stacking look
+                key={service.type}
+                ref={(el) => {
+                  cardsRef.current[index] = el;
+                }}
+                className="sticky top-16 z-10 flex h-[calc(100vh-4rem)] w-full items-center justify-center pointer-events-none sm:top-20 sm:h-[calc(100vh-5rem)] lg:top-24 lg:h-[calc(100vh-6rem)]"
               >
-                {/* Gradient Border Wrapper */}
                 <div
-                  className={`relative h-auto sm:h-[60vh] lg:h-[500px] w-full rounded-2xl sm:rounded-3xl lg:rounded-[32px] bg-[#050505] border border-white/10 overflow-hidden flex flex-col lg:flex-row ${service.glow}`}
+                  className="card-inner pointer-events-auto w-full max-w-4xl overflow-hidden rounded-2xl p-[1px] transition-transform duration-200 ease-out will-change-transform sm:rounded-3xl lg:rounded-[32px]"
+                  style={{ transformOrigin: "top center" }}
                 >
-                  {/* Background Gradient */}
                   <div
-                    className={`absolute inset-0 bg-gradient-to-br ${service.gradient} opacity-20`}
-                  />
+                    className="relative flex h-[calc(100vh-8rem)] w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#050505] sm:h-[60vh] sm:rounded-3xl lg:h-[500px] lg:flex-row lg:rounded-[32px]"
+                    style={{ boxShadow: `0 0 50px -10px ${hexToRgba(cardColor, 0.3)}` }}
+                  >
+                    <div
+                      className="absolute inset-0 opacity-20"
+                      style={{ background: `linear-gradient(to bottom right, ${hexToRgba(cardColor, 0.4)}, transparent)` }}
+                    />
 
-                  {/* Content Left: Info */}
-                  <div className="relative z-10 flex-1 p-6 sm:p-8 lg:p-12 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                        <div
-                          className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 ${service.color}`}
-                        >
-                          {service.icon}
+                    <div className="relative z-10 flex flex-1 flex-col justify-between p-6 sm:p-8 lg:p-12">
+                      <div>
+                        <div className="mb-4 flex items-center gap-3 sm:mb-6">
+                          <div
+                            className="rounded-xl border border-white/10 bg-white/5 p-2 sm:rounded-2xl sm:p-3"
+                            style={{ color: cardColor }}
+                          >
+                            {service.iconPublicId ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={getIconSrc(service.iconPublicId)}
+                                alt=""
+                                className="h-10 w-10 object-contain"
+                              />
+                            ) : (
+                              <Icon className="h-10 w-10" />
+                            )}
+                          </div>
+                          <span className="font-mono text-xs tracking-[0.3em] text-gray-500">
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
                         </div>
-                        {/* <span className="font-mono text-xs sm:text-sm text-gray-500 tracking-widest">
-                          ID_{service.id}
-                        </span> */}
+                        <h3 className="mb-4 text-2xl font-bold text-white sm:mb-6 sm:text-3xl lg:text-4xl xl:text-5xl">
+                          {service.title}
+                        </h3>
+                        <p className="max-w-md text-sm leading-relaxed text-gray-400 sm:text-base lg:text-lg">
+                          {service.description}
+                        </p>
                       </div>
-                      <h3 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 sm:mb-6">
-                        {service.title}
-                      </h3>
-                      <p className="text-sm sm:text-base lg:text-lg text-gray-400 leading-relaxed max-w-md">
-                        {service.description}
-                      </p>
+
+                      <button
+                        type="button"
+                        className="mt-6 flex items-center gap-2 text-xs font-mono text-gray-500 transition-colors hover:text-white sm:mt-8 sm:text-sm"
+                        onClick={() =>
+                          router.push(`/projects?tab=${service.type.toLowerCase()}`)
+                        }
+                      >
+                        <span className="uppercase tracking-widest">
+                          Explore {service.title}
+                        </span>
+                        <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                      </button>
                     </div>
 
                     <div
-                      className="mt-6 sm:mt-8 flex items-center gap-2 text-xs sm:text-sm font-mono text-gray-500 group cursor-pointer hover:text-white transition-colors"
-                      onClick={() =>
-                        router.push(
-                          `/projects?tab=${service.title.toLowerCase()}`,
-                        )
-                      }
+                      className={cn(
+                        "relative z-10 flex flex-1 overflow-hidden sm:min-h-[300px] lg:min-h-0",
+                        service.featuredItems.length > 0
+                          ? "items-stretch justify-stretch"
+                          : "items-center justify-center border-t border-white/10 bg-white/5 p-6 sm:p-8 lg:border-l lg:border-t-0",
+                      )}
                     >
-                      <span className="uppercase tracking-widest">
-                        Explore {service.title}
-                      </span>
-                      <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </div>
-                  </div>
-
-                  {/* Content Right: Decorative Visuals */}
-                  <div className="relative z-10 flex-1 bg-white/5 border-t sm:border-t lg:border-l border-white/10 p-6 sm:p-8 flex items-center justify-center overflow-hidden">
-                    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.02)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%] animate-[shimmer_3s_infinite]" />
-
-                    {/* Abstract Shape */}
-                    <div
-                      className={`w-28 h-28 sm:w-40 sm:h-40 lg:w-64 lg:h-64 rounded-full border border-white/10 flex items-center justify-center relative ${service.color}`}
-                    >
-                      <div className="absolute inset-0 rounded-full border border-current opacity-20 animate-[spin_10s_linear_infinite]" />
-                      {service.icon}
-                      {/* <Zap className="w-12 h-12 md:w-20 md:h-20 opacity-50" /> */}
+                      {service.featuredItems.length > 0 ? (
+                        <>
+                          <ServiceMediaRotator items={service.featuredItems} />
+                          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
+                          <div className="pointer-events-none absolute left-4 top-4 rounded-full border border-white/10 bg-black/45 px-3 py-1 text-[10px] font-mono uppercase tracking-[0.25em] text-white/70 backdrop-blur-sm sm:left-6 sm:top-6">
+                            Featured work
+                          </div>
+                        </>
+                      ) : (
+                        <DecorativeServicePanel
+                          icon={Icon}
+                          color={cardColor}
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Spacer at bottom to allow the last card to be scrolled past comfortably */}
-        <div className="h-[20vh]"></div>
+        <div className="h-[45vh] sm:h-[55vh]" />
       </div>
 
       <style jsx>{`
@@ -215,5 +266,4 @@ export function ServicesSection() {
   );
 }
 
-// Ensure default export is present to prevent "Element type is invalid" errors
 export default ServicesSection;

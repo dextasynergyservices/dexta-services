@@ -54,8 +54,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      router.push("/admin");
-      router.refresh();
+      router.replace("/admin");
     },
     [executeRecaptcha, router],
   );

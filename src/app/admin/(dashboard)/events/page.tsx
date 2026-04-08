@@ -29,7 +29,13 @@ export default async function EventsPage({
   const [events, total] = await Promise.all([
     prisma.event.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        title: true,
+        dateTime: true,
+        location: true,
+        status: true,
+        attendeeLimit: true,
         _count: { select: { registrations: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -39,15 +45,26 @@ export default async function EventsPage({
     prisma.event.count({ where }),
   ]);
 
-  // Get accepted counts for each event
-  const eventsWithAccepted = await Promise.all(
-    events.map(async (event) => {
-      const acceptedCount = await prisma.eventRegistration.count({
-        where: { eventId: event.id, status: "ACCEPTED" },
-      });
-      return { ...event, acceptedCount };
-    }),
+  const acceptedCounts =
+    events.length > 0
+      ? await prisma.eventRegistration.groupBy({
+          by: ["eventId"],
+          where: {
+            eventId: { in: events.map((event) => event.id) },
+            status: "ACCEPTED",
+          },
+          _count: { _all: true },
+        })
+      : [];
+
+  const acceptedCountByEventId = new Map(
+    acceptedCounts.map((entry) => [entry.eventId, entry._count._all]),
   );
+
+  const eventsWithAccepted = events.map((event) => ({
+    ...event,
+    acceptedCount: acceptedCountByEventId.get(event.id) ?? 0,
+  }));
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 

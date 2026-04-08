@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "prisma generate && next dev",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint .",
@@ -18,7 +18,18 @@
     "prisma:studio": "prisma studio",
     "postinstall": "prisma generate",
     "check": "pnpm run lint && pnpm run type-check && pnpm run format",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:seed:hero": "tsx prisma/seed-hero.ts",
+    "prisma:seed:manifesto": "tsx prisma/seed-manifesto.ts",
+    "prisma:seed:expressions": "tsx prisma/seed-expressions.ts",
+    "prisma:seed:services": "tsx prisma/seed-services.ts",
+    "prisma:seed:about": "tsx prisma/seed-about.ts",
+    "prisma:seed:contact": "tsx prisma/seed-contact.ts",
+    "prisma:seed:offers": "tsx prisma/seed-offers.ts",
+    "prisma:seed:offers-pricing-content": "tsx prisma/seed-offers-pricing-content.ts",
+    "prisma:seed:projects-hero": "tsx prisma/seed-projects-hero.ts",
+    "prisma:migrate:projects-phase2": "tsx prisma/migrate-projects-phase2.ts",
+    "prisma:seed:portfolio-page": "tsx prisma/seed-portfolio-page.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -28,6 +39,8 @@
     "@google-cloud/recaptcha-enterprise": "^6.3.1",
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.2.2",
+    "@neondatabase/serverless": "^1.0.2",
+    "@prisma/adapter-neon": "^7.6.0",
     "@prisma/adapter-pg": "^7.0.1",
     "@prisma/client": "^7.0.1",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -35,6 +48,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.0",
     "@tanstack/react-query": "^5.90.11",
+    "@tinymce/tinymce-react": "^6.3.0",
     "baseline-browser-mapping": "^2.9.15",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
@@ -56,9 +70,12 @@
     "react-google-recaptcha": "^3.1.0",
     "react-google-recaptcha-v3": "^1.11.0",
     "react-hook-form": "^7.66.1",
+    "sanitize-html": "^2.17.2",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "three": "^0.181.2",
+    "tinymce": "^8.4.0",
+    "ws": "^8.20.0",
     "zod": "^4.1.13"
   },
   "devDependencies": {
@@ -70,7 +87,9 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-google-recaptcha": "^2.1.9",
+    "@types/sanitize-html": "^2.16.1",
     "@types/three": "^0.181.0",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/parser": "^8.48.0",
     "dotenv": "^17.3.1",

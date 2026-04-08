@@ -141,27 +141,39 @@ export async function registerForDevDay(
       location: event.location,
     };
 
-    try {
-      await sendPendingEmail(
-        { name: registration.name, email: registration.email },
-        eventInfo,
-      );
-
-      await sendTeamNotificationEmail(
-        {
-          name: registration.name,
-          email: registration.email,
-          formData: {
-            role,
-            stack: stack || "",
-            expectation: expectation || "",
-            profile: profile || "",
+    const [pendingEmailResult, teamNotificationResult] =
+      await Promise.allSettled([
+        sendPendingEmail(
+          { name: registration.name, email: registration.email },
+          eventInfo,
+        ),
+        sendTeamNotificationEmail(
+          {
+            name: registration.name,
+            email: registration.email,
+            formData: {
+              role,
+              stack: stack || "",
+              expectation: expectation || "",
+              profile: profile || "",
+            },
           },
-        },
-        eventInfo,
+          eventInfo,
+        ),
+      ]);
+
+    if (pendingEmailResult.status === "rejected") {
+      console.error(
+        "[Dev Day Registration] Pending email sending failed:",
+        pendingEmailResult.reason,
       );
-    } catch (emailError) {
-      console.error("[Dev Day Registration] Email sending failed:", emailError);
+    }
+
+    if (teamNotificationResult.status === "rejected") {
+      console.error(
+        "[Dev Day Registration] Team notification email failed:",
+        teamNotificationResult.reason,
+      );
     }
 
     return {

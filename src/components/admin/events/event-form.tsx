@@ -291,6 +291,8 @@ export function EventForm({
           value={watch("imagePublicId") || undefined}
           onChange={(publicId) => setValue("imagePublicId", publicId)}
           onRemove={() => setValue("imagePublicId", "")}
+          emptyLabel="Click to upload event image"
+          previewAlt="Event image preview"
         />
       </div>
 
