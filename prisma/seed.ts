@@ -15,14 +15,6 @@ import {
   serviceContentDefaults,
 } from "./seed-projects-data";
 
-type SeedPrisma = PrismaClient & {
-  aboutPageContent: any;
-  aboutMilestone: any;
-  aboutExpertiseItem: any;
-  aboutTeamMember: any;
-  aboutValueItem: any;
-};
-
 const connectionString =
   process.env.DATABASE_URL_UNPOOLED?.trim() || process.env.DATABASE_URL?.trim();
 
@@ -31,7 +23,7 @@ async function main() {
     adapter: new PrismaPg({
       connectionString,
     }),
-  }) as SeedPrisma;
+  });
 
   const email = "admin@dexta.services";
   const password = "Dexta123!";

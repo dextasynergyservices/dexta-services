@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -12,21 +10,13 @@ import {
   serializeJsonStringArray,
 } from "../src/lib/about-defaults";
 
-type AboutSeedPrisma = PrismaClient & {
-  aboutPageContent: any;
-  aboutMilestone: any;
-  aboutExpertiseItem: any;
-  aboutTeamMember: any;
-  aboutValueItem: any;
-};
-
 const connectionString =
   process.env.DATABASE_URL_UNPOOLED?.trim() || process.env.DATABASE_URL?.trim();
 
 async function main() {
   const prisma = new PrismaClient({
     adapter: new PrismaPg({ connectionString }),
-  }) as AboutSeedPrisma;
+  });
 
   const existingAboutContent = await prisma.aboutPageContent.findFirst({
     orderBy: { id: "asc" },
