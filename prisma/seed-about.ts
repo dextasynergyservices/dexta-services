@@ -28,22 +28,26 @@ async function main() {
     adapter: new PrismaPg({ connectionString }),
   }) as AboutSeedPrisma;
 
-  await prisma.aboutPageContent.upsert({
-    where: { id: 1 },
-    update: {
-      ...ABOUT_PAGE_CONTENT_DEFAULTS,
-      storyTrustedItems: serializeJsonStringArray(
-        ABOUT_PAGE_CONTENT_DEFAULTS.storyTrustedItems,
-      ),
-    },
-    create: {
-      id: 1,
-      ...ABOUT_PAGE_CONTENT_DEFAULTS,
-      storyTrustedItems: serializeJsonStringArray(
-        ABOUT_PAGE_CONTENT_DEFAULTS.storyTrustedItems,
-      ),
-    },
+  const existingAboutContent = await prisma.aboutPageContent.findFirst({
+    orderBy: { id: "asc" },
   });
+  const aboutContentData = {
+    ...ABOUT_PAGE_CONTENT_DEFAULTS,
+    storyTrustedItems: serializeJsonStringArray(
+      ABOUT_PAGE_CONTENT_DEFAULTS.storyTrustedItems,
+    ),
+  };
+
+  if (existingAboutContent) {
+    await prisma.aboutPageContent.update({
+      where: { id: existingAboutContent.id },
+      data: aboutContentData,
+    });
+  } else {
+    await prisma.aboutPageContent.create({
+      data: aboutContentData,
+    });
+  }
 
   await prisma.aboutMilestone.deleteMany();
   await prisma.aboutMilestone.createMany({

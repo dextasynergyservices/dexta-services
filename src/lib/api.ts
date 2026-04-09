@@ -7,6 +7,7 @@ import {
   ABOUT_CONTENT_TAG,
   ABOUT_EXPERTISE_TAG,
   ABOUT_MILESTONES_TAG,
+  ABOUT_SPACE_TAG,
   ABOUT_TEAM_TAG,
   ABOUT_VALUES_TAG,
 } from "./about-cache";
@@ -21,6 +22,7 @@ import {
   type AboutIconKey,
   type AboutMilestoneData,
   type AboutPageContentData,
+  type AboutSpaceItemData,
   type AboutTeamMemberData,
   type AboutValueItemData,
 } from "./about-defaults";
@@ -995,8 +997,8 @@ export async function fetchContactSocialLinks(): Promise<
 
 async function readAboutPageContent(): Promise<AboutPageContentData> {
   try {
-    const row = await aboutPrisma.aboutPageContent.findUnique({
-      where: { id: 1 },
+    const row = await aboutPrisma.aboutPageContent.findFirst({
+      orderBy: { id: "asc" },
     });
 
     if (!row) {
@@ -1039,6 +1041,9 @@ async function readAboutPageContent(): Promise<AboutPageContentData> {
       cultureBody: row.cultureBody,
       teamNoteLabel: row.teamNoteLabel,
       teamPortfolioButtonText: row.teamPortfolioButtonText,
+      spaceLabel: row.spaceLabel,
+      spaceTitle: row.spaceTitle,
+      spaceBody: row.spaceBody,
       valuesLabel: row.valuesLabel,
       valuesTitle: row.valuesTitle,
       valuesBody: row.valuesBody,
@@ -1200,6 +1205,72 @@ const fetchAboutTeamMembersCached = unstable_cache(
 
 export async function fetchAboutTeamMembers(): Promise<AboutTeamMemberData[]> {
   return fetchAboutTeamMembersCached();
+}
+
+async function readAboutSpaceItems(): Promise<AboutSpaceItemData[]> {
+  try {
+    const aboutSpaceItem = (
+      aboutPrisma as typeof aboutPrisma & {
+        aboutSpaceItem?: {
+          findMany: (args: {
+            where: { isVisible: true };
+            orderBy: { position: "asc" };
+          }) => Promise<
+            Array<{
+              title: string;
+              description: string;
+              mediaType: AboutSpaceItemData["mediaType"];
+              mediaPublicId: string | null;
+              thumbnailPublicId: string | null;
+              isVisible: boolean;
+              position: number;
+            }>
+          >;
+        };
+      }
+    ).aboutSpaceItem;
+
+    if (!aboutSpaceItem) {
+      return [];
+    }
+
+    const rows = await aboutSpaceItem.findMany({
+      where: { isVisible: true },
+      orderBy: { position: "asc" },
+    });
+
+    return rows.map(
+      (row: {
+        title: string;
+        description: string;
+        mediaType: AboutSpaceItemData["mediaType"];
+        mediaPublicId: string | null;
+        thumbnailPublicId: string | null;
+        isVisible: boolean;
+        position: number;
+      }) => ({
+        title: row.title,
+        description: row.description,
+        mediaType: row.mediaType,
+        mediaPublicId: normalizeStoredCloudinaryValue(row.mediaPublicId),
+        thumbnailPublicId: normalizeStoredCloudinaryValue(row.thumbnailPublicId),
+        isVisible: row.isVisible,
+        position: row.position,
+      }),
+    );
+  } catch {
+    return [];
+  }
+}
+
+const fetchAboutSpaceItemsCached = unstable_cache(
+  readAboutSpaceItems,
+  ["about-space-items"],
+  { tags: [ABOUT_SPACE_TAG] },
+);
+
+export async function fetchAboutSpaceItems(): Promise<AboutSpaceItemData[]> {
+  return fetchAboutSpaceItemsCached();
 }
 
 async function readAboutValueItems(): Promise<AboutValueItemData[]> {

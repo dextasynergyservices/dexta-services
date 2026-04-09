@@ -47,7 +47,7 @@ export function OffersHero({
         <img
           src={heroImageSrc}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover object-center opacity-75"
+          className="absolute inset-0 h-full w-full object-cover object-center"
           loading="eager"
           fetchPriority="high"
         />
@@ -56,7 +56,7 @@ export function OffersHero({
         className={cn(
           "absolute inset-0",
           hasHeroImage
-            ? "bg-[var(--offers-hero-bg)]/52"
+            ? "bg-[var(--offers-hero-bg)]/75"
             : "bg-[var(--offers-hero-bg)]",
         )}
       />

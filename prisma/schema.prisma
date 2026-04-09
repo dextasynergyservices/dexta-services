@@ -541,6 +541,9 @@ model AboutPageContent {
   cultureBody             String   @default("We care about thoughtful collaboration, clear communication, and building work that feels sharp, useful, and durable.")
   teamNoteLabel           String   @default("Professional note")
   teamPortfolioButtonText String   @default("View Portfolio")
+  spaceLabel              String   @default("Our Space")
+  spaceTitle              String   @default("The rooms where Dexta records, builds, welcomes, and recharges.")
+  spaceBody               String   @default("From the podcast studio to the reception, workspace, and wellness corners, our environment is designed to support focus, collaboration, and creative momentum.")
 
   valuesLabel             String   @default("Our Values")
   valuesTitle             String   @default("The standards we bring into every engagement.")
@@ -599,6 +602,22 @@ model AboutTeamMember {
   position      Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([position])
+  @@index([isVisible])
+}
+
+model AboutSpaceItem {
+  id                String    @id @default(uuid())
+  title             String
+  description       String
+  mediaType         MediaType @default(IMAGE)
+  mediaPublicId     String?
+  thumbnailPublicId String?
+  isVisible         Boolean   @default(true)
+  position          Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@index([position])
   @@index([isVisible])

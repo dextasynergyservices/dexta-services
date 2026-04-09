@@ -673,6 +673,9 @@ export const aboutPageContentSchema = z.object({
   cultureBody: requiredTrimmedString("Culture body", 1500),
   teamNoteLabel: requiredTrimmedString("Team note label", 120),
   teamPortfolioButtonText: requiredTrimmedString("Portfolio button text", 120),
+  spaceLabel: requiredTrimmedString("Space label", 120),
+  spaceTitle: requiredTrimmedString("Space title", 220),
+  spaceBody: requiredTrimmedString("Space body", 2000),
   valuesLabel: requiredTrimmedString("Values label", 120),
   valuesTitle: requiredTrimmedString("Values title", 220),
   valuesBody: requiredTrimmedString("Values body", 2000),
@@ -726,6 +729,30 @@ export const aboutTeamMemberSchema = z.object({
 });
 
 export type AboutTeamMemberInput = z.infer<typeof aboutTeamMemberSchema>;
+
+export const aboutSpaceItemSchema = z
+  .object({
+    title: requiredTrimmedString("Title", 120),
+    description: requiredTrimmedString("Description", 600),
+    mediaType: mediaTypeSchema,
+    mediaPublicId: optionalCloudinaryPublicIdSchema,
+    thumbnailPublicId: optionalCloudinaryPublicIdSchema,
+    isVisible: z.boolean(),
+    position: z.number().int().min(0, "Position must be zero or greater"),
+  })
+  .refine((value) => value.mediaType !== "VIDEO" || Boolean(value.mediaPublicId), {
+    message: "Video spaces require a video upload",
+    path: ["mediaPublicId"],
+  })
+  .refine(
+    (value) => value.mediaType !== "VIDEO" || Boolean(value.thumbnailPublicId),
+    {
+      message: "Video spaces require a thumbnail image",
+      path: ["thumbnailPublicId"],
+    },
+  );
+
+export type AboutSpaceItemInput = z.infer<typeof aboutSpaceItemSchema>;
 
 export const aboutValueItemSchema = z.object({
   icon: aboutIconKeySchema,

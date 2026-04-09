@@ -17,11 +17,13 @@ import {
   isCloudinaryUrl,
   type TransformOptions,
 } from "@/lib/cloudinary";
+import { AboutSpaceSection } from "./about-space-section";
 import type {
   AboutExpertiseItemData,
   AboutIconKey,
   AboutMilestoneData,
   AboutPageContentData,
+  AboutSpaceItemData,
   AboutTeamMemberData,
   AboutValueItemData,
 } from "@/lib/about-defaults";
@@ -117,19 +119,29 @@ export function AboutPageView({
   milestones,
   expertiseItems,
   teamMembers,
+  spaceItems,
   valueItems,
 }: {
   content: AboutPageContentData;
   milestones: AboutMilestoneData[];
   expertiseItems: AboutExpertiseItemData[];
   teamMembers: AboutTeamMemberData[];
+  spaceItems: AboutSpaceItemData[];
   valueItems: AboutValueItemData[];
 }) {
-  const heroImage = resolveImage(
-    content.heroBackgroundImagePublicId,
-    HERO_IMAGE_FALLBACK,
-    { c: "fill", f: "auto", g: "auto", q: "auto", w: 2200 },
-  );
+  const heroImagePublicId = content.heroBackgroundImagePublicId;
+  const heroImage =
+    heroImagePublicId && /^https?:\/\//i.test(heroImagePublicId)
+      ? heroImagePublicId
+      : heroImagePublicId
+        ? getCloudinaryUrl(heroImagePublicId, {
+            c: "fill",
+            f: "auto",
+            g: "auto",
+            q: "auto",
+            w: 2200,
+          })
+        : HERO_IMAGE_FALLBACK;
 
   const pageStyle = {
     "--about-page-bg": "var(--background)",
@@ -149,13 +161,17 @@ export function AboutPageView({
     >
       <section className="relative overflow-hidden bg-[var(--about-brand-deep)] text-white">
         <div className="absolute inset-0">
-          <AboutVisual
+          {/* We intentionally match the project/offers hero layering here so
+              the about image reads through the overlay the same way. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={heroImage}
-            alt="About Dexta hero background"
-            className="h-full w-full object-cover opacity-50"
-            priority
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-center"
+            loading="eager"
+            fetchPriority="high"
           />
-          <div className="absolute inset-0 bg-[var(--about-brand-deep)] opacity-90" />
+          <div className="absolute inset-0 bg-[var(--about-brand-deep)]/75" />
         </div>
         <div className="relative mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-28">
           <div className="max-w-3xl">
@@ -267,6 +283,13 @@ export function AboutPageView({
           </div>
         </div>
       </section>
+
+      <AboutSpaceSection
+        label={content.spaceLabel}
+        title={content.spaceTitle}
+        body={content.spaceBody}
+        items={spaceItems}
+      />
 
       <section className="bg-[var(--about-accent)]/7 py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
