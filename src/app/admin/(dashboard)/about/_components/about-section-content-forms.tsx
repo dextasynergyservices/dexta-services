@@ -2,7 +2,14 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileText, Layers3, Loader2, ShieldCheck, Users } from "lucide-react";
+import {
+  Building2,
+  FileText,
+  Layers3,
+  Loader2,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -536,6 +543,99 @@ export function AboutTeamSectionForm({ content }: SectionFormProps) {
         isSubmitting={isSubmitting}
         isDirty={isDirty}
         label="Save Team Section"
+      />
+    </form>
+  );
+}
+
+const aboutSpaceSectionSchema = aboutPageContentSchema.pick({
+  spaceLabel: true,
+  spaceTitle: true,
+  spaceBody: true,
+});
+
+type AboutSpaceSectionValues = z.infer<typeof aboutSpaceSectionSchema>;
+
+export function AboutSpaceSectionForm({ content }: SectionFormProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isDirty, isSubmitting },
+  } = useForm<AboutSpaceSectionValues>({
+    resolver: zodResolver(aboutSpaceSectionSchema),
+    defaultValues: {
+      spaceLabel: content.spaceLabel,
+      spaceTitle: content.spaceTitle,
+      spaceBody: content.spaceBody,
+    },
+  });
+
+  useEffect(() => {
+    reset({
+      spaceLabel: content.spaceLabel,
+      spaceTitle: content.spaceTitle,
+      spaceBody: content.spaceBody,
+    });
+  }, [content, reset]);
+
+  const onSubmit = async (data: AboutSpaceSectionValues) => {
+    const result = await updateAboutPageContentSection(
+      data as Partial<AboutPageContentInput>,
+    );
+
+    if (!result.success) {
+      toast.error(result.message);
+      return;
+    }
+
+    reset(data);
+    toast.success(result.message);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <SectionCard
+        title="Our Space Section Copy"
+        description="Edit the section heading and intro copy that sit above the office space cards on the public About page."
+        icon={<Building2 className="h-5 w-5" />}
+      >
+        <div>
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Section label
+          </Label>
+          <Input
+            className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
+            {...register("spaceLabel")}
+          />
+          <FieldError message={errors.spaceLabel?.message} />
+        </div>
+
+        <div>
+          <Label className="mb-1.5 block text-xs text-[#888]">Title</Label>
+          <Textarea
+            rows={3}
+            className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
+            {...register("spaceTitle")}
+          />
+          <FieldError message={errors.spaceTitle?.message} />
+        </div>
+
+        <div>
+          <Label className="mb-1.5 block text-xs text-[#888]">Body</Label>
+          <Textarea
+            rows={5}
+            className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
+            {...register("spaceBody")}
+          />
+          <FieldError message={errors.spaceBody?.message} />
+        </div>
+      </SectionCard>
+
+      <SaveButton
+        isSubmitting={isSubmitting}
+        isDirty={isDirty}
+        label="Save Our Space Section"
       />
     </form>
   );

@@ -7,7 +7,11 @@ import type {
 } from "@/lib/api";
 import { getCloudinaryUrl } from "@/lib/cloudinary";
 import { cn } from "@/lib/utils";
-import { OFFERS_AUDIENCE_META, toAudienceHref } from "./offers-constants";
+import {
+  getOffersAudienceLabel,
+  OFFERS_AUDIENCE_META,
+  toAudienceHref,
+} from "./offers-constants";
 
 interface OffersHeroProps {
   content: UnifiedOffersPageProps["content"];
@@ -43,7 +47,7 @@ export function OffersHero({
         <img
           src={heroImageSrc}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover object-center opacity-75"
+          className="absolute inset-0 h-full w-full object-cover object-center"
           loading="eager"
           fetchPriority="high"
         />
@@ -52,7 +56,7 @@ export function OffersHero({
         className={cn(
           "absolute inset-0",
           hasHeroImage
-            ? "bg-[var(--offers-hero-bg)]/52"
+            ? "bg-[var(--offers-hero-bg)]/75"
             : "bg-[var(--offers-hero-bg)]",
         )}
       />
@@ -110,6 +114,10 @@ export function OffersHero({
                 const meta = OFFERS_AUDIENCE_META[audience.slug];
                 const Icon = meta.icon;
                 const isActive = activeAudience === audience.slug;
+                const audienceLabel = getOffersAudienceLabel(
+                  audience.slug,
+                  audience.tabLabel,
+                );
 
                 return (
                   <Link
@@ -123,7 +131,7 @@ export function OffersHero({
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
-                    {audience.tabLabel}
+                    {audienceLabel}
                   </Link>
                 );
               })}

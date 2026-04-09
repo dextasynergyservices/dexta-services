@@ -108,6 +108,7 @@ export function AdminSidebar({
           icon: Layers,
         },
         { href: "/admin/about/team", label: "Team Section", icon: Users },
+        { href: "/admin/about/space", label: "Our Space", icon: ImageIcon },
         {
           href: "/admin/about/values",
           label: "Values Section",

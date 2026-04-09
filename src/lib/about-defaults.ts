@@ -44,6 +44,9 @@ export type AboutPageContentData = {
   cultureBody: string;
   teamNoteLabel: string;
   teamPortfolioButtonText: string;
+  spaceLabel: string;
+  spaceTitle: string;
+  spaceBody: string;
   valuesLabel: string;
   valuesTitle: string;
   valuesBody: string;
@@ -89,6 +92,18 @@ export type AboutValueItemData = {
   icon: AboutIconKey;
   title: string;
   description: string;
+  isVisible: boolean;
+  position: number;
+};
+
+export type AboutSpaceMediaType = "IMAGE" | "VIDEO";
+
+export type AboutSpaceItemData = {
+  title: string;
+  description: string;
+  mediaType: AboutSpaceMediaType;
+  mediaPublicId: string | null;
+  thumbnailPublicId: string | null;
   isVisible: boolean;
   position: number;
 };
@@ -140,6 +155,11 @@ export const ABOUT_PAGE_CONTENT_DEFAULTS: AboutPageContentData = {
     "We care about sharp communication, thoughtful iteration, and work that remains useful long after the first delivery.",
   teamNoteLabel: "Professional note",
   teamPortfolioButtonText: "View Portfolio",
+  spaceLabel: "Our Space",
+  spaceTitle:
+    "The rooms where Dexta records, builds, welcomes, and recharges.",
+  spaceBody:
+    "From the podcast studio to the reception, workspace, and wellness corners, our environment is designed to support focus, collaboration, and creative momentum.",
   valuesLabel: "Our Values",
   valuesTitle:
     "The principles that define how Dexta thinks, builds, and partners.",

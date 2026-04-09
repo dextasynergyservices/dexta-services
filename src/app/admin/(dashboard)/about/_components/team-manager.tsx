@@ -489,8 +489,12 @@ export function TeamManager({ items }: { items: AboutTeamMemberRow[] }) {
         </div>
       </SectionShell>
 
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="border-[#222] bg-[#111] text-white sm:max-w-3xl">
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen} modal={false}>
+        <DialogContent
+          className="border-[#222] bg-[#111] text-white sm:max-w-3xl"
+          onInteractOutside={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => event.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Add Team Member</DialogTitle>
           </DialogHeader>
@@ -504,8 +508,13 @@ export function TeamManager({ items }: { items: AboutTeamMemberRow[] }) {
       <Dialog
         open={!!editingItem}
         onOpenChange={(open) => !open && setEditingItem(null)}
+        modal={false}
       >
-        <DialogContent className="border-[#222] bg-[#111] text-white sm:max-w-3xl">
+        <DialogContent
+          className="border-[#222] bg-[#111] text-white sm:max-w-3xl"
+          onInteractOutside={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => event.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Edit Team Member</DialogTitle>
           </DialogHeader>

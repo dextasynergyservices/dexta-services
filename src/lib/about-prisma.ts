@@ -7,6 +7,7 @@ type AboutPrismaDelegates = {
   aboutMilestone: any;
   aboutExpertiseItem: any;
   aboutTeamMember: any;
+  aboutSpaceItem: any;
   aboutValueItem: any;
 };
 

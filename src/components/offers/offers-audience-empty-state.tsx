@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { OffersAudiencePanelData } from "@/lib/api";
+import { getOffersAudienceLabel } from "./offers-constants";
 import { getOffersAccentStyle } from "./offers-theme";
 
 interface OffersAudienceEmptyStateProps {
@@ -10,13 +11,15 @@ interface OffersAudienceEmptyStateProps {
 export function OffersAudienceEmptyState({
   audience,
 }: OffersAudienceEmptyStateProps) {
+  const audienceLabel = getOffersAudienceLabel(audience.slug, audience.tabLabel);
+
   return (
     <div
       style={getOffersAccentStyle(audience.color)}
       className="rounded-[var(--offers-radius-panel)] border border-[var(--offers-accent-border-strong)] bg-[var(--offers-page-surface)] p-5 sm:p-6"
     >
       <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--offers-accent-strong)]">
-        {audience.tabLabel}
+        {audienceLabel}
       </p>
       <h3 className="mt-3 font-display text-2xl tracking-[-0.04em] text-[var(--offers-page-fg-strong)] sm:text-[2rem]">
         {audience.emptyTitle}

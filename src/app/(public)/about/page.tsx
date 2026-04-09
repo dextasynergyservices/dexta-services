@@ -4,6 +4,7 @@ import {
   fetchAboutExpertiseItems,
   fetchAboutMilestones,
   fetchAboutPageContent,
+  fetchAboutSpaceItems,
   fetchAboutTeamMembers,
   fetchAboutValueItems,
 } from "@/lib/api";
@@ -15,12 +16,13 @@ export const metadata = {
 };
 
 export default async function AboutPage() {
-  const [content, milestones, expertiseItems, teamMembers, valueItems] =
+  const [content, milestones, expertiseItems, teamMembers, spaceItems, valueItems] =
     await Promise.all([
       fetchAboutPageContent(),
       fetchAboutMilestones(),
       fetchAboutExpertiseItems(),
       fetchAboutTeamMembers(),
+      fetchAboutSpaceItems(),
       fetchAboutValueItems(),
     ]);
 
@@ -32,6 +34,7 @@ export default async function AboutPage() {
           milestones={milestones}
           expertiseItems={expertiseItems}
           teamMembers={teamMembers}
+          spaceItems={spaceItems}
           valueItems={valueItems}
         />
       </PageTransition>

@@ -6,6 +6,7 @@ import {
   ABOUT_CONTENT_TAG,
   ABOUT_EXPERTISE_TAG,
   ABOUT_MILESTONES_TAG,
+  ABOUT_SPACE_TAG,
   ABOUT_TEAM_TAG,
   ABOUT_VALUES_TAG,
 } from "@/lib/about-cache";
@@ -19,6 +20,7 @@ import {
   serializeJsonStringArray,
   type AboutExpertiseItemData,
   type AboutPageContentData,
+  type AboutSpaceItemData,
   type AboutValueItemData,
 } from "@/lib/about-defaults";
 import { aboutPrisma } from "@/lib/about-prisma";
@@ -27,11 +29,13 @@ import {
   aboutExpertiseItemSchema,
   aboutMilestoneSchema,
   aboutPageContentSchema,
+  aboutSpaceItemSchema,
   aboutTeamMemberSchema,
   aboutValueItemSchema,
   type AboutExpertiseItemInput,
   type AboutMilestoneInput,
   type AboutPageContentInput,
+  type AboutSpaceItemInput,
   type AboutTeamMemberInput,
   type AboutValueItemInput,
 } from "@/lib/validators";
@@ -75,6 +79,17 @@ export type AboutTeamMemberRow = {
   position: number;
 };
 
+export type AboutSpaceItemRow = {
+  id: string;
+  title: string;
+  description: string;
+  mediaType: AboutSpaceItemData["mediaType"];
+  mediaPublicId: string | null;
+  thumbnailPublicId: string | null;
+  isVisible: boolean;
+  position: number;
+};
+
 export type AboutValueItemRow = {
   id: string;
   icon: AboutValueItemData["icon"];
@@ -85,6 +100,7 @@ export type AboutValueItemRow = {
 };
 
 type AboutPageContentRecord = {
+  id: number;
   heroEyebrow: string;
   heroHeadline: string;
   heroBody: string;
@@ -120,6 +136,9 @@ type AboutPageContentRecord = {
   cultureBody: string;
   teamNoteLabel: string;
   teamPortfolioButtonText: string;
+  spaceLabel: string;
+  spaceTitle: string;
+  spaceBody: string;
   valuesLabel: string;
   valuesTitle: string;
   valuesBody: string;
@@ -149,6 +168,7 @@ export type AboutAdminData = {
   milestones: AboutMilestoneRow[];
   expertiseItems: AboutExpertiseItemRow[];
   teamMembers: AboutTeamMemberRow[];
+  spaceItems: AboutSpaceItemRow[];
   valueItems: AboutValueItemRow[];
 };
 
@@ -181,6 +201,48 @@ function revalidateAboutTeam() {
   updateTag(ABOUT_TEAM_TAG);
   revalidatePath("/about");
   revalidatePath("/admin/about");
+}
+
+function revalidateAboutSpace() {
+  updateTag(ABOUT_SPACE_TAG);
+  revalidatePath("/about");
+  revalidatePath("/admin/about");
+}
+
+function getAboutSpaceItemDelegate() {
+  const delegate = (
+    aboutPrisma as typeof aboutPrisma & {
+      aboutSpaceItem?: {
+        count: () => Promise<number>;
+        createMany: (args: {
+          data: Array<{
+            title: string;
+            description: string;
+            mediaType: AboutSpaceItemData["mediaType"];
+            mediaPublicId: string | null;
+            thumbnailPublicId: string | null;
+            isVisible: boolean;
+            position: number;
+          }>;
+        }) => Promise<unknown>;
+        findMany: (args: { orderBy: { position: "asc" } }) => Promise<AboutSpaceItemRow[]>;
+        create: (args: { data: AboutSpaceItemInput }) => Promise<unknown>;
+        findUnique: (args: { where: { id: string } }) => Promise<
+          | (AboutSpaceItemRow & {
+              id: string;
+            })
+          | null
+        >;
+        update: (args: {
+          where: { id: string };
+          data: Partial<AboutSpaceItemInput> | { position: number };
+        }) => Promise<unknown>;
+        delete: (args: { where: { id: string } }) => Promise<unknown>;
+      };
+    }
+  ).aboutSpaceItem;
+
+  return delegate ?? null;
 }
 
 function revalidateAboutValues() {
@@ -228,6 +290,9 @@ function normalizeAboutPageContent(
     cultureBody: data.cultureBody,
     teamNoteLabel: data.teamNoteLabel,
     teamPortfolioButtonText: data.teamPortfolioButtonText,
+    spaceLabel: data.spaceLabel,
+    spaceTitle: data.spaceTitle,
+    spaceBody: data.spaceBody,
     valuesLabel: data.valuesLabel,
     valuesTitle: data.valuesTitle,
     valuesBody: data.valuesBody,
@@ -291,6 +356,9 @@ function mapAboutPageContentRecord(
     cultureBody: content.cultureBody,
     teamNoteLabel: content.teamNoteLabel,
     teamPortfolioButtonText: content.teamPortfolioButtonText,
+    spaceLabel: content.spaceLabel,
+    spaceTitle: content.spaceTitle,
+    spaceBody: content.spaceBody,
     valuesLabel: content.valuesLabel,
     valuesTitle: content.valuesTitle,
     valuesBody: content.valuesBody,
@@ -370,6 +438,28 @@ function mapTeamMemberRow(row: {
   };
 }
 
+function mapSpaceRow(row: {
+  id: string;
+  title: string;
+  description: string;
+  mediaType: AboutSpaceItemData["mediaType"];
+  mediaPublicId: string | null;
+  thumbnailPublicId: string | null;
+  isVisible: boolean;
+  position: number;
+}): AboutSpaceItemRow {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    mediaType: row.mediaType,
+    mediaPublicId: row.mediaPublicId,
+    thumbnailPublicId: row.thumbnailPublicId,
+    isVisible: row.isVisible,
+    position: row.position,
+  };
+}
+
 function mapValueRow(row: {
   id: string;
   icon: AboutValueItemData["icon"];
@@ -389,17 +479,20 @@ function mapValueRow(row: {
 }
 
 async function ensureAboutSeeded() {
-  await aboutPrisma.aboutPageContent.upsert({
-    where: { id: 1 },
-    update: {},
-    create: {
-      id: 1,
-      ...ABOUT_PAGE_CONTENT_DEFAULTS,
-      storyTrustedItems: serializeJsonStringArray(
-        ABOUT_PAGE_CONTENT_DEFAULTS.storyTrustedItems,
-      ),
-    },
-  });
+  const existingContent = (await aboutPrisma.aboutPageContent.findFirst({
+    orderBy: { id: "asc" },
+  })) as AboutPageContentRecord | null;
+
+  if (!existingContent) {
+    await aboutPrisma.aboutPageContent.create({
+      data: {
+        ...ABOUT_PAGE_CONTENT_DEFAULTS,
+        storyTrustedItems: serializeJsonStringArray(
+          ABOUT_PAGE_CONTENT_DEFAULTS.storyTrustedItems,
+        ),
+      },
+    });
+  }
 
   if ((await aboutPrisma.aboutMilestone.count()) === 0) {
     await aboutPrisma.aboutMilestone.createMany({
@@ -460,19 +553,24 @@ async function ensureAboutSeeded() {
 export async function getAboutAdminData(): Promise<AboutAdminData> {
   await requireAuth();
   await ensureAboutSeeded();
+  const aboutSpaceItem = getAboutSpaceItemDelegate();
 
-  const [content, milestones, expertiseItems, teamMembers, valueItems] =
+  const [content, milestones, expertiseItems, teamMembers, spaceItems, valueItems] =
     (await Promise.all([
-      aboutPrisma.aboutPageContent.findUnique({ where: { id: 1 } }),
+      aboutPrisma.aboutPageContent.findFirst({ orderBy: { id: "asc" } }),
       aboutPrisma.aboutMilestone.findMany({ orderBy: { position: "asc" } }),
       aboutPrisma.aboutExpertiseItem.findMany({ orderBy: { position: "asc" } }),
       aboutPrisma.aboutTeamMember.findMany({ orderBy: { position: "asc" } }),
+      aboutSpaceItem
+        ? aboutSpaceItem.findMany({ orderBy: { position: "asc" } })
+        : Promise.resolve([] as AboutSpaceItemRow[]),
       aboutPrisma.aboutValueItem.findMany({ orderBy: { position: "asc" } }),
     ])) as [
       AboutPageContentRecord | null,
       AboutMilestoneRow[],
       AboutExpertiseItemRow[],
       AboutTeamMemberRecord[],
+      AboutSpaceItemRow[],
       AboutValueItemRow[],
     ];
 
@@ -492,6 +590,7 @@ export async function getAboutAdminData(): Promise<AboutAdminData> {
       }),
     ),
     teamMembers: teamMembers.map((item) => mapTeamMemberRow(item)),
+    spaceItems: spaceItems.map((item) => mapSpaceRow(item)),
     valueItems: valueItems.map((item) =>
       mapValueRow({
         id: item.id,
@@ -519,19 +618,29 @@ export async function updateAboutPageContent(
   }
 
   const normalized = normalizeAboutPageContent(parsed.data);
+  const existingContent = (await aboutPrisma.aboutPageContent.findFirst({
+    orderBy: { id: "asc" },
+  })) as AboutPageContentRecord | null;
+  const serializedTrustedItems = serializeJsonStringArray(
+    normalized.storyTrustedItems,
+  );
 
-  await aboutPrisma.aboutPageContent.upsert({
-    where: { id: 1 },
-    update: {
-      ...normalized,
-      storyTrustedItems: serializeJsonStringArray(normalized.storyTrustedItems),
-    },
-    create: {
-      id: 1,
-      ...normalized,
-      storyTrustedItems: serializeJsonStringArray(normalized.storyTrustedItems),
-    },
-  });
+  if (existingContent) {
+    await aboutPrisma.aboutPageContent.update({
+      where: { id: existingContent.id },
+      data: {
+        ...normalized,
+        storyTrustedItems: serializedTrustedItems,
+      },
+    });
+  } else {
+    await aboutPrisma.aboutPageContent.create({
+      data: {
+        ...normalized,
+        storyTrustedItems: serializedTrustedItems,
+      },
+    });
+  }
 
   revalidateAboutContent();
   return { success: true, message: "About page content updated." };
@@ -543,8 +652,8 @@ export async function updateAboutPageContentSection(
   await requireAuth();
   await ensureAboutSeeded();
 
-  const current = (await aboutPrisma.aboutPageContent.findUnique({
-    where: { id: 1 },
+  const current = (await aboutPrisma.aboutPageContent.findFirst({
+    orderBy: { id: "asc" },
   })) as AboutPageContentRecord | null;
 
   const merged = {
@@ -561,19 +670,26 @@ export async function updateAboutPageContentSection(
   }
 
   const normalized = normalizeAboutPageContent(parsed.data);
+  const serializedTrustedItems = serializeJsonStringArray(
+    normalized.storyTrustedItems,
+  );
 
-  await aboutPrisma.aboutPageContent.upsert({
-    where: { id: 1 },
-    update: {
-      ...normalized,
-      storyTrustedItems: serializeJsonStringArray(normalized.storyTrustedItems),
-    },
-    create: {
-      id: 1,
-      ...normalized,
-      storyTrustedItems: serializeJsonStringArray(normalized.storyTrustedItems),
-    },
-  });
+  if (current) {
+    await aboutPrisma.aboutPageContent.update({
+      where: { id: current.id },
+      data: {
+        ...normalized,
+        storyTrustedItems: serializedTrustedItems,
+      },
+    });
+  } else {
+    await aboutPrisma.aboutPageContent.create({
+      data: {
+        ...normalized,
+        storyTrustedItems: serializedTrustedItems,
+      },
+    });
+  }
 
   revalidateAboutContent();
   return { success: true, message: "About section updated." };
@@ -962,6 +1078,143 @@ export async function reorderAboutTeamMembers(
 
   revalidateAboutTeam();
   return { success: true, message: "Team member reordered." };
+}
+
+export async function createAboutSpaceItem(
+  data: AboutSpaceItemInput,
+): Promise<ActionResult> {
+  await requireAuth();
+  const aboutSpaceItem = getAboutSpaceItemDelegate();
+  if (!aboutSpaceItem) {
+    return {
+      success: false,
+      message: "Our Space is unavailable until Prisma is regenerated and the dev server is restarted.",
+    };
+  }
+
+  const position = await aboutSpaceItem.count();
+  const parsed = aboutSpaceItemSchema.safeParse({ ...data, position });
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid space item.",
+    };
+  }
+
+  await aboutSpaceItem.create({ data: parsed.data });
+  revalidateAboutSpace();
+  return { success: true, message: "Space item added." };
+}
+
+export async function updateAboutSpaceItem(
+  id: string,
+  data: AboutSpaceItemInput,
+): Promise<ActionResult> {
+  await requireAuth();
+  const aboutSpaceItem = getAboutSpaceItemDelegate();
+  if (!aboutSpaceItem) {
+    return {
+      success: false,
+      message: "Our Space is unavailable until Prisma is regenerated and the dev server is restarted.",
+    };
+  }
+
+  const existing = await aboutSpaceItem.findUnique({
+    where: { id },
+  });
+  if (!existing) {
+    return { success: false, message: "Space item not found." };
+  }
+
+  const parsed = aboutSpaceItemSchema.safeParse({
+    ...data,
+    position: existing.position,
+  });
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message ?? "Invalid space item.",
+    };
+  }
+
+  await aboutSpaceItem.update({
+    where: { id },
+    data: parsed.data,
+  });
+
+  revalidateAboutSpace();
+  return { success: true, message: "Space item updated." };
+}
+
+export async function deleteAboutSpaceItem(id: string): Promise<ActionResult> {
+  await requireAuth();
+  const aboutSpaceItem = getAboutSpaceItemDelegate();
+  if (!aboutSpaceItem) {
+    return {
+      success: false,
+      message: "Our Space is unavailable until Prisma is regenerated and the dev server is restarted.",
+    };
+  }
+
+  const existing = await aboutSpaceItem.findUnique({
+    where: { id },
+  });
+  if (!existing) {
+    return { success: false, message: "Space item not found." };
+  }
+
+  await aboutSpaceItem.delete({ where: { id } });
+
+  const rows = await aboutSpaceItem.findMany({
+    orderBy: { position: "asc" },
+  });
+  await prisma.$transaction(
+    rows.map((row: { id: string }, index: number) =>
+      aboutSpaceItem.update({
+        where: { id: row.id },
+        data: { position: index },
+      }),
+    ),
+  );
+
+  revalidateAboutSpace();
+  return { success: true, message: "Space item removed." };
+}
+
+export async function reorderAboutSpaceItems(
+  id: string,
+  direction: ReorderDirection,
+): Promise<ActionResult> {
+  await requireAuth();
+  const aboutSpaceItem = getAboutSpaceItemDelegate();
+  if (!aboutSpaceItem) {
+    return {
+      success: false,
+      message: "Our Space is unavailable until Prisma is regenerated and the dev server is restarted.",
+    };
+  }
+
+  const rows = await aboutSpaceItem.findMany({
+    orderBy: { position: "asc" },
+  });
+  const swap = getReorderSwap(rows, id, direction);
+  if (!swap) {
+    return { success: false, message: "Unable to move this space item." };
+  }
+
+  await prisma.$transaction([
+    aboutSpaceItem.update({
+      where: { id: swap.current.id },
+      data: { position: swap.target.position },
+    }),
+    aboutSpaceItem.update({
+      where: { id: swap.target.id },
+      data: { position: swap.current.position },
+    }),
+  ]);
+
+  revalidateAboutSpace();
+  return { success: true, message: "Space item reordered." };
 }
 
 export async function createAboutValueItem(
