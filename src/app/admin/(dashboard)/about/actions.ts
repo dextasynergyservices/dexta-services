@@ -479,7 +479,6 @@ function mapValueRow(row: {
 }
 
 async function ensureAboutSeeded() {
-  const aboutSpaceItem = getAboutSpaceItemDelegate();
   const existingContent = (await aboutPrisma.aboutPageContent.findFirst({
     orderBy: { id: "asc" },
   })) as AboutPageContentRecord | null;
