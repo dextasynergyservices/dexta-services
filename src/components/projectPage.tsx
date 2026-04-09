@@ -214,7 +214,8 @@ export default function ProjectPage({
 
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearchTerm = useDeferredValue(searchTerm);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [visibleProjectCount, setVisibleProjectCount] =
+    useState(PROJECTS_PER_PAGE);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     null,
   );
@@ -223,7 +224,7 @@ export default function ProjectPage({
 
   useEffect(() => {
     setSearchTerm("");
-    setCurrentPage(1);
+    setVisibleProjectCount(PROJECTS_PER_PAGE);
     setSelectedProjectId(null);
     setActiveAssetIndex(0);
     setImageZoom(1);
@@ -239,16 +240,12 @@ export default function ProjectPage({
     );
   });
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredProjects.length / PROJECTS_PER_PAGE),
+  const visibleProjects = filteredProjects.slice(0, visibleProjectCount);
+  const visibleResultsCount = Math.min(
+    visibleProjectCount,
+    filteredProjects.length,
   );
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  const startIndex = (safeCurrentPage - 1) * PROJECTS_PER_PAGE;
-  const paginatedProjects = filteredProjects.slice(
-    startIndex,
-    startIndex + PROJECTS_PER_PAGE,
-  );
+  const hasMoreProjects = visibleProjects.length < filteredProjects.length;
 
   const selectedProject =
     filteredProjects.find((project) => project.id === selectedProjectId) ??
@@ -275,11 +272,7 @@ export default function ProjectPage({
   }, [safeAssetIndex]);
 
   useEffect(() => {
-    if (currentPage !== safeCurrentPage) setCurrentPage(safeCurrentPage);
-  }, [currentPage, safeCurrentPage]);
-
-  useEffect(() => {
-    setCurrentPage(1);
+    setVisibleProjectCount(PROJECTS_PER_PAGE);
   }, [normalizedSearch]);
 
   useEffect(() => {
@@ -485,7 +478,7 @@ export default function ProjectPage({
                 of the studio.
               </h2>
               <p className="mt-3 text-sm text-[#55657f] sm:text-base">
-                Showing {filteredProjects.length} result
+                Showing {visibleResultsCount} of {filteredProjects.length} result
                 {filteredProjects.length === 1 ? "" : "s"} from{" "}
                 {counts[activeTab]} published{" "}
                 {activeTabMeta.label.toLowerCase()} item
@@ -505,9 +498,9 @@ export default function ProjectPage({
           </div>
 
           {/* Project cards */}
-          {paginatedProjects.length > 0 ? (
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {paginatedProjects.map((project, index) => {
+          {visibleProjects.length > 0 ? (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
+              {visibleProjects.map((project, index) => {
                 const previewSrc = getProjectPreview(project);
                 const assetCount = project.assets.length;
 
@@ -634,43 +627,20 @@ export default function ProjectPage({
             </div>
           )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={safeCurrentPage === 1}
-                className="rounded-full border border-[#dbe8f4] bg-white px-4 py-2 text-sm text-[#51627b] transition-colors hover:border-[#00abff]/30 hover:text-[#000c99] disabled:cursor-not-allowed disabled:opacity-35"
-              >
-                Prev
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
-                  <button
-                    key={page}
-                    type="button"
-                    onClick={() => setCurrentPage(page)}
-                    className={cn(
-                      "h-10 min-w-10 rounded-full border px-3 text-sm transition-colors",
-                      page === safeCurrentPage
-                        ? "border-[#000c99] bg-[#000c99] text-white"
-                        : "border-[#dbe8f4] bg-white text-[#51627b] hover:border-[#00abff]/30 hover:text-[#000c99]",
-                    )}
-                  >
-                    {page}
-                  </button>
-                ),
-              )}
+          {hasMoreProjects && (
+            <div className="mt-12 flex flex-col items-center justify-center gap-3 text-center">
+              <p className="text-sm text-[#6a7a93]">
+                More work is available below. Load the next 6 projects when
+                you're ready.
+              </p>
               <button
                 type="button"
                 onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  setVisibleProjectCount((count) => count + PROJECTS_PER_PAGE)
                 }
-                disabled={safeCurrentPage === totalPages}
-                className="rounded-full border border-[#dbe8f4] bg-white px-4 py-2 text-sm text-[#51627b] transition-colors hover:border-[#00abff]/30 hover:text-[#000c99] disabled:cursor-not-allowed disabled:opacity-35"
+                className="inline-flex h-12 items-center justify-center rounded-full border border-[#c7d9ee] bg-white px-6 text-sm font-medium text-[#000c99] transition-colors hover:border-[#00abff]/35 hover:bg-[#f7fbff]"
               >
-                Next
+                Load more
               </button>
             </div>
           )}

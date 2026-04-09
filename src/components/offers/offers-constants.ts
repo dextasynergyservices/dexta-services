@@ -41,6 +41,13 @@ export const OFFERS_SERVICE_ICONS: Record<
   PRINT: Printer,
 };
 
+export function getOffersAudienceLabel(
+  slug: OffersAudienceSlug,
+  fallbackLabel: string,
+) {
+  return slug === "churches" ? "Church/Organisation" : fallbackLabel;
+}
+
 export function toAudienceHref(slug: OffersAudienceSlug) {
   return slug === DEFAULT_OFFERS_AUDIENCE
     ? "/offers"

@@ -154,9 +154,9 @@ export function ServicesSection({
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="sticky top-3 z-30 mb-2 text-center sm:top-4 sm:mb-3 lg:top-5">
-          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-6xl lg:text-7xl">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+        <div className="sticky top-3 z-30 mb-6 text-center sm:top-4 sm:mb-8 md:top-5 md:mb-10 lg:top-5 lg:mb-8">
+          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl">
             PROJECTS
           </h2>
         </div>
@@ -172,14 +172,14 @@ export function ServicesSection({
                 ref={(el) => {
                   cardsRef.current[index] = el;
                 }}
-                className="sticky top-16 z-10 flex h-[calc(100vh-4rem)] w-full items-center justify-center pointer-events-none sm:top-20 sm:h-[calc(100vh-5rem)] lg:top-24 lg:h-[calc(100vh-6rem)]"
+                className="pointer-events-none sticky top-16 z-10 flex h-[calc(100vh-4rem)] w-full items-center justify-center sm:top-20 sm:h-[calc(100vh-5rem)] md:top-28 md:h-[calc(100vh-7rem)] lg:top-24 lg:h-[calc(100vh-6rem)]"
               >
                 <div
                   className="card-inner pointer-events-auto w-full max-w-4xl overflow-hidden rounded-2xl p-[1px] transition-transform duration-200 ease-out will-change-transform sm:rounded-3xl lg:rounded-[32px]"
                   style={{ transformOrigin: "top center" }}
                 >
                   <div
-                    className="relative flex h-[calc(100vh-8rem)] w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#050505] sm:h-[60vh] sm:rounded-3xl lg:h-[500px] lg:flex-row lg:rounded-[32px]"
+                    className="relative flex h-[68vh] min-h-[29rem] max-h-[34rem] w-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#050505] sm:h-[60vh] sm:min-h-0 sm:max-h-none sm:rounded-3xl md:h-[30rem] md:flex-row lg:h-[500px] lg:rounded-[32px]"
                     style={{
                       boxShadow: `0 0 50px -10px ${hexToRgba(cardColor, 0.3)}`,
                     }}
@@ -191,7 +191,7 @@ export function ServicesSection({
                       }}
                     />
 
-                    <div className="relative z-10 flex flex-1 flex-col justify-between p-6 sm:p-8 lg:p-12">
+                    <div className="relative z-10 flex flex-1 flex-col justify-between p-6 sm:p-8 md:p-10 lg:p-12">
                       <div>
                         <div className="mb-4 flex items-center gap-3 sm:mb-6">
                           <div
@@ -223,7 +223,7 @@ export function ServicesSection({
 
                       <button
                         type="button"
-                        className="mt-6 flex items-center gap-2 text-xs font-mono text-gray-500 transition-colors hover:text-white sm:mt-8 sm:text-sm"
+                        className="mt-6 flex items-center gap-2 text-xs font-mono text-gray-500 transition-colors hover:text-white sm:mt-8 sm:text-sm md:mt-6"
                         onClick={() =>
                           router.push(
                             `/projects?tab=${service.type.toLowerCase()}`,
@@ -239,10 +239,10 @@ export function ServicesSection({
 
                     <div
                       className={cn(
-                        "relative z-10 flex flex-1 overflow-hidden sm:min-h-[300px] lg:min-h-0",
+                        "relative z-10 flex flex-1 overflow-hidden sm:min-h-[300px] md:min-h-0",
                         service.featuredItems.length > 0
                           ? "items-stretch justify-stretch"
-                          : "items-center justify-center border-t border-white/10 bg-white/5 p-6 sm:p-8 lg:border-l lg:border-t-0",
+                          : "items-center justify-center border-t border-white/10 bg-white/5 p-6 sm:p-8 md:border-l md:border-t-0 md:p-10 lg:p-10",
                       )}
                     >
                       {service.featuredItems.length > 0 ? (
@@ -264,7 +264,7 @@ export function ServicesSection({
           })}
         </div>
 
-        <div className="h-[45vh] sm:h-[55vh]" />
+        <div className="h-[45vh] sm:h-[55vh] md:h-[42vh]" />
       </div>
 
       <style jsx>{`

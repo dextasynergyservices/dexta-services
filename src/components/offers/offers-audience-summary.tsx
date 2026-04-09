@@ -1,5 +1,8 @@
 import type { OffersAudiencePanelData, OffersGroupData } from "@/lib/api";
-import { OFFERS_AUDIENCE_META } from "./offers-constants";
+import {
+  getOffersAudienceLabel,
+  OFFERS_AUDIENCE_META,
+} from "./offers-constants";
 
 interface OffersAudienceSummaryProps {
   audience: OffersAudiencePanelData;
@@ -12,6 +15,7 @@ export function OffersAudienceSummary({
 }: OffersAudienceSummaryProps) {
   const meta = OFFERS_AUDIENCE_META[audience.slug];
   const Icon = meta.icon;
+  const audienceLabel = getOffersAudienceLabel(audience.slug, audience.tabLabel);
   const totalPlans = audience.offerGroups.reduce(
     (count, group) => count + group.plans.length,
     0,
@@ -26,7 +30,7 @@ export function OffersAudienceSummary({
               <Icon className="h-5 w-5 text-[var(--offers-page-fg-strong)]" />
             </div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--offers-page-muted)]">
-              {audience.tabLabel}
+              {audienceLabel}
             </p>
           </div>
 
@@ -34,7 +38,7 @@ export function OffersAudienceSummary({
             className="mt-4 font-display text-[clamp(1.8rem,4vw,2.5rem)] tracking-[-0.045em] text-[var(--offers-page-fg-strong)]"
             style={{ textWrap: "balance", overflowWrap: "anywhere" }}
           >
-            {selectedGroup?.name ?? `${audience.tabLabel} Offers`}
+            {selectedGroup?.name ?? `${audienceLabel} Offers`}
           </h3>
 
           <p

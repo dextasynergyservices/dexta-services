@@ -9,7 +9,10 @@ import type {
 } from "@/lib/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { OFFERS_AUDIENCE_META } from "./offers-constants";
+import {
+  getOffersAudienceLabel,
+  OFFERS_AUDIENCE_META,
+} from "./offers-constants";
 import { OffersAudienceEmptyState } from "./offers-audience-empty-state";
 import { OffersSectionIntro } from "./offers-section-intro";
 import { PricingGrid } from "./pricing-grid";
@@ -95,6 +98,10 @@ export function OffersAudienceTabs({
             {audiences.map((audience) => {
               const meta = OFFERS_AUDIENCE_META[audience.slug];
               const Icon = meta.icon;
+              const audienceLabel = getOffersAudienceLabel(
+                audience.slug,
+                audience.tabLabel,
+              );
 
               return (
                 <TabsTrigger
@@ -104,7 +111,7 @@ export function OffersAudienceTabs({
                   className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--offers-page-border)] bg-[var(--offers-page-surface)] px-5 py-2 text-sm font-semibold text-[var(--offers-page-fg-strong)] transition-all focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--offers-page-bg)] data-[state=active]:border-[var(--dexta-primary)] data-[state=active]:bg-[var(--dexta-primary)] data-[state=active]:text-white"
                 >
                   <Icon className="h-4 w-4 shrink-0" />
-                  {audience.tabLabel}
+                  {audienceLabel}
                 </TabsTrigger>
               );
             })}
@@ -113,6 +120,10 @@ export function OffersAudienceTabs({
           {audiences.map((audience) => {
             const selectedGroup = selectedGroups[audience.slug];
             const hasAnyGroups = audience.offerGroups.length > 0;
+            const audienceLabel = getOffersAudienceLabel(
+              audience.slug,
+              audience.tabLabel,
+            );
 
             return (
               <TabsContent
@@ -157,7 +168,7 @@ export function OffersAudienceTabs({
                             title={selectedGroup.name}
                             description={selectedGroup.description}
                             plans={selectedGroup.plans}
-                            audienceLabel={audience.tabLabel}
+                            audienceLabel={audienceLabel}
                             offerGroupName={selectedGroup.name}
                             offersWhatsAppHref={offersWhatsAppHref}
                             color={audience.color}
