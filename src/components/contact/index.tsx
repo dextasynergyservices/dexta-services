@@ -17,8 +17,8 @@ export function ContactHero({ content }: { content: ContactPageContentData }) {
   return (
     <section className="relative overflow-hidden bg-[var(--dexta-secondary)] text-white">
       {/* Subtle radial glow */}
-      <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-[var(--dexta-primary)]/40 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-[var(--dexta)]/10 blur-3xl pointer-events-none" />
+      <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-[color-mix(in_srgb,var(--dexta-primary)_40%,transparent)] blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-[color-mix(in_srgb,var(--dexta)_10%,transparent)] blur-3xl pointer-events-none" />
 
       <div className="relative mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-28">
         <motion.div

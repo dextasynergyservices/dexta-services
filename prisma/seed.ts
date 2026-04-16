@@ -11,9 +11,14 @@ import {
   serializeJsonStringArray,
 } from "../src/lib/about-defaults";
 import {
+  WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS,
+  serializeJsonStringArray as serializeSchoolTemplateJsonStringArray,
+} from "../src/lib/we-brand-schools-defaults";
+import {
   projectsHeroDefaults,
   serviceContentDefaults,
 } from "./seed-projects-data";
+import { WE_BRAND_SCHOOLS_TEMPLATE_SEED_DATA } from "./seed-we-brand-schools-data";
 
 const connectionString =
   process.env.DATABASE_URL_UNPOOLED?.trim() || process.env.DATABASE_URL?.trim();
@@ -125,10 +130,63 @@ async function main() {
     })),
   });
 
+  const existingWeBrandSchoolsContent =
+    await prisma.weBrandSchoolsPageContent.findFirst({
+      orderBy: { id: "asc" },
+    });
+
+  if (existingWeBrandSchoolsContent) {
+    await prisma.weBrandSchoolsPageContent.update({
+      where: { id: existingWeBrandSchoolsContent.id },
+      data: WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS,
+    });
+  } else {
+    await prisma.weBrandSchoolsPageContent.create({
+      data: WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS,
+    });
+  }
+
+  await prisma.schoolWebsiteTemplate.deleteMany();
+
+  for (const template of WE_BRAND_SCHOOLS_TEMPLATE_SEED_DATA) {
+    const createdTemplate = await prisma.schoolWebsiteTemplate.create({
+      data: {
+        id: template.id,
+        name: template.name,
+        slug: template.slug,
+        summary: template.summary,
+        description: template.description,
+        websiteUrl: template.websiteUrl,
+        highlights: serializeSchoolTemplateJsonStringArray(template.highlights),
+        coverAssetId: null,
+        isVisible: template.isVisible,
+        position: template.position,
+        assets: {
+          create: template.assets.map((asset) => ({
+            id: asset.id,
+            publicId: asset.publicId,
+            mediaType: asset.mediaType,
+            thumbnailPublicId: asset.thumbnailPublicId,
+            caption: asset.caption,
+            position: asset.position,
+          })),
+        },
+      },
+    });
+
+    if (template.assets[0]?.id) {
+      await prisma.schoolWebsiteTemplate.update({
+        where: { id: createdTemplate.id },
+        data: { coverAssetId: template.assets[0].id },
+      });
+    }
+  }
+
   console.log(`Admin user seeded: ${email}`);
   console.log("Seeded homepage project section defaults.");
   console.log("Seeded projects hero defaults.");
   console.log("Seeded About page content and cards.");
+  console.log("Seeded We Brand Schools landing page defaults and templates.");
   console.log("IMPORTANT: Change the default password after first login!");
 
   await prisma.$disconnect();

@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 import prisma from "@/lib/prisma";
 import { aboutPrisma } from "@/lib/about-prisma";
+import { weBrandSchoolsPrisma } from "@/lib/we-brand-schools-prisma";
 import { getCloudinaryPublicId } from "./cloudinary";
 import {
   ABOUT_CONTENT_TAG,
@@ -43,6 +44,16 @@ import {
   type OffersAudienceType,
   type OffersPageContentData,
 } from "./offers-defaults";
+import {
+  SCHOOL_WEBSITE_TEMPLATES_TAG,
+  WE_BRAND_SCHOOLS_CONTENT_TAG,
+} from "./we-brand-schools-cache";
+import {
+  WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS,
+  parseJsonStringArray as parseWeBrandSchoolsJsonStringArray,
+  type SchoolWebsiteTemplateData,
+  type WeBrandSchoolsPageContentData,
+} from "./we-brand-schools-defaults";
 import { resolveProjectSectionCardColor } from "./project-section";
 
 export const PORTFOLIO_TABS = ["design", "build", "print"] as const;
@@ -899,6 +910,153 @@ export async function fetchUnifiedOffersPage(): Promise<UnifiedOffersPageProps> 
     initialAudience,
     offersWhatsAppHref,
   };
+}
+
+// ─── We Brand Schools ──────────────────────────────────────────────────────────
+
+async function readWeBrandSchoolsPageContent(): Promise<WeBrandSchoolsPageContentData> {
+  try {
+    const row = await weBrandSchoolsPrisma.weBrandSchoolsPageContent.findFirst({
+      orderBy: { id: "asc" },
+    });
+
+    if (!row) {
+      return WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS;
+    }
+
+    return {
+      logoPublicId: row.logoPublicId,
+      heroImagePublicId: row.heroImagePublicId ?? null,
+      heroEyebrow: row.heroEyebrow,
+      heroHeadline: row.heroHeadline,
+      heroBody: row.heroBody,
+      heroPrimaryCtaText: row.heroPrimaryCtaText,
+      heroPrimaryCtaHref: row.heroPrimaryCtaHref,
+      heroSecondaryCtaText: row.heroSecondaryCtaText,
+      heroSecondaryCtaHref: row.heroSecondaryCtaHref,
+      overviewLabel: row.overviewLabel,
+      overviewTitle: row.overviewTitle,
+      overviewBody: row.overviewBody,
+      processLabel: row.processLabel,
+      processTitle: row.processTitle,
+      processBody: row.processBody,
+      processStep1Title: row.processStep1Title,
+      processStep1Body: row.processStep1Body,
+      processStep2Title: row.processStep2Title,
+      processStep2Body: row.processStep2Body,
+      processStep3Title: row.processStep3Title,
+      processStep3Body: row.processStep3Body,
+      processStep4Title: row.processStep4Title,
+      processStep4Body: row.processStep4Body,
+      templatesLabel: row.templatesLabel,
+      templatesTitle: row.templatesTitle,
+      templatesBody: row.templatesBody,
+    };
+  } catch {
+    return WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS;
+  }
+}
+
+const fetchWeBrandSchoolsPageContentCached = unstable_cache(
+  readWeBrandSchoolsPageContent,
+  ["we-brand-schools-page-content"],
+  { tags: [WE_BRAND_SCHOOLS_CONTENT_TAG] },
+);
+
+export async function fetchWeBrandSchoolsPageContent(): Promise<
+  WeBrandSchoolsPageContentData
+> {
+  return fetchWeBrandSchoolsPageContentCached();
+}
+
+async function readSchoolWebsiteTemplates(): Promise<SchoolWebsiteTemplateData[]> {
+  try {
+    const rows = await weBrandSchoolsPrisma.schoolWebsiteTemplate.findMany({
+      where: { isVisible: true },
+      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        summary: true,
+        description: true,
+        websiteUrl: true,
+        highlights: true,
+        coverAssetId: true,
+        isVisible: true,
+        position: true,
+        assets: {
+          orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true,
+            publicId: true,
+            mediaType: true,
+            thumbnailPublicId: true,
+            caption: true,
+            position: true,
+          },
+        },
+      },
+    });
+
+    if (!rows.length) {
+      return [];
+    }
+
+    return rows.map((row: {
+      id: string;
+      name: string;
+      slug: string;
+      summary: string;
+      description: string | null;
+      websiteUrl: string | null;
+      highlights: string;
+      coverAssetId: string | null;
+      isVisible: boolean;
+      position: number;
+      assets: {
+        id: string;
+        publicId: string;
+        mediaType: "IMAGE" | "VIDEO";
+        thumbnailPublicId: string | null;
+        caption: string | null;
+        position: number;
+      }[];
+    }) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      summary: row.summary,
+      description: row.description,
+      websiteUrl: row.websiteUrl,
+      highlights: parseWeBrandSchoolsJsonStringArray(row.highlights),
+      coverAssetId: row.coverAssetId,
+      isVisible: row.isVisible,
+      position: row.position,
+      assets: row.assets.map((asset) => ({
+        id: asset.id,
+        publicId: asset.publicId,
+        mediaType: asset.mediaType,
+        thumbnailPublicId: asset.thumbnailPublicId,
+        caption: asset.caption,
+        position: asset.position,
+      })),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+const fetchSchoolWebsiteTemplatesCached = unstable_cache(
+  readSchoolWebsiteTemplates,
+  ["school-website-templates"],
+  { tags: [SCHOOL_WEBSITE_TEMPLATES_TAG] },
+);
+
+export async function fetchSchoolWebsiteTemplates(): Promise<
+  SchoolWebsiteTemplateData[]
+> {
+  return fetchSchoolWebsiteTemplatesCached();
 }
 
 // ─── Contact Page ─────────────────────────────────────────────────────────────
