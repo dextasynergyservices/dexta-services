@@ -13,14 +13,14 @@ datasource db {
 }
 
 model ContactMessage {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   name      String
   email     String
   message   String
-  isRead    Boolean  @default(false)
+  isRead    Boolean   @default(false)
   readAt    DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([email])
   @@index([createdAt])
@@ -45,9 +45,9 @@ model DevsDayRegistration {
   name        String
   email       String
   role        String
-  stack       String?  // optional tech stack
-  expectation String?  // optional what they're looking forward to
-  profile     String?  // optional URL (GitHub/LinkedIn)
+  stack       String? // optional tech stack
+  expectation String? // optional what they're looking forward to
+  profile     String? // optional URL (GitHub/LinkedIn)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -86,8 +86,8 @@ model Event {
   dateTime      DateTime
   timezone      String      @default("Africa/Lagos")
   location      String
-  imagePublicId String?     // Cloudinary public ID
-  attendeeLimit Int?        // null = unlimited
+  imagePublicId String? // Cloudinary public ID
+  attendeeLimit Int? // null = unlimited
   status        EventStatus @default(DRAFT)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -105,16 +105,16 @@ model EventFormField {
   id          String        @id @default(uuid())
   eventId     String
   event       Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  name        String        // machine key e.g. "tech_stack"
-  label       String        // display e.g. "Tech Stack"
+  name        String // machine key e.g. "tech_stack"
+  label       String // display e.g. "Tech Stack"
   type        FormFieldType @default(TEXT)
   placeholder String?
   required    Boolean       @default(false)
-  options     String?       // JSON array for SELECT, e.g. '["A","B"]'
+  options     String? // JSON array for SELECT, e.g. '["A","B"]'
   position    Int           @default(0)
 
-  @@index([eventId])
   @@unique([eventId, name])
+  @@index([eventId])
 }
 
 model EventRegistration {
@@ -125,7 +125,7 @@ model EventRegistration {
   name          String
   status        RegistrationStatus @default(PENDING)
   declineReason String?
-  formData      String             // JSON of field responses keyed by field name
+  formData      String // JSON of field responses keyed by field name
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 
@@ -189,26 +189,26 @@ model ProjectsHeroContent {
 // One row per project — shared between homepage feature rotation + /projects page.
 // The legacy single-media fields remain during the transition to gallery-based assets.
 model PortfolioItem {
-  id                String          @id @default(uuid())
+  id                String           @id @default(uuid())
   serviceType       ServiceType
   title             String
   description       String?
   clientName        String?
-  slug              String?         @unique
-  tags              String          @default("[]") // JSON array string e.g. '["Logo","Branding"]'
+  slug              String?          @unique
+  tags              String           @default("[]") // JSON array string e.g. '["Logo","Branding"]'
   websiteUrl        String?
-  objectPosition    String          @default("center")
-  mediaPublicId     String          // legacy primary media field kept for compatibility during migration
-  mediaType         MediaType       @default(IMAGE)
-  thumbnailPublicId String?         // legacy video poster frame kept for compatibility during migration
+  objectPosition    String           @default("center")
+  mediaPublicId     String // legacy primary media field kept for compatibility during migration
+  mediaType         MediaType        @default(IMAGE)
+  thumbnailPublicId String? // legacy video poster frame kept for compatibility during migration
   coverAssetId      String?
-  coverAsset        PortfolioAsset? @relation("PortfolioCoverAsset", fields: [coverAssetId], references: [id], onDelete: SetNull)
+  coverAsset        PortfolioAsset?  @relation("PortfolioCoverAsset", fields: [coverAssetId], references: [id], onDelete: SetNull)
   assets            PortfolioAsset[] @relation("PortfolioItemAssets")
-  isFeatured        Boolean         @default(false) // Rotates on landing page service card
-  isVisible         Boolean         @default(true)  // Controls visibility on /projects page
-  position          Int             @default(0)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  isFeatured        Boolean          @default(false) // Rotates on landing page service card
+  isVisible         Boolean          @default(true) // Controls visibility on /projects page
+  position          Int              @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@index([serviceType])
   @@index([serviceType, isFeatured])
@@ -218,16 +218,16 @@ model PortfolioItem {
 }
 
 model PortfolioAsset {
-  id                String      @id @default(uuid())
+  id                String          @id @default(uuid())
   portfolioItemId   String
-  portfolioItem     PortfolioItem  @relation("PortfolioItemAssets", fields: [portfolioItemId], references: [id], onDelete: Cascade)
+  portfolioItem     PortfolioItem   @relation("PortfolioItemAssets", fields: [portfolioItemId], references: [id], onDelete: Cascade)
   publicId          String
-  mediaType         MediaType      @default(IMAGE)
+  mediaType         MediaType       @default(IMAGE)
   thumbnailPublicId String?
   caption           String?
-  position          Int            @default(0)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  position          Int             @default(0)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
   coverForItems     PortfolioItem[] @relation("PortfolioCoverAsset")
 
   @@index([portfolioItemId])
@@ -264,40 +264,40 @@ model ManifestoContent {
 
 // Singleton — always one row (id = 1). Manages both hero copy zones and images.
 model HeroContent {
-  id                      Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   // Images
-  backgroundImagePublicId String?  // Cloudinary public ID for the full-bleed background
+  backgroundImagePublicId   String? // Cloudinary public ID for the full-bleed background
   cardFallbackImagePublicId String? // Cloudinary public ID used as fallback for cards with no individual image
 
   // Zone 1: Main hero copy
-  eyebrow      String   @default("Dexta Synergy Services")
-  headline     String
-  body         String
-  ctaText      String   @default("See Our Work")
-  ctaHref      String   @default("/projects")
+  eyebrow  String @default("Dexta Synergy Services")
+  headline String
+  body     String
+  ctaText  String @default("See Our Work")
+  ctaHref  String @default("/projects")
 
   // Zone 2: Service stack section (post-scroll)
-  stackBadge   String   @default("Dexta service stack")
+  stackBadge   String @default("Dexta service stack")
   stackTitle   String
   stackBody    String
-  stackCtaText String   @default("Start a Project")
-  stackCtaHref String   @default("/contact")
+  stackCtaText String @default("Start a Project")
+  stackCtaHref String @default("/contact")
 
-  updatedAt    DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 }
 
 // Ordered list of hero cards — replaces the hardcoded HERO_CARDS object.
 model HeroCard {
   id             String   @id @default(uuid())
-  position       Int      @default(0)   // 0=left, 1=center, 2=right
+  position       Int      @default(0) // 0=left, 1=center, 2=right
   href           String
-  imagePublicId  String?                // Cloudinary public ID; null = use local fallback
+  imagePublicId  String? // Cloudinary public ID; null = use local fallback
   objectPosition String   @default("center")
-  label          String                 // e.g. "IDENTITY"
-  title          String                 // e.g. "DESIGN"
-  chip           String                 // e.g. "Brand systems"
-  badge          String                 // e.g. "ID"
+  label          String // e.g. "IDENTITY"
+  title          String // e.g. "DESIGN"
+  chip           String // e.g. "Brand systems"
+  badge          String // e.g. "ID"
   metaTitle      String
   metaSubtitle   String
   isVisible      Boolean  @default(true)
@@ -332,6 +332,18 @@ enum ContactSocialPlatform {
   WHATSAPP
   YOUTUBE
   TIKTOK
+}
+
+enum SchoolWebsiteJobStatus {
+  PENDING
+  IN_PROGRESS
+  LIVE
+  DECLINED
+}
+
+enum SchoolWebsiteDomainChoice {
+  HAS_DOMAIN
+  NEEDS_DOMAIN
 }
 
 enum AboutIconKey {
@@ -381,15 +393,15 @@ model OffersPageContent {
 
 // One row per audience type — label, color, visibility
 model Audience {
-  id           String       @id @default(uuid())
-  type         AudienceType @unique
-  tabLabel     String       @default("")
-  emptyTitle   String       @default("")
-  emptyBody    String       @default("")
-  color        String       @default("cyan") // "cyan" | "blue" | "purple"
-  isVisible    Boolean      @default(true)
-  offerGroups  OfferGroup[]
-  updatedAt    DateTime     @updatedAt
+  id          String       @id @default(uuid())
+  type        AudienceType @unique
+  tabLabel    String       @default("")
+  emptyTitle  String       @default("")
+  emptyBody   String       @default("")
+  color       String       @default("cyan") // "cyan" | "blue" | "purple"
+  isVisible   Boolean      @default(true)
+  offerGroups OfferGroup[]
+  updatedAt   DateTime     @updatedAt
 
   @@index([type])
 }
@@ -397,16 +409,16 @@ model Audience {
 // Offer group — a named collection of plans within one audience
 // (e.g. "Mass SMS", "Website Packages", "Brand Identity")
 model OfferGroup {
-  id           String       @id @default(uuid())
+  id           String        @id @default(uuid())
   audienceType AudienceType
-  audience     Audience     @relation(fields: [audienceType], references: [type], onDelete: Cascade)
+  audience     Audience      @relation(fields: [audienceType], references: [type], onDelete: Cascade)
   name         String
   description  String?
-  position     Int          @default(0)
-  isVisible    Boolean      @default(true)
+  position     Int           @default(0)
+  isVisible    Boolean       @default(true)
   plans        PricingPlan[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   @@index([audienceType])
   @@index([audienceType, position])
@@ -414,22 +426,22 @@ model OfferGroup {
 
 // Individual pricing plan — belongs to one OfferGroup
 model PricingPlan {
-  id             String             @id @default(uuid())
-  offerGroupId   String
-  offerGroup     OfferGroup         @relation(fields: [offerGroupId], references: [id], onDelete: Cascade)
-  name           String
-  subtitle       String?
-  imagePublicId  String?
-  features       String             @default("[]") // JSON array of feature strings
-  billingEnabled Boolean            @default(false) // admin toggle: show billing options inside card
-  isHighlighted  Boolean            @default(false)
+  id                 String              @id @default(uuid())
+  offerGroupId       String
+  offerGroup         OfferGroup          @relation(fields: [offerGroupId], references: [id], onDelete: Cascade)
+  name               String
+  subtitle           String?
+  imagePublicId      String?
+  features           String              @default("[]") // JSON array of feature strings
+  billingEnabled     Boolean             @default(false) // admin toggle: show billing options inside card
+  isHighlighted      Boolean             @default(false)
   highlightBgColor   String?
   highlightTextColor String?
-  isVisible      Boolean            @default(true)
-  position       Int                @default(0)
-  billingOptions PlanBillingOption[]
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  isVisible          Boolean             @default(true)
+  position           Int                 @default(0)
+  billingOptions     PlanBillingOption[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([offerGroupId])
   @@index([offerGroupId, position])
@@ -443,7 +455,7 @@ model PlanBillingOption {
   duration  BillingDuration
   priceNGN  Float?
   priceUSD  Float?
-  label     String?         // optional display override e.g. "₦5,000 / month"
+  label     String? // optional display override e.g. "₦5,000 / month"
   isDefault Boolean         @default(false) // which option is pre-selected in the card
   position  Int             @default(0)
   createdAt DateTime        @default(now())
@@ -459,103 +471,211 @@ model PlanBillingOption {
 // Singleton — always one row (id = 1). Stores shared contact copy and
 // business contact details used across home, contact page, and footer.
 model ContactPageContent {
-  id                 Int      @id @default(autoincrement())
-  homeEyebrow        String   @default("Get in touch")
-  homeTitle          String   @default("Let's Work Together")
-  homeBody           String   @default("Ready to start a project or just have a question? We'd love to hear from you.")
-  homeCtaText        String   @default("Contact Us")
-  homeCtaHref        String   @default("/contact")
-  heroEyebrow        String   @default("Contact Us")
-  heroTitle          String   @default("Get In Touch")
-  heroBody           String   @default("Have a project in mind? Let's bring your vision to life. Reach out and we'll get back to you shortly.")
-  infoEyebrow        String   @default("Where to find us")
-  infoTitle          String   @default("Contact Information")
-  infoBody           String   @default("We're based in Port Harcourt, Nigeria and work with clients across the globe.")
-  formEyebrow        String   @default("Send a message")
-  formTitle          String   @default("Drop Us a Line")
-  formBody           String   @default("Fill in the form and we'll respond within one business day.")
-  addressLabel       String   @default("Address")
-  address            String   @default("96 Elioparanwo Road, Port Harcourt, Rivers State, Nigeria")
-  emailLabel         String   @default("Email")
-  emails             String   @default("[\"info@dexta.services\",\"admin@dexta.services\"]")
-  phoneLabel         String   @default("Phone")
-  phones             String   @default("[\"+234 810 320 8287\"]")
-  socialsLabel       String   @default("Follow Us")
-  updatedAt          DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  homeEyebrow  String   @default("Get in touch")
+  homeTitle    String   @default("Let's Work Together")
+  homeBody     String   @default("Ready to start a project or just have a question? We'd love to hear from you.")
+  homeCtaText  String   @default("Contact Us")
+  homeCtaHref  String   @default("/contact")
+  heroEyebrow  String   @default("Contact Us")
+  heroTitle    String   @default("Get In Touch")
+  heroBody     String   @default("Have a project in mind? Let's bring your vision to life. Reach out and we'll get back to you shortly.")
+  infoEyebrow  String   @default("Where to find us")
+  infoTitle    String   @default("Contact Information")
+  infoBody     String   @default("We're based in Port Harcourt, Nigeria and work with clients across the globe.")
+  formEyebrow  String   @default("Send a message")
+  formTitle    String   @default("Drop Us a Line")
+  formBody     String   @default("Fill in the form and we'll respond within one business day.")
+  addressLabel String   @default("Address")
+  address      String   @default("96 Elioparanwo Road, Port Harcourt, Rivers State, Nigeria")
+  emailLabel   String   @default("Email")
+  emails       String   @default("[\"info@dexta.services\",\"admin@dexta.services\"]")
+  phoneLabel   String   @default("Phone")
+  phones       String   @default("[\"+234 810 320 8287\"]")
+  socialsLabel String   @default("Follow Us")
+  updatedAt    DateTime @updatedAt
 }
 
 model ContactSocialLink {
-  id         String                @id @default(uuid())
-  platform   ContactSocialPlatform @unique
-  label      String
-  href       String
-  isVisible  Boolean               @default(true)
-  position   Int                   @default(0)
-  createdAt  DateTime              @default(now())
-  updatedAt  DateTime              @updatedAt
+  id        String                @id @default(uuid())
+  platform  ContactSocialPlatform @unique
+  label     String
+  href      String
+  isVisible Boolean               @default(true)
+  position  Int                   @default(0)
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
 
   @@index([position])
   @@index([isVisible])
+}
+
+// --- We Brand Schools ---
+
+// Singleton — always one row (id = 1). Stores editable copy and branding for
+// the We Brand Schools landing page.
+model WeBrandSchoolsPageContent {
+  id                   Int      @id @default(autoincrement())
+  logoPublicId         String?
+  heroImagePublicId    String?
+  heroEyebrow          String   @default("We Brand Schools")
+  heroHeadline         String   @default("Free school websites built from proven templates.")
+  heroBody             String   @default("We help schools launch a credible online presence faster by adapting one of our ready-to-deploy website templates to fit their identity, message, and contact details.")
+  heroPrimaryCtaText   String   @default("Browse Templates")
+  heroPrimaryCtaHref   String   @default("#templates")
+  heroSecondaryCtaText String   @default("Apply for a Free Website")
+  heroSecondaryCtaHref String   @default("#apply")
+  overviewLabel        String   @default("What It Is")
+  overviewTitle        String   @default("A faster path to a professional school website.")
+  overviewBody         String   @default("We Brand Schools is Dexta's initiative for helping schools get online with polished, mobile-friendly websites built from our approved templates. Schools choose a template, submit their content, and we handle the setup and launch process.")
+  processLabel         String   @default("How It Works")
+  processTitle         String   @default("From template selection to launch in a clear, simple flow.")
+  processBody          String   @default("The process is designed to be straightforward for school administrators and repeatable for our internal team.")
+  processStep1Title    String   @default("Choose a template")
+  processStep1Body     String   @default("Browse the available school website templates and open any one to preview images, videos, and the live experience.")
+  processStep2Title    String   @default("Submit school details")
+  processStep2Body     String   @default("Tell us about your school, including your vision, mission, core values, and official contact details.")
+  processStep3Title    String   @default("Confirm domain path")
+  processStep3Body     String   @default("Let us know whether you already own a domain or need help choosing one.")
+  processStep4Title    String   @default("Review and go live")
+  processStep4Body     String   @default("After review and approval, we prepare the site, complete minor revisions, and move the project to launch.")
+  templatesLabel       String   @default("Website Templates")
+  templatesTitle       String   @default("Templates schools can preview and apply for.")
+  templatesBody        String   @default("Each template includes multiple preview images or videos, a live preview link, and a direct way to select it for your application.")
+  updatedAt            DateTime @updatedAt
+}
+
+model SchoolWebsiteTemplate {
+  id           String                       @id @default(uuid())
+  name         String
+  slug         String                       @unique
+  summary      String
+  description  String?
+  websiteUrl   String?
+  highlights   String                       @default("[]")
+  coverAssetId String?
+  coverAsset   SchoolWebsiteTemplateAsset?  @relation("SchoolWebsiteTemplateCoverAsset", fields: [coverAssetId], references: [id], onDelete: SetNull)
+  assets       SchoolWebsiteTemplateAsset[] @relation("SchoolWebsiteTemplateAssets")
+  applications SchoolWebsiteApplication[]
+  isVisible    Boolean                      @default(true)
+  position     Int                          @default(0)
+  createdAt    DateTime                     @default(now())
+  updatedAt    DateTime                     @updatedAt
+
+  @@index([slug])
+  @@index([position])
+  @@index([isVisible])
+}
+
+model SchoolWebsiteTemplateAsset {
+  id                String                  @id @default(uuid())
+  templateId        String
+  template          SchoolWebsiteTemplate   @relation("SchoolWebsiteTemplateAssets", fields: [templateId], references: [id], onDelete: Cascade)
+  publicId          String
+  mediaType         MediaType               @default(IMAGE)
+  thumbnailPublicId String?
+  caption           String?
+  position          Int                     @default(0)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  coverForTemplates SchoolWebsiteTemplate[] @relation("SchoolWebsiteTemplateCoverAsset")
+
+  @@index([templateId])
+  @@index([templateId, position])
+}
+
+model SchoolWebsiteApplication {
+  id                   String                    @id @default(uuid())
+  templateId           String?
+  template             SchoolWebsiteTemplate?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  selectedTemplateName String
+  schoolName           String
+  aboutSchool          String
+  vision               String
+  mission              String
+  coreValues           String
+  officialPhone        String
+  officialEmail        String
+  officialAddress      String
+  officialWebsiteUrl   String?
+  officialContactName  String?
+  officialContactRole  String?
+  officialContactPhone String?
+  officialContactEmail String?
+  domainChoice         SchoolWebsiteDomainChoice
+  existingDomain       String?
+  preferredDomain1     String?
+  preferredDomain2     String?
+  status               SchoolWebsiteJobStatus    @default(PENDING)
+  adminNotes           String?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+
+  @@index([templateId])
+  @@index([schoolName])
+  @@index([status])
+  @@index([domainChoice])
+  @@index([createdAt])
 }
 
 // --- About Page ---
 
 // Singleton — always one row (id = 1). Stores all fixed copy for the /about page.
 model AboutPageContent {
-  id                      Int      @id @default(autoincrement())
-  heroEyebrow             String   @default("About Dexta")
-  heroHeadline            String   @default("Built to shape brands, products, and public presence with clarity.")
-  heroBody                String   @default("We are a design-led digital studio helping ambitious teams communicate better, launch stronger, and grow with confidence.")
+  id                          Int     @id @default(autoincrement())
+  heroEyebrow                 String  @default("About Dexta")
+  heroHeadline                String  @default("Built to shape brands, products, and public presence with clarity.")
+  heroBody                    String  @default("We are a design-led digital studio helping ambitious teams communicate better, launch stronger, and grow with confidence.")
   heroBackgroundImagePublicId String?
-  heroPrimaryCtaText      String   @default("Start a Project")
-  heroPrimaryCtaHref      String   @default("/contact")
-  heroSecondaryCtaText    String   @default("View Our Work")
-  heroSecondaryCtaHref    String   @default("/projects")
-  heroStat1Value          String   @default("6+")
-  heroStat1Label          String   @default("Years of momentum")
-  heroStat2Value          String   @default("200+")
-  heroStat2Label          String   @default("Projects delivered")
-  heroStat3Value          String   @default("98%")
-  heroStat3Label          String   @default("Client retention")
-  heroStat4Value          String   @default("50+")
-  heroStat4Label          String   @default("Teams supported")
+  heroPrimaryCtaText          String  @default("Start a Project")
+  heroPrimaryCtaHref          String  @default("/contact")
+  heroSecondaryCtaText        String  @default("View Our Work")
+  heroSecondaryCtaHref        String  @default("/projects")
+  heroStat1Value              String  @default("6+")
+  heroStat1Label              String  @default("Years of momentum")
+  heroStat2Value              String  @default("200+")
+  heroStat2Label              String  @default("Projects delivered")
+  heroStat3Value              String  @default("98%")
+  heroStat3Label              String  @default("Client retention")
+  heroStat4Value              String  @default("50+")
+  heroStat4Label              String  @default("Teams supported")
 
-  storyLabel              String   @default("Our Story")
-  storyTitle              String   @default("A modern studio built on precision, partnership, and momentum.")
-  storyBody1              String   @default("Dexta began with a simple conviction: brands and organisations deserve sharper thinking, stronger execution, and digital work that actually moves the needle.")
-  storyBody2              String   @default("Today, we help businesses, schools, and institutions translate ambition into clear brand systems, reliable digital products, and public-facing experiences people trust.")
-  storyHighlightLabel     String   @default("Studio View")
-  storyHighlightTitle     String   @default("Trusted across fast-moving sectors")
-  storyHighlightBody      String   @default("We bring design discipline, technical execution, and practical business thinking to every engagement.")
-  storyTrustedLabel       String   @default("We work across")
-  storyTrustedItems       String   @default("[\"Fintech\",\"Education\",\"Healthcare\",\"Commerce\"]")
+  storyLabel          String @default("Our Story")
+  storyTitle          String @default("A modern studio built on precision, partnership, and momentum.")
+  storyBody1          String @default("Dexta began with a simple conviction: brands and organisations deserve sharper thinking, stronger execution, and digital work that actually moves the needle.")
+  storyBody2          String @default("Today, we help businesses, schools, and institutions translate ambition into clear brand systems, reliable digital products, and public-facing experiences people trust.")
+  storyHighlightLabel String @default("Studio View")
+  storyHighlightTitle String @default("Trusted across fast-moving sectors")
+  storyHighlightBody  String @default("We bring design discipline, technical execution, and practical business thinking to every engagement.")
+  storyTrustedLabel   String @default("We work across")
+  storyTrustedItems   String @default("[\"Fintech\",\"Education\",\"Healthcare\",\"Commerce\"]")
 
-  expertiseLabel          String   @default("What We Bring")
-  expertiseTitle          String   @default("Strategy, design, and delivery aligned in one system.")
-  expertiseBody           String   @default("Our expertise sits at the intersection of brand thinking, product execution, and real-world communication support.")
+  expertiseLabel String @default("What We Bring")
+  expertiseTitle String @default("Strategy, design, and delivery aligned in one system.")
+  expertiseBody  String @default("Our expertise sits at the intersection of brand thinking, product execution, and real-world communication support.")
 
-  teamLabel               String   @default("Our Team")
-  teamTitle               String   @default("The people shaping the work behind the scenes.")
-  teamBody                String   @default("Our team blends creative direction, technical depth, and thoughtful execution across every client touchpoint.")
-  cultureTitle            String   @default("How We Work")
-  cultureBody             String   @default("We care about thoughtful collaboration, clear communication, and building work that feels sharp, useful, and durable.")
-  teamNoteLabel           String   @default("Professional note")
-  teamPortfolioButtonText String   @default("View Portfolio")
-  spaceLabel              String   @default("Our Space")
-  spaceTitle              String   @default("The rooms where Dexta records, builds, welcomes, and recharges.")
-  spaceBody               String   @default("From the podcast studio to the reception, workspace, and wellness corners, our environment is designed to support focus, collaboration, and creative momentum.")
+  teamLabel               String @default("Our Team")
+  teamTitle               String @default("The people shaping the work behind the scenes.")
+  teamBody                String @default("Our team blends creative direction, technical depth, and thoughtful execution across every client touchpoint.")
+  cultureTitle            String @default("How We Work")
+  cultureBody             String @default("We care about thoughtful collaboration, clear communication, and building work that feels sharp, useful, and durable.")
+  teamNoteLabel           String @default("Professional note")
+  teamPortfolioButtonText String @default("View Portfolio")
+  spaceLabel              String @default("Our Space")
+  spaceTitle              String @default("The rooms where Dexta records, builds, welcomes, and recharges.")
+  spaceBody               String @default("From the podcast studio to the reception, workspace, and wellness corners, our environment is designed to support focus, collaboration, and creative momentum.")
 
-  valuesLabel             String   @default("Our Values")
-  valuesTitle             String   @default("The standards we bring into every engagement.")
-  valuesBody              String   @default("These values shape how we think, how we build, and how we partner with the teams we support.")
+  valuesLabel String @default("Our Values")
+  valuesTitle String @default("The standards we bring into every engagement.")
+  valuesBody  String @default("These values shape how we think, how we build, and how we partner with the teams we support.")
 
-  ctaLabel                String   @default("Let’s build something clear and ambitious.")
-  ctaTitle                String   @default("If the way we think feels like a fit, we should talk.")
-  ctaBody                 String   @default("Tell us what you’re building and we’ll help shape the right brand, digital, and communication direction for it.")
-  ctaText                 String   @default("Start a Conversation")
-  ctaHref                 String   @default("/contact")
+  ctaLabel String @default("Let’s build something clear and ambitious.")
+  ctaTitle String @default("If the way we think feels like a fit, we should talk.")
+  ctaBody  String @default("Tell us what you’re building and we’ll help shape the right brand, digital, and communication direction for it.")
+  ctaText  String @default("Start a Conversation")
+  ctaHref  String @default("/contact")
 
-  updatedAt               DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 }
 
 model AboutMilestone {
@@ -574,7 +694,7 @@ model AboutMilestone {
 
 model AboutExpertiseItem {
   id          String       @id @default(uuid())
-  icon         AboutIconKey
+  icon        AboutIconKey
   title       String
   description String
   metricLabel String
@@ -589,19 +709,19 @@ model AboutExpertiseItem {
 }
 
 model AboutTeamMember {
-  id            String   @id @default(uuid())
-  name          String
-  role          String
-  bio           String
-  expertise     String   @default("[]")
-  funFact       String
-  portfolioUrl  String
-  showPortfolioButton Boolean @default(true)
-  imagePublicId String?
-  isVisible     Boolean  @default(true)
-  position      Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  name                String
+  role                String
+  bio                 String
+  expertise           String   @default("[]")
+  funFact             String
+  portfolioUrl        String
+  showPortfolioButton Boolean  @default(true)
+  imagePublicId       String?
+  isVisible           Boolean  @default(true)
+  position            Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   @@index([position])
   @@index([isVisible])

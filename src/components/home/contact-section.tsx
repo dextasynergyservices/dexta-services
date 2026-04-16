@@ -60,7 +60,7 @@ export function ContactSection({
           transition={{ duration: 0.75, ease }}
         >
           {/* Subtle inner glow */}
-          <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[var(--dexta-primary)]/40 blur-3xl" />
+          <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[color-mix(in_srgb,var(--dexta-primary)_40%,transparent)] blur-3xl" />
 
           <div className="relative grid gap-12 lg:grid-cols-2 lg:items-center">
             {/* ── Left: CTA text ── */}
@@ -198,7 +198,7 @@ export function ContactSection({
                           title={social.label}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white/70 transition-all hover:border-[var(--dexta)] hover:bg-[var(--dexta)]/10 hover:text-white"
+                          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white/70 transition-all hover:border-[var(--dexta)] hover:bg-[color-mix(in_srgb,var(--dexta)_10%,transparent)] hover:text-white"
                           initial={{ scale: 0, opacity: 0 }}
                           whileInView={{ scale: 1, opacity: 1 }}
                           viewport={{ once: true }}

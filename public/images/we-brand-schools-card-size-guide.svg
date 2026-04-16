@@ -1,0 +1,25 @@
+<svg width="1200" height="1500" viewBox="0 0 1200 1500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="1500" fill="#0B1F4D"/>
+  <rect width="1200" height="1500" fill="url(#cardGlow)"/>
+  <text x="600" y="560" fill="white" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="700" text-anchor="middle" letter-spacing="8">
+    CARD IMAGE SIZE
+  </text>
+  <text x="600" y="710" fill="white" font-family="Arial, Helvetica, sans-serif" font-size="132" font-weight="700" text-anchor="middle">
+    1200 x 1500
+  </text>
+  <text x="600" y="820" fill="#FFFFFF" fill-opacity="0.78" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="600" text-anchor="middle" letter-spacing="4">
+    4:5 RATIO
+  </text>
+  <text x="600" y="980" fill="#FFFFFF" fill-opacity="0.86" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="500" text-anchor="middle">
+    Upload portrait images in this size for the template cards
+  </text>
+  <text x="600" y="1040" fill="#FFFFFF" fill-opacity="0.62" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="500" text-anchor="middle">
+    Recommended alternatives: 1600 x 2000 or 2000 x 2500
+  </text>
+  <defs>
+    <linearGradient id="cardGlow" x1="0" y1="0" x2="1200" y2="1500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14337A"/>
+      <stop offset="1" stop-color="#0B1F4D"/>
+    </linearGradient>
+  </defs>
+</svg>

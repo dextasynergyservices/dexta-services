@@ -56,7 +56,7 @@ export function OffersHero({
         className={cn(
           "absolute inset-0",
           hasHeroImage
-            ? "bg-[var(--offers-hero-bg)]/75"
+            ? "bg-[color-mix(in_srgb,var(--offers-hero-bg)_75%,transparent)]"
             : "bg-[var(--offers-hero-bg)]",
         )}
       />

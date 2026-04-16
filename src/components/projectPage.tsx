@@ -369,7 +369,7 @@ export default function ProjectPage({
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : null}
-        <div className="absolute inset-0 bg-[var(--dexta-secondary)]/75" />
+        <div className="absolute inset-0 bg-[color-mix(in_srgb,var(--dexta-secondary)_75%,transparent)]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:48px_48px] opacity-15" />
         <div className="absolute inset-x-0 bottom-0 h-px bg-white/15" />
         <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-24 lg:px-8 lg:py-28">

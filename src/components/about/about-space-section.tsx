@@ -91,7 +91,7 @@ export function AboutSpaceSection({
 
   return (
     <>
-      <section className="bg-[var(--about-accent)]/9 py-20 lg:py-24">
+      <section className="bg-[color-mix(in_srgb,var(--about-accent)_9%,white)] py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--about-accent)]">
@@ -113,7 +113,7 @@ export function AboutSpaceSection({
                 onClick={() => setSelectedIndex(index)}
                 className="group overflow-hidden rounded-[24px] border border-[var(--about-border)] bg-white text-left transition-[transform,border-color,box-shadow] duration-500 hover:-translate-y-1 hover:border-[var(--about-brand)] hover:shadow-[0_24px_80px_-48px_rgba(0,12,153,0.45)]"
               >
-                <div className="relative aspect-[16/11] overflow-hidden border-b border-[var(--about-border)] bg-[var(--about-brand-deep)]/8">
+                <div className="relative aspect-[16/11] overflow-hidden border-b border-[var(--about-border)] bg-[color-mix(in_srgb,var(--about-brand-deep)_8%,white)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={previewSources[index]}
@@ -160,8 +160,8 @@ export function AboutSpaceSection({
           {selectedItem ? (
             <div className="relative overflow-hidden rounded-lg">
               <div className="pointer-events-none absolute inset-0">
-                <div className="absolute -top-24 -right-16 h-56 w-56 rounded-full bg-[var(--dexta)]/22 blur-3xl" />
-                <div className="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-[var(--dexta-primary)]/30 blur-3xl" />
+                <div className="absolute -top-24 -right-16 h-56 w-56 rounded-full bg-[color-mix(in_srgb,var(--dexta)_22%,transparent)] blur-3xl" />
+                <div className="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-[color-mix(in_srgb,var(--dexta-primary)_30%,transparent)] blur-3xl" />
               </div>
 
               <div className="relative border-b border-white/10 bg-gradient-to-br from-[var(--dexta-secondary)] via-[var(--dexta-primary)] to-[var(--dexta-secondary)] px-6 py-5">

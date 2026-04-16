@@ -61,6 +61,17 @@ function requiredTrimmedString(label: string, max: number) {
     .max(max, `${label} must be ${max} characters or less`);
 }
 
+function optionalTrimmedString(label: string, max: number) {
+  return z.preprocess((value) => {
+    if (typeof value !== "string") {
+      return value;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? null : trimmed;
+  }, z.string().max(max, `${label} must be ${max} characters or less`).nullable().optional());
+}
+
 function requiredHeroRichText(label: string, max: number) {
   return z
     .string()
@@ -99,6 +110,39 @@ function jsonStringArraySchema(
       },
       {
         message: `${label} must be a JSON array of 1 to ${maxItems} non-empty strings`,
+      },
+    );
+}
+
+function jsonStringArrayUpToSchema(
+  label: string,
+  maxItems: number,
+  maxItemLength: number,
+) {
+  return z
+    .string()
+    .trim()
+    .refine(
+      (value) => {
+        try {
+          const parsed = JSON.parse(value);
+
+          return (
+            Array.isArray(parsed) &&
+            parsed.length <= maxItems &&
+            parsed.every(
+              (item) =>
+                typeof item === "string" &&
+                item.trim().length > 0 &&
+                item.trim().length <= maxItemLength,
+            )
+          );
+        } catch {
+          return false;
+        }
+      },
+      {
+        message: `${label} must be a JSON array of up to ${maxItems} non-empty strings`,
       },
     );
 }
@@ -449,6 +493,16 @@ const contactSocialPlatformSchema = z.enum([
   "YOUTUBE",
   "TIKTOK",
 ]);
+const schoolWebsiteJobStatusSchema = z.enum([
+  "PENDING",
+  "IN_PROGRESS",
+  "LIVE",
+  "DECLINED",
+]);
+const schoolWebsiteDomainChoiceSchema = z.enum([
+  "HAS_DOMAIN",
+  "NEEDS_DOMAIN",
+]);
 const aboutIconKeySchema = z.enum([
   "ZAP",
   "GLOBE",
@@ -550,6 +604,199 @@ export const planBillingOptionSchema = z.object({
 });
 
 export type PlanBillingOptionInput = z.infer<typeof planBillingOptionSchema>;
+
+// ─── We Brand Schools ──────────────────────────────────────────────────────────
+
+export const weBrandSchoolsPageContentSchema = z.object({
+  logoPublicId: optionalCloudinaryPublicIdSchema,
+  heroImagePublicId: optionalCloudinaryPublicIdSchema,
+  heroEyebrow: requiredTrimmedString("Hero eyebrow", 120),
+  heroHeadline: requiredTrimmedString("Hero headline", 220),
+  heroBody: requiredTrimmedString("Hero body", 2000),
+  heroPrimaryCtaText: requiredTrimmedString("Primary CTA text", 100),
+  heroPrimaryCtaHref: requiredTrimmedString("Primary CTA link", 500),
+  heroSecondaryCtaText: requiredTrimmedString("Secondary CTA text", 100),
+  heroSecondaryCtaHref: requiredTrimmedString("Secondary CTA link", 500),
+  overviewLabel: requiredTrimmedString("Overview label", 120),
+  overviewTitle: requiredTrimmedString("Overview title", 220),
+  overviewBody: requiredTrimmedString("Overview body", 2000),
+  processLabel: requiredTrimmedString("Process label", 120),
+  processTitle: requiredTrimmedString("Process title", 220),
+  processBody: requiredTrimmedString("Process body", 1600),
+  processStep1Title: requiredTrimmedString("Process step 1 title", 120),
+  processStep1Body: requiredTrimmedString("Process step 1 body", 600),
+  processStep2Title: requiredTrimmedString("Process step 2 title", 120),
+  processStep2Body: requiredTrimmedString("Process step 2 body", 600),
+  processStep3Title: requiredTrimmedString("Process step 3 title", 120),
+  processStep3Body: requiredTrimmedString("Process step 3 body", 600),
+  processStep4Title: requiredTrimmedString("Process step 4 title", 120),
+  processStep4Body: requiredTrimmedString("Process step 4 body", 600),
+  templatesLabel: requiredTrimmedString("Templates label", 120),
+  templatesTitle: requiredTrimmedString("Templates title", 220),
+  templatesBody: requiredTrimmedString("Templates body", 1600),
+});
+
+export type WeBrandSchoolsPageContentInput = z.infer<
+  typeof weBrandSchoolsPageContentSchema
+>;
+
+export const schoolWebsiteTemplateAssetSchema = z
+  .object({
+    id: z
+      .string()
+      .trim()
+      .max(100, "Asset ID must be 100 characters or less")
+      .optional()
+      .nullable(),
+    publicId: z
+      .string()
+      .trim()
+      .min(1, "Asset public ID is required")
+      .max(500, "Asset public ID must be 500 characters or less"),
+    mediaType: mediaTypeSchema,
+    thumbnailPublicId: optionalCloudinaryPublicIdSchema,
+    caption: optionalTrimmedString("Asset caption", 300),
+    position: z.number().int().min(0, "Position must be zero or greater"),
+  })
+  .refine(
+    (value) => value.mediaType !== "VIDEO" || Boolean(value.thumbnailPublicId),
+    {
+      message: "Video assets require a thumbnail image",
+      path: ["thumbnailPublicId"],
+    },
+  );
+
+export type SchoolWebsiteTemplateAssetInput = z.infer<
+  typeof schoolWebsiteTemplateAssetSchema
+>;
+
+export const schoolWebsiteTemplateSchema = z.object({
+  name: requiredTrimmedString("Template name", 160),
+  slug: z
+    .string()
+    .trim()
+    .min(1, "Template slug is required")
+    .max(250, "Template slug must be 250 characters or less")
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Template slug must be lowercase letters, numbers, and hyphens only",
+    ),
+  summary: requiredTrimmedString("Template summary", 220),
+  description: optionalTrimmedString("Template description", 3000),
+  websiteUrl: optionalUrlSchema,
+  highlights: jsonStringArrayUpToSchema("Template highlights", 8, 120),
+  coverAssetId: z
+    .string()
+    .trim()
+    .max(100, "Cover asset ID must be 100 characters or less")
+    .optional()
+    .nullable(),
+  assets: z.array(schoolWebsiteTemplateAssetSchema).default([]),
+  isVisible: z.boolean(),
+  position: z.number().int().min(0, "Position must be zero or greater"),
+});
+
+export type SchoolWebsiteTemplateInput = z.infer<
+  typeof schoolWebsiteTemplateSchema
+>;
+
+export const schoolWebsiteApplicationStepOneSchema = z.object({
+  templateId: z
+    .string()
+    .trim()
+    .max(100, "Template ID must be 100 characters or less")
+    .optional()
+    .nullable(),
+  selectedTemplateName: requiredTrimmedString("Selected template", 160),
+  schoolName: requiredTrimmedString("School name", 180),
+  aboutSchool: requiredTrimmedString("About your school", 5000),
+  vision: requiredTrimmedString("Vision", 2000),
+  mission: requiredTrimmedString("Mission", 2000),
+  coreValues: requiredTrimmedString("Core values", 2000),
+  officialPhone: requiredTrimmedString("Official phone", 60),
+  officialEmail: requiredTrimmedString("Official email", 320).refine(
+    (value) => z.string().email().safeParse(value).success,
+    "Please enter a valid official email address",
+  ),
+  officialAddress: requiredTrimmedString("Official address", 300),
+  officialWebsiteUrl: optionalUrlSchema,
+  officialContactName: optionalTrimmedString("Official contact name", 120),
+  officialContactRole: optionalTrimmedString("Official contact role", 120),
+  officialContactPhone: optionalTrimmedString("Official contact phone", 60),
+  officialContactEmail: z.preprocess((value) => {
+    if (typeof value !== "string") {
+      return value;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? null : trimmed;
+  }, z.string().email("Please enter a valid official contact email").max(320).nullable().optional()),
+});
+
+export type SchoolWebsiteApplicationStepOneInput = z.infer<
+  typeof schoolWebsiteApplicationStepOneSchema
+>;
+
+export const schoolWebsiteApplicationStepTwoSchema = z
+  .object({
+    domainChoice: schoolWebsiteDomainChoiceSchema,
+    existingDomain: optionalTrimmedString("Existing domain", 255),
+    preferredDomain1: optionalTrimmedString("Preferred domain name", 255),
+    preferredDomain2: optionalTrimmedString(
+      "Second preferred domain name",
+      255,
+    ),
+  })
+  .refine(
+    (value) =>
+      value.domainChoice !== "HAS_DOMAIN" || Boolean(value.existingDomain),
+    {
+      message: "Existing domain is required when the school already has one",
+      path: ["existingDomain"],
+    },
+  )
+  .refine(
+    (value) =>
+      value.domainChoice !== "NEEDS_DOMAIN" || Boolean(value.preferredDomain1),
+    {
+      message:
+        "Preferred domain name is required when the school needs a domain",
+      path: ["preferredDomain1"],
+    },
+  )
+  .refine(
+    (value) =>
+      value.domainChoice !== "NEEDS_DOMAIN" || Boolean(value.preferredDomain2),
+    {
+      message:
+        "Second preferred domain name is required when the school needs a domain",
+      path: ["preferredDomain2"],
+    },
+  );
+
+export type SchoolWebsiteApplicationStepTwoInput = z.infer<
+  typeof schoolWebsiteApplicationStepTwoSchema
+>;
+
+export const schoolWebsiteApplicationSchema = schoolWebsiteApplicationStepOneSchema
+  .merge(schoolWebsiteApplicationStepTwoSchema)
+  .extend({
+    status: schoolWebsiteJobStatusSchema.default("PENDING"),
+    adminNotes: optionalTrimmedString("Admin notes", 4000),
+  });
+
+export type SchoolWebsiteApplicationInput = z.infer<
+  typeof schoolWebsiteApplicationSchema
+>;
+
+export const schoolWebsiteApplicationStatusSchema = z.object({
+  status: schoolWebsiteJobStatusSchema,
+  adminNotes: optionalTrimmedString("Admin notes", 4000),
+});
+
+export type SchoolWebsiteApplicationStatusInput = z.infer<
+  typeof schoolWebsiteApplicationStatusSchema
+>;
 
 // ─── Contact Page ─────────────────────────────────────────────────────────────
 

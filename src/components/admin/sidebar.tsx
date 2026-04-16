@@ -24,6 +24,7 @@ import {
   Image as ImageIcon,
   HandCoins,
   Info,
+  GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -155,6 +156,28 @@ export function AdminSidebar({
           icon: PanelTop,
         },
         { href: "/admin/offers/plans", label: "Offers", icon: HandCoins },
+      ],
+    },
+    {
+      label: "We Brand Schools",
+      icon: GraduationCap,
+      basePaths: ["/admin/we-brand-schools"],
+      items: [
+        {
+          href: "/admin/we-brand-schools/content",
+          label: "Content",
+          icon: PanelTop,
+        },
+        {
+          href: "/admin/we-brand-schools/templates",
+          label: "Templates",
+          icon: ImageIcon,
+        },
+        {
+          href: "/admin/we-brand-schools/applications",
+          label: "Applications",
+          icon: Users,
+        },
       ],
     },
     {

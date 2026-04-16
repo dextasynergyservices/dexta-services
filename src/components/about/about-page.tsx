@@ -171,7 +171,7 @@ export function AboutPageView({
             loading="eager"
             fetchPriority="high"
           />
-          <div className="absolute inset-0 bg-[var(--about-brand-deep)]/75" />
+          <div className="absolute inset-0 bg-[color-mix(in_srgb,var(--about-brand-deep)_75%,transparent)]" />
         </div>
         <div className="relative mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-28">
           <div className="max-w-3xl">
@@ -291,7 +291,7 @@ export function AboutPageView({
         items={spaceItems}
       />
 
-      <section className="bg-[var(--about-accent)]/7 py-20 lg:py-24">
+      <section className="bg-[color-mix(in_srgb,var(--about-accent)_7%,white)] py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--about-accent)]">
@@ -422,7 +422,7 @@ export function AboutPageView({
         </div>
       </section>
 
-      <section className="bg-[var(--about-accent)]/7 py-20 lg:py-24">
+      <section className="bg-[color-mix(in_srgb,var(--about-accent)_7%,white)] py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--about-accent)]">

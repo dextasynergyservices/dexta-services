@@ -48,6 +48,14 @@ function getPreviewSrc(value?: string) {
     return null;
   }
 
+  if (
+    value.startsWith("/") ||
+    value.startsWith("http://") ||
+    value.startsWith("https://")
+  ) {
+    return value;
+  }
+
   return isCloudinaryUrl(value) ? value : getCloudinaryUrl(value);
 }
 
@@ -66,6 +74,15 @@ export function ImageUpload({
   const handleDelete = async () => {
     const publicId = value ? getCloudinaryPublicId(value) : null;
     if (!publicId) return;
+
+    if (
+      publicId.startsWith("/") ||
+      publicId.startsWith("http://") ||
+      publicId.startsWith("https://")
+    ) {
+      onRemove();
+      return;
+    }
 
     setDeleting(true);
     try {

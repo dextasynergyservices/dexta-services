@@ -130,7 +130,7 @@ export function Footer({
                     <motion.a
                       key={`${social.platform}-${social.href}`}
                       href={social.href}
-                      className="group relative rounded-full border border-[var(--primary)] bg-[var(--primary)]/10 p-3 transition-all duration-300 hover:border-[#000c99] hover:bg-[#000c99]/20"
+                      className="group relative rounded-full border border-[var(--primary)] bg-[color-mix(in_srgb,var(--primary)_10%,transparent)] p-3 transition-all duration-300 hover:border-[#000c99] hover:bg-[#000c99]/20"
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
                       title={social.label}
