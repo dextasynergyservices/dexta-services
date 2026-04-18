@@ -72,6 +72,11 @@ function optionalTrimmedString(label: string, max: number) {
   }, z.string().max(max, `${label} must be ${max} characters or less`).nullable().optional());
 }
 
+export const SCHOOL_WEBSITE_TESTIMONIAL_MAX_CHARACTERS = 170;
+export const SCHOOL_WEBSITE_TESTIMONIAL_MAX_SCHOOL_NAME_CHARACTERS = 40;
+export const SCHOOL_WEBSITE_TESTIMONIAL_MAX_AUTHOR_NAME_CHARACTERS = 32;
+export const SCHOOL_WEBSITE_TESTIMONIAL_MAX_AUTHOR_POSITION_CHARACTERS = 32;
+
 function requiredHeroRichText(label: string, max: number) {
   return z
     .string()
@@ -617,9 +622,27 @@ export const weBrandSchoolsPageContentSchema = z.object({
   heroPrimaryCtaHref: requiredTrimmedString("Primary CTA link", 500),
   heroSecondaryCtaText: requiredTrimmedString("Secondary CTA text", 100),
   heroSecondaryCtaHref: requiredTrimmedString("Secondary CTA link", 500),
+  heroFeature1: requiredTrimmedString("Hero feature 1", 120),
+  heroFeature2: requiredTrimmedString("Hero feature 2", 120),
+  heroFeature3: requiredTrimmedString("Hero feature 3", 120),
   overviewLabel: requiredTrimmedString("Overview label", 120),
   overviewTitle: requiredTrimmedString("Overview title", 220),
   overviewBody: requiredTrimmedString("Overview body", 2000),
+  overviewPrimaryCtaText: requiredTrimmedString("Overview primary CTA text", 100),
+  overviewPrimaryCtaHref: requiredTrimmedString("Overview primary CTA link", 500),
+  overviewSecondaryCtaText: requiredTrimmedString(
+    "Overview secondary CTA text",
+    100,
+  ),
+  overviewSecondaryCtaHref: requiredTrimmedString(
+    "Overview secondary CTA link",
+    500,
+  ),
+  overviewBenefitsLabel: requiredTrimmedString("Overview benefits label", 120),
+  overviewBenefit1: requiredTrimmedString("Overview benefit 1", 220),
+  overviewBenefit2: requiredTrimmedString("Overview benefit 2", 220),
+  overviewBenefit3: requiredTrimmedString("Overview benefit 3", 220),
+  overviewBenefit4: requiredTrimmedString("Overview benefit 4", 220),
   processLabel: requiredTrimmedString("Process label", 120),
   processTitle: requiredTrimmedString("Process title", 220),
   processBody: requiredTrimmedString("Process body", 1600),
@@ -638,6 +661,32 @@ export const weBrandSchoolsPageContentSchema = z.object({
 
 export type WeBrandSchoolsPageContentInput = z.infer<
   typeof weBrandSchoolsPageContentSchema
+>;
+
+export const schoolWebsiteTestimonialSchema = z.object({
+  schoolName: requiredTrimmedString(
+    "School name",
+    SCHOOL_WEBSITE_TESTIMONIAL_MAX_SCHOOL_NAME_CHARACTERS,
+  ),
+  logoPublicId: optionalCloudinaryPublicIdSchema,
+  quote: requiredTrimmedString(
+    "Testimonial write-up",
+    SCHOOL_WEBSITE_TESTIMONIAL_MAX_CHARACTERS,
+  ),
+  authorName: requiredTrimmedString(
+    "Contact name",
+    SCHOOL_WEBSITE_TESTIMONIAL_MAX_AUTHOR_NAME_CHARACTERS,
+  ),
+  authorPosition: requiredTrimmedString(
+    "Position in school",
+    SCHOOL_WEBSITE_TESTIMONIAL_MAX_AUTHOR_POSITION_CHARACTERS,
+  ),
+  isVisible: z.boolean(),
+  position: z.number().int().min(0, "Position must be zero or greater"),
+});
+
+export type SchoolWebsiteTestimonialInput = z.infer<
+  typeof schoolWebsiteTestimonialSchema
 >;
 
 export const schoolWebsiteTemplateAssetSchema = z

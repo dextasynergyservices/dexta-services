@@ -1,8 +1,11 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS } from "../src/lib/we-brand-schools-defaults";
-import { serializeJsonStringArray } from "../src/lib/we-brand-schools-defaults";
+import {
+  SCHOOL_WEBSITE_TESTIMONIAL_DEFAULTS,
+  WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS,
+  serializeJsonStringArray,
+} from "../src/lib/we-brand-schools-defaults";
 import { WE_BRAND_SCHOOLS_TEMPLATE_SEED_DATA } from "./seed-we-brand-schools-data";
 
 const connectionString =
@@ -25,6 +28,14 @@ async function main() {
   } else {
     await prisma.weBrandSchoolsPageContent.create({
       data: WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS,
+    });
+  }
+
+  await prisma.schoolWebsiteTestimonial.deleteMany();
+
+  for (const testimonial of SCHOOL_WEBSITE_TESTIMONIAL_DEFAULTS) {
+    await prisma.schoolWebsiteTestimonial.create({
+      data: testimonial,
     });
   }
 
@@ -64,7 +75,9 @@ async function main() {
     }
   }
 
-  console.log("Seeded We Brand Schools landing page content and templates.");
+  console.log(
+    "Seeded We Brand Schools landing page content, testimonials, and templates.",
+  );
 
   await prisma.$disconnect();
 }

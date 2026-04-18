@@ -100,6 +100,32 @@ body {
   display: none;
 }
 
+.we-brand-schools-testimonial-track {
+  animation: we-brand-schools-marquee var(--testimonial-duration, 32s) linear
+    infinite;
+  will-change: transform;
+}
+
+.group:hover .we-brand-schools-testimonial-track {
+  animation-play-state: paused;
+}
+
+@keyframes we-brand-schools-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .we-brand-schools-testimonial-track {
+    animation: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

@@ -16,9 +16,21 @@ export type WeBrandSchoolsPageContentData = {
   heroPrimaryCtaHref: string;
   heroSecondaryCtaText: string;
   heroSecondaryCtaHref: string;
+  heroFeature1: string;
+  heroFeature2: string;
+  heroFeature3: string;
   overviewLabel: string;
   overviewTitle: string;
   overviewBody: string;
+  overviewPrimaryCtaText: string;
+  overviewPrimaryCtaHref: string;
+  overviewSecondaryCtaText: string;
+  overviewSecondaryCtaHref: string;
+  overviewBenefitsLabel: string;
+  overviewBenefit1: string;
+  overviewBenefit2: string;
+  overviewBenefit3: string;
+  overviewBenefit4: string;
   processLabel: string;
   processTitle: string;
   processBody: string;
@@ -33,6 +45,17 @@ export type WeBrandSchoolsPageContentData = {
   templatesLabel: string;
   templatesTitle: string;
   templatesBody: string;
+};
+
+export type SchoolWebsiteTestimonialData = {
+  id: string;
+  schoolName: string;
+  logoPublicId: string | null;
+  quote: string;
+  authorName: string;
+  authorPosition: string;
+  isVisible: boolean;
+  position: number;
 };
 
 export type SchoolWebsiteTemplateMediaType = "IMAGE" | "VIDEO";
@@ -96,10 +119,27 @@ export const WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS: WeBrandSchoolsPageContentDa
     heroPrimaryCtaHref: "#templates",
     heroSecondaryCtaText: "Apply for a Free Website",
     heroSecondaryCtaHref: "#apply",
+    heroFeature1: "Template-based website build",
+    heroFeature2: "Mobile-ready layouts for schools",
+    heroFeature3: "Clear path from selection to launch",
     overviewLabel: "What It Is",
-    overviewTitle: "A faster path to a professional school website.",
+    overviewTitle:
+      "A FREE WEBSITE for your school. Built, customised, and ready to go live.",
     overviewBody:
-      "We Brand Schools is Dexta's initiative for helping schools get online with polished, mobile-friendly websites built from approved templates. Schools choose a template, submit their content, and we handle setup through launch.",
+      "This Dexta's WeBrandSchools' Offer is a structured to give schools a credible, polished online presence. You choose a website style from our curated collection. We build it entirely around your school — your identity, your content, your brand. You pay ONLY for your domain name and hosting. That's your school's permanent address on the internet. EVERYTHING ELSE IS PROVIDED.",
+    overviewPrimaryCtaText: "See available templates",
+    overviewPrimaryCtaHref: "#templates",
+    overviewSecondaryCtaText: "Ask a question first",
+    overviewSecondaryCtaHref: "#help",
+    overviewBenefitsLabel: "What schools get",
+    overviewBenefit1:
+      "A professionally structured website built from an approved template",
+    overviewBenefit2:
+      "Your school name, content, contact details, and branding applied to the chosen layout",
+    overviewBenefit3:
+      "A faster rollout path than a full custom website project",
+    overviewBenefit4:
+      "A credible public-facing platform for information, communication, and visibility",
     processLabel: "How It Works",
     processTitle: "From template selection to launch in a clear, simple flow.",
     processBody:
@@ -121,6 +161,143 @@ export const WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS: WeBrandSchoolsPageContentDa
     templatesBody:
       "Each template supports a gallery of images and videos, a preview link, and a direct selection flow into the school application form.",
   };
+
+export const SCHOOL_WEBSITE_TESTIMONIAL_DEFAULTS: SchoolWebsiteTestimonialData[] =
+  [
+    {
+      id: "wbs-testimonial-cedar-grove",
+      schoolName: "Cedar Grove Academy",
+      logoPublicId: null,
+      quote:
+        "The website gave our school a clearer public face. Parents now understand who we are and how to reach us quickly.",
+      authorName: "Mrs. Adaeze Okafor",
+      authorPosition: "Proprietress",
+      isVisible: true,
+      position: 0,
+    },
+    {
+      id: "wbs-testimonial-harbour-heights",
+      schoolName: "Harbour Heights College",
+      logoPublicId: null,
+      quote:
+        "We moved from scattered information to one polished school website. The process felt structured, fast, and easy for our team.",
+      authorName: "Mr. Tunde Adebayo",
+      authorPosition: "School Director",
+      isVisible: true,
+      position: 1,
+    },
+    {
+      id: "wbs-testimonial-fountain-gate",
+      schoolName: "Fountain Gate Schools",
+      logoPublicId: null,
+      quote:
+        "Our new site made admissions details, announcements, and contact information easier to share. Our school now feels properly represented online.",
+      authorName: "Mrs. Ifeoma Nwosu",
+      authorPosition: "Head of School",
+      isVisible: true,
+      position: 2,
+    },
+    {
+      id: "wbs-testimonial-sunrise-international",
+      schoolName: "Sunrise International Academy",
+      logoPublicId: "/images/school-logos/sunrise-international-academy.svg",
+      quote:
+        "Our parents now meet a website that feels as polished as our school. It quickly improved trust during enquiries and admissions.",
+      authorName: "Mrs. Bimpe Adetoro",
+      authorPosition: "Proprietress",
+      isVisible: true,
+      position: 3,
+    },
+    {
+      id: "wbs-testimonial-kingsford-college-lagos",
+      schoolName: "Kingsford College Lagos",
+      logoPublicId: "/images/school-logos/kingsford-college-lagos.svg",
+      quote:
+        "The structure was clear from day one. We shared our school details and branding, and Dexta delivered a website we proudly share.",
+      authorName: "Mr. Samuel Ekanem",
+      authorPosition: "Director of Operations",
+      isVisible: true,
+      position: 4,
+    },
+    {
+      id: "wbs-testimonial-meadow-hall-preparatory",
+      schoolName: "Meadow Hall Preparatory School",
+      logoPublicId: "/images/school-logos/meadow-hall-preparatory.svg",
+      quote:
+        "The website quickly supported admissions, announcements, and parent confidence. It gave our school a more refined digital presence almost immediately.",
+      authorName: "Mrs. Zainab Yusuf",
+      authorPosition: "Head of School",
+      isVisible: true,
+      position: 5,
+    },
+    {
+      id: "wbs-testimonial-greenfield-science-academy",
+      schoolName: "Greenfield Science Academy",
+      logoPublicId: "/images/school-logos/greenfield-science-academy.svg",
+      quote:
+        "The template-led approach saved us time without feeling generic. The finished website reflects our academic identity and speaks clearly to families.",
+      authorName: "Dr. Chinedu Okorie",
+      authorPosition: "Academic Director",
+      isVisible: true,
+      position: 6,
+    },
+  ];
+
+export function withWeBrandSchoolsPageContentDefaults(
+  value?: Partial<WeBrandSchoolsPageContentData> | null,
+): WeBrandSchoolsPageContentData {
+  const defaults = WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS;
+
+  return {
+    logoPublicId: value?.logoPublicId ?? defaults.logoPublicId,
+    heroImagePublicId: value?.heroImagePublicId ?? defaults.heroImagePublicId,
+    heroEyebrow: value?.heroEyebrow ?? defaults.heroEyebrow,
+    heroHeadline: value?.heroHeadline ?? defaults.heroHeadline,
+    heroBody: value?.heroBody ?? defaults.heroBody,
+    heroPrimaryCtaText:
+      value?.heroPrimaryCtaText ?? defaults.heroPrimaryCtaText,
+    heroPrimaryCtaHref:
+      value?.heroPrimaryCtaHref ?? defaults.heroPrimaryCtaHref,
+    heroSecondaryCtaText:
+      value?.heroSecondaryCtaText ?? defaults.heroSecondaryCtaText,
+    heroSecondaryCtaHref:
+      value?.heroSecondaryCtaHref ?? defaults.heroSecondaryCtaHref,
+    heroFeature1: value?.heroFeature1 ?? defaults.heroFeature1,
+    heroFeature2: value?.heroFeature2 ?? defaults.heroFeature2,
+    heroFeature3: value?.heroFeature3 ?? defaults.heroFeature3,
+    overviewLabel: value?.overviewLabel ?? defaults.overviewLabel,
+    overviewTitle: value?.overviewTitle ?? defaults.overviewTitle,
+    overviewBody: value?.overviewBody ?? defaults.overviewBody,
+    overviewPrimaryCtaText:
+      value?.overviewPrimaryCtaText ?? defaults.overviewPrimaryCtaText,
+    overviewPrimaryCtaHref:
+      value?.overviewPrimaryCtaHref ?? defaults.overviewPrimaryCtaHref,
+    overviewSecondaryCtaText:
+      value?.overviewSecondaryCtaText ?? defaults.overviewSecondaryCtaText,
+    overviewSecondaryCtaHref:
+      value?.overviewSecondaryCtaHref ?? defaults.overviewSecondaryCtaHref,
+    overviewBenefitsLabel:
+      value?.overviewBenefitsLabel ?? defaults.overviewBenefitsLabel,
+    overviewBenefit1: value?.overviewBenefit1 ?? defaults.overviewBenefit1,
+    overviewBenefit2: value?.overviewBenefit2 ?? defaults.overviewBenefit2,
+    overviewBenefit3: value?.overviewBenefit3 ?? defaults.overviewBenefit3,
+    overviewBenefit4: value?.overviewBenefit4 ?? defaults.overviewBenefit4,
+    processLabel: value?.processLabel ?? defaults.processLabel,
+    processTitle: value?.processTitle ?? defaults.processTitle,
+    processBody: value?.processBody ?? defaults.processBody,
+    processStep1Title: value?.processStep1Title ?? defaults.processStep1Title,
+    processStep1Body: value?.processStep1Body ?? defaults.processStep1Body,
+    processStep2Title: value?.processStep2Title ?? defaults.processStep2Title,
+    processStep2Body: value?.processStep2Body ?? defaults.processStep2Body,
+    processStep3Title: value?.processStep3Title ?? defaults.processStep3Title,
+    processStep3Body: value?.processStep3Body ?? defaults.processStep3Body,
+    processStep4Title: value?.processStep4Title ?? defaults.processStep4Title,
+    processStep4Body: value?.processStep4Body ?? defaults.processStep4Body,
+    templatesLabel: value?.templatesLabel ?? defaults.templatesLabel,
+    templatesTitle: value?.templatesTitle ?? defaults.templatesTitle,
+    templatesBody: value?.templatesBody ?? defaults.templatesBody,
+  };
+}
 
 export function parseJsonStringArray(value: string): string[] {
   try {

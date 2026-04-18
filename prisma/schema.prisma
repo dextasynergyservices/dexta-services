@@ -525,9 +525,21 @@ model WeBrandSchoolsPageContent {
   heroPrimaryCtaHref   String   @default("#templates")
   heroSecondaryCtaText String   @default("Apply for a Free Website")
   heroSecondaryCtaHref String   @default("#apply")
+  heroFeature1         String   @default("Template-based website build")
+  heroFeature2         String   @default("Mobile-ready layouts for schools")
+  heroFeature3         String   @default("Clear path from selection to launch")
   overviewLabel        String   @default("What It Is")
   overviewTitle        String   @default("A faster path to a professional school website.")
   overviewBody         String   @default("We Brand Schools is Dexta's initiative for helping schools get online with polished, mobile-friendly websites built from our approved templates. Schools choose a template, submit their content, and we handle the setup and launch process.")
+  overviewPrimaryCtaText String @default("See available templates")
+  overviewPrimaryCtaHref String @default("#templates")
+  overviewSecondaryCtaText String @default("Ask a question first")
+  overviewSecondaryCtaHref String @default("#help")
+  overviewBenefitsLabel String @default("What schools get")
+  overviewBenefit1     String   @default("A professionally structured website built from an approved template")
+  overviewBenefit2     String   @default("Your school name, content, contact details, and branding applied to the chosen layout")
+  overviewBenefit3     String   @default("A faster rollout path than a full custom website project")
+  overviewBenefit4     String   @default("A credible public-facing platform for information, communication, and visibility")
   processLabel         String   @default("How It Works")
   processTitle         String   @default("From template selection to launch in a clear, simple flow.")
   processBody          String   @default("The process is designed to be straightforward for school administrators and repeatable for our internal team.")
@@ -543,6 +555,23 @@ model WeBrandSchoolsPageContent {
   templatesTitle       String   @default("Templates schools can preview and apply for.")
   templatesBody        String   @default("Each template includes multiple preview images or videos, a live preview link, and a direct way to select it for your application.")
   updatedAt            DateTime @updatedAt
+}
+
+model SchoolWebsiteTestimonial {
+  id             String   @id @default(uuid())
+  schoolName     String
+  logoPublicId   String?
+  quote          String
+  authorName     String
+  authorPosition String
+  isVisible      Boolean  @default(true)
+  position       Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([position])
+  @@index([isVisible])
+  @@index([schoolName])
 }
 
 model SchoolWebsiteTemplate {

@@ -1,0 +1,12 @@
+<svg width="600" height="360" viewBox="0 0 600 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="360" rx="40" fill="#F8FBFF"/>
+  <rect x="70" y="104" width="128" height="152" rx="32" fill="#123E96"/>
+  <path d="M110 150H158" stroke="#9DFFAF" stroke-width="12" stroke-linecap="round"/>
+  <path d="M118 203L134 146L150 203" stroke="#F8FBFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="134" cy="128" r="14" fill="#9DFFAF"/>
+  <circle cx="108" cy="218" r="10" fill="#9DFFAF"/>
+  <circle cx="160" cy="218" r="10" fill="#9DFFAF"/>
+  <text x="236" y="149" fill="#0A2A66" font-family="Montserrat, Arial, sans-serif" font-size="29" font-weight="700" letter-spacing="2">GREENFIELD</text>
+  <text x="236" y="190" fill="#0A2A66" font-family="Montserrat, Arial, sans-serif" font-size="23" font-weight="600" letter-spacing="3">SCIENCE ACADEMY</text>
+  <text x="236" y="235" fill="#2F8A45" font-family="Montserrat, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="3">INSPIRE. DISCOVER. BUILD.</text>
+</svg>

@@ -4,8 +4,15 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath, updateTag } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getCloudinaryPublicId } from "@/lib/cloudinary";
-import { weBrandSchoolsPrisma } from "@/lib/we-brand-schools-prisma";
 import {
+  createSchoolWebsiteTestimonialRecord,
+  deleteSchoolWebsiteTestimonialRecord,
+  listSchoolWebsiteTestimonials,
+  updateSchoolWebsiteTestimonialRecord,
+  weBrandSchoolsPrisma,
+} from "@/lib/we-brand-schools-prisma";
+import {
+  SCHOOL_WEBSITE_TESTIMONIALS_TAG,
   SCHOOL_WEBSITE_APPLICATIONS_TAG,
   SCHOOL_WEBSITE_TEMPLATES_TAG,
   WE_BRAND_SCHOOLS_CONTENT_TAG,
@@ -15,14 +22,18 @@ import {
   parseJsonStringArray,
   serializeJsonStringArray,
   type SchoolWebsiteApplicationData,
+  type SchoolWebsiteTestimonialData,
   type SchoolWebsiteTemplateData,
   type WeBrandSchoolsPageContentData,
+  withWeBrandSchoolsPageContentDefaults,
 } from "@/lib/we-brand-schools-defaults";
 import {
   schoolWebsiteApplicationStatusSchema,
+  schoolWebsiteTestimonialSchema,
   schoolWebsiteTemplateSchema,
   weBrandSchoolsPageContentSchema,
   type SchoolWebsiteApplicationStatusInput,
+  type SchoolWebsiteTestimonialInput,
   type SchoolWebsiteTemplateInput,
   type WeBrandSchoolsPageContentInput,
 } from "@/lib/validators";
@@ -30,6 +41,7 @@ import {
 type ActionResult = { success: boolean; message: string };
 
 export type WeBrandSchoolsPageContentRow = WeBrandSchoolsPageContentData;
+export type SchoolWebsiteTestimonialRow = SchoolWebsiteTestimonialData;
 export type SchoolWebsiteTemplateRow = SchoolWebsiteTemplateData;
 export type SchoolWebsiteApplicationRow = SchoolWebsiteApplicationData & {
   id: string;
@@ -43,11 +55,13 @@ export type SchoolWebsiteApplicationRow = SchoolWebsiteApplicationData & {
 
 function revalidateWeBrandSchoolsAdmin() {
   updateTag(WE_BRAND_SCHOOLS_CONTENT_TAG);
+  updateTag(SCHOOL_WEBSITE_TESTIMONIALS_TAG);
   updateTag(SCHOOL_WEBSITE_TEMPLATES_TAG);
   updateTag(SCHOOL_WEBSITE_APPLICATIONS_TAG);
   revalidatePath("/webrandschools");
   revalidatePath("/admin/we-brand-schools");
   revalidatePath("/admin/we-brand-schools/content");
+  revalidatePath("/admin/we-brand-schools/testimonials");
   revalidatePath("/admin/we-brand-schools/templates");
   revalidatePath("/admin/we-brand-schools/applications");
 }
@@ -137,6 +151,15 @@ function normalizeTemplateData(data: SchoolWebsiteTemplateInput) {
   };
 }
 
+function normalizeTestimonialData(data: SchoolWebsiteTestimonialInput) {
+  return {
+    ...data,
+    logoPublicId: data.logoPublicId
+      ? (getCloudinaryPublicId(data.logoPublicId) ?? data.logoPublicId)
+      : null,
+  };
+}
+
 function mapTemplateRow(row: {
   id: string;
   name: string;
@@ -189,7 +212,7 @@ export async function getWeBrandSchoolsPageContent(): Promise<WeBrandSchoolsPage
       return WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS;
     }
 
-    return {
+    return withWeBrandSchoolsPageContentDefaults({
       logoPublicId: row.logoPublicId ?? null,
       heroImagePublicId: row.heroImagePublicId ?? null,
       heroEyebrow: row.heroEyebrow,
@@ -199,9 +222,21 @@ export async function getWeBrandSchoolsPageContent(): Promise<WeBrandSchoolsPage
       heroPrimaryCtaHref: row.heroPrimaryCtaHref,
       heroSecondaryCtaText: row.heroSecondaryCtaText,
       heroSecondaryCtaHref: row.heroSecondaryCtaHref,
+      heroFeature1: row.heroFeature1,
+      heroFeature2: row.heroFeature2,
+      heroFeature3: row.heroFeature3,
       overviewLabel: row.overviewLabel,
       overviewTitle: row.overviewTitle,
       overviewBody: row.overviewBody,
+      overviewPrimaryCtaText: row.overviewPrimaryCtaText,
+      overviewPrimaryCtaHref: row.overviewPrimaryCtaHref,
+      overviewSecondaryCtaText: row.overviewSecondaryCtaText,
+      overviewSecondaryCtaHref: row.overviewSecondaryCtaHref,
+      overviewBenefitsLabel: row.overviewBenefitsLabel,
+      overviewBenefit1: row.overviewBenefit1,
+      overviewBenefit2: row.overviewBenefit2,
+      overviewBenefit3: row.overviewBenefit3,
+      overviewBenefit4: row.overviewBenefit4,
       processLabel: row.processLabel,
       processTitle: row.processTitle,
       processBody: row.processBody,
@@ -216,7 +251,7 @@ export async function getWeBrandSchoolsPageContent(): Promise<WeBrandSchoolsPage
       templatesLabel: row.templatesLabel,
       templatesTitle: row.templatesTitle,
       templatesBody: row.templatesBody,
-    };
+    });
   } catch (error) {
     console.error("[getWeBrandSchoolsPageContent]", error);
     return WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS;
@@ -280,6 +315,125 @@ export async function updateWeBrandSchoolsPageContent(
         error instanceof Error
           ? error.message
           : "Failed to update We Brand Schools content.",
+    };
+  }
+}
+
+export async function getSchoolWebsiteTestimonialsAdmin(): Promise<
+  SchoolWebsiteTestimonialRow[]
+> {
+  try {
+    const rows = await listSchoolWebsiteTestimonials();
+
+    return rows.map((row: SchoolWebsiteTestimonialRow) => ({
+      id: row.id,
+      schoolName: row.schoolName,
+      logoPublicId: row.logoPublicId ?? null,
+      quote: row.quote,
+      authorName: row.authorName,
+      authorPosition: row.authorPosition,
+      isVisible: row.isVisible,
+      position: row.position,
+    }));
+  } catch (error) {
+    console.error("[getSchoolWebsiteTestimonialsAdmin]", error);
+    return [];
+  }
+}
+
+export async function createSchoolWebsiteTestimonial(
+  data: SchoolWebsiteTestimonialInput,
+): Promise<ActionResult> {
+  try {
+    await requireAuth();
+
+    const parsed = schoolWebsiteTestimonialSchema.safeParse(data);
+    if (!parsed.success) {
+      return {
+        success: false,
+        message: parsed.error.issues[0]?.message ?? "Validation failed",
+      };
+    }
+
+    await createSchoolWebsiteTestimonialRecord(
+      normalizeTestimonialData(parsed.data),
+    );
+
+    revalidateWeBrandSchoolsAdmin();
+    return {
+      success: true,
+      message: "Testimonial card created successfully.",
+    };
+  } catch (error) {
+    console.error("[createSchoolWebsiteTestimonial]", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to create testimonial card.",
+    };
+  }
+}
+
+export async function updateSchoolWebsiteTestimonial(
+  id: string,
+  data: SchoolWebsiteTestimonialInput,
+): Promise<ActionResult> {
+  try {
+    await requireAuth();
+
+    const parsed = schoolWebsiteTestimonialSchema.safeParse(data);
+    if (!parsed.success) {
+      return {
+        success: false,
+        message: parsed.error.issues[0]?.message ?? "Validation failed",
+      };
+    }
+
+    await updateSchoolWebsiteTestimonialRecord(
+      id,
+      normalizeTestimonialData(parsed.data),
+    );
+
+    revalidateWeBrandSchoolsAdmin();
+    return {
+      success: true,
+      message: "Testimonial card updated successfully.",
+    };
+  } catch (error) {
+    console.error("[updateSchoolWebsiteTestimonial]", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to update testimonial card.",
+    };
+  }
+}
+
+export async function deleteSchoolWebsiteTestimonial(
+  id: string,
+): Promise<ActionResult> {
+  try {
+    await requireAuth();
+
+    await deleteSchoolWebsiteTestimonialRecord(id);
+
+    revalidateWeBrandSchoolsAdmin();
+    return {
+      success: true,
+      message: "Testimonial card deleted successfully.",
+    };
+  } catch (error) {
+    console.error("[deleteSchoolWebsiteTestimonial]", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to delete testimonial card.",
     };
   }
 }

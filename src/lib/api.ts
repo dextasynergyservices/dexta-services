@@ -2,7 +2,10 @@ import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 import prisma from "@/lib/prisma";
 import { aboutPrisma } from "@/lib/about-prisma";
-import { weBrandSchoolsPrisma } from "@/lib/we-brand-schools-prisma";
+import {
+  listSchoolWebsiteTestimonials,
+  weBrandSchoolsPrisma,
+} from "@/lib/we-brand-schools-prisma";
 import { getCloudinaryPublicId } from "./cloudinary";
 import {
   ABOUT_CONTENT_TAG,
@@ -51,8 +54,10 @@ import {
 import {
   WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS,
   parseJsonStringArray as parseWeBrandSchoolsJsonStringArray,
+  type SchoolWebsiteTestimonialData,
   type SchoolWebsiteTemplateData,
   type WeBrandSchoolsPageContentData,
+  withWeBrandSchoolsPageContentDefaults,
 } from "./we-brand-schools-defaults";
 import { resolveProjectSectionCardColor } from "./project-section";
 
@@ -924,7 +929,7 @@ async function readWeBrandSchoolsPageContent(): Promise<WeBrandSchoolsPageConten
       return WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS;
     }
 
-    return {
+    return withWeBrandSchoolsPageContentDefaults({
       logoPublicId: row.logoPublicId,
       heroImagePublicId: row.heroImagePublicId ?? null,
       heroEyebrow: row.heroEyebrow,
@@ -934,9 +939,21 @@ async function readWeBrandSchoolsPageContent(): Promise<WeBrandSchoolsPageConten
       heroPrimaryCtaHref: row.heroPrimaryCtaHref,
       heroSecondaryCtaText: row.heroSecondaryCtaText,
       heroSecondaryCtaHref: row.heroSecondaryCtaHref,
+      heroFeature1: row.heroFeature1,
+      heroFeature2: row.heroFeature2,
+      heroFeature3: row.heroFeature3,
       overviewLabel: row.overviewLabel,
       overviewTitle: row.overviewTitle,
       overviewBody: row.overviewBody,
+      overviewPrimaryCtaText: row.overviewPrimaryCtaText,
+      overviewPrimaryCtaHref: row.overviewPrimaryCtaHref,
+      overviewSecondaryCtaText: row.overviewSecondaryCtaText,
+      overviewSecondaryCtaHref: row.overviewSecondaryCtaHref,
+      overviewBenefitsLabel: row.overviewBenefitsLabel,
+      overviewBenefit1: row.overviewBenefit1,
+      overviewBenefit2: row.overviewBenefit2,
+      overviewBenefit3: row.overviewBenefit3,
+      overviewBenefit4: row.overviewBenefit4,
       processLabel: row.processLabel,
       processTitle: row.processTitle,
       processBody: row.processBody,
@@ -951,7 +968,7 @@ async function readWeBrandSchoolsPageContent(): Promise<WeBrandSchoolsPageConten
       templatesLabel: row.templatesLabel,
       templatesTitle: row.templatesTitle,
       templatesBody: row.templatesBody,
-    };
+    });
   } catch {
     return WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS;
   }
@@ -967,6 +984,33 @@ export async function fetchWeBrandSchoolsPageContent(): Promise<
   WeBrandSchoolsPageContentData
 > {
   return fetchWeBrandSchoolsPageContentCached();
+}
+
+async function readSchoolWebsiteTestimonials(): Promise<
+  SchoolWebsiteTestimonialData[]
+> {
+  try {
+    const rows = await listSchoolWebsiteTestimonials({ visibleOnly: true });
+
+    return rows.map((row: SchoolWebsiteTestimonialData) => ({
+      id: row.id,
+      schoolName: row.schoolName,
+      logoPublicId: row.logoPublicId ?? null,
+      quote: row.quote,
+      authorName: row.authorName,
+      authorPosition: row.authorPosition,
+      isVisible: row.isVisible,
+      position: row.position,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchSchoolWebsiteTestimonials(): Promise<
+  SchoolWebsiteTestimonialData[]
+> {
+  return readSchoolWebsiteTestimonials();
 }
 
 async function readSchoolWebsiteTemplates(): Promise<SchoolWebsiteTemplateData[]> {
