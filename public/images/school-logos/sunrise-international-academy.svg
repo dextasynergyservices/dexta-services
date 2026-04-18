@@ -1,0 +1,10 @@
+<svg width="600" height="360" viewBox="0 0 600 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="360" rx="40" fill="#F8FBFF"/>
+  <circle cx="134" cy="180" r="74" fill="#FFF3D6"/>
+  <circle cx="134" cy="180" r="56" fill="#FFB11A"/>
+  <path d="M134 134L146.931 170.603H185.816L154.442 193.194L166.74 229.797L134 207.205L101.26 229.797L113.558 193.194L82.1844 170.603H121.069L134 134Z" fill="#0A2A66"/>
+  <path d="M90 241C103.944 225.742 118.276 217.5 134 217.5C149.724 217.5 164.056 225.742 178 241" stroke="#0A2A66" stroke-width="12" stroke-linecap="round"/>
+  <text x="240" y="154" fill="#0A2A66" font-family="Montserrat, Arial, sans-serif" font-size="33" font-weight="700" letter-spacing="2">SUNRISE</text>
+  <text x="240" y="194" fill="#0A2A66" font-family="Montserrat, Arial, sans-serif" font-size="19" font-weight="600" letter-spacing="4">INTERNATIONAL ACADEMY</text>
+  <text x="240" y="237" fill="#FFB11A" font-family="Montserrat, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="3">LEARN. LEAD. SHINE.</text>
+</svg>

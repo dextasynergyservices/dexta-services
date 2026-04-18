@@ -169,6 +169,11 @@ export function AdminSidebar({
           icon: PanelTop,
         },
         {
+          href: "/admin/we-brand-schools/testimonials",
+          label: "Testimonials",
+          icon: Quote,
+        },
+        {
           href: "/admin/we-brand-schools/templates",
           label: "Templates",
           icon: ImageIcon,

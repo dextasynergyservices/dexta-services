@@ -267,11 +267,43 @@ export function WeBrandSchoolsContentForm({
             <FieldError message={errors.heroSecondaryCtaHref?.message} />
           </div>
         </div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Hero feature 1
+            </Label>
+            <Input
+              className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
+              {...register("heroFeature1")}
+            />
+            <FieldError message={errors.heroFeature1?.message} />
+          </div>
+          <div>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Hero feature 2
+            </Label>
+            <Input
+              className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
+              {...register("heroFeature2")}
+            />
+            <FieldError message={errors.heroFeature2?.message} />
+          </div>
+          <div>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Hero feature 3
+            </Label>
+            <Input
+              className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
+              {...register("heroFeature3")}
+            />
+            <FieldError message={errors.heroFeature3?.message} />
+          </div>
+        </div>
       </SectionCard>
 
       <SectionCard
         title="Overview Section"
-        description="Control the explanatory content shown after the hero."
+        description="Control the post-hero introduction block, its action buttons, and the school benefits panel."
         icon={<LayoutTemplate className="h-5 w-5" />}
       >
         <div>
@@ -299,6 +331,96 @@ export function WeBrandSchoolsContentForm({
             {...register("overviewBody")}
           />
           <FieldError message={errors.overviewBody?.message} />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Primary CTA text
+            </Label>
+            <Input
+              className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
+              {...register("overviewPrimaryCtaText")}
+            />
+            <FieldError message={errors.overviewPrimaryCtaText?.message} />
+          </div>
+          <div>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Primary CTA href
+            </Label>
+            <Input
+              className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
+              {...register("overviewPrimaryCtaHref")}
+            />
+            <FieldError message={errors.overviewPrimaryCtaHref?.message} />
+          </div>
+          <div>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Secondary CTA text
+            </Label>
+            <Input
+              className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
+              {...register("overviewSecondaryCtaText")}
+            />
+            <FieldError message={errors.overviewSecondaryCtaText?.message} />
+          </div>
+          <div>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Secondary CTA href
+            </Label>
+            <Input
+              className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
+              {...register("overviewSecondaryCtaHref")}
+            />
+            <FieldError message={errors.overviewSecondaryCtaHref?.message} />
+          </div>
+        </div>
+        <div>
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Benefits panel label
+          </Label>
+          <Input
+            className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
+            {...register("overviewBenefitsLabel")}
+          />
+          <FieldError message={errors.overviewBenefitsLabel?.message} />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div>
+            <Label className="mb-1.5 block text-xs text-[#888]">Benefit 1</Label>
+            <Textarea
+              rows={3}
+              className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
+              {...register("overviewBenefit1")}
+            />
+            <FieldError message={errors.overviewBenefit1?.message} />
+          </div>
+          <div>
+            <Label className="mb-1.5 block text-xs text-[#888]">Benefit 2</Label>
+            <Textarea
+              rows={3}
+              className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
+              {...register("overviewBenefit2")}
+            />
+            <FieldError message={errors.overviewBenefit2?.message} />
+          </div>
+          <div>
+            <Label className="mb-1.5 block text-xs text-[#888]">Benefit 3</Label>
+            <Textarea
+              rows={3}
+              className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
+              {...register("overviewBenefit3")}
+            />
+            <FieldError message={errors.overviewBenefit3?.message} />
+          </div>
+          <div>
+            <Label className="mb-1.5 block text-xs text-[#888]">Benefit 4</Label>
+            <Textarea
+              rows={3}
+              className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
+              {...register("overviewBenefit4")}
+            />
+            <FieldError message={errors.overviewBenefit4?.message} />
+          </div>
         </div>
       </SectionCard>
 

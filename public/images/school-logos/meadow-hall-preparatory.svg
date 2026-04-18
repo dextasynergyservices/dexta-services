@@ -1,0 +1,10 @@
+<svg width="600" height="360" viewBox="0 0 600 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="360" rx="40" fill="#F8FBFF"/>
+  <circle cx="134" cy="180" r="74" fill="#E3F7EB"/>
+  <circle cx="134" cy="180" r="58" fill="#1E8F5B"/>
+  <path d="M134 135C155.539 135 173 152.461 173 174C173 206.222 147 231 134 240C121 231 95 206.222 95 174C95 152.461 112.461 135 134 135Z" fill="#F8FBFF"/>
+  <path d="M135 152C127.343 171.172 119.324 185.45 111 195.5C120.891 194.731 129.224 194.731 136 195.5C133.816 203.302 132.483 210.135 132 216C142.317 200.618 152.317 186.34 162 173.167C153.997 173.594 146.33 174.344 139 175.417C140.302 167.729 141.635 159.924 143 152H135Z" fill="#1E8F5B"/>
+  <text x="236" y="151" fill="#114230" font-family="Montserrat, Arial, sans-serif" font-size="31" font-weight="700" letter-spacing="2">MEADOW HALL</text>
+  <text x="236" y="192" fill="#114230" font-family="Montserrat, Arial, sans-serif" font-size="21" font-weight="600" letter-spacing="3">PREPARATORY SCHOOL</text>
+  <text x="236" y="236" fill="#1E8F5B" font-family="Montserrat, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="3">ROOTED IN EXCELLENCE</text>
+</svg>

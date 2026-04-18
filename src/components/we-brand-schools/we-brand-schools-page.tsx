@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
@@ -13,14 +20,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
-  Globe2,
   Loader2,
   Mail,
-  MonitorSmartphone,
   Phone,
   Play,
-  Rocket,
-  ShieldCheck,
 } from "lucide-react";
 import { submitSchoolWebsiteApplication } from "@/app/(public)/webrandschools/actions";
 import { RecaptchaProvider } from "@/components/layout/recaptcha-provider";
@@ -49,33 +52,12 @@ import {
   schoolWebsiteApplicationStepTwoSchema,
 } from "@/lib/validators";
 import type {
+  SchoolWebsiteTestimonialData,
   SchoolWebsiteTemplateAssetData,
   SchoolWebsiteTemplateData,
   WeBrandSchoolsPageContentData,
 } from "@/lib/we-brand-schools-defaults";
-
-const BENEFITS = [
-  {
-    title: "Build trust faster",
-    body: "Parents, students, and partners get a polished first impression from the first click.",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Stay clear on every screen",
-    body: "Each website starts with a mobile-responsive structure so your school reads well on phones and desktops.",
-    icon: MonitorSmartphone,
-  },
-  {
-    title: "Launch without custom-build delays",
-    body: "Template-led delivery keeps the process faster, cleaner, and easier to manage for both your team and ours.",
-    icon: Rocket,
-  },
-  {
-    title: "Own a stronger online presence",
-    body: "Your school gets a real website foundation for announcements, admissions information, and public contact.",
-    icon: Globe2,
-  },
-] as const;
+import { withWeBrandSchoolsPageContentDefaults } from "@/lib/we-brand-schools-defaults";
 
 const WE_BRAND_SCHOOLS_HERO_IMAGE_FALLBACK = "/images/school1.jpg";
 
@@ -134,6 +116,119 @@ function getVideoUrl(publicId: string) {
   }
 
   return `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload/q_auto/${publicId}`;
+}
+
+function getSchoolInitials(value: string) {
+  return value
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+function SchoolTestimonialCard({
+  testimonial,
+  compact = false,
+}: {
+  testimonial: SchoolWebsiteTestimonialData;
+  compact?: boolean;
+}) {
+  const logoSrc = testimonial.logoPublicId
+    ? resolveImageSource(testimonial.logoPublicId, {
+        c: "fit",
+        h: 360,
+        q: "auto",
+        w: 420,
+      })
+    : null;
+  const initials = getSchoolInitials(testimonial.schoolName);
+
+  return (
+    <article
+      className={`grid overflow-hidden rounded-[28px] border border-white/70 bg-[linear-gradient(145deg,#f8fbff_0%,#ffffff_100%)] text-[#07193f] shadow-[0_24px_64px_-42px_rgba(7,25,63,0.34)] ${
+        compact
+          ? "h-[214px] w-full max-w-[27rem] grid-cols-[minmax(0,0.34fr)_minmax(0,0.66fr)]"
+          : "h-[238px] w-[min(88vw,27rem)] grid-cols-[minmax(0,0.32fr)_minmax(0,0.68fr)] lg:h-[244px] lg:w-[27.25rem] xl:w-[28rem]"
+      }`}
+    >
+      <div
+        className={`flex items-center justify-center border-r border-[#00abff]/55 bg-white ${
+          compact ? "p-2" : "p-2.5 md:p-3"
+        }`}
+      >
+        {logoSrc ? (
+          <div
+            className={`flex h-full w-full items-center justify-center ${
+              compact ? "min-h-[132px]" : "min-h-[158px]"
+            }`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={logoSrc}
+              alt={`${testimonial.schoolName} logo`}
+              className="h-full w-full object-contain"
+              loading="lazy"
+            />
+          </div>
+        ) : (
+          <div
+            className={`flex h-full w-full items-center justify-center bg-white font-semibold tracking-[0.18em] text-[#07193f] ${
+              compact ? "min-h-[132px] text-xl" : "min-h-[158px] text-2xl"
+            }`}
+          >
+            {initials || "SC"}
+          </div>
+        )}
+      </div>
+
+      <div className={`flex flex-col ${compact ? "px-3.5 pt-4 pb-7" : "px-4 pt-5 pb-5 sm:px-5 sm:pt-5 sm:pb-6"}`}>
+        <div>
+          <p
+            className={`font-semibold uppercase tracking-[0.24em] text-[#00abff] ${
+              compact
+                ? "line-clamp-2 text-[9px] leading-[1rem]"
+                : "text-[10px] sm:text-[11px]"
+            }`}
+          >
+            {testimonial.schoolName}
+          </p>
+          <p
+            className={`text-[#07193f]/82 ${
+              compact
+                ? "mt-2 line-clamp-5 text-[0.76rem] leading-[1.08rem]"
+                : "mt-2 line-clamp-6 text-[0.86rem] leading-[1.2rem] lg:text-[0.88rem] lg:leading-[1.25rem]"
+            }`}
+          >
+            “{testimonial.quote}”
+          </p>
+        </div>
+
+        <div
+          className={`mt-auto border-t border-[#07193f]/10 ${
+            compact ? "pt-3 pb-5" : "pt-4 pb-3"
+          }`}
+        >
+          <p
+            className={`font-semibold text-[#07193f] ${
+              compact ? "line-clamp-1 text-[0.84rem]" : "line-clamp-1 text-sm"
+            }`}
+          >
+            {testimonial.authorName}
+          </p>
+          <p
+            className={`mt-1 font-semibold uppercase tracking-[0.22em] text-[#07193f]/56 ${
+              compact
+                ? "line-clamp-1 text-[9px]"
+                : "line-clamp-1 text-[10px] sm:text-[11px]"
+            }`}
+          >
+            {testimonial.authorPosition}
+          </p>
+        </div>
+      </div>
+    </article>
+  );
 }
 
 function TemplatePreviewDialog({
@@ -1231,19 +1326,27 @@ function TemplateApplicationDialog({
 
 function WeBrandSchoolsPageContent({
   content,
+  testimonials,
   templates,
   contactContent,
   socialLinks,
 }: {
   content: WeBrandSchoolsPageContentData;
+  testimonials: SchoolWebsiteTestimonialData[];
   templates: SchoolWebsiteTemplateData[];
   contactContent: ContactPageContentData;
   socialLinks: ContactSocialLinkData[];
 }) {
+  const safeContent = withWeBrandSchoolsPageContentDefaults(content);
   const [previewTemplate, setPreviewTemplate] =
     useState<SchoolWebsiteTemplateData | null>(null);
   const [applicationTemplate, setApplicationTemplate] =
     useState<SchoolWebsiteTemplateData | null>(null);
+  const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
+  const desktopTestimonialsRef = useRef<HTMLDivElement | null>(null);
+  const desktopAnimationFrameRef = useRef<number | null>(null);
+  const desktopManualPauseUntilRef = useRef(0);
+  const desktopHoverPausedRef = useRef(false);
   const [templateBatchSize, setTemplateBatchSize] = useState(2);
   const [visibleTemplateCount, setVisibleTemplateCount] = useState(2);
   const primaryEmail = contactContent.emails[0] ?? "info@dexta.services";
@@ -1251,8 +1354,8 @@ function WeBrandSchoolsPageContent({
   const whatsappHref =
     socialLinks.find((social) => social.platform === "WHATSAPP")?.href ??
     "/contact";
-  const heroImageSrc = content.heroImagePublicId
-    ? resolveImageSource(content.heroImagePublicId, {
+  const heroImageSrc = safeContent.heroImagePublicId
+    ? resolveImageSource(safeContent.heroImagePublicId, {
         c: "fill",
         g: "auto",
         h: 1400,
@@ -1309,6 +1412,129 @@ function WeBrandSchoolsPageContent({
     [templates, visibleTemplateCount],
   );
   const hasMoreTemplates = visibleTemplateCount < templates.length;
+  const firstTestimonial = testimonials[0] ?? null;
+  const activeMobileTestimonial =
+    testimonials[activeTestimonialIndex] ?? firstTestimonial;
+  const hasMultipleTestimonials = testimonials.length > 1;
+
+  const cycleTestimonial = useCallback(
+    (direction: -1 | 1) => {
+      if (!testimonials.length) return;
+
+      setActiveTestimonialIndex((current) => {
+        const nextIndex = current + direction;
+
+        if (nextIndex < 0) {
+          return testimonials.length - 1;
+        }
+
+        if (nextIndex >= testimonials.length) {
+          return 0;
+        }
+
+        return nextIndex;
+      });
+    },
+    [testimonials.length],
+  );
+
+  useEffect(() => {
+    setActiveTestimonialIndex((current) => {
+      if (!testimonials.length) return 0;
+      return Math.min(current, testimonials.length - 1);
+    });
+  }, [testimonials.length]);
+
+  useEffect(() => {
+    if (!hasMultipleTestimonials) return;
+
+    const intervalId = window.setInterval(() => {
+      cycleTestimonial(1);
+    }, 10000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [cycleTestimonial, hasMultipleTestimonials]);
+
+  const normalizeDesktopTestimonialsPosition = useCallback(() => {
+    const container = desktopTestimonialsRef.current;
+    const firstSet = container?.querySelector<HTMLElement>("[data-testimonial-set]");
+    const setWidth = firstSet?.offsetWidth ?? 0;
+
+    if (!container || !setWidth) return;
+
+    if (container.scrollLeft < setWidth * 0.5) {
+      container.scrollLeft += setWidth;
+      return;
+    }
+
+    if (container.scrollLeft > setWidth * 1.5) {
+      container.scrollLeft -= setWidth;
+    }
+  }, []);
+
+  const scrollDesktopTestimonials = useCallback((direction: -1 | 1) => {
+    const container = desktopTestimonialsRef.current;
+    if (!container) return;
+
+    const firstSet = container.querySelector<HTMLElement>("[data-testimonial-set]");
+    const firstCard = container.querySelector<HTMLElement>("[data-testimonial-card]");
+    const cardWidth = firstCard?.offsetWidth ?? 0;
+    const gapWidth = Number.parseFloat(
+      window.getComputedStyle(firstSet ?? container).columnGap || "24",
+    );
+    const stepSize = cardWidth + gapWidth;
+    const currentScrollLeft = container.scrollLeft;
+
+    desktopManualPauseUntilRef.current = Date.now() + 700;
+
+    container.scrollTo({
+      behavior: "smooth",
+      left: currentScrollLeft + stepSize * direction,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!hasMultipleTestimonials) return;
+
+    const initializePosition = () => {
+      const container = desktopTestimonialsRef.current;
+      const firstSet = container?.querySelector<HTMLElement>("[data-testimonial-set]");
+      const setWidth = firstSet?.offsetWidth ?? 0;
+
+      if (!container || !setWidth) return;
+
+      container.scrollLeft = setWidth;
+    };
+
+    const animationStep = () => {
+      const container = desktopTestimonialsRef.current;
+      if (
+        container &&
+        window.matchMedia("(min-width: 768px)").matches &&
+        !desktopHoverPausedRef.current &&
+        Date.now() >= desktopManualPauseUntilRef.current
+      ) {
+        container.scrollLeft += 0.75;
+        normalizeDesktopTestimonialsPosition();
+      }
+
+      desktopAnimationFrameRef.current = window.requestAnimationFrame(animationStep);
+    };
+
+    const initFrame = window.requestAnimationFrame(() => {
+      initializePosition();
+      desktopAnimationFrameRef.current = window.requestAnimationFrame(animationStep);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(initFrame);
+      if (desktopAnimationFrameRef.current) {
+        window.cancelAnimationFrame(desktopAnimationFrameRef.current);
+      }
+    };
+  }, [hasMultipleTestimonials, normalizeDesktopTestimonialsPosition]);
 
   return (
     <>
@@ -1321,16 +1547,19 @@ function WeBrandSchoolsPageContent({
               transition={{ duration: 0.55, ease: "easeOut" }}
               className="flex items-center"
             >
-              {content.logoPublicId ? (
+              {safeContent.logoPublicId ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={getCloudinaryUrl(content.logoPublicId, { h: 96, q: "auto" })}
+                  src={getCloudinaryUrl(safeContent.logoPublicId, {
+                    h: 96,
+                    q: "auto",
+                  })}
                   alt="We Brand Schools"
                   className="h-12 w-auto object-contain sm:h-14"
                 />
               ) : (
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white">
-                  {content.heroEyebrow}
+                  {safeContent.heroEyebrow}
                 </p>
               )}
             </motion.div>
@@ -1343,25 +1572,25 @@ function WeBrandSchoolsPageContent({
                 className="max-w-4xl"
               >
                 <h1 className="mt-4 max-w-5xl font-display text-[clamp(3rem,7vw,6.4rem)] leading-[0.9] tracking-[-0.05em]">
-                  {content.heroHeadline}
+                  {safeContent.heroHeadline}
                 </h1>
                 <p className="mt-6 max-w-2xl text-base leading-8 text-white/82 sm:text-lg">
-                  {content.heroBody}
+                  {safeContent.heroBody}
                 </p>
 
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <Link href={content.heroPrimaryCtaHref}>
+                  <Link href={safeContent.heroPrimaryCtaHref}>
                     <Button className="h-12 rounded-full bg-white px-7 text-sm font-semibold text-[#07193f] transition-opacity hover:opacity-90">
-                      {content.heroPrimaryCtaText}
+                      {safeContent.heroPrimaryCtaText}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
-                  <Link href={content.heroSecondaryCtaHref}>
+                  <Link href={safeContent.heroSecondaryCtaHref}>
                     <Button
                       variant="outline"
                       className="h-12 rounded-full border-white/40 bg-transparent px-7 text-sm font-semibold text-white hover:bg-white hover:text-[#07193f]"
                     >
-                      {content.heroSecondaryCtaText}
+                      {safeContent.heroSecondaryCtaText}
                     </Button>
                   </Link>
                 </div>
@@ -1394,12 +1623,14 @@ function WeBrandSchoolsPageContent({
               className="mt-12 grid gap-4 md:grid-cols-3"
             >
               {[
-                "Template-based website build",
-                "Mobile-ready layouts for schools",
-                "Clear path from selection to launch",
-              ].map((item) => (
+                safeContent.heroFeature1,
+                safeContent.heroFeature2,
+                safeContent.heroFeature3,
+              ]
+                .filter((item) => item.trim().length > 0)
+                .map((item, index) => (
                 <div
-                  key={item}
+                  key={`hero-feature-${index}-${item}`}
                   className="rounded-[26px] border border-white/12 bg-white/8 px-5 py-5 backdrop-blur-sm"
                 >
                   <p className="text-sm font-medium text-white/88">{item}</p>
@@ -1413,27 +1644,27 @@ function WeBrandSchoolsPageContent({
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1.06fr)_minmax(0,0.94fr)] lg:items-start">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#00abff]">
-                {content.overviewLabel}
+                {safeContent.overviewLabel}
               </p>
               <h2 className="mt-4 max-w-3xl font-display text-4xl leading-tight tracking-[-0.04em] text-[#07193f] sm:text-5xl">
-                {content.overviewTitle}
+                {safeContent.overviewTitle}
               </h2>
               <p className="mt-5 max-w-2xl text-base leading-8 text-slate-700">
-                {content.overviewBody}
+                {safeContent.overviewBody}
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="#templates">
+                <Link href={safeContent.overviewPrimaryCtaHref}>
                   <Button className="h-12 rounded-full bg-[#07193f] px-7 text-sm font-semibold text-white hover:bg-[#0d2458]">
-                    See available templates
+                    {safeContent.overviewPrimaryCtaText}
                   </Button>
                 </Link>
-                <Link href="#help">
+                <Link href={safeContent.overviewSecondaryCtaHref}>
                   <Button
                     variant="outline"
                     className="h-12 rounded-full border-[#07193f]/20 bg-white px-7 text-sm font-semibold text-[#07193f] hover:bg-[#07193f] hover:text-white"
                   >
-                    Ask a question first
+                    {safeContent.overviewSecondaryCtaText}
                   </Button>
                 </Link>
               </div>
@@ -1441,16 +1672,21 @@ function WeBrandSchoolsPageContent({
 
             <div className="rounded-[32px] border border-[#07193f]/10 bg-white p-7">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00abff]">
-                What schools get
+                {safeContent.overviewBenefitsLabel}
               </p>
               <div className="mt-5 space-y-4">
                 {[
-                  "A professionally structured website built from an approved template",
-                  "Your school name, content, contact details, and branding applied to the chosen layout",
-                  "A faster rollout path than a full custom website project",
-                  "A credible public-facing platform for information, communication, and visibility",
-                ].map((item) => (
-                  <div key={item} className="flex gap-3">
+                  safeContent.overviewBenefit1,
+                  safeContent.overviewBenefit2,
+                  safeContent.overviewBenefit3,
+                  safeContent.overviewBenefit4,
+                ]
+                  .filter((item) => item.trim().length > 0)
+                  .map((item, index) => (
+                  <div
+                    key={`overview-benefit-${index}-${item}`}
+                    className="flex gap-3"
+                  >
                     <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-[#00abff]" />
                     <p className="text-sm leading-7 text-slate-700">{item}</p>
                   </div>
@@ -1460,7 +1696,7 @@ function WeBrandSchoolsPageContent({
           </div>
         </section>
 
-                {/* Why it matters */}
+        {/* Testimonials */}
         <section
           className="bg-[color-mix(in_srgb,var(--about-accent)_9%,white)] py-20 lg:py-24"
           style={
@@ -1475,31 +1711,148 @@ function WeBrandSchoolsPageContent({
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--about-accent)]">
-                Why it matters
+                Testimonials
               </p>
               <h2 className="mt-4 font-display text-4xl leading-tight tracking-[-0.04em] text-[var(--about-brand-deep)] sm:text-5xl">
-                Clear benefits for schools that need a stronger public-facing presence.
+                Trusted by schools across Nigeria
               </h2>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--about-brand-deep)]/80">
+                Real feedback from school leaders using Dexta’s template-led
+                website rollout to sharpen how their institutions show up online.
+              </p>
             </div>
 
-            <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {BENEFITS.map(({ title, body, icon: Icon }) => (
-                <div
-                  key={title}
-                  className="rounded-[28px] border border-[var(--about-border)] bg-white p-6"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--about-brand-deep)] text-[var(--about-accent)]">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="mt-5 text-xl font-semibold tracking-[-0.03em] text-[var(--about-brand-deep)]">
-                    {title}
-                  </h3>
-                  <p className="mt-3 text-sm leading-7 text-[var(--about-brand-deep)]/80">
-                    {body}
-                  </p>
+            {testimonials.length ? (
+              <div className="mt-10">
+                <div className="mx-auto max-w-sm md:hidden">
+                  {activeMobileTestimonial ? (
+                    <>
+                      <div className="mb-4 flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--about-accent)]">
+                            Featured school
+                          </p>
+                        </div>
+
+                        {testimonials.length > 1 ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => cycleTestimonial(-1)}
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#00abff]/22 bg-white text-[#07193f] shadow-[0_18px_40px_-28px_rgba(7,25,63,0.35)] transition hover:-translate-y-0.5 hover:border-[#00abff]/40 hover:text-[#00abff]"
+                              aria-label="View previous school testimonial"
+                            >
+                              <ChevronLeft className="h-5 w-5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => cycleTestimonial(1)}
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#00abff]/22 bg-white text-[#07193f] shadow-[0_18px_40px_-28px_rgba(7,25,63,0.35)] transition hover:-translate-y-0.5 hover:border-[#00abff]/40 hover:text-[#00abff]"
+                              aria-label="View next school testimonial"
+                            >
+                              <ChevronRight className="h-5 w-5" />
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <AnimatePresence mode="wait" initial={false}>
+                        <motion.div
+                          key={activeMobileTestimonial.id}
+                          initial={{ opacity: 0, x: 18, scale: 0.98 }}
+                          animate={{ opacity: 1, x: 0, scale: 1 }}
+                          exit={{ opacity: 0, x: -18, scale: 0.98 }}
+                          transition={{ duration: 0.28, ease: "easeOut" }}
+                        >
+                          <SchoolTestimonialCard
+                            testimonial={activeMobileTestimonial}
+                            compact
+                          />
+                        </motion.div>
+                      </AnimatePresence>
+                    </>
+                  ) : null}
                 </div>
-              ))}
-            </div>
+
+                <div className="relative hidden md:block">
+                  <div className="mb-5 flex items-center justify-end gap-2">
+                    {testimonials.length > 1 ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => scrollDesktopTestimonials(-1)}
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#00abff]/22 bg-white text-[#07193f] shadow-[0_18px_40px_-28px_rgba(7,25,63,0.35)] transition hover:-translate-y-0.5 hover:border-[#00abff]/40 hover:text-[#00abff]"
+                          aria-label="Scroll to previous school testimonials"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => scrollDesktopTestimonials(1)}
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#00abff]/22 bg-white text-[#07193f] shadow-[0_18px_40px_-28px_rgba(7,25,63,0.35)] transition hover:-translate-y-0.5 hover:border-[#00abff]/40 hover:text-[#00abff]"
+                          aria-label="Scroll to next school testimonials"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+
+                  <div className="pointer-events-none absolute inset-y-[3.5rem] left-0 z-10 w-8 bg-gradient-to-r from-[color-mix(in_srgb,var(--about-accent)_8%,white)] to-transparent lg:w-12" />
+                  <div className="pointer-events-none absolute inset-y-[3.5rem] right-0 z-10 w-8 bg-gradient-to-l from-[color-mix(in_srgb,var(--about-accent)_8%,white)] to-transparent lg:w-12" />
+
+                  <div
+                    ref={desktopTestimonialsRef}
+                    className="hero-card-scroller overflow-x-auto py-1"
+                    onMouseEnter={() => {
+                      desktopHoverPausedRef.current = true;
+                    }}
+                    onMouseLeave={() => {
+                      desktopHoverPausedRef.current = false;
+                    }}
+                    onScroll={() => normalizeDesktopTestimonialsPosition()}
+                  >
+                    {testimonials.length > 1 ? (
+                      <div className="flex w-max">
+                        {[0, 1, 2].map((copyIndex) => (
+                          <div
+                            key={`testimonial-set-${copyIndex}`}
+                            data-testimonial-set
+                            className="flex shrink-0 gap-5 pr-5 lg:gap-6 lg:pr-6"
+                            aria-hidden={copyIndex !== 1}
+                          >
+                            {testimonials.map((testimonial) => (
+                              <div
+                                key={`${testimonial.id}-${copyIndex}`}
+                                data-testimonial-card
+                              >
+                                <SchoolTestimonialCard testimonial={testimonial} />
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex justify-center">
+                        {firstTestimonial ? (
+                          <SchoolTestimonialCard testimonial={firstTestimonial} />
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-10 rounded-[30px] border border-[var(--about-border)]/12 bg-white px-6 py-10 text-center">
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--about-accent)]">
+                  Testimonials will appear here
+                </p>
+                <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[var(--about-brand-deep)]/76">
+                  Add school cards from the admin testimonials screen to start
+                  the right-to-left carousel on this page.
+                </p>
+              </div>
+            )}
           </div>
         </section>
 
@@ -1584,7 +1937,7 @@ function WeBrandSchoolsPageContent({
                 </p>
               </div>
 
-              <Link href="#help">
+              <Link href="https://wa.me/2348103208297" target="blank">
                 <Button className="h-12 rounded-full bg-white px-7 text-sm font-semibold text-[#07193f] hover:opacity-90">
                   Need help choosing?
                 </Button>
@@ -1845,6 +2198,7 @@ function WeBrandSchoolsPageContent({
 
 export function WeBrandSchoolsPage(props: {
   content: WeBrandSchoolsPageContentData;
+  testimonials: SchoolWebsiteTestimonialData[];
   templates: SchoolWebsiteTemplateData[];
   contactContent: ContactPageContentData;
   socialLinks: ContactSocialLinkData[];

@@ -10,6 +10,10 @@ const TABS = [
     label: "Content",
   },
   {
+    href: "/admin/we-brand-schools/testimonials",
+    label: "Testimonials",
+  },
+  {
     href: "/admin/we-brand-schools/templates",
     label: "Templates",
   },
