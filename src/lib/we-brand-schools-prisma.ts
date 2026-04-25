@@ -10,6 +10,9 @@ type WeBrandSchoolsPrismaDelegates = {
   schoolWebsiteTemplate: any;
   schoolWebsiteTemplateAsset: any;
   schoolWebsiteApplication: any;
+  schoolWebsiteProject: any;
+  schoolWebsiteProjectRevision: any;
+  schoolWebsiteProjectExportLog: any;
 };
 
 export const weBrandSchoolsPrisma =

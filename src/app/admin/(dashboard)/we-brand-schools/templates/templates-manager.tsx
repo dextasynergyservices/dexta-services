@@ -113,7 +113,9 @@ export function TemplatesManager({
   const [creating, setCreating] = useState(false);
   const [viewing, setViewing] = useState<SchoolWebsiteTemplateRow | null>(null);
   const [editing, setEditing] = useState<SchoolWebsiteTemplateRow | null>(null);
-  const [deleting, setDeleting] = useState<SchoolWebsiteTemplateRow | null>(null);
+  const [deleting, setDeleting] = useState<SchoolWebsiteTemplateRow | null>(
+    null,
+  );
 
   const refresh = () => router.refresh();
 
@@ -181,8 +183,8 @@ export function TemplatesManager({
             No templates in the database yet.
           </p>
           <p className="mt-2 text-xs leading-6 text-[#666]">
-            Add the first school template so it can appear on the public We Brand
-            Schools page.
+            Add the first school template so it can appear on the public We
+            Brand Schools page.
           </p>
         </div>
       ) : (
@@ -254,7 +256,9 @@ export function TemplatesManager({
                               View details
                             </span>
                           </div>
-                          <p className="text-xs text-[#666]">/{template.slug}</p>
+                          <p className="text-xs text-[#666]">
+                            /{template.slug}
+                          </p>
                           <p className="max-w-md text-xs leading-6 text-[#8d8d8d]">
                             {template.summary}
                           </p>
@@ -288,7 +292,9 @@ export function TemplatesManager({
                           className="inline-flex max-w-[220px] items-center gap-2 text-xs text-cyan-400 hover:text-cyan-300"
                         >
                           <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                          <span className="truncate">{template.websiteUrl}</span>
+                          <span className="truncate">
+                            {template.websiteUrl}
+                          </span>
                         </a>
                       ) : (
                         <span className="text-xs text-[#666]">Not set</span>
@@ -411,7 +417,8 @@ export function TemplatesManager({
                         Description
                       </p>
                       <p className="mt-3 text-sm leading-7 text-[#a7a7a7]">
-                        {viewing.description?.trim() || "No extended description added yet."}
+                        {viewing.description?.trim() ||
+                          "No extended description added yet."}
                       </p>
                     </div>
                   </section>
@@ -462,12 +469,16 @@ export function TemplatesManager({
                               </div>
                               <div className="space-y-2 text-xs text-[#888]">
                                 <p className="break-all">
-                                  <span className="text-[#666]">Public ID:</span>{" "}
+                                  <span className="text-[#666]">
+                                    Public ID:
+                                  </span>{" "}
                                   {asset.publicId}
                                 </p>
                                 {asset.thumbnailPublicId ? (
                                   <p className="break-all">
-                                    <span className="text-[#666]">Thumbnail:</span>{" "}
+                                    <span className="text-[#666]">
+                                      Thumbnail:
+                                    </span>{" "}
                                     {asset.thumbnailPublicId}
                                   </p>
                                 ) : null}
@@ -502,20 +513,26 @@ export function TemplatesManager({
                         <p className="text-[11px] uppercase tracking-[0.18em] text-[#666]">
                           Slug
                         </p>
-                        <p className="mt-1 text-sm text-white">/{viewing.slug}</p>
+                        <p className="mt-1 text-sm text-white">
+                          /{viewing.slug}
+                        </p>
                       </div>
                       <div className="rounded-xl border border-[#222] bg-[#111] px-4 py-3">
                         <p className="text-[11px] uppercase tracking-[0.18em] text-[#666]">
                           Position
                         </p>
-                        <p className="mt-1 text-sm text-white">{viewing.position}</p>
+                        <p className="mt-1 text-sm text-white">
+                          {viewing.position}
+                        </p>
                       </div>
                       <div className="rounded-xl border border-[#222] bg-[#111] px-4 py-3">
                         <p className="text-[11px] uppercase tracking-[0.18em] text-[#666]">
                           Visibility
                         </p>
                         <p className="mt-1 text-sm text-white">
-                          {viewing.isVisible ? "Visible on public page" : "Hidden from public page"}
+                          {viewing.isVisible
+                            ? "Visible on public page"
+                            : "Hidden from public page"}
                         </p>
                       </div>
                       <div className="rounded-xl border border-[#222] bg-[#111] px-4 py-3">
@@ -572,20 +589,32 @@ export function TemplatesManager({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={creating} onOpenChange={setCreating}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto border-[#222] bg-[#111] text-white sm:max-w-4xl">
+      <Dialog open={creating} onOpenChange={setCreating} modal={false}>
+        <DialogContent
+          className="max-h-[92vh] overflow-y-auto border-[#222] bg-[#111] text-white sm:max-w-4xl"
+          onInteractOutside={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => event.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="text-white">New Template</DialogTitle>
           </DialogHeader>
-          <TemplateForm onSubmit={handleCreate} onCancel={() => setCreating(false)} />
+          <TemplateForm
+            onSubmit={handleCreate}
+            onCancel={() => setCreating(false)}
+          />
         </DialogContent>
       </Dialog>
 
       <Dialog
         open={Boolean(editing)}
         onOpenChange={(open) => !open && setEditing(null)}
+        modal={false}
       >
-        <DialogContent className="max-h-[92vh] overflow-y-auto border-[#222] bg-[#111] text-white sm:max-w-4xl">
+        <DialogContent
+          className="max-h-[92vh] overflow-y-auto border-[#222] bg-[#111] text-white sm:max-w-4xl"
+          onInteractOutside={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => event.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="text-white">Edit Template</DialogTitle>
           </DialogHeader>
@@ -610,8 +639,8 @@ export function TemplatesManager({
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[#666]">
               This removes the template, all its preview assets, and any future
-              admin edits tied to it. Existing applications will still keep their
-              captured template name.
+              admin edits tied to it. Existing applications will still keep
+              their captured template name.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

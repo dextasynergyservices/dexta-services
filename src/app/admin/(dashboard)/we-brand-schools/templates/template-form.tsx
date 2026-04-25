@@ -52,7 +52,9 @@ function createAsset(mediaType: "IMAGE" | "VIDEO", position: number) {
   };
 }
 
-function getInitialValues(template?: SchoolWebsiteTemplateRow): TemplateFormValues {
+function getInitialValues(
+  template?: SchoolWebsiteTemplateRow,
+): TemplateFormValues {
   return {
     name: template?.name ?? "",
     slug: template?.slug ?? "",
@@ -208,7 +210,10 @@ export function TemplateForm({
           rows={3}
           value={values.summary}
           onChange={(event) =>
-            setValues((current) => ({ ...current, summary: event.target.value }))
+            setValues((current) => ({
+              ...current,
+              summary: event.target.value,
+            }))
           }
           className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
         />
@@ -262,9 +267,7 @@ export function TemplateForm({
       </div>
 
       <div>
-        <Label className="mb-1.5 block text-xs text-[#888]">
-          Highlights
-        </Label>
+        <Label className="mb-1.5 block text-xs text-[#888]">Highlights</Label>
         <Textarea
           rows={4}
           value={values.highlightsText}
@@ -290,7 +293,9 @@ export function TemplateForm({
           }
         />
         <div>
-          <p className="text-sm font-medium text-white">Visible on public page</p>
+          <p className="text-sm font-medium text-white">
+            Visible on public page
+          </p>
           <p className="text-xs text-[#666]">
             Hidden templates stay in admin but won’t show on `/webrandschools`.
           </p>
@@ -372,7 +377,9 @@ export function TemplateForm({
                     }
                   >
                     <Star className="mr-1.5 h-4 w-4" />
-                    {values.coverAssetId === asset.id ? "Cover" : "Use as cover"}
+                    {values.coverAssetId === asset.id
+                      ? "Cover"
+                      : "Use as cover"}
                   </Button>
                   <Button
                     type="button"
@@ -442,20 +449,26 @@ export function TemplateForm({
                       onRemove={() => updateAsset(asset.id, { publicId: "" })}
                       emptyLabel="Upload image"
                       previewAlt={`Template asset ${index + 1}`}
+                      deletePreviousOnReplace={false}
                     />
                   </>
                 ) : (
                   <div>
                     <Label className="mb-1.5 block text-xs text-[#888]">
-                      Video public ID or URL
+                      Video
                     </Label>
-                    <Input
-                      value={asset.publicId}
-                      onChange={(event) =>
-                        updateAsset(asset.id, { publicId: event.target.value })
+                    <ImageUpload
+                      value={asset.publicId || undefined}
+                      onChange={(value) =>
+                        updateAsset(asset.id, { publicId: value })
                       }
-                      placeholder="Cloudinary public ID or https://..."
-                      className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
+                      onRemove={() => updateAsset(asset.id, { publicId: "" })}
+                      emptyLabel="Upload video"
+                      previewAlt={`Template video ${index + 1}`}
+                      resourceType="video"
+                      allowedFormats={["mp4", "webm", "mov"]}
+                      maxFileSize={100_000_000}
+                      successMessage="Video uploaded successfully"
                     />
                   </div>
                 )}
@@ -476,6 +489,7 @@ export function TemplateForm({
                     }
                     emptyLabel="Upload thumbnail"
                     previewAlt={`Video thumbnail ${index + 1}`}
+                    deletePreviousOnReplace={false}
                   />
                 </div>
               ) : null}
@@ -511,7 +525,11 @@ export function TemplateForm({
           disabled={isSubmitting}
           className="bg-cyan-500 text-black hover:bg-cyan-400"
         >
-          {isSubmitting ? "Saving..." : initialData ? "Save Template" : "Create Template"}
+          {isSubmitting
+            ? "Saving..."
+            : initialData
+              ? "Save Template"
+              : "Create Template"}
         </Button>
       </div>
     </form>
