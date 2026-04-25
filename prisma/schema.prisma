@@ -341,6 +341,14 @@ enum SchoolWebsiteJobStatus {
   DECLINED
 }
 
+enum SchoolWebsiteProjectStatus {
+  DRAFT
+  IN_PROGRESS
+  READY_FOR_EXPORT
+  EXPORTED
+  LIVE
+}
+
 enum SchoolWebsiteDomainChoice {
   HAS_DOMAIN
   NEEDS_DOMAIN
@@ -515,46 +523,46 @@ model ContactSocialLink {
 // Singleton — always one row (id = 1). Stores editable copy and branding for
 // the We Brand Schools landing page.
 model WeBrandSchoolsPageContent {
-  id                   Int      @id @default(autoincrement())
-  logoPublicId         String?
-  heroImagePublicId    String?
-  heroEyebrow          String   @default("We Brand Schools")
-  heroHeadline         String   @default("Free school websites built from proven templates.")
-  heroBody             String   @default("We help schools launch a credible online presence faster by adapting one of our ready-to-deploy website templates to fit their identity, message, and contact details.")
-  heroPrimaryCtaText   String   @default("Browse Templates")
-  heroPrimaryCtaHref   String   @default("#templates")
-  heroSecondaryCtaText String   @default("Apply for a Free Website")
-  heroSecondaryCtaHref String   @default("#apply")
-  heroFeature1         String   @default("Template-based website build")
-  heroFeature2         String   @default("Mobile-ready layouts for schools")
-  heroFeature3         String   @default("Clear path from selection to launch")
-  overviewLabel        String   @default("What It Is")
-  overviewTitle        String   @default("A faster path to a professional school website.")
-  overviewBody         String   @default("We Brand Schools is Dexta's initiative for helping schools get online with polished, mobile-friendly websites built from our approved templates. Schools choose a template, submit their content, and we handle the setup and launch process.")
-  overviewPrimaryCtaText String @default("See available templates")
-  overviewPrimaryCtaHref String @default("#templates")
-  overviewSecondaryCtaText String @default("Ask a question first")
-  overviewSecondaryCtaHref String @default("#help")
-  overviewBenefitsLabel String @default("What schools get")
-  overviewBenefit1     String   @default("A professionally structured website built from an approved template")
-  overviewBenefit2     String   @default("Your school name, content, contact details, and branding applied to the chosen layout")
-  overviewBenefit3     String   @default("A faster rollout path than a full custom website project")
-  overviewBenefit4     String   @default("A credible public-facing platform for information, communication, and visibility")
-  processLabel         String   @default("How It Works")
-  processTitle         String   @default("From template selection to launch in a clear, simple flow.")
-  processBody          String   @default("The process is designed to be straightforward for school administrators and repeatable for our internal team.")
-  processStep1Title    String   @default("Choose a template")
-  processStep1Body     String   @default("Browse the available school website templates and open any one to preview images, videos, and the live experience.")
-  processStep2Title    String   @default("Submit school details")
-  processStep2Body     String   @default("Tell us about your school, including your vision, mission, core values, and official contact details.")
-  processStep3Title    String   @default("Confirm domain path")
-  processStep3Body     String   @default("Let us know whether you already own a domain or need help choosing one.")
-  processStep4Title    String   @default("Review and go live")
-  processStep4Body     String   @default("After review and approval, we prepare the site, complete minor revisions, and move the project to launch.")
-  templatesLabel       String   @default("Website Templates")
-  templatesTitle       String   @default("Templates schools can preview and apply for.")
-  templatesBody        String   @default("Each template includes multiple preview images or videos, a live preview link, and a direct way to select it for your application.")
-  updatedAt            DateTime @updatedAt
+  id                       Int      @id @default(autoincrement())
+  logoPublicId             String?
+  heroImagePublicId        String?
+  heroEyebrow              String   @default("We Brand Schools")
+  heroHeadline             String   @default("Free school websites built from proven templates.")
+  heroBody                 String   @default("We help schools launch a credible online presence faster by adapting one of our ready-to-deploy website templates to fit their identity, message, and contact details.")
+  heroPrimaryCtaText       String   @default("Browse Templates")
+  heroPrimaryCtaHref       String   @default("#templates")
+  heroSecondaryCtaText     String   @default("Apply for a Free Website")
+  heroSecondaryCtaHref     String   @default("#apply")
+  heroFeature1             String   @default("Template-based website build")
+  heroFeature2             String   @default("Mobile-ready layouts for schools")
+  heroFeature3             String   @default("Clear path from selection to launch")
+  overviewLabel            String   @default("What It Is")
+  overviewTitle            String   @default("A faster path to a professional school website.")
+  overviewBody             String   @default("We Brand Schools is Dexta's initiative for helping schools get online with polished, mobile-friendly websites built from our approved templates. Schools choose a template, submit their content, and we handle the setup and launch process.")
+  overviewPrimaryCtaText   String   @default("See available templates")
+  overviewPrimaryCtaHref   String   @default("#templates")
+  overviewSecondaryCtaText String   @default("Ask a question first")
+  overviewSecondaryCtaHref String   @default("#help")
+  overviewBenefitsLabel    String   @default("What schools get")
+  overviewBenefit1         String   @default("A professionally structured website built from an approved template")
+  overviewBenefit2         String   @default("Your school name, content, contact details, and branding applied to the chosen layout")
+  overviewBenefit3         String   @default("A faster rollout path than a full custom website project")
+  overviewBenefit4         String   @default("A credible public-facing platform for information, communication, and visibility")
+  processLabel             String   @default("How It Works")
+  processTitle             String   @default("From template selection to launch in a clear, simple flow.")
+  processBody              String   @default("The process is designed to be straightforward for school administrators and repeatable for our internal team.")
+  processStep1Title        String   @default("Choose a template")
+  processStep1Body         String   @default("Browse the available school website templates and open any one to preview images, videos, and the live experience.")
+  processStep2Title        String   @default("Submit school details")
+  processStep2Body         String   @default("Tell us about your school, including your vision, mission, core values, and official contact details.")
+  processStep3Title        String   @default("Confirm domain path")
+  processStep3Body         String   @default("Let us know whether you already own a domain or need help choosing one.")
+  processStep4Title        String   @default("Review and go live")
+  processStep4Body         String   @default("After review and approval, we prepare the site, complete minor revisions, and move the project to launch.")
+  templatesLabel           String   @default("Website Templates")
+  templatesTitle           String   @default("Templates schools can preview and apply for.")
+  templatesBody            String   @default("Each template includes multiple preview images or videos, a live preview link, and a direct way to select it for your application.")
+  updatedAt                DateTime @updatedAt
 }
 
 model SchoolWebsiteTestimonial {
@@ -586,6 +594,7 @@ model SchoolWebsiteTemplate {
   coverAsset   SchoolWebsiteTemplateAsset?  @relation("SchoolWebsiteTemplateCoverAsset", fields: [coverAssetId], references: [id], onDelete: SetNull)
   assets       SchoolWebsiteTemplateAsset[] @relation("SchoolWebsiteTemplateAssets")
   applications SchoolWebsiteApplication[]
+  projects     SchoolWebsiteProject[]
   isVisible    Boolean                      @default(true)
   position     Int                          @default(0)
   createdAt    DateTime                     @default(now())
@@ -617,6 +626,7 @@ model SchoolWebsiteApplication {
   id                   String                    @id @default(uuid())
   templateId           String?
   template             SchoolWebsiteTemplate?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  project              SchoolWebsiteProject?
   selectedTemplateName String
   schoolName           String
   aboutSchool          String
@@ -645,6 +655,67 @@ model SchoolWebsiteApplication {
   @@index([status])
   @@index([domainChoice])
   @@index([createdAt])
+}
+
+model SchoolWebsiteProject {
+  id             String                          @id @default(uuid())
+  applicationId  String                          @unique
+  application    SchoolWebsiteApplication        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  templateId     String?
+  template       SchoolWebsiteTemplate?          @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateSlug   String
+  templateName   String
+  schoolName     String
+  contactEmail   String?
+  status         SchoolWebsiteProjectStatus      @default(DRAFT)
+  contentJson    Json
+  sourceSnapshot Json?
+  exportZipUrl   String?
+  lastExportedAt DateTime?
+  revisions      SchoolWebsiteProjectRevision[]
+  exportLogs     SchoolWebsiteProjectExportLog[]
+  createdAt      DateTime                        @default(now())
+  updatedAt      DateTime                        @updatedAt
+
+  @@index([templateId])
+  @@index([templateSlug])
+  @@index([schoolName])
+  @@index([contactEmail])
+  @@index([status])
+  @@index([lastExportedAt])
+  @@index([createdAt])
+}
+
+model SchoolWebsiteProjectRevision {
+  id          String               @id @default(uuid())
+  projectId   String
+  project     SchoolWebsiteProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contentJson Json
+  note        String?
+  createdAt   DateTime             @default(now())
+
+  @@index([projectId])
+  @@index([createdAt])
+  @@index([projectId, createdAt])
+}
+
+model SchoolWebsiteProjectExportLog {
+  id           String               @id @default(uuid())
+  projectId    String
+  project      SchoolWebsiteProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status       String
+  message      String
+  exportZipUrl String?
+  fileCount    Int?
+  pageCount    Int?
+  durationMs   Int?
+  detailsJson  Json?
+  createdAt    DateTime             @default(now())
+
+  @@index([projectId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([projectId, createdAt])
 }
 
 // --- About Page ---

@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  startSchoolWebsiteProject,
   updateSchoolWebsiteApplicationStatus,
   type SchoolWebsiteApplicationRow,
 } from "../actions";
@@ -389,6 +390,28 @@ export function ApplicationsManager({
     useState<SchoolWebsiteApplicationRow | null>(null);
   const [quickActionId, setQuickActionId] = useState<string | null>(null);
 
+  const openProjectEditor = (projectId: string) => {
+    router.push(`/admin/we-brand-schools/projects/${projectId}/editor`);
+  };
+
+  const startProject = async (application: SchoolWebsiteApplicationRow) => {
+    setQuickActionId(`${application.id}:START_PROJECT`);
+    const result = await startSchoolWebsiteProject(application.id);
+    setQuickActionId(null);
+
+    if (!result.success || !result.projectId) {
+      toast.error(result.message);
+      return;
+    }
+
+    toast.success(result.message);
+    router.refresh();
+    router.push(
+      result.redirectHref ??
+        `/admin/we-brand-schools/projects/${result.projectId}/editor`,
+    );
+  };
+
   const runQuickAction = async (
     application: SchoolWebsiteApplicationRow,
     status: SchoolWebsiteApplicationRow["status"],
@@ -479,25 +502,44 @@ export function ApplicationsManager({
                         <Eye className="mr-1.5 h-3.5 w-3.5" />
                         View
                       </Button>
-                      {application.status === "PENDING" ? (
+                      {application.project ? (
                         <Button
                           type="button"
                           size="sm"
                           onClick={(event) => {
                             event.stopPropagation();
-                            void runQuickAction(application, "IN_PROGRESS");
+                            openProjectEditor(application.project!.id);
                           }}
-                          disabled={quickActionId === `${application.id}:IN_PROGRESS`}
                           className="bg-blue-600 text-white hover:bg-blue-500"
                         >
-                          {quickActionId === `${application.id}:IN_PROGRESS` ? (
+                          Continue Editing
+                        </Button>
+                      ) : application.status === "PENDING" ||
+                        application.status === "IN_PROGRESS" ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void startProject(application);
+                          }}
+                          disabled={
+                            quickActionId === `${application.id}:START_PROJECT`
+                          }
+                          className="bg-blue-600 text-white hover:bg-blue-500"
+                        >
+                          {quickActionId ===
+                          `${application.id}:START_PROJECT` ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : application.status === "IN_PROGRESS" ? (
+                            "Start Editing"
                           ) : (
                             "Start"
                           )}
                         </Button>
                       ) : null}
-                      {application.status === "IN_PROGRESS" ? (
+                      {application.status === "IN_PROGRESS" &&
+                      application.project ? (
                         <Button
                           type="button"
                           size="sm"

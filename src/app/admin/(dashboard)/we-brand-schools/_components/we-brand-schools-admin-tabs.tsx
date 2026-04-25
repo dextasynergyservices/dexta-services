@@ -21,6 +21,10 @@ const TABS = [
     href: "/admin/we-brand-schools/applications",
     label: "Applications",
   },
+  {
+    href: "/admin/we-brand-schools/projects",
+    label: "Projects",
+  },
 ] as const;
 
 export function WeBrandSchoolsAdminTabs() {
