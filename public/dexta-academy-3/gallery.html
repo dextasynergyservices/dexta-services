@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gallery | DXT Academy</title>
+    <meta
+      name="description"
+      content="Explore the DXT Academy gallery for a closer look at academics, sports, arts, events, and campus life."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700;800&family=Sora:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      document.documentElement.classList.add("js");
+      if ("scrollRestoration" in history) {
+        history.scrollRestoration = "manual";
+      }
+      if (!window.location.hash) {
+        window.scrollTo(0, 0);
+        window.addEventListener(
+          "pageshow",
+          function () {
+            window.scrollTo(0, 0);
+          },
+          { once: true },
+        );
+      }
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body class="gallery-page">
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="index.html" aria-label="DXT Academy home">
+          <span class="brand__crest" aria-hidden="true">
+            <span class="brand__crest-inner"></span>
+          </span>
+          <span class="brand__name">
+            <strong>DXT</strong>
+            <span>Academy</span>
+          </span>
+        </a>
+
+        <button
+          class="nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="site-nav"
+        >
+          Menu
+        </button>
+
+        <nav class="site-nav" id="site-nav" aria-label="Primary navigation">
+          <a href="index.html">Home</a>
+          <a href="about.html">About</a>
+          <a href="index.html#programmes">Programmes</a>
+          <a href="gallery.html" aria-current="page">Gallery</a>
+          <a href="index.html#how-to-apply">How To Apply</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+
+        <div class="header-actions">
+          <a class="portal-link" href="#">Portal</a>
+          <a class="button button--gold" href="index.html#how-to-apply">Apply Now</a>
+        </div>
+      </header>
+
+      <main id="top" class="gallery-reference">
+        <section class="gallery-hero-ref">
+          <div class="gallery-hero-ref__inner">
+            <div class="gallery-hero-ref__copy">
+              <p class="gallery-hero-ref__eyebrow">OUR MOMENTS</p>
+              <h1>Gallery</h1>
+              <p>
+                A glimpse into life at DXT Academy&mdash;where learning
+                goes beyond the classroom and every moment shapes confident,
+                compassionate leaders.
+              </p>
+            </div>
+
+            <div class="gallery-hero-ref__media" aria-hidden="true">
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777052241/ChatGPT_Image_Apr_24_2026_06_37_07_PM_tw3iqx.png"
+                alt=""
+              />
+            </div>
+          </div>
+        </section>
+
+        <section class="gallery-reference__container gallery-filter-bar">
+          <div class="gallery-filter-bar__chips" aria-label="Gallery filters">
+            <button class="filter-chip is-active" type="button" data-gallery-filter="all" aria-pressed="true">
+              All
+            </button>
+            <button class="filter-chip" type="button" data-gallery-filter="academics" aria-pressed="false">
+              Academics
+            </button>
+            <button class="filter-chip" type="button" data-gallery-filter="sports" aria-pressed="false">
+              Sports
+            </button>
+            <button class="filter-chip" type="button" data-gallery-filter="arts-culture" aria-pressed="false">
+              Arts &amp; Culture
+            </button>
+            <button class="filter-chip" type="button" data-gallery-filter="clubs-activities" aria-pressed="false">
+              Clubs &amp; Activities
+            </button>
+            <button class="filter-chip" type="button" data-gallery-filter="events" aria-pressed="false">
+              Events
+            </button>
+            <button class="filter-chip" type="button" data-gallery-filter="campus-life" aria-pressed="false">
+              Campus Life
+            </button>
+          </div>
+        </section>
+
+        <section class="gallery-reference__container gallery-gallery-ref">
+          <div class="gallery-reference-grid" id="gallery-grid">
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="academics"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777052313/ChatGPT_Image_Apr_24_2026_06_38_15_PM_ioqvmr.png"
+                alt="Students engaged in a DXT Academy learning moment."
+              />
+              <figcaption class="sr-only">Academics</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="sports"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777052395/ChatGPT_Image_Apr_24_2026_06_39_36_PM_cqlwbh.png"
+                alt="Students taking part in an active school life moment."
+              />
+              <figcaption class="sr-only">Sports</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="arts-culture"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777052467/ChatGPT_Image_Apr_24_2026_06_40_33_PM_ke8tlj.png"
+                alt="Students sharing a creative school experience."
+              />
+              <figcaption class="sr-only">Arts and Culture</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="clubs-activities"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777052513/ChatGPT_Image_Apr_24_2026_06_41_33_PM_mtrns1.png"
+                alt="Students participating in a school activity together."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Clubs and Activities</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              id="events"
+              data-gallery-item="events"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777052572/ChatGPT_Image_Apr_24_2026_06_42_35_PM_prdtzg.png"
+                alt="A memorable DXT Academy event moment."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Events</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              id="campus-life"
+              data-gallery-item="campus-life"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777048139/ChatGPT_Image_Apr_24_2026_05_28_41_PM_wxecmo.png"
+                alt="Front view of the DXT Academy campus building."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Campus Life</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="academics"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777048299/ChatGPT_Image_Apr_24_2026_05_31_18_PM_ewkta9.png"
+                alt="Students learning together in a classroom."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Academics</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="academics"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777048438/ChatGPT_Image_Apr_24_2026_05_33_43_PM_bw5za9.png"
+                alt="Teacher guiding students during a lesson."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Academics</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="arts-culture"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777048506/ChatGPT_Image_Apr_24_2026_05_34_49_PM_rvberr.png"
+                alt="Students gathered for a creative classroom activity."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Arts and Culture</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="sports"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777048693/ChatGPT_Image_Apr_24_2026_05_37_57_PM_ci5uzt.png"
+                alt="Students building teamwork through leadership and wellness."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Sports</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="academics"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777048931/ChatGPT_Image_Apr_24_2026_05_41_47_PM_cmsihk.png"
+                alt="Teacher supporting children during a classroom activity."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Academics</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="campus-life"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777049023/ChatGPT_Image_Apr_24_2026_05_43_23_PM_g97uxt.png"
+                alt="Smiling pupil standing outdoors."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Campus Life</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="academics"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777049089/ChatGPT_Image_Apr_24_2026_05_44_26_PM_ng09ym.png"
+                alt="Teacher speaking beside a classroom whiteboard."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Academics</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="academics"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777050387/ChatGPT_Image_Apr_24_2026_06_06_00_PM_lgyoza.png"
+                alt="Teacher guiding pupils during a classroom activity."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Academics</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="academics"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777050934/ChatGPT_Image_Apr_24_2026_06_15_02_PM_n00wzy.png"
+                alt="Teacher guiding pupils during a classroom lesson."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Academics</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="clubs-activities"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777051169/ChatGPT_Image_Apr_24_2026_06_18_42_PM_epyxsu.png"
+                alt="Students collaborating and learning together in class."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Clubs and Activities</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="campus-life"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777051234/ChatGPT_Image_Apr_24_2026_06_20_15_PM_zzv7gc.png"
+                alt="Student smiling confidently while holding school books."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Campus Life</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="academics"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777051568/ChatGPT_Image_Apr_24_2026_06_25_49_PM_qieshw.png"
+                alt="Children reading together during a learning activity."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Academics</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="campus-life"
+            >
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777051736/ChatGPT_Image_Apr_24_2026_06_28_42_PM_vyghtd.png"
+                alt="Smiling student in school uniform outdoors."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Campus Life</figcaption>
+            </figure>
+
+            <figure
+              class="gallery-reference-card"
+              data-gallery-item="campus-life"
+            >
+              <img
+                src="assets/contact-hero-building.png"
+                alt="DXT Academy campus building."
+                loading="lazy"
+              />
+              <figcaption class="sr-only">Campus Life</figcaption>
+            </figure>
+          </div>
+
+          <nav
+            class="gallery-pagination"
+            id="gallery-pagination"
+            aria-label="Gallery pagination"
+            hidden
+          ></nav>
+        </section>
+      </main>
+
+      <footer class="site-footer gallery-footer">
+        <div class="gallery-reference__container">
+          <div class="footer-main gallery-footer__main">
+            <div class="footer-brand gallery-footer__brand">
+              <a class="brand brand--footer" href="index.html" aria-label="DXT Academy home">
+                <span class="brand__crest" aria-hidden="true">
+                  <span class="brand__crest-inner"></span>
+                </span>
+                <span class="brand__name">
+                  <strong>DXT</strong>
+                  <span>Academy</span>
+                </span>
+              </a>
+
+              <p>
+                Nurturing minds. Building leaders. Preparing students for a
+                bright and successful future.
+              </p>
+            </div>
+
+            <div class="footer-links gallery-footer__links">
+              <div class="footer-column">
+                <h3>Explore</h3>
+                <a href="index.html">Home</a>
+                <a href="about.html">About</a>
+                <a href="index.html#programmes">Programmes</a>
+                <a href="gallery.html">Gallery</a>
+                <a href="index.html#how-to-apply">How To Apply</a>
+                <a href="contact.html">Contact</a>
+              </div>
+
+              <div class="footer-column gallery-footer__contact">
+                <h3>Contact</h3>
+                <a href="https://maps.google.com/?q=12+Academy+Drive+Lagos+Nigeria">
+                  <span>12 Academy Drive,<br />Lagos, Nigeria.</span>
+                </a>
+                <a href="tel:+2348001234567">
+                  <span>+234 800 123 4567</span>
+                </a>
+                <a href="mailto:info@dxtacademy.edu.ng">
+                  <span>info@dxtacademy.edu.ng</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bottom gallery-footer__bottom">
+            <p>&copy; 2025 DXT Academy. All Rights Reserved.</p>
+            <div class="footer-legal gallery-footer__legal">
+              <a href="#">Privacy Policy</a>
+              <a href="#">Terms of Use</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

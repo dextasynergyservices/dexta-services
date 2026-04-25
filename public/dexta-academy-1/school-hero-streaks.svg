@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="none" role="img" aria-labelledby="title desc">
+<title id="title">Homepage hero abstract line bursts</title>
+<desc id="desc">Repeated mural-style lines spread across the hero so the pattern feels more random and less fixed.</desc>
+<style>
+.stroke {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0;
+}
+.orange { stroke: #FF6B35; }
+.sky { stroke: #7fd0ff; }
+.white { stroke: #ffffff; }
+.blue { stroke: #07801b; }
+.thin-white { stroke: #acb893; }
+.thick { stroke-width: 34; }
+.mid { stroke-width: 28; }
+.slim { stroke-width: 18; }
+.fine { stroke-width: 12; }
+.group { transform-box: fill-box; transform-origin: center; }
+.group-a { animation: driftA 21s ease-in-out infinite alternate; }
+.group-b { animation: driftB 26s ease-in-out infinite alternate; }
+.group-c { animation: driftC 24s ease-in-out infinite alternate; }
+.group-d { animation: driftD 28s ease-in-out infinite alternate; }
+.group-e { animation: driftE 22s ease-in-out infinite alternate; }
+.group-f { animation: driftF 30s ease-in-out infinite alternate; }
+@keyframes driftA { 0% { transform: translate(0, 0); } 100% { transform: translate(24px, -16px); } }
+@keyframes driftB { 0% { transform: translate(0, 0); } 100% { transform: translate(-28px, 22px); } }
+@keyframes driftC { 0% { transform: translate(0, 0); } 100% { transform: translate(18px, 20px); } }
+@keyframes driftD { 0% { transform: translate(0, 0); } 100% { transform: translate(-22px, -18px); } }
+@keyframes driftE { 0% { transform: translate(0, 0); } 100% { transform: translate(16px, -24px); } }
+@keyframes driftF { 0% { transform: translate(0, 0); } 100% { transform: translate(-18px, 14px); } }
+@media (prefers-reduced-motion: reduce) {
+  .stroke {
+    stroke-dashoffset: 0;
+    opacity: .9;
+  }
+  .group-a, .group-b, .group-c, .group-d, .group-e, .group-f {
+    animation: none;
+  }
+}
+</style>
+
+<g class="group group-a">
+  <path class="stroke blue mid" pathLength="100" d="M86 620C126 676 166 742 214 826">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.1;0.34;1" dur="8.6s" begin="0.4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.1;0.26;0.56;1" dur="8.6s" begin="0.4s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke orange thick" pathLength="100" d="M430 474C338 526 284 606 296 706">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.08;0.3;1" dur="9.2s" begin="1.2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.08;0.24;0.54;1" dur="9.2s" begin="1.2s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke sky thick" pathLength="100" d="M554 572C476 636 452 726 474 848">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.12;0.42;1" dur="10.8s" begin="2.3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.12;0.3;0.62;1" dur="10.8s" begin="2.3s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke thin-white fine" pathLength="100" d="M122 558C240 538 370 538 496 558">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.18;0.42;1" dur="7s" begin="3.1s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;0.92;0.84;0" keyTimes="0;0.18;0.34;0.54;1" dur="7s" begin="3.1s" repeatCount="indefinite"/>
+  </path>
+</g>
+
+<g class="group group-b">
+  <path class="stroke white thick" pathLength="100" d="M250 304C314 252 388 246 454 278">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.16;0.4;1" dur="7.8s" begin="5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.16;0.3;0.54;1" dur="7.8s" begin="5s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke sky mid" pathLength="100" d="M76 258C132 226 194 226 246 260">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.18;0.42;1" dur="8.2s" begin="1.8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;0.94;0.94;0" keyTimes="0;0.18;0.32;0.56;1" dur="8.2s" begin="1.8s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke blue mid" pathLength="100" d="M520 334C592 298 664 298 724 336">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.14;0.4;1" dur="7.5s" begin="6.2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;0.94;0.94;0" keyTimes="0;0.14;0.28;0.52;1" dur="7.5s" begin="6.2s" repeatCount="indefinite"/>
+  </path>
+</g>
+
+<g class="group group-c">
+  <path class="stroke orange thick" pathLength="100" d="M920 434C1012 496 1088 494 1168 440">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.08;0.3;1" dur="8.4s" begin="0.9s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.08;0.24;0.52;1" dur="8.4s" begin="0.9s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke orange thick" pathLength="100" d="M832 610C748 556 678 552 628 592">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.14;0.42;1" dur="7.8s" begin="4.2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.14;0.28;0.54;1" dur="7.8s" begin="4.2s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke orange thick" pathLength="100" d="M778 730C668 734 602 694 606 636C610 582 708 576 830 606C950 638 1054 740 1176 730C1270 722 1340 668 1410 592">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.06;0.46;1" dur="12.6s" begin="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.06;0.22;0.64;1" dur="12.6s" begin="2s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke thin-white fine" pathLength="100" d="M726 488C812 470 910 472 998 488">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.16;0.38;1" dur="6.6s" begin="5.8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;0.9;0.8;0" keyTimes="0;0.16;0.3;0.5;1" dur="6.6s" begin="5.8s" repeatCount="indefinite"/>
+  </path>
+</g>
+
+<g class="group group-d">
+  <path class="stroke white thick" pathLength="100" d="M1218 458C1318 516 1358 614 1318 702">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.1;0.34;1" dur="9s" begin="3.4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.1;0.28;0.54;1" dur="9s" begin="3.4s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke sky thick" pathLength="100" d="M1510 344C1586 438 1612 544 1584 664C1564 756 1524 820 1458 876">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.08;0.38;1" dur="10.4s" begin="1.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.08;0.24;0.58;1" dur="10.4s" begin="1.5s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke white mid" pathLength="100" d="M1434 778C1508 778 1580 778 1652 778">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.16;0.4;1" dur="7.9s" begin="5.4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.16;0.32;0.56;1" dur="7.9s" begin="5.4s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke orange slim" pathLength="100" d="M1294 862C1398 840 1508 840 1618 858">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.18;0.42;1" dur="9.4s" begin="6.1s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.18;0.34;0.58;1" dur="9.4s" begin="6.1s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke thin-white fine" pathLength="100" d="M1030 566C1142 544 1264 544 1388 566">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.2;0.42;1" dur="7.2s" begin="4.4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;0.9;0.82;0" keyTimes="0;0.2;0.34;0.54;1" dur="7.2s" begin="4.4s" repeatCount="indefinite"/>
+  </path>
+</g>
+
+<g class="group group-e">
+  <path class="stroke blue slim" pathLength="100" d="M1358 252C1418 216 1488 224 1542 268">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.16;0.38;1" dur="8.1s" begin="2.8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;0.96;0.96;0" keyTimes="0;0.16;0.3;0.54;1" dur="8.1s" begin="2.8s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke white fine" pathLength="100" d="M1278 352C1338 324 1404 326 1460 360">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.18;0.4;1" dur="7.3s" begin="6.8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;0.92;0.84;0" keyTimes="0;0.18;0.32;0.54;1" dur="7.3s" begin="6.8s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke orange slim" pathLength="100" d="M1100 202C1180 170 1260 174 1330 214">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.14;0.38;1" dur="8.8s" begin="1.9s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;0.96;0.96;0" keyTimes="0;0.14;0.28;0.56;1" dur="8.8s" begin="1.9s" repeatCount="indefinite"/>
+  </path>
+</g>
+
+<g class="group group-f">
+  <path class="stroke sky mid" pathLength="100" d="M996 286C1062 246 1136 248 1192 288">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.18;0.4;1" dur="8.5s" begin="7.4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;0.96;0.96;0" keyTimes="0;0.18;0.32;0.56;1" dur="8.5s" begin="7.4s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke orange fine" pathLength="100" d="M870 258C928 226 996 228 1048 262">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.16;0.38;1" dur="7.7s" begin="5.9s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;0.94;0.86;0" keyTimes="0;0.16;0.3;0.54;1" dur="7.7s" begin="5.9s" repeatCount="indefinite"/>
+  </path>
+  <path class="stroke white fine" pathLength="100" d="M620 264C678 234 744 234 800 264">
+    <animate attributeName="stroke-dashoffset" values="100;100;0;0" keyTimes="0;0.18;0.4;1" dur="7.4s" begin="8.1s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0;0.92;0.84;0" keyTimes="0;0.18;0.3;0.52;1" dur="7.4s" begin="8.1s" repeatCount="indefinite"/>
+  </path>
+</g>
+</svg>

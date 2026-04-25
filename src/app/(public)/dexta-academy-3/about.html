@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About | DXT Academy</title>
+    <meta
+      name="description"
+      content="Learn about DXT Academy's values, learning approach, and early education philosophy."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700;800&family=Sora:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      document.documentElement.classList.add("js");
+      if ("scrollRestoration" in history) {
+        history.scrollRestoration = "manual";
+      }
+      if (!window.location.hash) {
+        window.scrollTo(0, 0);
+        window.addEventListener(
+          "pageshow",
+          function () {
+            window.scrollTo(0, 0);
+          },
+          { once: true },
+        );
+      }
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body class="about-page">
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="index.html" aria-label="DXT Academy home">
+          <span class="brand__crest" aria-hidden="true">
+            <span class="brand__crest-inner"></span>
+          </span>
+          <span class="brand__name">
+            <strong>DXT</strong>
+            <span>Academy</span>
+          </span>
+        </a>
+
+        <button
+          class="nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="site-nav"
+        >
+          Menu
+        </button>
+
+        <nav class="site-nav" id="site-nav" aria-label="Primary navigation">
+          <a href="index.html">Home</a>
+          <a href="about.html" aria-current="page">About</a>
+          <a href="index.html#programmes">Programmes</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="index.html#how-to-apply">How To Apply</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+
+        <div class="header-actions">
+          <a class="portal-link" href="#">Portal</a>
+          <a class="button button--gold" href="index.html#how-to-apply">Apply Now</a>
+        </div>
+      </header>
+
+      <main id="top">
+        <section class="about-hero">
+          <div class="about-container about-hero__inner">
+            <div class="about-hero__copy">
+              <p class="eyebrow eyebrow--gold">About DXT Academy</p>
+              <h1>
+                <span class="about-hero__line">Nurturing Minds.</span>
+                <span class="about-hero__line"
+                  >Building <span class="accent-word">Leaders.</span></span
+                >
+              </h1>
+              <!-- <p class="about-hero__lede">
+                At DXT Academy, we provide a world-class education that
+                combines strong academics, character development, and leadership
+                training to prepare students for a successful and impactful
+                future while helping every learner grow with confidence,
+                curiosity, and purpose.
+              </p> -->
+              <a class="button button--gold about-hero__button" href="#our-story"
+                >Our Story <span aria-hidden="true">↗</span></a
+              >
+            </div>
+
+            <div class="about-hero__media">
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777050387/ChatGPT_Image_Apr_24_2026_06_06_00_PM_lgyoza.png"
+                alt="Teacher guiding pupils during a classroom activity"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- Our Story -->
+        <section
+          class="about-story"
+          id="our-story"
+          data-scroll-reveal
+        >
+          <div class="about-container about-story__stack">
+            <div class="about-story__intro">
+              <p class="eyebrow about-story__eyebrow reveal-item reveal-item--fade">Our Story</p>
+              <h2 class="about-story__title">
+                <span class="about-story__title-line reveal-item reveal-item--clip"
+                  >The Story, Mission</span
+                >
+                <span
+                  class="about-story__title-line reveal-item reveal-item--clip"
+                  style="--reveal-delay: 120ms"
+                  >And <span class="accent-word">Vision</span> That Shape Us</span
+                >
+              </h2>
+            </div>
+
+            <article class="about-story-card about-story-card--story reveal-item reveal-item--fade" style="--reveal-delay: 280ms">
+              <div class="about-story-card__copy">
+                <p class="eyebrow about-story-card__eyebrow">Our Story</p>
+                <h3>A Foundation Built For Growth</h3>
+                <p>
+                  Founded in 2005, DXT Academy was established on a
+                  simple belief: every child can achieve greatness when given
+                  the right guidance, values, and opportunities.
+                </p>
+                <p>
+                  Over the years, we have grown into a respected learning
+                  community known for academic excellence, character formation,
+                  and preparing students to lead with confidence.
+                </p>
+              </div>
+              <figure class="about-story-card__media">
+                <img
+                  src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777050934/ChatGPT_Image_Apr_24_2026_06_15_02_PM_n00wzy.png"
+                  alt="Teacher guiding pupils during a classroom lesson"
+                />
+              </figure>
+            </article>
+
+            <article class="about-story-card about-story-card--mission about-story-card--reverse reveal-item reveal-item--fade" style="--reveal-delay: 360ms">
+              <div class="about-story-card__copy">
+                <p class="eyebrow about-story-card__eyebrow">Our Mission</p>
+                <h3>Helping Every Learner Thrive</h3>
+                <p>
+                  Our mission is to nurture confident, curious, and
+                  compassionate learners through excellent teaching, strong
+                  values, and meaningful opportunities for growth.
+                </p>
+                <p>
+                  We pursue this every day by blending academic rigor with
+                  mentorship, creativity, discipline, and care so students can
+                  discover their strengths and use them well.
+                </p>
+              </div>
+              <figure class="about-story-card__media">
+                <img
+                  src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777051169/ChatGPT_Image_Apr_24_2026_06_18_42_PM_epyxsu.png"
+                  alt="Students collaborating and learning together in class"
+                />
+              </figure>
+            </article>
+
+            <article class="about-story-card about-story-card--vision reveal-item reveal-item--fade" style="--reveal-delay: 440ms">
+              <div class="about-story-card__copy">
+                <p class="eyebrow about-story-card__eyebrow">Our Vision</p>
+                <h3>Raising Leaders For Tomorrow</h3>
+                <p>
+                  Our vision is to raise principled leaders and innovators who
+                  excel academically and positively transform their communities
+                  and the wider world.
+                </p>
+                <p>
+                  We look beyond the classroom to develop students who think
+                  boldly, serve responsibly, and step into the future ready to
+                  make meaningful impact.
+                </p>
+              </div>
+              <figure class="about-story-card__media">
+                <img
+                  src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777051234/ChatGPT_Image_Apr_24_2026_06_20_15_PM_zzv7gc.png"
+                  alt="Student smiling confidently while holding school books"
+                />
+              </figure>
+            </article>
+          </div>
+        </section>
+        <!-- End Our Story -->
+
+        <!-- Our Values -->
+        <section class="about-values" data-scroll-reveal>
+          <div class="about-container">
+            <div class="about-values__heading">
+              <p class="eyebrow reveal-item reveal-item--fade">Our Values</p>
+              <h2>
+                <span class="reveal-item reveal-item--clip">The Principles That</span>
+                <br />
+                <span class="reveal-item reveal-item--clip" style="--reveal-delay: 120ms"
+                  ><span class="accent-word">Guide Us</span></span
+                >
+              </h2>
+            </div>
+
+            <div class="about-values__marquee reveal-item reveal-item--fade" style="--reveal-delay: 40ms">
+              <div class="about-values__track">
+                <article class="about-value-card">
+                  <div class="about-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z" />
+                      <path d="M9.5 12l1.7 1.7 3.6-4" />
+                    </svg>
+                  </div>
+                  <h3>Integrity</h3>
+                  <p>We uphold honesty, transparency, and strong moral values.</p>
+                </article>
+
+                <article class="about-value-card">
+                  <div class="about-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <path d="M12 20s-6-3.7-8-7.7C2.5 9 4.3 6 7.6 6c1.9 0 3.1 1 4.4 2.6C13.3 7 14.5 6 16.4 6 19.7 6 21.5 9 20 12.3 18 16.3 12 20 12 20z" />
+                    </svg>
+                  </div>
+                  <h3>Respect</h3>
+                  <p>We value every individual and celebrate our differences.</p>
+                </article>
+
+                <article class="about-value-card">
+                  <div class="about-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5z" />
+                      <path d="M8 7h8M8 11h8M8 15h5" />
+                    </svg>
+                  </div>
+                  <h3>Responsibility</h3>
+                  <p>We take ownership of our actions and strive for excellence.</p>
+                </article>
+
+                <article class="about-value-card">
+                  <div class="about-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <path d="M9 18h6" />
+                      <path d="M10 22h4" />
+                      <path d="M12 2a7 7 0 0 0-4 12.8c.6.4 1 1 1 1.7V18h6v-1.5c0-.7.4-1.3 1-1.7A7 7 0 0 0 12 2z" />
+                    </svg>
+                  </div>
+                  <h3>Excellence</h3>
+                  <p>We are committed to continuous growth and high standards.</p>
+                </article>
+
+                <article class="about-value-card">
+                  <div class="about-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="10" cy="7" r="4" />
+                      <path d="M20 21v-2a4 4 0 0 0-3-3.9" />
+                      <path d="M16 3.1a4 4 0 0 1 0 7.8" />
+                    </svg>
+                  </div>
+                  <h3>Leadership</h3>
+                  <p>We inspire courage, initiative, and a desire to make impact.</p>
+                </article>
+              </div>
+
+              <div class="about-values__track" aria-hidden="true">
+                <article class="about-value-card">
+                  <div class="about-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z" />
+                      <path d="M9.5 12l1.7 1.7 3.6-4" />
+                    </svg>
+                  </div>
+                  <h3>Integrity</h3>
+                  <p>We uphold honesty, transparency, and strong moral values.</p>
+                </article>
+
+                <article class="about-value-card">
+                  <div class="about-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <path d="M12 20s-6-3.7-8-7.7C2.5 9 4.3 6 7.6 6c1.9 0 3.1 1 4.4 2.6C13.3 7 14.5 6 16.4 6 19.7 6 21.5 9 20 12.3 18 16.3 12 20 12 20z" />
+                    </svg>
+                  </div>
+                  <h3>Respect</h3>
+                  <p>We value every individual and celebrate our differences.</p>
+                </article>
+
+                <article class="about-value-card">
+                  <div class="about-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5z" />
+                      <path d="M8 7h8M8 11h8M8 15h5" />
+                    </svg>
+                  </div>
+                  <h3>Responsibility</h3>
+                  <p>We take ownership of our actions and strive for excellence.</p>
+                </article>
+
+                <article class="about-value-card">
+                  <div class="about-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <path d="M9 18h6" />
+                      <path d="M10 22h4" />
+                      <path d="M12 2a7 7 0 0 0-4 12.8c.6.4 1 1 1 1.7V18h6v-1.5c0-.7.4-1.3 1-1.7A7 7 0 0 0 12 2z" />
+                    </svg>
+                  </div>
+                  <h3>Excellence</h3>
+                  <p>We are committed to continuous growth and high standards.</p>
+                </article>
+
+                <article class="about-value-card">
+                  <div class="about-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="10" cy="7" r="4" />
+                      <path d="M20 21v-2a4 4 0 0 0-3-3.9" />
+                      <path d="M16 3.1a4 4 0 0 1 0 7.8" />
+                    </svg>
+                  </div>
+                  <h3>Leadership</h3>
+                  <p>We inspire courage, initiative, and a desire to make impact.</p>
+                </article>
+              </div>
+            </div>
+          </div>
+        </section>
+        <!-- End of Our Approach -->
+
+        <!-- Our Impact -->
+        <section class="about-approach" id="our-approach" data-scroll-reveal>
+          <div class="about-container about-approach__grid">
+            <figure class="about-approach__media reveal-item reveal-item--media" style="--reveal-delay: 80ms">
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777051568/ChatGPT_Image_Apr_24_2026_06_25_49_PM_qieshw.png"
+                alt="Children reading together during a learning activity"
+              />
+            </figure>
+
+            <div class="about-approach__copy">
+              <p class="eyebrow reveal-item reveal-item--fade">Our Approach</p>
+              <h2>
+                <span class="reveal-item reveal-item--clip">Learning Beyond</span>
+                <br />
+                <span class="reveal-item reveal-item--clip" style="--reveal-delay: 120ms"
+                  >The <span class="accent-word">Classroom</span></span
+                >
+              </h2>
+              <p class="reveal-item reveal-item--fade" style="--reveal-delay: 220ms">
+                We believe education goes beyond textbooks. Our approach combines
+                rigorous academics with real-world experiences, creative
+                exploration, and leadership opportunities.
+              </p>
+
+              <ul class="about-checks">
+                <li class="reveal-item reveal-item--fade" style="--reveal-delay: 280ms">
+                  Student-centered learning
+                </li>
+                <li class="reveal-item reveal-item--fade" style="--reveal-delay: 360ms">
+                  Innovative and technology-driven classrooms
+                </li>
+                <li class="reveal-item reveal-item--fade" style="--reveal-delay: 440ms">
+                  Co-curricular activities that build skills and confidence
+                </li>
+                <li class="reveal-item reveal-item--fade" style="--reveal-delay: 520ms">
+                  Mentorship and leadership development
+                </li>
+              </ul>
+
+              <a
+                class="button button--navy reveal-item reveal-item--fade"
+                style="--reveal-delay: 620ms"
+                href="gallery.html"
+                >Campus Life <span aria-hidden="true">↗</span></a
+              >
+            </div>
+          </div>
+        </section>
+        <!-- End of Our Impact -->
+
+        <section class="about-impact-band" id="our-impact" data-scroll-reveal>
+          <div class="about-container about-impact-band__grid">
+            <div class="about-impact-band__copy">
+              <p class="eyebrow eyebrow--gold reveal-item reveal-item--fade">Our Impact</p>
+              <h2>
+                <span class="reveal-item reveal-item--clip">Shaping Today.</span>
+                <span class="reveal-item reveal-item--clip" style="--reveal-delay: 120ms"
+                  ><span class="accent-word">Inspiring Tomorrow.</span></span
+                >
+              </h2>
+
+              <div class="about-impact-band__stats">
+                <article class="about-impact-stat reveal-item reveal-item--fade" style="--reveal-delay: 200ms">
+                  <div class="about-impact-stat__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <path d="M3 9l9-5 9 5-9 5-9-5z" />
+                      <path d="M6 11.5V15c0 1.8 2.7 3.5 6 3.5s6-1.7 6-3.5v-3.5" />
+                    </svg>
+                  </div>
+                  <strong>20+</strong>
+                  <span>Years of Excellence</span>
+                </article>
+
+                <article class="about-impact-stat reveal-item reveal-item--fade" style="--reveal-delay: 300ms">
+                  <div class="about-impact-stat__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <circle cx="8" cy="8" r="3" />
+                      <circle cx="16" cy="8" r="3" />
+                      <path d="M3 19a5 5 0 0 1 10 0" />
+                      <path d="M11 19a5 5 0 0 1 10 0" />
+                    </svg>
+                  </div>
+                  <strong>1,500+</strong>
+                  <span>Students Empowered</span>
+                </article>
+
+                <article class="about-impact-stat reveal-item reveal-item--fade" style="--reveal-delay: 400ms">
+                  <div class="about-impact-stat__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5z" />
+                      <path d="M8 7h8M8 11h8M8 15h5" />
+                    </svg>
+                  </div>
+                  <strong>100+</strong>
+                  <span>Experienced Staff</span>
+                </article>
+
+                <article class="about-impact-stat reveal-item reveal-item--fade" style="--reveal-delay: 500ms">
+                  <div class="about-impact-stat__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                      <path d="M8 4h8v4a4 4 0 0 0 4 4h0v2a8 8 0 0 1-16 0v-2h0a4 4 0 0 0 4-4V4z" />
+                      <path d="M16 6h3a2 2 0 0 1 0 4h-3" />
+                      <path d="M8 6H5a2 2 0 0 0 0 4h3" />
+                    </svg>
+                  </div>
+                  <strong>95%</strong>
+                  <span>University Progression</span>
+                </article>
+              </div>
+            </div>
+
+            <figure class="about-impact-band__media reveal-item reveal-item--media" style="--reveal-delay: 100ms">
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777051736/ChatGPT_Image_Apr_24_2026_06_28_42_PM_vyghtd.png"
+                alt="Smiling student in school uniform outdoors"
+              />
+            </figure>
+          </div>
+        </section>
+
+        <section class="about-tour-band" data-scroll-reveal>
+          <div class="about-container about-tour-band__inner">
+            <div class="about-tour-band__icon reveal-item reveal-item--fade" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                <rect x="3" y="5" width="18" height="16" rx="3" />
+                <path d="M16 3v4M8 3v4M3 10h18" />
+                <path d="M8 14h3M8 18h5" />
+              </svg>
+            </div>
+
+            <div class="about-tour-band__copy reveal-item reveal-item--fade" style="--reveal-delay: 120ms">
+              <h2>Experience DXT Academy</h2>
+              <p>Book a tour and discover how we nurture minds and build leaders.</p>
+            </div>
+
+            <a
+              class="button button--navy reveal-item reveal-item--fade"
+              style="--reveal-delay: 220ms"
+              href="index.html#how-to-apply"
+              >Apply Now <span aria-hidden="true">↗</span></a
+            >
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer about-site-footer">
+        <div class="about-container about-site-footer__grid">
+          <div class="about-site-footer__brand">
+            <a class="brand brand--footer" href="index.html" aria-label="DXT Academy home">
+              <span class="brand__crest" aria-hidden="true">
+                <span class="brand__crest-inner"></span>
+              </span>
+              <span class="brand__name">
+                <strong>DXT</strong>
+                <span>Academy</span>
+              </span>
+            </a>
+            <p>
+              Nurturing minds. Building leaders. Preparing students for a bright
+              and successful future.
+            </p>
+          </div>
+
+          <div class="about-site-footer__links">
+            <div class="footer-column">
+              <h3>Explore</h3>
+              <a href="index.html">Home</a>
+              <a href="about.html">About</a>
+              <a href="index.html#programmes">Programmes</a>
+              <a href="gallery.html">Gallery</a>
+              <a href="index.html#how-to-apply">How To Apply</a>
+              <a href="contact.html">Contact</a>
+            </div>
+
+            <div class="footer-column">
+              <h3>Contact</h3>
+              <p>12 Academy Drive, Lagos, Nigeria.</p>
+              <a href="tel:+2348001234567">+234 800 123 4567</a>
+              <a href="mailto:info@dxtacademy.edu.ng">info@dxtacademy.edu.ng</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-container about-site-footer__bottom">
+          <p>&copy; <span id="current-year"></span> DXT Academy. All Rights Reserved.</p>
+          <div class="footer-legal">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Use</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
