@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DXT Academy | Joyful Learning for Bold Young Minds</title>
+    <meta
+      name="description"
+      content="A vibrant school landing page rebuilt from the provided design reference using HTML, CSS, and JavaScript."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700;800&family=Sora:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      document.documentElement.classList.add("js");
+      if ("scrollRestoration" in history) {
+        history.scrollRestoration = "manual";
+      }
+      if (!window.location.hash) {
+        window.scrollTo(0, 0);
+        window.addEventListener(
+          "pageshow",
+          function () {
+            window.scrollTo(0, 0);
+          },
+          { once: true },
+        );
+      }
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body class="home-page">
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="index.html" aria-label="DXT Academy home">
+          <span class="brand__crest" aria-hidden="true">
+            <span class="brand__crest-inner"></span>
+          </span>
+          <span class="brand__name">
+            <strong>DXT</strong>
+            <span>Academy</span>
+          </span>
+        </a>
+
+        <button
+          class="nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="site-nav"
+        >
+          Menu
+        </button>
+
+        <nav class="site-nav" id="site-nav" aria-label="Primary navigation">
+          <a href="index.html" aria-current="page">Home</a>
+          <a href="about.html">About</a>
+          <a href="index.html#programmes">Programmes</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="#how-to-apply">How To Apply</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+
+        <div class="header-actions">
+          <a class="portal-link" href="#">Portal</a>
+          <a class="button button--gold" href="#how-to-apply">Apply Now</a>
+        </div>
+      </header>
+
+      <main id="top">
+        <section class="hero section">
+          <div class="hero__sky-layer" aria-hidden="true">
+            <img
+              class="hero__sky-image"
+              src="https://res.cloudinary.com/dxoorukfj/image/upload/v1776866714/ChatGPT_Image_Apr_22_2026_03_04_47_PM_szdmih.png"
+              alt=""
+            />
+          </div>
+
+          <!-- <div class="hero__campus-layer" aria-hidden="true">
+            <img
+              class="hero__campus-image"
+              src="https://res.cloudinary.com/dxoorukfj/image/upload/v1776866645/ChatGPT_Image_Apr_22_2026_03_02_25_PM_fp0n6e.png"
+              alt=""
+            />
+          </div> -->
+
+
+          <div class="hero__student-layer" aria-hidden="true">
+            <img
+              class="hero__student-lineup"
+              src="https://res.cloudinary.com/dxoorukfj/image/upload/v1776867733/Untitled_design_2_onazpj.png"
+              alt=""
+            />
+          </div>
+
+          <div class="hero__inner">
+            <div class="hero__content">
+              <h1 class="hero__title">
+                <span class="hero__line">
+                  <span class="hero__segment hero__segment--drop-top hero__step-3">Quality Learning</span>
+                </span>
+                <span class="hero__line">
+                  <span class="hero__segment hero__segment--drop-top hero__step-3">Made </span>
+                  <span class="hero__accent hero__accent--fade hero__accent--joyful hero__step-1">Joyful,</span>
+                </span>
+                <span class="hero__line">
+                  <span class="hero__accent hero__accent--fade hero__accent--bold hero__step-2">Bold,</span>
+                  <span class="hero__segment hero__segment--drop-bottom hero__step-4"> And</span>
+                </span>
+                <span class="hero__line">
+                  <span class="hero__segment hero__segment--drop-bottom hero__step-4">Nigerian!</span>
+                </span>
+              </h1>
+              <!-- <p class="hero__lede">
+                From early years to primary school graduation, we raise children
+                who lead with confidence, curiosity, and strong academic
+                foundations.
+              </p> -->
+
+              <div class="hero__actions">
+                <a class="button button--gold hero__cta-primary" href="#how-to-apply">
+                  Apply Now
+                  <span aria-hidden="true">↗</span>
+                </a>
+                <a class="button button--ghost hero__cta-secondary" href="#programmes">
+                  Explore Programmes
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section welcome" id="features" data-scroll-reveal>
+          <div class="welcome__copy">
+            <p class="eyebrow welcome__eyebrow reveal-item reveal-item--fade">
+              Welcome to DXT Academy
+            </p>
+            <h2 class="welcome__title">
+              <span class="welcome__title-line">
+                <span class="welcome__title-text reveal-item reveal-item--clip">
+                  Nurturing Minds.
+                </span>
+              </span>
+              <span class="welcome__title-line">
+                <span class="welcome__title-text reveal-item reveal-item--clip">
+                  Building <span class="accent-word welcome__accent">Leaders.</span>
+                </span>
+              </span>
+            </h2>
+            <p class="welcome__body reveal-item reveal-item--fade">
+              At DXT Academy, we provide a world-class education that
+              combines strong academics, character development, and leadership
+              training to prepare students for a successful and impactful future.
+            </p>
+            <a class="button button--navy welcome__cta reveal-item reveal-item--fade" href="about.html">
+              Learn More About Us
+              <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+
+          <div class="welcome__media reveal-item reveal-item--media">
+            <img
+              src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777048139/ChatGPT_Image_Apr_24_2026_05_28_41_PM_wxecmo.png"
+              alt="Front view of DXT Academy campus building"
+            />
+          </div>
+        </section>
+
+        <!-- Our Programmes -->
+        <section class="section programmes-showcase" id="programmes" data-scroll-reveal>
+          <div class="section-heading section-heading--spread">
+            <div>
+              <p class="eyebrow eyebrow--gold">Academic Excellence</p>
+              <h2>Our <span class="accent-word">Programmes</span></h2>
+            </div>
+            <p>
+              A broad and balanced curriculum designed to challenge minds and
+              develop future leaders across academics, creativity, and
+              confidence-building.
+            </p>
+            <a class="button button--outline-light" href="about.html">
+              View All Programmes
+              <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+
+          <div class="programme-showcase__grid">
+            <article class="programme-tile programme-tile--reveal">
+              <span class="programme-tile__icon">SC</span>
+              <h3>Secondary School</h3>
+              <p>
+                Building a strong foundation for academic excellence,
+                leadership, and confident communication.
+              </p>
+              <a class="programme-tile__link" href="about.html">
+                Learn More
+                <span aria-hidden="true">→</span>
+              </a>
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777048299/ChatGPT_Image_Apr_24_2026_05_31_18_PM_ewkta9.png"
+                alt="Students learning together in a classroom"
+              />
+            </article>
+
+            <article class="programme-tile programme-tile--reveal">
+              <span class="programme-tile__icon">ST</span>
+              <h3>STEM Programme</h3>
+              <p>
+                Inspiring innovation, problem-solving, and curiosity through
+                guided experiments and discovery.
+              </p>
+              <a class="programme-tile__link" href="about.html">
+                Learn More
+                <span aria-hidden="true">→</span>
+              </a>
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777048438/ChatGPT_Image_Apr_24_2026_05_33_43_PM_bw5za9.png"
+                alt="Teacher guiding students during a lesson"
+              />
+            </article>
+
+            <article class="programme-tile programme-tile--reveal">
+              <span class="programme-tile__icon">AR</span>
+              <h3>Creative Arts</h3>
+              <p>
+                Nurturing creativity through music, drama, visual arts, and
+                expressive storytelling.
+              </p>
+              <a class="programme-tile__link" href="about.html">
+                Learn More
+                <span aria-hidden="true">→</span>
+              </a>
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777048506/ChatGPT_Image_Apr_24_2026_05_34_49_PM_rvberr.png"
+                alt="Students gathered for a classroom activity"
+              />
+            </article>
+
+            <article class="programme-tile programme-tile--reveal">
+              <span class="programme-tile__icon">LW</span>
+              <h3>Leadership &amp; Wellness</h3>
+              <p>
+                Building resilience, teamwork, and self-belief through sport,
+                service, and purposeful student leadership.
+              </p>
+              <a class="programme-tile__link" href="about.html">
+                Learn More
+                <span aria-hidden="true">→</span>
+              </a>
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777048693/ChatGPT_Image_Apr_24_2026_05_37_57_PM_ci5uzt.png"
+              />
+            </article>
+          </div>
+        </section>
+        <!-- End Our Programmes -->
+
+        <section class="section home-apply" id="how-to-apply" data-scroll-reveal>
+          <div class="home-apply__inner">
+            <div class="home-apply__copy">
+              <p class="eyebrow eyebrow--gold reveal-item reveal-item--fade">
+                How To Apply
+              </p>
+              <h2>
+                Start Your Child&rsquo;s DXT Academy Journey
+              </h2>
+              <p class="reveal-item reveal-item--fade" style="--reveal-delay: 100ms">
+                We have made the application process simple for parents. Review
+                what you need, submit the admission form, and our team will
+                contact you with the next step.
+              </p>
+              <div class="home-apply__actions reveal-item reveal-item--fade" style="--reveal-delay: 180ms">
+                <a class="button button--gold" href="contact.html#admission">
+                  Start Application
+                  <span aria-hidden="true">↗</span>
+                </a>
+                <a class="button button--navy" href="contact.html#message">
+                  Contact Admissions
+                </a>
+              </div>
+            </div>
+
+            <div class="home-apply__panel">
+              <div class="home-apply__steps" aria-label="How to apply steps">
+                <article class="home-apply-step reveal-item reveal-item--fade">
+                  <span class="home-apply-step__number">01</span>
+                  <h3>Read The Requirements</h3>
+                  <p>
+                    Confirm the class or programme you want to apply for and
+                    prepare the basic student details.
+                  </p>
+                </article>
+
+                <article class="home-apply-step reveal-item reveal-item--fade" style="--reveal-delay: 80ms">
+                  <span class="home-apply-step__number">02</span>
+                  <h3>Complete The Form</h3>
+                  <p>
+                    Fill the online admission form carefully using accurate
+                    parent, guardian, and student information.
+                  </p>
+                </article>
+
+                <article class="home-apply-step reveal-item reveal-item--fade" style="--reveal-delay: 160ms">
+                  <span class="home-apply-step__number">03</span>
+                  <h3>Wait For Confirmation</h3>
+                  <p>
+                    Our admissions team reviews the submission and reaches out
+                    by phone or email.
+                  </p>
+                </article>
+
+                <article class="home-apply-step reveal-item reveal-item--fade" style="--reveal-delay: 240ms">
+                  <span class="home-apply-step__number">04</span>
+                  <h3>Visit The School</h3>
+                  <p>
+                    Parents may be invited for a tour, discussion, or assessment
+                    depending on the child&rsquo;s class level.
+                  </p>
+                </article>
+              </div>
+
+              <aside class="home-apply__note reveal-item reveal-item--fade" style="--reveal-delay: 280ms">
+                <h3>Have These Ready</h3>
+                <ul>
+                  <li>Parent or guardian name, phone number, and email address</li>
+                  <li>Child&rsquo;s full name, age, and intended class</li>
+                  <li>Previous school details, where applicable</li>
+                  <li>Important health, learning, or support information</li>
+                </ul>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <!-- Gallery preview -->
+        <section class="section home-gallery" id="gallery-preview">
+          <div class="home-gallery__layout">
+            <div class="home-gallery__intro">
+              <p class="eyebrow">Gallery Preview</p>
+              <h2>School Life In <span class="accent-word">Focus</span></h2>
+              <p class="home-gallery__copy">
+                Step into the day-to-day rhythm of DXT Academy, from
+                classroom guidance and confident participation to the atmosphere
+                that helps children feel seen, curious, and proud to belong.
+              </p>
+
+              <div class="home-gallery__tags" aria-label="Gallery highlights">
+                <span>Classroom moments</span>
+                <span>Confident learners</span>
+                <span>Teacher support</span>
+              </div>
+            </div>
+
+            <div class="home-gallery__mosaic">
+              <figure class="home-gallery-card home-gallery-card--feature">
+                <img
+                  src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777048931/ChatGPT_Image_Apr_24_2026_05_41_47_PM_cmsihk.png"
+                  alt="Teacher supporting children during a classroom activity"
+                />
+                <figcaption class="home-gallery-card__meta">
+                  <span class="home-gallery-card__eyebrow">Classroom Life</span>
+                  <strong>Focused classroom support</strong>
+                  <p>Teacher-led guidance helps children build confidence as they practice together.</p>
+                </figcaption>
+              </figure>
+
+              <figure class="home-gallery-card">
+                <img
+                  src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777049023/ChatGPT_Image_Apr_24_2026_05_43_23_PM_g97uxt.png"
+                  alt="Smiling pupil standing outdoors"
+                />
+                <figcaption class="home-gallery-card__meta">
+                  <span class="home-gallery-card__eyebrow">School Culture</span>
+                  <strong>Confident school culture</strong>
+                  <p>Children are encouraged to show up with pride, voice, and curiosity.</p>
+                </figcaption>
+              </figure>
+
+              <figure class="home-gallery-card">
+                <img
+                  src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777049089/ChatGPT_Image_Apr_24_2026_05_44_26_PM_ng09ym.png"
+                  alt="Teacher speaking beside a classroom whiteboard"
+                />
+                <figcaption class="home-gallery-card__meta">
+                  <span class="home-gallery-card__eyebrow">Teaching Moments</span>
+                  <strong>Structured teaching moments</strong>
+                  <p>Clear explanation and live interaction help children follow ideas with ease.</p>
+                </figcaption>
+              </figure>
+            </div>
+          </div>
+
+          <div class="home-gallery__actions">
+            <a class="button button--navy" href="gallery.html">
+              View More
+              <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </section> 
+        <!-- End Gallery preview -->
+
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-main">
+          <div class="footer-brand">
+            <a class="brand brand--footer" href="index.html" aria-label="DXT Academy home">
+              <span class="brand__crest" aria-hidden="true">
+                <span class="brand__crest-inner"></span>
+              </span>
+              <span class="brand__name">
+                <strong>DXT</strong>
+                <span>Academy</span>
+              </span>
+            </a>
+
+            <p>
+              Nurturing minds. Building leaders. Preparing students for a bright
+              and impactful future.
+            </p>
+          </div>
+
+          <div class="footer-links">
+            <div class="footer-column">
+              <h3>Explore</h3>
+              <a href="index.html">Home</a>
+              <a href="about.html">About</a>
+              <a href="index.html#programmes">Programmes</a>
+              <a href="gallery.html">Gallery</a>
+              <a href="#how-to-apply">How To Apply</a>
+            </div>
+
+            <div class="footer-column">
+              <h3>Contact</h3>
+              <p>12 Academy Drive, Lagos, Nigeria.</p>
+              <a href="tel:+2348001234567">+234 800 123 4567</a>
+              <a href="mailto:info@dxtacademy.edu.ng">info@dxtacademy.edu.ng</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <p>&copy; <span id="current-year"></span> DXT Academy. All rights reserved.</p>
+          <div class="footer-legal">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Use</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

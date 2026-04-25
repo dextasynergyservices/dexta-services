@@ -16,6 +16,10 @@ export default defineConfig([
       ".vercel/**",
       "src/generated/**",
       "prisma/generated/**",
+      // Static academy templates ship raw browser scripts and vendored bundles.
+      // They are served as assets, not maintained as app-source modules.
+      "**/dexta-academy-*/**/*.js",
+      "**/dexta-academy-*/**/*.jsx",
     ],
   },
   {

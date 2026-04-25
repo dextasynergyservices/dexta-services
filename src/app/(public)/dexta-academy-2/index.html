@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DXT Academy | Education That Inspires</title>
+    <meta
+      name="description"
+      content="DXT Academy is a leading secondary school committed to academic excellence, strong character, and confident leadership."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html {
+        background: #081827;
+      }
+
+      body[data-page="home"].is-home-loading {
+        margin: 0;
+        overflow: hidden;
+        background: #081827;
+      }
+
+      .site-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        display: grid;
+        place-items: center;
+        background: #081827;
+        color: #ffffff;
+        font-family: system-ui, sans-serif;
+      }
+    </style>
+    <link rel="stylesheet" href="assets/css/styles.css" />
+    <noscript>
+      <style>
+        .site-loader {
+          display: none;
+        }
+
+        body[data-page="home"].is-home-loading {
+          overflow: auto;
+        }
+
+        body[data-page="home"].is-home-loading .site-header,
+        body[data-page="home"].is-home-loading .hero-home::before,
+        body[data-page="home"].is-home-loading .hero-home__building,
+        body[data-page="home"].is-home-loading .hero-home__copy,
+        body[data-page="home"].is-home-loading .hero-home__stats {
+          opacity: 1;
+        }
+      </style>
+    </noscript>
+  </head>
+  <body data-page="home" class="is-home-loading">
+    <div class="site-loader" data-home-loader role="status" aria-live="polite">
+      <div class="site-loader__content">
+        <span class="site-loader__mark" aria-hidden="true">DXT</span>
+        <span class="site-loader__text">Loading DXT Academy</span>
+        <span class="site-loader__bar" aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <header class="site-header" data-site-header></header>
+
+    <main>
+      <section class="hero-home">
+        <div class="hero-home__building" aria-hidden="true"></div>
+        <div class="hero-home__overlay"></div>
+
+        <div class="container hero-home__inner">
+          <div class="hero-home__copy">
+            <p class="eyebrow">Welcome to DXT Academy</p>
+            <h1>
+              Education
+              <span>That Inspires.</span>
+            </h1>
+            <p class="hero-home__lead">
+              We nurture confident leaders with academic excellence, strong character,
+              and a deep sense of purpose.
+            </p>
+            <div class="hero-home__actions">
+              <a class="button button--primary" href="about.html">
+                <span>Discover DXT Academy</span>
+                <span data-icon="arrow"></span>
+              </a>
+            </div>
+          </div>
+
+          <img
+            class="hero-home__students"
+            src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777044586/Untitled_design_6_foe65y.png"
+            alt="DXT Academy students"
+          />
+
+          <ul class="hero-home__stats">
+            <li>
+              <span class="hero-home__stat-top">
+                <span data-icon="cap"></span>
+                <span data-stat="20+">20+</span>
+              </span>
+              <span class="hero-home__stat-label">Years of Excellence</span>
+            </li>
+            <li>
+              <span class="hero-home__stat-top">
+                <span data-icon="people"></span>
+                <span data-stat="1,500+">1,500+</span>
+              </span>
+              <span class="hero-home__stat-label">Students</span>
+            </li>
+            <li>
+              <span class="hero-home__stat-top">
+                <span data-icon="book"></span>
+                <span data-stat="100+">100+</span>
+              </span>
+              <span class="hero-home__stat-label">Experienced Staff</span>
+            </li>
+            <li>
+              <span class="hero-home__stat-top">
+                <span data-icon="trophy"></span>
+                <span data-stat="95%">95%</span>
+              </span>
+              <span class="hero-home__stat-label">University Progression</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="values-strip">
+        <div class="container values-strip__grid">
+          <div class="values-strip__intro">
+            <h2>Our Values. Their Future.</h2>
+            <p>
+              At DXT Academy, we go beyond academics to shape well-rounded individuals
+              prepared to make a positive impact in the world.
+            </p>
+          </div>
+
+          <article class="value-item">
+            <span class="value-item__icon" data-icon="integrity"></span>
+            <h3>Integrity</h3>
+            <p>We uphold honesty, fairness, and strong moral principles in all we do.</p>
+          </article>
+
+          <article class="value-item">
+            <span class="value-item__icon" data-icon="excellence"></span>
+            <h3>Excellence</h3>
+            <p>We strive for the highest standards in academics, character, and leadership.</p>
+          </article>
+
+          <article class="value-item">
+            <span class="value-item__icon" data-icon="respect"></span>
+            <h3>Respect</h3>
+            <p>We value every individual and foster a culture of kindness and inclusion.</p>
+          </article>
+
+          <article class="value-item">
+            <span class="value-item__icon" data-icon="responsibility"></span>
+            <h3>Responsibility</h3>
+            <p>We take ownership of our actions and are committed to our community.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section section--dark split-showcase">
+        <div class="container split-showcase__grid">
+          <div class="split-showcase__copy">
+            <p class="eyebrow">About DXT Academy</p>
+            <h2 class="section-title">A Legacy of Excellence</h2>
+            <p class="section-copy">
+              For over two decades, DXT Academy has been a beacon of quality education,
+              developing students academically, socially, and emotionally to thrive in a global world.
+            </p>
+            <div style="margin-top: 28px">
+              <a class="button button--primary" href="about.html">
+                <span>Learn More About Us</span>
+                <span data-icon="arrow"></span>
+              </a>
+            </div>
+          </div>
+          <div class="media-card">
+            <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777039633/dxt2-about_ubzert.png" alt="DXT Academy science lab students" />
+          </div>
+        </div>
+      </section>
+
+      <section class="section programs">
+        <div class="container">
+          <p class="eyebrow" style="justify-content: center">Academics</p>
+          <h2 class="section-title">Programs That Prepare for Tomorrow</h2>
+          <p class="section-copy" style="margin-inline: auto">
+            We offer a broad and balanced curriculum tailored to meet the needs of every learner.
+          </p>
+
+          <div class="programs__cards">
+            <article class="card">
+              <div class="card__media">
+                <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777039883/ChatGPT_Image_Apr_24_2026_03_10_55_PM_sp96dc.png" alt="Students in a secondary classroom" />
+                <span class="card__badge" data-icon="book"></span>
+              </div>
+              <div class="card__body">
+                <h3 class="card__title">Secondary Education</h3>
+                <p class="card__text">
+                  A strong foundation in core subjects with personalised support to help students excel.
+                </p>
+                <a class="card__link" href="academics.html">
+                  <span>Learn More</span>
+                  <span data-icon="arrow"></span>
+                </a>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card__media">
+                <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777040078/ChatGPT_Image_Apr_24_2026_03_14_21_PM_gckkff.png" alt="Student working in a STEM classroom" />
+                <span class="card__badge" data-icon="stem"></span>
+              </div>
+              <div class="card__body">
+                <h3 class="card__title">STEM Program</h3>
+                <p class="card__text">
+                  Equipping students with critical thinking and problem-solving skills for the future.
+                </p>
+                <a class="card__link" href="academics.html#stem">
+                  <span>Learn More</span>
+                  <span data-icon="arrow"></span>
+                </a>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card__media">
+                <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777040256/ChatGPT_Image_Apr_24_2026_03_17_22_PM_nv38iq.png" alt="Student painting in an arts class" />
+                <span class="card__badge" data-icon="arts"></span>
+              </div>
+              <div class="card__body">
+                <h3 class="card__title">Creative Arts</h3>
+                <p class="card__text">
+                  Nurturing creativity and expression through music, art, drama, and design.
+                </p>
+                <a class="card__link" href="student-life.html#arts">
+                  <span>Learn More</span>
+                  <span data-icon="arrow"></span>
+                </a>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card__media">
+                <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777040385/ChatGPT_Image_Apr_24_2026_03_19_26_PM_ucngff.png" alt="Students playing sports" />
+                <span class="card__badge" data-icon="sport"></span>
+              </div>
+              <div class="card__body">
+                <h3 class="card__title">Sports &amp; Wellness</h3>
+                <p class="card__text">
+                  Promoting physical health, teamwork, and discipline through a variety of sports.
+                </p>
+                <a class="card__link" href="student-life.html#sports">
+                  <span>Lead More</span>
+                  <span data-icon="arrow"></span>
+                </a>
+              </div>
+            </article>
+          </div>
+
+          <div class="cta-banner">
+            <div class="cta-banner__panel">
+              <span class="cta-banner__icon" data-icon="cap"></span>
+              <div class="cta-banner__copy">
+                <h2>Ready to get started?</h2>
+                <p>
+                  Join a community where your child will learn, grow, and become a leader of tomorrow.
+                </p>
+              </div>
+              <a class="button button--primary" href="admissions.html" data-admission-modal>
+                <span>Apply for Admission</span>
+                <span data-icon="arrow"></span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <div class="news-heading">
+            <div>
+              <p class="eyebrow">Student Life</p>
+              <h2 class="section-title">A Community Where Students Thrive</h2>
+              <p class="section-copy">
+                Beyond the classroom, students grow through clubs, creative
+                opportunities, sports, and meaningful leadership experiences.
+              </p>
+            </div>
+            <a class="button button--outline-dark" href="student-life.html">
+              <span>View Student Life</span>
+              <span data-icon="arrow"></span>
+            </a>
+          </div>
+
+          <div class="news-grid">
+            <article class="news-card">
+              <div class="news-card__media">
+                <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777040554/ChatGPT_Image_Apr_24_2026_03_22_21_PM_lhcqe5.png" alt="Students taking part in a school club activity" />
+              </div>
+              <div class="news-card__body">
+                <p class="news-card__date">Clubs &amp; Societies</p>
+                <h3 class="news-card__title">Opportunities to Explore Every Interest</h3>
+                <p class="news-card__excerpt">
+                  Students build confidence and connection through debate, coding,
+                  journalism, service, and entrepreneurship clubs.
+                </p>
+                <a class="card__link" href="student-life.html">
+                  <span>Learn More</span>
+                  <span data-icon="arrow"></span>
+                </a>
+              </div>
+            </article>
+
+            <article class="news-card">
+              <div class="news-card__media">
+                <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777040665/ChatGPT_Image_Apr_24_2026_03_24_10_PM_bizf1y.png" alt="Student taking part in a creative arts activity" />
+              </div>
+              <div class="news-card__body">
+                <p class="news-card__date">Creative Expression</p>
+                <h3 class="news-card__title">Music, Art, and Performance with Confidence</h3>
+                <p class="news-card__excerpt">
+                  Students express talent and imagination through visual arts,
+                  music, and stage experiences that build confidence.
+                </p>
+                <a class="card__link" href="student-life.html#arts">
+                  <span>Learn More</span>
+                  <span data-icon="arrow"></span>
+                </a>
+              </div>
+            </article>
+
+            <article class="news-card">
+              <div class="news-card__media">
+                <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1777040757/ChatGPT_Image_Apr_24_2026_03_25_39_PM_jtsr9f.png" alt="Students taking part in sports and wellness activities" />
+              </div>
+              <div class="news-card__body">
+                <p class="news-card__date">Sports &amp; Wellness</p>
+                <h3 class="news-card__title">Healthy Routines and Team Spirit</h3>
+                <p class="news-card__excerpt">
+                  Structured sports and wellness programs encourage discipline,
+                  teamwork, resilience, and healthy habits.
+                </p>
+                <a class="card__link" href="student-life.html#sports">
+                  <span>Learn More</span>
+                  <span data-icon="arrow"></span>
+                </a>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer" data-site-footer></footer>
+    <script src="assets/js/app.js"></script>
+  </body>
+</html>
