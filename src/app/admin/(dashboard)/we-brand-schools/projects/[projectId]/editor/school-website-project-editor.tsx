@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { resolveSchoolTemplateAsset } from "@/lib/school-template-assets";
 import { cn } from "@/lib/utils";
 import {
   type SchoolTemplateProjectContent,
@@ -48,6 +49,7 @@ type ProjectEditorWorkspaceProps = {
 
 type SelectedScope = "page" | "shared";
 type PreviewMode = "desktop" | "tablet" | "mobile";
+type EditableFieldValue = string | number | boolean | null;
 
 type SectionBinding = {
   content: SchoolTemplateProjectSectionContent;
@@ -67,6 +69,20 @@ type DraftUpdater =
       currentDraft: SchoolTemplateProjectContent,
     ) => SchoolTemplateProjectContent);
 
+type ModelValidationCandidate = {
+  field: SchoolTemplateProjectFieldSnapshot;
+  value: EditableFieldValue;
+  label: string;
+};
+
+type ModelValidationProbeResult = {
+  ok: boolean;
+  status: number;
+  contentType: string | null;
+};
+
+const MODEL_VALIDATION_PREVIEW_KEY = "preview-models";
+
 const PREVIEW_MODES: Array<{
   id: PreviewMode;
   label: string;
@@ -84,6 +100,12 @@ function getProjectPreviewHref(
   key: number,
 ) {
   return `/admin/we-brand-schools/projects/${projectId}/preview/${pageSlug}?editorPreview=${key}`;
+}
+
+function getTemplateBaseHref(previewPath: string) {
+  const parts = previewPath.split("/");
+  parts.pop();
+  return `${parts.join("/") || ""}/`;
 }
 
 function formatDate(value: string) {
@@ -105,9 +127,13 @@ function getNumberValue(value: unknown) {
   return typeof value === "number" ? value : Number(value) || 0;
 }
 
+function isFilledFieldValue(value: unknown) {
+  return value !== null && value !== undefined && value !== "";
+}
+
 function getFieldDisplayValue(
   field: SchoolTemplateProjectFieldSnapshot,
-  value: string | number | boolean | null,
+  value: EditableFieldValue,
 ) {
   if (value !== null && value !== "") {
     return value;
@@ -155,17 +181,248 @@ function getRepeatableItemFields(
   return fields.filter((field) => !sectionLevelKeys.has(field.key));
 }
 
+function resolveModelValidationUrl({
+  value,
+  field,
+  sourceSnapshot,
+}: {
+  value: EditableFieldValue;
+  field: SchoolTemplateProjectFieldSnapshot;
+  sourceSnapshot: SchoolTemplateSourceSnapshot;
+}) {
+  const resolved = resolveSchoolTemplateAsset(value, field, {
+    cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "",
+    proxyCloudinaryRawModels: false,
+  }).trim();
+
+  if (!resolved) {
+    return "";
+  }
+
+  const modelUrl = resolved;
+
+  if (/^(https?:|blob:|data:)/i.test(modelUrl)) {
+    return modelUrl;
+  }
+
+  if (modelUrl.startsWith("/")) {
+    return new URL(modelUrl, window.location.origin).href;
+  }
+
+  try {
+    const templateBaseUrl = new URL(
+      getTemplateBaseHref(sourceSnapshot.previewPath),
+      window.location.origin,
+    );
+
+    return new URL(modelUrl.replace(/^\.\//, ""), templateBaseUrl).href;
+  } catch {
+    return modelUrl;
+  }
+}
+
+function getProbeResult(
+  response: globalThis.Response,
+): ModelValidationProbeResult {
+  return {
+    ok: response.ok,
+    status: response.status,
+    contentType: response.headers.get("content-type"),
+  };
+}
+
+async function probeModelValidationUrl(
+  url: string,
+): Promise<ModelValidationProbeResult> {
+  if (/^(blob:|data:)/i.test(url)) {
+    return {
+      ok: true,
+      status: 200,
+      contentType: null,
+    };
+  }
+
+  const headResponse = await fetch(url, {
+    method: "HEAD",
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+
+  if (headResponse.status !== 405 && headResponse.status !== 501) {
+    return getProbeResult(headResponse);
+  }
+
+  const getResponse = await fetch(url, {
+    method: "GET",
+    headers: {
+      Range: "bytes=0-0",
+    },
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  await getResponse.body?.cancel();
+
+  return getProbeResult(getResponse);
+}
+
+function getModelValidationErrorMessage({
+  label,
+  status,
+  contentType,
+}: {
+  label: string;
+  status: number;
+  contentType: string | null;
+}) {
+  if (contentType?.toLowerCase().includes("text/html")) {
+    return `${label} resolved to an HTML page instead of a .glb/.gltf file. Check the model URL or upload the model again.`;
+  }
+
+  if (status === 400) {
+    return `${label} has an invalid Cloudinary model URL or public ID. Upload a valid .glb file and try preview again.`;
+  }
+
+  if (status === 401) {
+    return `${label} could not be checked because your admin session was not authorized. Sign in again, then try preview.`;
+  }
+
+  if (status === 403) {
+    return `${label} exists but is not accessible from preview. Check the Cloudinary file permissions or upload it again.`;
+  }
+
+  if (status === 404) {
+    return `${label} was not found on Cloudinary. Upload the 3D model again or choose another file.`;
+  }
+
+  return `${label} could not be loaded for preview. Cloudinary returned ${status}.`;
+}
+
+function collectSectionModelValidationCandidates(
+  section: SectionBinding,
+  labelPrefix: string,
+) {
+  const candidates: ModelValidationCandidate[] = [];
+  const repeatableItemFields = section.content.repeatable
+    ? new Set(getRepeatableItemFields(section).map((field) => field.key))
+    : new Set<string>();
+
+  for (const field of section.snapshot?.fields ?? []) {
+    if (field.type !== "model3d") {
+      continue;
+    }
+
+    if (section.content.repeatable && repeatableItemFields.has(field.key)) {
+      continue;
+    }
+
+    const value = getFieldDisplayValue(
+      field,
+      section.content.fields[field.key] ?? null,
+    );
+
+    if (!isFilledFieldValue(value)) {
+      continue;
+    }
+
+    candidates.push({
+      field,
+      value: value as EditableFieldValue,
+      label: `${labelPrefix} ${field.label}`,
+    });
+  }
+
+  if (!section.content.repeatable) {
+    return candidates;
+  }
+
+  const modelItemFields = getRepeatableItemFields(section).filter(
+    (field) => field.type === "model3d",
+  );
+
+  for (const [itemIndex, item] of section.content.repeatable.items.entries()) {
+    for (const field of modelItemFields) {
+      const value = getFieldDisplayValue(field, item[field.key] ?? null);
+
+      if (!isFilledFieldValue(value)) {
+        continue;
+      }
+
+      candidates.push({
+        field,
+        value: value as EditableFieldValue,
+        label: `${labelPrefix} item ${itemIndex + 1} ${field.label}`,
+      });
+    }
+  }
+
+  return candidates;
+}
+
+function getPreviewModelValidationCandidates({
+  content,
+  sourceSnapshot,
+  pageSlug,
+}: {
+  content: SchoolTemplateProjectContent;
+  sourceSnapshot: SchoolTemplateSourceSnapshot;
+  pageSlug: string;
+}) {
+  const candidates: ModelValidationCandidate[] = [];
+
+  for (const sectionContent of content.sharedSections) {
+    candidates.push(
+      ...collectSectionModelValidationCandidates(
+        {
+          content: sectionContent,
+          snapshot:
+            sourceSnapshot.sharedSections.find(
+              (section) => section.id === sectionContent.id,
+            ) ?? null,
+        },
+        sectionContent.label,
+      ),
+    );
+  }
+
+  const page = content.pages.find((item) => item.slug === pageSlug);
+  const pageSnapshot = sourceSnapshot.pages.find(
+    (item) => item.slug === pageSlug,
+  );
+
+  for (const sectionContent of page?.sections ?? []) {
+    candidates.push(
+      ...collectSectionModelValidationCandidates(
+        {
+          content: sectionContent,
+          snapshot:
+            pageSnapshot?.sections.find(
+              (section) => section.id === sectionContent.id,
+            ) ?? null,
+        },
+        sectionContent.label,
+      ),
+    );
+  }
+
+  return candidates;
+}
+
 function FieldControl({
   field,
   value,
   onChange,
+  onValidateModel,
+  isValidatingModel = false,
 }: {
   field: SchoolTemplateProjectFieldSnapshot;
-  value: string | number | boolean | null;
-  onChange: (value: string | number | boolean | null) => void;
+  value: EditableFieldValue;
+  onChange: (value: EditableFieldValue) => void;
+  onValidateModel?: (value: EditableFieldValue) => Promise<void> | void;
+  isValidatingModel?: boolean;
 }) {
   const controlKind = getFieldControlKind(field);
   const displayValue = getFieldDisplayValue(field, value);
+  const displayStringValue = getStringValue(displayValue);
   const commonInputClass =
     "border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder:text-[#555]";
 
@@ -183,26 +440,51 @@ function FieldControl({
           className={cn("resize-none", commonInputClass)}
         />
       ) : controlKind === "image" || controlKind === "model3d" ? (
-        <ImageUpload
-          value={getStringValue(displayValue)}
-          onChange={(publicId) => onChange(publicId)}
-          onRemove={() => onChange("")}
-          emptyLabel={
-            controlKind === "model3d" ? "Upload GLB model" : "Upload image"
-          }
-          previewAlt={field.label}
-          resourceType={controlKind === "model3d" ? "raw" : "image"}
-          allowedFormats={field.acceptedFileTypes?.map((format) =>
-            format.replace(/^\./, ""),
-          )}
-          maxFileSize={controlKind === "model3d" ? 10_000_000 : undefined}
-          deletePreviousOnReplace={false}
-          successMessage={
-            controlKind === "model3d"
-              ? "3D model uploaded successfully"
-              : undefined
-          }
-        />
+        <div className="space-y-2">
+          <ImageUpload
+            value={displayStringValue}
+            onChange={(publicId) => {
+              onChange(publicId);
+              if (controlKind === "model3d") {
+                void onValidateModel?.(publicId);
+              }
+            }}
+            onRemove={() => onChange("")}
+            emptyLabel={
+              controlKind === "model3d" ? "Upload GLB model" : "Upload image"
+            }
+            previewAlt={field.label}
+            resourceType={controlKind === "model3d" ? "raw" : "image"}
+            allowedFormats={field.acceptedFileTypes?.map((format) =>
+              format.replace(/^\./, ""),
+            )}
+            maxFileSize={controlKind === "model3d" ? 10_000_000 : undefined}
+            deletePreviousOnReplace={false}
+            successMessage={
+              controlKind === "model3d"
+                ? "3D model uploaded successfully"
+                : undefined
+            }
+          />
+          {controlKind === "model3d" &&
+          displayStringValue &&
+          onValidateModel ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void onValidateModel?.(displayStringValue)}
+              disabled={isValidatingModel}
+              className="w-full border-[#333] bg-[#0d0d0d] text-[#888] hover:border-cyan-500/30 hover:text-white"
+            >
+              {isValidatingModel ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <Eye className="mr-1.5 h-4 w-4" />
+              )}
+              Test model in preview
+            </Button>
+          ) : null}
+        </div>
       ) : controlKind === "color" ? (
         <div className="grid grid-cols-[44px_minmax(0,1fr)] gap-2">
           <Input
@@ -299,6 +581,9 @@ export function SchoolWebsiteProjectEditor({
   const [autosaveStatus, setAutosaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [validatingModelKey, setValidatingModelKey] = useState<string | null>(
+    null,
+  );
   const draftRef = useRef(draft);
   const isDirtyRef = useRef(isDirty);
   const isSavingRef = useRef(isSaving);
@@ -368,6 +653,8 @@ export function SchoolWebsiteProjectEditor({
     : sourceSnapshot.previewPath;
   const activePreviewMode =
     PREVIEW_MODES.find((mode) => mode.id === previewMode) ?? PREVIEW_MODES[0];
+  const isPreviewValidatingModel =
+    validatingModelKey === MODEL_VALIDATION_PREVIEW_KEY;
   const activeFieldGroups = useMemo(() => {
     const groups = new Map<string, SchoolTemplateProjectFieldSnapshot[]>();
     const repeatableItemFields = activeSection
@@ -629,6 +916,147 @@ export function SchoolWebsiteProjectEditor({
     [applicationId, projectId],
   );
 
+  const validateModelCandidate = useCallback(
+    async (
+      candidate: ModelValidationCandidate,
+      { showSuccess = false }: { showSuccess?: boolean } = {},
+    ) => {
+      const validationUrl = resolveModelValidationUrl({
+        value: candidate.value,
+        field: candidate.field,
+        sourceSnapshot,
+      });
+
+      if (!validationUrl) {
+        toast.error(`${candidate.label} does not have a model file selected.`);
+        return false;
+      }
+
+      let result: ModelValidationProbeResult;
+      try {
+        result = await probeModelValidationUrl(validationUrl);
+      } catch {
+        toast.error(
+          `${candidate.label} could not be reached from preview. Check the upload, then try again.`,
+        );
+        return false;
+      }
+
+      if (!result.ok) {
+        toast.error(
+          getModelValidationErrorMessage({
+            label: candidate.label,
+            status: result.status,
+            contentType: result.contentType,
+          }),
+        );
+        return false;
+      }
+
+      if (result.contentType?.toLowerCase().includes("text/html")) {
+        toast.error(
+          getModelValidationErrorMessage({
+            label: candidate.label,
+            status: result.status,
+            contentType: result.contentType,
+          }),
+        );
+        return false;
+      }
+
+      if (showSuccess) {
+        toast.success(`${candidate.label} is ready for preview.`);
+      }
+
+      return true;
+    },
+    [sourceSnapshot],
+  );
+
+  const validatePreviewModelFields = useCallback(
+    async ({ showSuccess = false }: { showSuccess?: boolean } = {}) => {
+      const candidates = getPreviewModelValidationCandidates({
+        content: draftRef.current,
+        sourceSnapshot,
+        pageSlug: selectedPage?.slug ?? selectedPageSlug,
+      });
+
+      if (!candidates.length) {
+        return true;
+      }
+
+      setValidatingModelKey(MODEL_VALIDATION_PREVIEW_KEY);
+
+      try {
+        for (const candidate of candidates) {
+          const isValid = await validateModelCandidate(candidate);
+          if (!isValid) {
+            return false;
+          }
+        }
+
+        if (showSuccess) {
+          toast.success(
+            candidates.length === 1
+              ? "3D model is ready for preview."
+              : "3D models are ready for preview.",
+          );
+        }
+
+        return true;
+      } finally {
+        setValidatingModelKey(null);
+      }
+    },
+    [
+      selectedPage?.slug,
+      selectedPageSlug,
+      sourceSnapshot,
+      validateModelCandidate,
+    ],
+  );
+
+  const validateActiveModelField = useCallback(
+    async (
+      field: SchoolTemplateProjectFieldSnapshot,
+      value: EditableFieldValue,
+      validationKey: string,
+      label: string,
+    ) => {
+      if (!isFilledFieldValue(value)) {
+        return;
+      }
+
+      setValidatingModelKey(validationKey);
+
+      try {
+        await validateModelCandidate(
+          {
+            field,
+            value,
+            label,
+          },
+          { showSuccess: true },
+        );
+      } finally {
+        setValidatingModelKey(null);
+      }
+    },
+    [validateModelCandidate],
+  );
+
+  const saveDraftAndValidatePreviewModels = async () => {
+    const saved = await saveDraft({
+      createRevision: true,
+      note: "Manual draft save.",
+      showToast: true,
+    });
+
+    if (saved) {
+      await validatePreviewModelFields();
+    }
+  };
+
   useEffect(() => {
     const autosaveInterval = window.setInterval(() => {
       if (!isDirtyRef.current || isSavingRef.current) {
@@ -654,6 +1082,11 @@ export function SchoolWebsiteProjectEditor({
         showToast: false,
       });
       if (!saved) return;
+    }
+
+    const modelsReady = await validatePreviewModelFields();
+    if (!modelsReady) {
+      return;
     }
 
     setPreviewKey((current) => current + 1);
@@ -744,13 +1177,7 @@ export function SchoolWebsiteProjectEditor({
         <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
-            onClick={() =>
-              void saveDraft({
-                createRevision: true,
-                note: "Manual draft save.",
-                showToast: true,
-              })
-            }
+            onClick={() => void saveDraftAndValidatePreviewModels()}
             disabled={isSaving || isExporting}
             className="bg-cyan-500 text-black hover:bg-cyan-400"
           >
@@ -764,12 +1191,16 @@ export function SchoolWebsiteProjectEditor({
           <Button
             type="button"
             variant="outline"
-            onClick={refreshPreview}
-            disabled={isSaving || isExporting}
+            onClick={() => void refreshPreview()}
+            disabled={isSaving || isExporting || isPreviewValidatingModel}
             className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white"
           >
-            <Eye className="mr-1.5 h-4 w-4" />
-            Preview
+            {isPreviewValidatingModel ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Eye className="mr-1.5 h-4 w-4" />
+            )}
+            {isPreviewValidatingModel ? "Checking" : "Preview"}
           </Button>
           <Button
             type="button"
@@ -972,22 +1403,40 @@ export function SchoolWebsiteProjectEditor({
                         {group.name}
                       </p>
                       <div className="grid gap-4 xl:grid-cols-2">
-                        {group.fields.map((field) => (
-                          <FieldControl
-                            key={`${activeSection.content.id}:${field.key}`}
-                            field={field}
-                            value={
-                              activeSection.content.fields[field.key] ?? null
-                            }
-                            onChange={(value) =>
-                              updateSectionField(
-                                activeSection.content.id,
-                                field.key,
-                                value,
-                              )
-                            }
-                          />
-                        ))}
+                        {group.fields.map((field) => {
+                          const modelValidationKey = `${activeSection.content.id}:${field.key}:model-preview`;
+
+                          return (
+                            <FieldControl
+                              key={`${activeSection.content.id}:${field.key}`}
+                              field={field}
+                              value={
+                                activeSection.content.fields[field.key] ?? null
+                              }
+                              onChange={(value) =>
+                                updateSectionField(
+                                  activeSection.content.id,
+                                  field.key,
+                                  value,
+                                )
+                              }
+                              onValidateModel={
+                                field.type === "model3d"
+                                  ? (nextValue) =>
+                                      validateActiveModelField(
+                                        field,
+                                        nextValue,
+                                        modelValidationKey,
+                                        `${activeSection.content.label} ${field.label}`,
+                                      )
+                                  : undefined
+                              }
+                              isValidatingModel={
+                                validatingModelKey === modelValidationKey
+                              }
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   ))}
@@ -1032,21 +1481,40 @@ export function SchoolWebsiteProjectEditor({
                             </p>
                             <div className="grid gap-4 xl:grid-cols-2">
                               {getRepeatableItemFields(activeSection).map(
-                                (field) => (
-                                  <FieldControl
-                                    key={`${activeSection.content.id}:${itemIndex}:${field.key}`}
-                                    field={field}
-                                    value={item[field.key] ?? null}
-                                    onChange={(value) =>
-                                      updateRepeatableItemField(
-                                        activeSection.content.id,
-                                        itemIndex,
-                                        field.key,
-                                        value,
-                                      )
-                                    }
-                                  />
-                                ),
+                                (field) => {
+                                  const modelValidationKey = `${activeSection.content.id}:${itemIndex}:${field.key}:model-preview`;
+
+                                  return (
+                                    <FieldControl
+                                      key={`${activeSection.content.id}:${itemIndex}:${field.key}`}
+                                      field={field}
+                                      value={item[field.key] ?? null}
+                                      onChange={(value) =>
+                                        updateRepeatableItemField(
+                                          activeSection.content.id,
+                                          itemIndex,
+                                          field.key,
+                                          value,
+                                        )
+                                      }
+                                      onValidateModel={
+                                        field.type === "model3d"
+                                          ? (nextValue) =>
+                                              validateActiveModelField(
+                                                field,
+                                                nextValue,
+                                                modelValidationKey,
+                                                `${activeSection.content.label} item ${itemIndex + 1} ${field.label}`,
+                                              )
+                                          : undefined
+                                      }
+                                      isValidatingModel={
+                                        validatingModelKey ===
+                                        modelValidationKey
+                                      }
+                                    />
+                                  );
+                                },
                               )}
                             </div>
                           </div>

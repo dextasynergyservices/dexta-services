@@ -7,6 +7,8 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type MutableRefObject,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,8 +24,13 @@ import {
   ExternalLink,
   Loader2,
   Mail,
+  Maximize2,
   Phone,
   Play,
+  RotateCcw,
+  X,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { submitSchoolWebsiteApplication } from "@/app/(public)/webrandschools/actions";
 import { RecaptchaProvider } from "@/components/layout/recaptcha-provider";
@@ -60,6 +67,27 @@ import type {
 import { withWeBrandSchoolsPageContentDefaults } from "@/lib/we-brand-schools-defaults";
 
 const WE_BRAND_SCHOOLS_HERO_IMAGE_FALLBACK = "/images/school1.jpg";
+const TEMPLATE_PREVIEW_MIN_ZOOM = 1;
+const TEMPLATE_PREVIEW_MAX_ZOOM = 2.5;
+const TEMPLATE_PREVIEW_ZOOM_STEP = 0.25;
+
+function getNextTemplatePreviewZoom(currentZoom: number, delta: number) {
+  return Math.min(
+    TEMPLATE_PREVIEW_MAX_ZOOM,
+    Math.max(
+      TEMPLATE_PREVIEW_MIN_ZOOM,
+      Number((currentZoom + delta).toFixed(2)),
+    ),
+  );
+}
+
+type TemplatePreviewPanState = {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  scrollLeft: number;
+  scrollTop: number;
+};
 
 function isDirectAssetSource(value: string) {
   return (
@@ -69,28 +97,43 @@ function isDirectAssetSource(value: string) {
   );
 }
 
-function resolveImageSource(value: string, options?: Parameters<typeof getCloudinaryUrl>[1]) {
+function resolveImageSource(
+  value: string,
+  options?: Parameters<typeof getCloudinaryUrl>[1],
+) {
   return isDirectAssetSource(value) ? value : getCloudinaryUrl(value, options);
+}
+
+function resolveVideoPosterSource(publicId: string) {
+  if (publicId.startsWith("https://res.cloudinary.com/")) {
+    return publicId
+      .replace("/video/upload/", "/video/upload/so_0,f_jpg,q_auto/")
+      .replace(/\.(mp4|mov|webm)(?:\?.*)?$/i, ".jpg");
+  }
+
+  if (isDirectAssetSource(publicId)) {
+    return null;
+  }
+
+  return `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload/so_0,f_jpg,q_auto/${publicId}.jpg`;
 }
 
 function resolveAssetPreview(asset: SchoolWebsiteTemplateAssetData) {
   if (asset.mediaType === "VIDEO") {
-    if (!asset.thumbnailPublicId) {
-      return null;
+    if (asset.thumbnailPublicId) {
+      return resolveImageSource(asset.thumbnailPublicId, {
+        c: "fit",
+        h: 900,
+        q: "auto",
+        w: 1400,
+      });
     }
 
-    return resolveImageSource(asset.thumbnailPublicId, {
-      c: "fill",
-      g: "auto",
-      h: 900,
-      q: "auto",
-      w: 1400,
-    });
+    return resolveVideoPosterSource(asset.publicId);
   }
 
   return resolveImageSource(asset.publicId, {
-    c: "fill",
-    g: "auto",
+    c: "fit",
     h: 900,
     q: "auto",
     w: 1400,
@@ -108,6 +151,19 @@ function resolveTemplateCardPreview(template: SchoolWebsiteTemplateData) {
   }
 
   return resolveAssetPreview(coverAsset);
+}
+
+function resolveFullImageSource(asset: SchoolWebsiteTemplateAssetData) {
+  if (asset.mediaType === "VIDEO") {
+    return resolveAssetPreview(asset);
+  }
+
+  return resolveImageSource(asset.publicId, {
+    c: "fit",
+    h: 1800,
+    q: "auto",
+    w: 2400,
+  });
 }
 
 function getVideoUrl(publicId: string) {
@@ -182,7 +238,9 @@ function SchoolTestimonialCard({
         )}
       </div>
 
-      <div className={`flex flex-col ${compact ? "px-3.5 pt-4 pb-7" : "px-4 pt-5 pb-5 sm:px-5 sm:pt-5 sm:pb-6"}`}>
+      <div
+        className={`flex flex-col ${compact ? "px-3.5 pt-4 pb-7" : "px-4 pt-5 pb-5 sm:px-5 sm:pt-5 sm:pb-6"}`}
+      >
         <div>
           <p
             className={`font-semibold uppercase tracking-[0.24em] text-[#00abff] ${
@@ -241,6 +299,14 @@ function TemplatePreviewDialog({
   onSelectTemplate: (template: SchoolWebsiteTemplateData) => void;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [fullscreenAsset, setFullscreenAsset] =
+    useState<SchoolWebsiteTemplateAssetData | null>(null);
+  const [imageZoom, setImageZoom] = useState(TEMPLATE_PREVIEW_MIN_ZOOM);
+  const [fullscreenZoom, setFullscreenZoom] = useState(
+    TEMPLATE_PREVIEW_MIN_ZOOM,
+  );
+  const imagePanStateRef = useRef<TemplatePreviewPanState | null>(null);
+  const fullscreenPanStateRef = useRef<TemplatePreviewPanState | null>(null);
 
   const activeAsset = useMemo(() => {
     if (!template) {
@@ -251,6 +317,7 @@ function TemplatePreviewDialog({
   }, [activeIndex, template]);
 
   const previewAssets = template?.assets ?? [];
+  const isActiveVideo = activeAsset?.mediaType === "VIDEO";
 
   const safeSetActiveIndex = useCallback(
     (nextIndex: number) => {
@@ -266,12 +333,85 @@ function TemplatePreviewDialog({
     [previewAssets.length],
   );
 
+  useEffect(() => {
+    setImageZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+    setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+  }, [activeIndex, template?.id]);
+
+  const createPanStartHandler = useCallback(
+    (
+      zoom: number,
+      panStateRef: MutableRefObject<TemplatePreviewPanState | null>,
+    ) =>
+      (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (zoom <= TEMPLATE_PREVIEW_MIN_ZOOM) return;
+        if (event.target instanceof HTMLElement) {
+          const interactiveElement = event.target.closest("button, a, video");
+          if (interactiveElement) return;
+        }
+
+        event.currentTarget.setPointerCapture(event.pointerId);
+        panStateRef.current = {
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          scrollLeft: event.currentTarget.scrollLeft,
+          scrollTop: event.currentTarget.scrollTop,
+        };
+      },
+    [],
+  );
+
+  const createPanMoveHandler = useCallback(
+    (panStateRef: MutableRefObject<TemplatePreviewPanState | null>) =>
+      (event: ReactPointerEvent<HTMLDivElement>) => {
+        const panState = panStateRef.current;
+        if (!panState || panState.pointerId !== event.pointerId) return;
+
+        event.currentTarget.scrollLeft =
+          panState.scrollLeft - (event.clientX - panState.startX);
+        event.currentTarget.scrollTop =
+          panState.scrollTop - (event.clientY - panState.startY);
+      },
+    [],
+  );
+
+  const createPanEndHandler = useCallback(
+    (panStateRef: MutableRefObject<TemplatePreviewPanState | null>) =>
+      (event: ReactPointerEvent<HTMLDivElement>) => {
+        const panState = panStateRef.current;
+        if (!panState || panState.pointerId !== event.pointerId) return;
+
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+        panStateRef.current = null;
+      },
+    [],
+  );
+
+  const imagePanHandlers = {
+    onPointerDown: createPanStartHandler(imageZoom, imagePanStateRef),
+    onPointerMove: createPanMoveHandler(imagePanStateRef),
+    onPointerUp: createPanEndHandler(imagePanStateRef),
+    onPointerCancel: createPanEndHandler(imagePanStateRef),
+  };
+  const fullscreenPanHandlers = {
+    onPointerDown: createPanStartHandler(fullscreenZoom, fullscreenPanStateRef),
+    onPointerMove: createPanMoveHandler(fullscreenPanStateRef),
+    onPointerUp: createPanEndHandler(fullscreenPanStateRef),
+    onPointerCancel: createPanEndHandler(fullscreenPanStateRef),
+  };
+
   return (
     <Dialog
       open={Boolean(template)}
       onOpenChange={(open) => {
         if (!open) {
           setActiveIndex(0);
+          setFullscreenAsset(null);
+          setImageZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+          setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
         }
         onOpenChange(open);
       }}
@@ -291,48 +431,95 @@ function TemplatePreviewDialog({
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              <div className="grid gap-0 lg:grid-cols-[minmax(0,1.35fr)_380px]">
+              <div className="grid gap-0 lg:grid-cols-[minmax(0,1.45fr)_360px]">
                 <div className="flex flex-col bg-white">
                   <div className="bg-white">
-                    <div className="relative aspect-[4/5] w-full overflow-hidden bg-white">
+                    <div
+                      className={`relative flex w-full items-center justify-center overflow-hidden ${
+                        isActiveVideo
+                          ? "aspect-video max-h-[min(68vh,760px)] bg-black sm:max-h-[min(72vh,820px)]"
+                          : "h-[min(68vh,760px)] min-h-[360px] bg-white sm:h-[min(72vh,820px)]"
+                      }`}
+                    >
                       {activeAsset ? (
                         activeAsset.mediaType === "VIDEO" ? (
                           <video
                             src={getVideoUrl(activeAsset.publicId)}
                             controls
                             playsInline
-                            className="h-full w-full object-contain"
+                            className="block h-full w-full object-contain"
                             poster={
                               activeAsset.thumbnailPublicId
-                                ? resolveImageSource(activeAsset.thumbnailPublicId, {
-                                    c: "fill",
-                                    g: "auto",
-                                    h: 900,
-                                    q: "auto",
-                                    w: 1400,
-                                  })
-                                : undefined
+                                ? resolveImageSource(
+                                    activeAsset.thumbnailPublicId,
+                                    {
+                                      c: "fit",
+                                      h: 900,
+                                      q: "auto",
+                                      w: 1400,
+                                    },
+                                  )
+                                : (resolveVideoPosterSource(
+                                    activeAsset.publicId,
+                                  ) ?? undefined)
                             }
                           />
                         ) : (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={resolveImageSource(activeAsset.publicId, {
-                              c: "fill",
-                              g: "auto",
-                              h: 1200,
-                              q: "auto",
-                              w: 1800,
-                            })}
-                            alt={template.name}
-                            className="h-full w-full object-contain"
-                          />
+                          <div
+                            className={`h-full w-full overflow-auto overscroll-contain ${
+                              imageZoom > TEMPLATE_PREVIEW_MIN_ZOOM
+                                ? "cursor-grab active:cursor-grabbing"
+                                : "cursor-zoom-in"
+                            }`}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`Open ${template.name} preview fullscreen`}
+                            onClick={() => {
+                              if (imageZoom > TEMPLATE_PREVIEW_MIN_ZOOM) {
+                                return;
+                              }
+
+                              setFullscreenAsset(activeAsset);
+                              setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key !== "Enter" && event.key !== " ") {
+                                return;
+                              }
+
+                              event.preventDefault();
+                              setFullscreenAsset(activeAsset);
+                              setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+                            }}
+                            {...imagePanHandlers}
+                          >
+                            <div
+                              className="flex min-h-full min-w-full items-center justify-center transition-[height,width] duration-200"
+                              style={{
+                                height: `${imageZoom * 100}%`,
+                                width: `${imageZoom * 100}%`,
+                              }}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={resolveImageSource(activeAsset.publicId, {
+                                  c: "fit",
+                                  h: 1200,
+                                  q: "auto",
+                                  w: 1800,
+                                })}
+                                alt={template.name}
+                                className="h-full w-full select-none object-contain"
+                                draggable={false}
+                              />
+                            </div>
+                          </div>
                         )
                       ) : (
                         <div className="flex h-full items-center justify-center bg-white">
                           <p className="px-6 text-center text-sm text-slate-600">
-                            Preview media will appear here once template assets are
-                            added.
+                            Preview media will appear here once template assets
+                            are added.
                           </p>
                         </div>
                       )}
@@ -357,6 +544,69 @@ function TemplatePreviewDialog({
                           </button>
                         </>
                       ) : null}
+
+                      {activeAsset?.mediaType === "IMAGE" ? (
+                        <>
+                          <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full border border-[#07193f]/12 bg-white/90 p-1 text-[#07193f] shadow-sm">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setImageZoom((currentZoom) =>
+                                  getNextTemplatePreviewZoom(
+                                    currentZoom,
+                                    -TEMPLATE_PREVIEW_ZOOM_STEP,
+                                  ),
+                                )
+                              }
+                              disabled={imageZoom <= TEMPLATE_PREVIEW_MIN_ZOOM}
+                              className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[#07193f]/8 disabled:cursor-not-allowed disabled:opacity-40"
+                              aria-label="Zoom image out"
+                            >
+                              <ZoomOut className="h-4 w-4" />
+                            </button>
+                            <span className="min-w-12 text-center text-xs font-semibold">
+                              {Math.round(imageZoom * 100)}%
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setImageZoom((currentZoom) =>
+                                  getNextTemplatePreviewZoom(
+                                    currentZoom,
+                                    TEMPLATE_PREVIEW_ZOOM_STEP,
+                                  ),
+                                )
+                              }
+                              disabled={imageZoom >= TEMPLATE_PREVIEW_MAX_ZOOM}
+                              className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[#07193f]/8 disabled:cursor-not-allowed disabled:opacity-40"
+                              aria-label="Zoom image in"
+                            >
+                              <ZoomIn className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setImageZoom(TEMPLATE_PREVIEW_MIN_ZOOM)
+                              }
+                              className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[#07193f]/8"
+                              aria-label="Reset image zoom"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFullscreenAsset(activeAsset);
+                              setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+                            }}
+                            className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-[#07193f]/12 bg-white/90 text-[#07193f] transition hover:bg-white"
+                            aria-label="Open fullscreen preview"
+                          >
+                            <Maximize2 className="h-5 w-5" />
+                          </button>
+                        </>
+                      ) : null}
                     </div>
                   </div>
 
@@ -369,7 +619,7 @@ function TemplatePreviewDialog({
                             key={asset.id}
                             type="button"
                             onClick={() => setActiveIndex(index)}
-                            className={`group relative h-20 w-28 shrink-0 overflow-hidden rounded-2xl border transition ${
+                            className={`group relative h-24 w-40 shrink-0 overflow-hidden rounded-2xl border bg-white transition ${
                               index === activeIndex
                                 ? "border-[#07193f] ring-2 ring-[#07193f]/10"
                                 : "border-[#07193f]/10"
@@ -380,7 +630,7 @@ function TemplatePreviewDialog({
                               <img
                                 src={previewSrc}
                                 alt={`${template.name} preview ${index + 1}`}
-                                className="h-full w-full object-cover"
+                                className="h-full w-full object-contain"
                               />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center bg-white text-slate-500">
@@ -397,7 +647,6 @@ function TemplatePreviewDialog({
                       })}
                     </div>
                   ) : null}
-
                 </div>
 
                 <aside className="hidden border-l border-[#07193f]/10 bg-white lg:block">
@@ -497,6 +746,91 @@ function TemplatePreviewDialog({
                 </aside>
               </div>
             </div>
+
+            {fullscreenAsset ? (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#07193f]/96 p-4 sm:p-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFullscreenAsset(null);
+                    setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+                  }}
+                  className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white hover:text-[#07193f]"
+                  aria-label="Close fullscreen preview"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+                <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/15 bg-white/10 p-1 text-white shadow-sm backdrop-blur">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFullscreenZoom((currentZoom) =>
+                        getNextTemplatePreviewZoom(
+                          currentZoom,
+                          -TEMPLATE_PREVIEW_ZOOM_STEP,
+                        ),
+                      )
+                    }
+                    disabled={fullscreenZoom <= TEMPLATE_PREVIEW_MIN_ZOOM}
+                    className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Zoom fullscreen image out"
+                  >
+                    <ZoomOut className="h-4 w-4" />
+                  </button>
+                  <span className="min-w-12 text-center text-xs font-semibold">
+                    {Math.round(fullscreenZoom * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFullscreenZoom((currentZoom) =>
+                        getNextTemplatePreviewZoom(
+                          currentZoom,
+                          TEMPLATE_PREVIEW_ZOOM_STEP,
+                        ),
+                      )
+                    }
+                    disabled={fullscreenZoom >= TEMPLATE_PREVIEW_MAX_ZOOM}
+                    className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Zoom fullscreen image in"
+                  >
+                    <ZoomIn className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM)}
+                    className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/15"
+                    aria-label="Reset fullscreen image zoom"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </button>
+                </div>
+                <div
+                  className={`h-full w-full overflow-auto overscroll-contain pt-16 ${
+                    fullscreenZoom > TEMPLATE_PREVIEW_MIN_ZOOM
+                      ? "cursor-grab active:cursor-grabbing"
+                      : "cursor-default"
+                  }`}
+                  {...fullscreenPanHandlers}
+                >
+                  <div
+                    className="flex min-h-full min-w-full items-center justify-center transition-[height,width] duration-200"
+                    style={{
+                      height: `${fullscreenZoom * 100}%`,
+                      width: `${fullscreenZoom * 100}%`,
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={resolveFullImageSource(fullscreenAsset) ?? ""}
+                      alt={`${template.name} fullscreen preview`}
+                      className="h-full w-full select-none object-contain"
+                      draggable={false}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             <div className="border-t border-[#07193f]/10 bg-white px-4 py-3 lg:hidden">
               <div className="grid gap-3 sm:grid-cols-2">
@@ -697,560 +1031,611 @@ function TemplateApplicationDialog({
         <DialogContent className="max-h-[92vh] overflow-hidden border-[#07193f]/20 bg-white p-0 text-[#07193f] sm:max-w-3xl">
           {template ? (
             <div className="flex max-h-[92vh] flex-col">
-            <div className="border-b border-[#07193f]/10 bg-white px-6 py-5">
-              <DialogHeader className="text-left">
-                <DialogTitle className="font-display text-3xl tracking-[-0.04em] text-[#07193f]">
-                  Apply for {template.name}
-                </DialogTitle>
-              </DialogHeader>
-            </div>
+              <div className="border-b border-[#07193f]/10 bg-white px-6 py-5">
+                <DialogHeader className="text-left">
+                  <DialogTitle className="font-display text-3xl tracking-[-0.04em] text-[#07193f]">
+                    Apply for {template.name}
+                  </DialogTitle>
+                </DialogHeader>
+              </div>
 
-            <div className="flex-1 overflow-y-auto px-6 py-6">
-              {isSuccess ? (
-                <div className="rounded-[28px] border border-emerald-500/20 bg-white p-8 text-center">
-                  <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-500" />
-                  <h3 className="mt-4 font-display text-3xl tracking-[-0.04em] text-[#07193f]">
-                    Application received
-                  </h3>
-                  <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-700">
-                    Your school website request for <strong>{template.name}</strong>{" "}
-                    has been submitted successfully. Our team will review the
-                    details and follow up using the official contact information you
-                    provided.
-                  </p>
-                  <div className="mt-6 flex justify-center">
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        resetForTemplate();
-                        onOpenChange(false);
-                      }}
-                      className="h-11 rounded-full bg-[#07193f] px-6 text-sm font-semibold text-white hover:bg-[#0d2458]"
-                    >
-                      Close
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={onSubmit} noValidate>
-                  <AnimatePresence mode="wait" initial={false}>
-                    {step === 1 ? (
-                      <motion.div
-                        key="step-1"
-                        initial={{ opacity: 0, x: 24 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -24 }}
-                        transition={{ duration: 0.2 }}
-                        className="space-y-6"
+              <div className="flex-1 overflow-y-auto px-6 py-6">
+                {isSuccess ? (
+                  <div className="rounded-[28px] border border-emerald-500/20 bg-white p-8 text-center">
+                    <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-500" />
+                    <h3 className="mt-4 font-display text-3xl tracking-[-0.04em] text-[#07193f]">
+                      Application received
+                    </h3>
+                    <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-700">
+                      Your school website request for{" "}
+                      <strong>{template.name}</strong> has been submitted
+                      successfully. Our team will review the details and follow
+                      up using the official contact information you provided.
+                    </p>
+                    <div className="mt-6 flex justify-center">
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          resetForTemplate();
+                          onOpenChange(false);
+                        }}
+                        className="h-11 rounded-full bg-[#07193f] px-6 text-sm font-semibold text-white hover:bg-[#0d2458]"
                       >
-                        <div className="grid gap-5 md:grid-cols-2">
-                          <div className="md:col-span-2">
-                            <Label htmlFor="schoolName" className="mb-2 block text-sm">
-                              School name
-                            </Label>
-                            <Input
-                              id="schoolName"
-                              placeholder="Enter your school name"
-                              className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
-                              {...form.register("schoolName")}
-                            />
-                            {form.formState.errors.schoolName ? (
-                              <p className="mt-2 text-xs text-red-500">
-                                {form.formState.errors.schoolName.message}
-                              </p>
-                            ) : null}
-                          </div>
-
-                          <div className="md:col-span-2">
-                            <Label
-                              htmlFor="aboutSchool"
-                              className="mb-2 block text-sm"
-                            >
-                              About your school
-                            </Label>
-                            <Textarea
-                              id="aboutSchool"
-                              placeholder="Tell us about your school, audience, and what it stands for"
-                              className="min-h-32 rounded-[24px] border-[#07193f]/12 bg-white"
-                              {...form.register("aboutSchool")}
-                            />
-                            {form.formState.errors.aboutSchool ? (
-                              <p className="mt-2 text-xs text-red-500">
-                                {form.formState.errors.aboutSchool.message}
-                              </p>
-                            ) : null}
-                          </div>
-
-                          <div>
-                            <Label htmlFor="vision" className="mb-2 block text-sm">
-                              Vision
-                            </Label>
-                            <Textarea
-                              id="vision"
-                              placeholder="Your school vision"
-                              className="min-h-28 rounded-[24px] border-[#07193f]/12 bg-white"
-                              {...form.register("vision")}
-                            />
-                            {form.formState.errors.vision ? (
-                              <p className="mt-2 text-xs text-red-500">
-                                {form.formState.errors.vision.message}
-                              </p>
-                            ) : null}
-                          </div>
-
-                          <div>
-                            <Label htmlFor="mission" className="mb-2 block text-sm">
-                              Mission
-                            </Label>
-                            <Textarea
-                              id="mission"
-                              placeholder="Your school mission"
-                              className="min-h-28 rounded-[24px] border-[#07193f]/12 bg-white"
-                              {...form.register("mission")}
-                            />
-                            {form.formState.errors.mission ? (
-                              <p className="mt-2 text-xs text-red-500">
-                                {form.formState.errors.mission.message}
-                              </p>
-                            ) : null}
-                          </div>
-
-                          <div className="md:col-span-2">
-                            <Label htmlFor="coreValues" className="mb-2 block text-sm">
-                              Core values
-                            </Label>
-                            <Textarea
-                              id="coreValues"
-                              placeholder="List the core values that define your school"
-                              className="min-h-28 rounded-[24px] border-[#07193f]/12 bg-white"
-                              {...form.register("coreValues")}
-                            />
-                            {form.formState.errors.coreValues ? (
-                              <p className="mt-2 text-xs text-red-500">
-                                {form.formState.errors.coreValues.message}
-                              </p>
-                            ) : null}
-                          </div>
-                        </div>
-
-                        <div className="rounded-[28px] border border-[#07193f]/10 bg-white p-5">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00abff]">
-                            Official contact detail
-                          </p>
-                          <div className="mt-5 grid gap-5 md:grid-cols-2">
-                            <div>
+                        Close
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <form onSubmit={onSubmit} noValidate>
+                    <AnimatePresence mode="wait" initial={false}>
+                      {step === 1 ? (
+                        <motion.div
+                          key="step-1"
+                          initial={{ opacity: 0, x: 24 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -24 }}
+                          transition={{ duration: 0.2 }}
+                          className="space-y-6"
+                        >
+                          <div className="grid gap-5 md:grid-cols-2">
+                            <div className="md:col-span-2">
                               <Label
-                                htmlFor="officialPhone"
+                                htmlFor="schoolName"
                                 className="mb-2 block text-sm"
                               >
-                                Official phone
+                                School name
                               </Label>
                               <Input
-                                id="officialPhone"
-                                placeholder="+234..."
+                                id="schoolName"
+                                placeholder="Enter your school name"
                                 className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
-                                {...form.register("officialPhone")}
+                                {...form.register("schoolName")}
                               />
-                              {form.formState.errors.officialPhone ? (
+                              {form.formState.errors.schoolName ? (
                                 <p className="mt-2 text-xs text-red-500">
-                                  {form.formState.errors.officialPhone.message}
-                                </p>
-                              ) : null}
-                            </div>
-
-                            <div>
-                              <Label
-                                htmlFor="officialEmail"
-                                className="mb-2 block text-sm"
-                              >
-                                Official email
-                              </Label>
-                              <Input
-                                id="officialEmail"
-                                type="email"
-                                placeholder="school@example.com"
-                                className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
-                                {...form.register("officialEmail")}
-                              />
-                              {form.formState.errors.officialEmail ? (
-                                <p className="mt-2 text-xs text-red-500">
-                                  {form.formState.errors.officialEmail.message}
+                                  {form.formState.errors.schoolName.message}
                                 </p>
                               ) : null}
                             </div>
 
                             <div className="md:col-span-2">
                               <Label
-                                htmlFor="officialAddress"
+                                htmlFor="aboutSchool"
                                 className="mb-2 block text-sm"
                               >
-                                Official address
+                                About your school
                               </Label>
                               <Textarea
-                                id="officialAddress"
-                                placeholder="Enter the school address"
-                                className="min-h-24 rounded-[24px] border-[#07193f]/12 bg-white"
-                                {...form.register("officialAddress")}
+                                id="aboutSchool"
+                                placeholder="Tell us about your school, audience, and what it stands for"
+                                className="min-h-32 rounded-[24px] border-[#07193f]/12 bg-white"
+                                {...form.register("aboutSchool")}
                               />
-                              {form.formState.errors.officialAddress ? (
+                              {form.formState.errors.aboutSchool ? (
                                 <p className="mt-2 text-xs text-red-500">
-                                  {form.formState.errors.officialAddress.message}
+                                  {form.formState.errors.aboutSchool.message}
+                                </p>
+                              ) : null}
+                            </div>
+
+                            <div>
+                              <Label
+                                htmlFor="vision"
+                                className="mb-2 block text-sm"
+                              >
+                                Vision
+                              </Label>
+                              <Textarea
+                                id="vision"
+                                placeholder="Your school vision"
+                                className="min-h-28 rounded-[24px] border-[#07193f]/12 bg-white"
+                                {...form.register("vision")}
+                              />
+                              {form.formState.errors.vision ? (
+                                <p className="mt-2 text-xs text-red-500">
+                                  {form.formState.errors.vision.message}
+                                </p>
+                              ) : null}
+                            </div>
+
+                            <div>
+                              <Label
+                                htmlFor="mission"
+                                className="mb-2 block text-sm"
+                              >
+                                Mission
+                              </Label>
+                              <Textarea
+                                id="mission"
+                                placeholder="Your school mission"
+                                className="min-h-28 rounded-[24px] border-[#07193f]/12 bg-white"
+                                {...form.register("mission")}
+                              />
+                              {form.formState.errors.mission ? (
+                                <p className="mt-2 text-xs text-red-500">
+                                  {form.formState.errors.mission.message}
                                 </p>
                               ) : null}
                             </div>
 
                             <div className="md:col-span-2">
                               <Label
-                                htmlFor="officialWebsiteUrl"
+                                htmlFor="coreValues"
                                 className="mb-2 block text-sm"
                               >
-                                Current website or social link
+                                Core values
                               </Label>
-                              <Input
-                                id="officialWebsiteUrl"
-                                placeholder="https://"
-                                className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
-                                {...form.register("officialWebsiteUrl")}
+                              <Textarea
+                                id="coreValues"
+                                placeholder="List the core values that define your school"
+                                className="min-h-28 rounded-[24px] border-[#07193f]/12 bg-white"
+                                {...form.register("coreValues")}
                               />
-                              {form.formState.errors.officialWebsiteUrl ? (
+                              {form.formState.errors.coreValues ? (
                                 <p className="mt-2 text-xs text-red-500">
-                                  {form.formState.errors.officialWebsiteUrl.message}
-                                </p>
-                              ) : null}
-                            </div>
-
-                            <div>
-                              <Label
-                                htmlFor="officialContactName"
-                                className="mb-2 block text-sm"
-                              >
-                                Contact person name
-                              </Label>
-                              <Input
-                                id="officialContactName"
-                                placeholder="Name of school representative"
-                                className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
-                                {...form.register("officialContactName")}
-                              />
-                              {form.formState.errors.officialContactName ? (
-                                <p className="mt-2 text-xs text-red-500">
-                                  {form.formState.errors.officialContactName.message}
-                                </p>
-                              ) : null}
-                            </div>
-
-                            <div>
-                              <Label
-                                htmlFor="officialContactRole"
-                                className="mb-2 block text-sm"
-                              >
-                                Contact person role
-                              </Label>
-                              <Input
-                                id="officialContactRole"
-                                placeholder="Principal, admin officer, founder..."
-                                className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
-                                {...form.register("officialContactRole")}
-                              />
-                              {form.formState.errors.officialContactRole ? (
-                                <p className="mt-2 text-xs text-red-500">
-                                  {form.formState.errors.officialContactRole.message}
-                                </p>
-                              ) : null}
-                            </div>
-
-                            <div>
-                              <Label
-                                htmlFor="officialContactPhone"
-                                className="mb-2 block text-sm"
-                              >
-                                Contact person phone
-                              </Label>
-                              <Input
-                                id="officialContactPhone"
-                                placeholder="+234..."
-                                className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
-                                {...form.register("officialContactPhone")}
-                              />
-                              {form.formState.errors.officialContactPhone ? (
-                                <p className="mt-2 text-xs text-red-500">
-                                  {form.formState.errors.officialContactPhone.message}
-                                </p>
-                              ) : null}
-                            </div>
-
-                            <div>
-                              <Label
-                                htmlFor="officialContactEmail"
-                                className="mb-2 block text-sm"
-                              >
-                                Contact person email
-                              </Label>
-                              <Input
-                                id="officialContactEmail"
-                                type="email"
-                                placeholder="contact@example.com"
-                                className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
-                                {...form.register("officialContactEmail")}
-                              />
-                              {form.formState.errors.officialContactEmail ? (
-                                <p className="mt-2 text-xs text-red-500">
-                                  {form.formState.errors.officialContactEmail.message}
+                                  {form.formState.errors.coreValues.message}
                                 </p>
                               ) : null}
                             </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="step-2"
-                        initial={{ opacity: 0, x: 24 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -24 }}
-                        transition={{ duration: 0.2 }}
-                        className="space-y-6"
-                      >
-                        <div className="rounded-[28px] border border-[#07193f]/10 bg-white p-5">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00abff]">
-                            Domain setup
-                          </p>
-                          <h3 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#07193f]">
-                            Do you already have a domain name?
-                          </h3>
-                          <p className="mt-3 text-sm leading-7 text-slate-700">
-                            Choose the option that matches your school's current
-                            domain situation so we can guide the next stage properly.
-                          </p>
 
-                          <div className="mt-5 grid gap-4 md:grid-cols-2">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                form.setValue("domainChoice", "HAS_DOMAIN", {
-                                  shouldDirty: true,
-                                  shouldTouch: true,
-                                  shouldValidate: true,
-                                })
-                              }
-                              className={`rounded-[24px] border px-5 py-5 text-left transition ${
-                                domainChoice === "HAS_DOMAIN"
-                                  ? "border-[#07193f] bg-white text-[#07193f]"
-                                  : "border-[#07193f]/10 bg-white text-[#07193f]"
-                              }`}
-                            >
-                              <p className="text-sm font-semibold">
-                                Yes, we already have one
-                              </p>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                form.setValue("domainChoice", "NEEDS_DOMAIN", {
-                                  shouldDirty: true,
-                                  shouldTouch: true,
-                                  shouldValidate: true,
-                                })
-                              }
-                              className={`rounded-[24px] border px-5 py-5 text-left transition ${
-                                domainChoice === "NEEDS_DOMAIN"
-                                  ? "border-[#07193f] bg-white text-[#07193f]"
-                                  : "border-[#07193f]/10 bg-white text-[#07193f]"
-                              }`}
-                            >
-                              <p className="text-sm font-semibold">
-                                No, we need one
-                              </p>
-                            </button>
-                          </div>
-
-                          {form.formState.errors.domainChoice ? (
-                            <p className="mt-3 text-xs text-red-500">
-                              {form.formState.errors.domainChoice.message}
+                          <div className="rounded-[28px] border border-[#07193f]/10 bg-white p-5">
+                            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00abff]">
+                              Official contact detail
                             </p>
-                          ) : null}
-
-                          {domainChoice === "HAS_DOMAIN" ? (
-                            <div className="mt-5">
-                              <Label
-                                htmlFor="existingDomain"
-                                className="mb-2 block text-sm"
-                              >
-                                Current domain name
-                              </Label>
-                              <Input
-                                id="existingDomain"
-                                placeholder="example.edu.ng"
-                                className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
-                                {...form.register("existingDomain")}
-                              />
-                              {form.formState.errors.existingDomain ? (
-                                <p className="mt-2 text-xs text-red-500">
-                                  {form.formState.errors.existingDomain.message}
-                                </p>
-                              ) : null}
-                            </div>
-                          ) : domainChoice === "NEEDS_DOMAIN" ? (
                             <div className="mt-5 grid gap-5 md:grid-cols-2">
                               <div>
                                 <Label
-                                  htmlFor="preferredDomain1"
+                                  htmlFor="officialPhone"
                                   className="mb-2 block text-sm"
                                 >
-                                  Preferred domain name
+                                  Official phone
                                 </Label>
                                 <Input
-                                  id="preferredDomain1"
-                                  placeholder="first-choice-school.edu.ng"
+                                  id="officialPhone"
+                                  placeholder="+234..."
                                   className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
-                                  {...form.register("preferredDomain1")}
+                                  {...form.register("officialPhone")}
                                 />
-                                {form.formState.errors.preferredDomain1 ? (
+                                {form.formState.errors.officialPhone ? (
                                   <p className="mt-2 text-xs text-red-500">
-                                    {form.formState.errors.preferredDomain1.message}
+                                    {
+                                      form.formState.errors.officialPhone
+                                        .message
+                                    }
                                   </p>
                                 ) : null}
                               </div>
 
                               <div>
                                 <Label
-                                  htmlFor="preferredDomain2"
+                                  htmlFor="officialEmail"
                                   className="mb-2 block text-sm"
                                 >
-                                  Second preferred domain name
+                                  Official email
                                 </Label>
                                 <Input
-                                  id="preferredDomain2"
-                                  placeholder="backup-choice-school.edu.ng"
+                                  id="officialEmail"
+                                  type="email"
+                                  placeholder="school@example.com"
                                   className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
-                                  {...form.register("preferredDomain2")}
+                                  {...form.register("officialEmail")}
                                 />
-                                {form.formState.errors.preferredDomain2 ? (
+                                {form.formState.errors.officialEmail ? (
                                   <p className="mt-2 text-xs text-red-500">
-                                    {form.formState.errors.preferredDomain2.message}
+                                    {
+                                      form.formState.errors.officialEmail
+                                        .message
+                                    }
+                                  </p>
+                                ) : null}
+                              </div>
+
+                              <div className="md:col-span-2">
+                                <Label
+                                  htmlFor="officialAddress"
+                                  className="mb-2 block text-sm"
+                                >
+                                  Official address
+                                </Label>
+                                <Textarea
+                                  id="officialAddress"
+                                  placeholder="Enter the school address"
+                                  className="min-h-24 rounded-[24px] border-[#07193f]/12 bg-white"
+                                  {...form.register("officialAddress")}
+                                />
+                                {form.formState.errors.officialAddress ? (
+                                  <p className="mt-2 text-xs text-red-500">
+                                    {
+                                      form.formState.errors.officialAddress
+                                        .message
+                                    }
+                                  </p>
+                                ) : null}
+                              </div>
+
+                              <div className="md:col-span-2">
+                                <Label
+                                  htmlFor="officialWebsiteUrl"
+                                  className="mb-2 block text-sm"
+                                >
+                                  Current website or social link
+                                </Label>
+                                <Input
+                                  id="officialWebsiteUrl"
+                                  placeholder="https://"
+                                  className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
+                                  {...form.register("officialWebsiteUrl")}
+                                />
+                                {form.formState.errors.officialWebsiteUrl ? (
+                                  <p className="mt-2 text-xs text-red-500">
+                                    {
+                                      form.formState.errors.officialWebsiteUrl
+                                        .message
+                                    }
+                                  </p>
+                                ) : null}
+                              </div>
+
+                              <div>
+                                <Label
+                                  htmlFor="officialContactName"
+                                  className="mb-2 block text-sm"
+                                >
+                                  Contact person name
+                                </Label>
+                                <Input
+                                  id="officialContactName"
+                                  placeholder="Name of school representative"
+                                  className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
+                                  {...form.register("officialContactName")}
+                                />
+                                {form.formState.errors.officialContactName ? (
+                                  <p className="mt-2 text-xs text-red-500">
+                                    {
+                                      form.formState.errors.officialContactName
+                                        .message
+                                    }
+                                  </p>
+                                ) : null}
+                              </div>
+
+                              <div>
+                                <Label
+                                  htmlFor="officialContactRole"
+                                  className="mb-2 block text-sm"
+                                >
+                                  Contact person role
+                                </Label>
+                                <Input
+                                  id="officialContactRole"
+                                  placeholder="Principal, admin officer, founder..."
+                                  className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
+                                  {...form.register("officialContactRole")}
+                                />
+                                {form.formState.errors.officialContactRole ? (
+                                  <p className="mt-2 text-xs text-red-500">
+                                    {
+                                      form.formState.errors.officialContactRole
+                                        .message
+                                    }
+                                  </p>
+                                ) : null}
+                              </div>
+
+                              <div>
+                                <Label
+                                  htmlFor="officialContactPhone"
+                                  className="mb-2 block text-sm"
+                                >
+                                  Contact person phone
+                                </Label>
+                                <Input
+                                  id="officialContactPhone"
+                                  placeholder="+234..."
+                                  className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
+                                  {...form.register("officialContactPhone")}
+                                />
+                                {form.formState.errors.officialContactPhone ? (
+                                  <p className="mt-2 text-xs text-red-500">
+                                    {
+                                      form.formState.errors.officialContactPhone
+                                        .message
+                                    }
+                                  </p>
+                                ) : null}
+                              </div>
+
+                              <div>
+                                <Label
+                                  htmlFor="officialContactEmail"
+                                  className="mb-2 block text-sm"
+                                >
+                                  Contact person email
+                                </Label>
+                                <Input
+                                  id="officialContactEmail"
+                                  type="email"
+                                  placeholder="contact@example.com"
+                                  className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
+                                  {...form.register("officialContactEmail")}
+                                />
+                                {form.formState.errors.officialContactEmail ? (
+                                  <p className="mt-2 text-xs text-red-500">
+                                    {
+                                      form.formState.errors.officialContactEmail
+                                        .message
+                                    }
                                   </p>
                                 ) : null}
                               </div>
                             </div>
-                          ) : null}
-
-                          <div className="mt-6 rounded-[24px] border border-[#07193f]/10 bg-[#f8fbff] p-5">
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="step-2"
+                          initial={{ opacity: 0, x: 24 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -24 }}
+                          transition={{ duration: 0.2 }}
+                          className="space-y-6"
+                        >
+                          <div className="rounded-[28px] border border-[#07193f]/10 bg-white p-5">
                             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00abff]">
-                              Terms acceptance
+                              Domain setup
                             </p>
+                            <h3 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#07193f]">
+                              Do you already have a domain name?
+                            </h3>
                             <p className="mt-3 text-sm leading-7 text-slate-700">
-                              Please review the terms for this offer before you submit
-                              your application.
+                              Choose the option that matches your school's
+                              current domain situation so we can guide the next
+                              stage properly.
                             </p>
 
-                            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="mt-5 grid gap-4 md:grid-cols-2">
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setHasViewedTerms(true);
-                                  setIsTermsOpen(true);
-                                }}
-                                className="inline-flex h-10 items-center justify-center rounded-full border border-[#07193f]/12 bg-white px-5 text-sm font-semibold text-[#07193f] transition hover:bg-[#07193f] hover:text-white"
+                                onClick={() =>
+                                  form.setValue("domainChoice", "HAS_DOMAIN", {
+                                    shouldDirty: true,
+                                    shouldTouch: true,
+                                    shouldValidate: true,
+                                  })
+                                }
+                                className={`rounded-[24px] border px-5 py-5 text-left transition ${
+                                  domainChoice === "HAS_DOMAIN"
+                                    ? "border-[#07193f] bg-white text-[#07193f]"
+                                    : "border-[#07193f]/10 bg-white text-[#07193f]"
+                                }`}
                               >
-                                Read Terms and Conditions
+                                <p className="text-sm font-semibold">
+                                  Yes, we already have one
+                                </p>
                               </button>
 
-                              <div className="rounded-full bg-white px-4 py-2 text-xs text-slate-600">
-                                {hasViewedTerms
-                                  ? "Terms opened"
-                                  : "Review available"}
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  form.setValue(
+                                    "domainChoice",
+                                    "NEEDS_DOMAIN",
+                                    {
+                                      shouldDirty: true,
+                                      shouldTouch: true,
+                                      shouldValidate: true,
+                                    },
+                                  )
+                                }
+                                className={`rounded-[24px] border px-5 py-5 text-left transition ${
+                                  domainChoice === "NEEDS_DOMAIN"
+                                    ? "border-[#07193f] bg-white text-[#07193f]"
+                                    : "border-[#07193f]/10 bg-white text-[#07193f]"
+                                }`}
+                              >
+                                <p className="text-sm font-semibold">
+                                  No, we need one
+                                </p>
+                              </button>
                             </div>
 
-                            <div className="mt-4 flex items-start gap-3 rounded-[20px] border border-[#07193f]/10 bg-white p-4">
-                              <Checkbox
-                                id="termsAgreement"
-                                checked={hasAcceptedTerms}
-                                onCheckedChange={(checked) =>
-                                  setHasAcceptedTerms(checked === true)
-                                }
-                                className="mt-0.5 border-[#07193f]/30 data-[state=checked]:border-[#07193f] data-[state=checked]:bg-[#07193f]"
-                              />
-                              <div className="space-y-1">
+                            {form.formState.errors.domainChoice ? (
+                              <p className="mt-3 text-xs text-red-500">
+                                {form.formState.errors.domainChoice.message}
+                              </p>
+                            ) : null}
+
+                            {domainChoice === "HAS_DOMAIN" ? (
+                              <div className="mt-5">
                                 <Label
-                                  htmlFor="termsAgreement"
-                                  className="cursor-pointer text-sm font-medium text-[#07193f]"
+                                  htmlFor="existingDomain"
+                                  className="mb-2 block text-sm"
                                 >
-                                  I have read and agree to the Terms and Conditions
+                                  Current domain name
                                 </Label>
-                                <p className="text-xs leading-6 text-slate-600">
-                                  You can review the terms above at any time before
-                                  submitting this application.
-                                </p>
+                                <Input
+                                  id="existingDomain"
+                                  placeholder="example.edu.ng"
+                                  className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
+                                  {...form.register("existingDomain")}
+                                />
+                                {form.formState.errors.existingDomain ? (
+                                  <p className="mt-2 text-xs text-red-500">
+                                    {
+                                      form.formState.errors.existingDomain
+                                        .message
+                                    }
+                                  </p>
+                                ) : null}
+                              </div>
+                            ) : domainChoice === "NEEDS_DOMAIN" ? (
+                              <div className="mt-5 grid gap-5 md:grid-cols-2">
+                                <div>
+                                  <Label
+                                    htmlFor="preferredDomain1"
+                                    className="mb-2 block text-sm"
+                                  >
+                                    Preferred domain name
+                                  </Label>
+                                  <Input
+                                    id="preferredDomain1"
+                                    placeholder="first-choice-school.edu.ng"
+                                    className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
+                                    {...form.register("preferredDomain1")}
+                                  />
+                                  {form.formState.errors.preferredDomain1 ? (
+                                    <p className="mt-2 text-xs text-red-500">
+                                      {
+                                        form.formState.errors.preferredDomain1
+                                          .message
+                                      }
+                                    </p>
+                                  ) : null}
+                                </div>
+
+                                <div>
+                                  <Label
+                                    htmlFor="preferredDomain2"
+                                    className="mb-2 block text-sm"
+                                  >
+                                    Second preferred domain name
+                                  </Label>
+                                  <Input
+                                    id="preferredDomain2"
+                                    placeholder="backup-choice-school.edu.ng"
+                                    className="h-11 rounded-2xl border-[#07193f]/12 bg-white"
+                                    {...form.register("preferredDomain2")}
+                                  />
+                                  {form.formState.errors.preferredDomain2 ? (
+                                    <p className="mt-2 text-xs text-red-500">
+                                      {
+                                        form.formState.errors.preferredDomain2
+                                          .message
+                                      }
+                                    </p>
+                                  ) : null}
+                                </div>
+                              </div>
+                            ) : null}
+
+                            <div className="mt-6 rounded-[24px] border border-[#07193f]/10 bg-[#f8fbff] p-5">
+                              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00abff]">
+                                Terms acceptance
+                              </p>
+                              <p className="mt-3 text-sm leading-7 text-slate-700">
+                                Please review the terms for this offer before
+                                you submit your application.
+                              </p>
+
+                              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setHasViewedTerms(true);
+                                    setIsTermsOpen(true);
+                                  }}
+                                  className="inline-flex h-10 items-center justify-center rounded-full border border-[#07193f]/12 bg-white px-5 text-sm font-semibold text-[#07193f] transition hover:bg-[#07193f] hover:text-white"
+                                >
+                                  Read Terms and Conditions
+                                </button>
+
+                                <div className="rounded-full bg-white px-4 py-2 text-xs text-slate-600">
+                                  {hasViewedTerms
+                                    ? "Terms opened"
+                                    : "Review available"}
+                                </div>
+                              </div>
+
+                              <div className="mt-4 flex items-start gap-3 rounded-[20px] border border-[#07193f]/10 bg-white p-4">
+                                <Checkbox
+                                  id="termsAgreement"
+                                  checked={hasAcceptedTerms}
+                                  onCheckedChange={(checked) =>
+                                    setHasAcceptedTerms(checked === true)
+                                  }
+                                  className="mt-0.5 border-[#07193f]/30 data-[state=checked]:border-[#07193f] data-[state=checked]:bg-[#07193f]"
+                                />
+                                <div className="space-y-1">
+                                  <Label
+                                    htmlFor="termsAgreement"
+                                    className="cursor-pointer text-sm font-medium text-[#07193f]"
+                                  >
+                                    I have read and agree to the Terms and
+                                    Conditions
+                                  </Label>
+                                  <p className="text-xs leading-6 text-slate-600">
+                                    You can review the terms above at any time
+                                    before submitting this application.
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </form>
-              )}
-            </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </form>
+                )}
+              </div>
 
-            {!isSuccess ? (
-              <div className="border-t border-[#07193f]/10 bg-white px-6 py-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-[#07193f]">
-                      Template: {template.name}
-                    </p>
-                    <p className="text-xs text-slate-600">Step {step} of 2</p>
-                  </div>
+              {!isSuccess ? (
+                <div className="border-t border-[#07193f]/10 bg-white px-6 py-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-[#07193f]">
+                        Template: {template.name}
+                      </p>
+                      <p className="text-xs text-slate-600">Step {step} of 2</p>
+                    </div>
 
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    {step === 2 ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setStep(1)}
-                        className="h-11 rounded-full border-[#07193f]/12 bg-white px-6 text-sm font-semibold text-[#07193f] hover:bg-[#07193f] hover:text-white"
-                      >
-                        Back
-                      </Button>
-                    ) : null}
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      {step === 2 ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setStep(1)}
+                          className="h-11 rounded-full border-[#07193f]/12 bg-white px-6 text-sm font-semibold text-[#07193f] hover:bg-[#07193f] hover:text-white"
+                        >
+                          Back
+                        </Button>
+                      ) : null}
 
-                    {step === 1 ? (
-                      <Button
-                        type="button"
-                        onClick={handleStepOneNext}
-                        className="h-11 rounded-full bg-[#07193f] px-6 text-sm font-semibold text-white hover:bg-[#0d2458]"
-                      >
-                        Next
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button
-                        type="button"
-                        onClick={onSubmit}
-                        disabled={
-                          form.formState.isSubmitting || !hasAcceptedTerms
-                        }
-                        className="h-11 rounded-full bg-[#07193f] px-6 text-sm font-semibold text-white hover:bg-[#0d2458] disabled:opacity-60"
-                      >
-                        {form.formState.isSubmitting ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Submitting...
-                          </>
-                        ) : (
-                          <>
-                            Submit application
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </>
-                        )}
-                      </Button>
-                    )}
+                      {step === 1 ? (
+                        <Button
+                          type="button"
+                          onClick={handleStepOneNext}
+                          className="h-11 rounded-full bg-[#07193f] px-6 text-sm font-semibold text-white hover:bg-[#0d2458]"
+                        >
+                          Next
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          onClick={onSubmit}
+                          disabled={
+                            form.formState.isSubmitting || !hasAcceptedTerms
+                          }
+                          className="h-11 rounded-full bg-[#07193f] px-6 text-sm font-semibold text-white hover:bg-[#0d2458] disabled:opacity-60"
+                        >
+                          {form.formState.isSubmitting ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Submitting...
+                            </>
+                          ) : (
+                            <>
+                              Submit application
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : null}
+              ) : null}
             </div>
           ) : null}
         </DialogContent>
@@ -1269,7 +1654,9 @@ function TemplateApplicationDialog({
 
           <div className="space-y-5 text-sm leading-7 text-slate-700">
             <div>
-              <p className="font-semibold text-[#07193f]">1. Free website build</p>
+              <p className="font-semibold text-[#07193f]">
+                1. Free website build
+              </p>
               <p>
                 Dexta will build a template-based school website for your school
                 under this offer at no website development charge.
@@ -1277,44 +1664,56 @@ function TemplateApplicationDialog({
             </div>
 
             <div>
-              <p className="font-semibold text-[#07193f]">2. Domain and hosting are paid by the school</p>
+              <p className="font-semibold text-[#07193f]">
+                2. Domain and hosting are paid by the school
+              </p>
               <p>
-                The school is responsible for paying for its domain name and hosting.
-                These are not included for free under this offer.
+                The school is responsible for paying for its domain name and
+                hosting. These are not included for free under this offer.
               </p>
             </div>
 
             <div>
-              <p className="font-semibold text-[#07193f]">3. No free domain or hosting obligation</p>
+              <p className="font-semibold text-[#07193f]">
+                3. No free domain or hosting obligation
+              </p>
               <p>
-                Dexta is not responsible for providing free domain registration or
-                free hosting for any school. If setup guidance is given, the actual
-                third-party costs must still be paid by the school.
+                Dexta is not responsible for providing free domain registration
+                or free hosting for any school. If setup guidance is given, the
+                actual third-party costs must still be paid by the school.
               </p>
             </div>
 
             <div>
-              <p className="font-semibold text-[#07193f]">4. Template-based delivery only</p>
+              <p className="font-semibold text-[#07193f]">
+                4. Template-based delivery only
+              </p>
               <p>
-                The website will be created from an approved template and adapted
-                with your school&apos;s name, content, branding, and contact details.
+                The website will be created from an approved template and
+                adapted with your school&apos;s name, content, branding, and
+                contact details.
               </p>
             </div>
 
             <div>
-              <p className="font-semibold text-[#07193f]">5. Content responsibility</p>
+              <p className="font-semibold text-[#07193f]">
+                5. Content responsibility
+              </p>
               <p>
                 Your school is responsible for submitting accurate content,
-                approved branding assets, and correct official contact information.
+                approved branding assets, and correct official contact
+                information.
               </p>
             </div>
 
             <div>
-              <p className="font-semibold text-[#07193f]">6. Review and launch</p>
+              <p className="font-semibold text-[#07193f]">
+                6. Review and launch
+              </p>
               <p>
-                Dexta may review each request before launch and may pause or decline
-                progress if required information, approvals, or domain and hosting
-                payments are not in place.
+                Dexta may review each request before launch and may pause or
+                decline progress if required information, approvals, or domain
+                and hosting payments are not in place.
               </p>
             </div>
           </div>
@@ -1364,9 +1763,12 @@ function WeBrandSchoolsPageContent({
       })
     : WE_BRAND_SCHOOLS_HERO_IMAGE_FALLBACK;
 
-  const openTemplatePreview = useCallback((template: SchoolWebsiteTemplateData) => {
-    setPreviewTemplate(template);
-  }, []);
+  const openTemplatePreview = useCallback(
+    (template: SchoolWebsiteTemplateData) => {
+      setPreviewTemplate(template);
+    },
+    [],
+  );
 
   const selectTemplate = useCallback((template: SchoolWebsiteTemplateData) => {
     setPreviewTemplate(null);
@@ -1459,7 +1861,9 @@ function WeBrandSchoolsPageContent({
 
   const normalizeDesktopTestimonialsPosition = useCallback(() => {
     const container = desktopTestimonialsRef.current;
-    const firstSet = container?.querySelector<HTMLElement>("[data-testimonial-set]");
+    const firstSet = container?.querySelector<HTMLElement>(
+      "[data-testimonial-set]",
+    );
     const setWidth = firstSet?.offsetWidth ?? 0;
 
     if (!container || !setWidth) return;
@@ -1478,8 +1882,12 @@ function WeBrandSchoolsPageContent({
     const container = desktopTestimonialsRef.current;
     if (!container) return;
 
-    const firstSet = container.querySelector<HTMLElement>("[data-testimonial-set]");
-    const firstCard = container.querySelector<HTMLElement>("[data-testimonial-card]");
+    const firstSet = container.querySelector<HTMLElement>(
+      "[data-testimonial-set]",
+    );
+    const firstCard = container.querySelector<HTMLElement>(
+      "[data-testimonial-card]",
+    );
     const cardWidth = firstCard?.offsetWidth ?? 0;
     const gapWidth = Number.parseFloat(
       window.getComputedStyle(firstSet ?? container).columnGap || "24",
@@ -1500,7 +1908,9 @@ function WeBrandSchoolsPageContent({
 
     const initializePosition = () => {
       const container = desktopTestimonialsRef.current;
-      const firstSet = container?.querySelector<HTMLElement>("[data-testimonial-set]");
+      const firstSet = container?.querySelector<HTMLElement>(
+        "[data-testimonial-set]",
+      );
       const setWidth = firstSet?.offsetWidth ?? 0;
 
       if (!container || !setWidth) return;
@@ -1520,12 +1930,14 @@ function WeBrandSchoolsPageContent({
         normalizeDesktopTestimonialsPosition();
       }
 
-      desktopAnimationFrameRef.current = window.requestAnimationFrame(animationStep);
+      desktopAnimationFrameRef.current =
+        window.requestAnimationFrame(animationStep);
     };
 
     const initFrame = window.requestAnimationFrame(() => {
       initializePosition();
-      desktopAnimationFrameRef.current = window.requestAnimationFrame(animationStep);
+      desktopAnimationFrameRef.current =
+        window.requestAnimationFrame(animationStep);
     });
 
     return () => {
@@ -1629,13 +2041,13 @@ function WeBrandSchoolsPageContent({
               ]
                 .filter((item) => item.trim().length > 0)
                 .map((item, index) => (
-                <div
-                  key={`hero-feature-${index}-${item}`}
-                  className="rounded-[26px] border border-white/12 bg-white/8 px-5 py-5 backdrop-blur-sm"
-                >
-                  <p className="text-sm font-medium text-white/88">{item}</p>
-                </div>
-              ))}
+                  <div
+                    key={`hero-feature-${index}-${item}`}
+                    className="rounded-[26px] border border-white/12 bg-white/8 px-5 py-5 backdrop-blur-sm"
+                  >
+                    <p className="text-sm font-medium text-white/88">{item}</p>
+                  </div>
+                ))}
             </motion.div>
           </div>
         </section>
@@ -1683,14 +2095,14 @@ function WeBrandSchoolsPageContent({
                 ]
                   .filter((item) => item.trim().length > 0)
                   .map((item, index) => (
-                  <div
-                    key={`overview-benefit-${index}-${item}`}
-                    className="flex gap-3"
-                  >
-                    <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-[#00abff]" />
-                    <p className="text-sm leading-7 text-slate-700">{item}</p>
-                  </div>
-                ))}
+                    <div
+                      key={`overview-benefit-${index}-${item}`}
+                      className="flex gap-3"
+                    >
+                      <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-[#00abff]" />
+                      <p className="text-sm leading-7 text-slate-700">{item}</p>
+                    </div>
+                  ))}
               </div>
             </div>
           </div>
@@ -1718,7 +2130,8 @@ function WeBrandSchoolsPageContent({
               </h2>
               <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--about-brand-deep)]/80">
                 Real feedback from school leaders using Dexta’s template-led
-                website rollout to sharpen how their institutions show up online.
+                website rollout to sharpen how their institutions show up
+                online.
               </p>
             </div>
 
@@ -1826,7 +2239,9 @@ function WeBrandSchoolsPageContent({
                                 key={`${testimonial.id}-${copyIndex}`}
                                 data-testimonial-card
                               >
-                                <SchoolTestimonialCard testimonial={testimonial} />
+                                <SchoolTestimonialCard
+                                  testimonial={testimonial}
+                                />
                               </div>
                             ))}
                           </div>
@@ -1835,7 +2250,9 @@ function WeBrandSchoolsPageContent({
                     ) : (
                       <div className="flex justify-center">
                         {firstTestimonial ? (
-                          <SchoolTestimonialCard testimonial={firstTestimonial} />
+                          <SchoolTestimonialCard
+                            testimonial={firstTestimonial}
+                          />
                         ) : null}
                       </div>
                     )}
@@ -1856,8 +2273,11 @@ function WeBrandSchoolsPageContent({
           </div>
         </section>
 
-              {/* How it works section */}
-        <section id="apply" className="mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-24">
+        {/* How it works section */}
+        <section
+          id="apply"
+          className="mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-24"
+        >
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#00abff]">
@@ -1911,13 +2331,15 @@ function WeBrandSchoolsPageContent({
                 <h3 className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-[#07193f]">
                   {item.title}
                 </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-700">{item.body}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-700">
+                  {item.body}
+                </p>
               </div>
             ))}
           </div>
         </section>
 
-                {/* Templates */}
+        {/* Templates */}
         <section
           id="templates"
           className="py-20 text-white lg:py-24"
@@ -1949,27 +2371,24 @@ function WeBrandSchoolsPageContent({
                 <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-3">
                   {visibleTemplates.map((template) => {
                     const previewSrc = resolveTemplateCardPreview(template);
-                    const videoCount = template.assets.filter(
-                      (asset) => asset.mediaType === "VIDEO",
-                    ).length;
 
                     return (
                       <article
                         key={template.id}
-                        className="group mx-auto flex w-full max-w-[340px] flex-col overflow-hidden rounded-[30px] border border-white/15 bg-white/8 backdrop-blur-sm transition duration-300 hover:bg-white/10"
+                        className="group mx-auto flex w-full max-w-[390px] flex-col overflow-hidden rounded-[30px] border border-white/15 bg-white/8 backdrop-blur-sm transition duration-300 hover:bg-white/10"
                       >
                         <button
                           type="button"
                           onClick={() => openTemplatePreview(template)}
                           className="block w-full text-left"
                         >
-                          <div className="relative aspect-[4/5] overflow-hidden bg-white/6">
+                          <div className="relative h-[430px] overflow-hidden bg-white sm:h-[470px] lg:h-[520px]">
                             {previewSrc ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={previewSrc}
                                 alt={template.name}
-                                className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                                className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.02]"
                                 loading="lazy"
                               />
                             ) : (
@@ -1977,11 +2396,6 @@ function WeBrandSchoolsPageContent({
                                 No media
                               </div>
                             )}
-                            {videoCount ? (
-                              <span className="absolute right-4 top-4 rounded-full bg-[#07193f]/88 p-2 text-white shadow-lg shadow-[#07193f]/20">
-                                <Play className="h-4 w-4 fill-current" />
-                              </span>
-                            ) : null}
                             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#07193f]/92 via-[#07193f]/40 to-transparent px-5 py-5">
                               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/68">
                                 Website Template
@@ -2024,7 +2438,10 @@ function WeBrandSchoolsPageContent({
                       variant="outline"
                       onClick={() => {
                         setVisibleTemplateCount((current) =>
-                          Math.min(templates.length, current + templateBatchSize),
+                          Math.min(
+                            templates.length,
+                            current + templateBatchSize,
+                          ),
                         );
                       }}
                       className="h-11 rounded-full border-white/20 bg-transparent px-6 text-sm font-semibold text-white hover:bg-white hover:text-[#07193f]"
@@ -2040,12 +2457,13 @@ function WeBrandSchoolsPageContent({
                   Templates will appear here
                 </p>
                 <h3 className="mt-4 font-display text-3xl tracking-[-0.04em] text-white">
-                  The landing page structure is ready for your school website catalog.
+                  The landing page structure is ready for your school website
+                  catalog.
                 </h3>
                 <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-white/75">
-                  Once templates are added from the admin side, this section will
-                  display each website with its media preview, live preview link, and
-                  selection CTA.
+                  Once templates are added from the admin side, this section
+                  will display each website with its media preview, live preview
+                  link, and selection CTA.
                 </p>
                 <div className="mt-6 flex justify-center">
                   <a href={whatsappHref} target="_blank" rel="noreferrer">
@@ -2059,7 +2477,7 @@ function WeBrandSchoolsPageContent({
           </div>
         </section>
 
-            {/* Help Section */}
+        {/* Help Section */}
         <section
           id="help"
           className="w-full py-20 lg:py-24"

@@ -467,7 +467,7 @@ export function TemplateForm({
                       previewAlt={`Template video ${index + 1}`}
                       resourceType="video"
                       allowedFormats={["mp4", "webm", "mov"]}
-                      maxFileSize={100_000_000}
+                      maxFileSize={10_000_000}
                       successMessage="Video uploaded successfully"
                     />
                   </div>
