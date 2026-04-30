@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
+import { resolveSchoolTemplateAsset } from "@/lib/school-template-assets";
 import {
   type SchoolTemplateProjectContent,
   type SchoolTemplateProjectFieldValue,
@@ -637,30 +638,9 @@ function resolveAsset(
   value: SchoolTemplateProjectFieldValue,
   field: SchoolTemplateProjectSectionSnapshot["fields"][number],
 ) {
-  const source = toText(value).trim();
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "";
-
-  if (!source) {
-    return "";
-  }
-
-  if (/^(https?:|data:|blob:|\/|\.\/|\.\.\/)/i.test(source)) {
-    return source;
-  }
-
-  if (/^(assets|css|fonts|img|images|js|lib|scss|school-)/i.test(source)) {
-    return source;
-  }
-
-  if (field.type === "image" && cloudName) {
-    return `https://res.cloudinary.com/${cloudName}/image/upload/f_auto,q_auto/${source}`;
-  }
-
-  if (field.type === "model3d" && cloudName) {
-    return `https://res.cloudinary.com/${cloudName}/raw/upload/${source}`;
-  }
-
-  return source;
+  return resolveSchoolTemplateAsset(value, field, {
+    cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "",
+  });
 }
 
 function setDeep(

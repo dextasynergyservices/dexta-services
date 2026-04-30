@@ -1,8 +1,14 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import {
+  getSchoolTemplateAssetResolverBrowserScript,
+  resolveSchoolTemplateAsset,
+} from "@/lib/school-template-assets";
+import {
   type SchoolTemplateProjectContent,
   type SchoolTemplateProjectPageContent,
+  type SchoolTemplateProjectSectionContent,
+  type SchoolTemplateProjectSectionSnapshot,
   type SchoolTemplateSourceSnapshot,
 } from "@/lib/school-template-project-content";
 
@@ -57,65 +63,111 @@ function assertSafeTemplatePath(sourceDir: string, fileName: string) {
   return resolvedPath;
 }
 
-function patchHero3dPreviewScript(value: string) {
-  return value
-    .replace(
-      /const MODEL_URL\s*=\s*new URL\("\.\.\/assets\/3d\/gr\.glb", import\.meta\.url\)\.href;/,
-      'const MODEL_URL = window.schoolHero3dConfig?.model?.url ? (/^(https?:|blob:|data:)/i.test(window.schoolHero3dConfig.model.url) ? window.schoolHero3dConfig.model.url : new URL(window.schoolHero3dConfig.model.url.replace(/^\\.\\//, ""), document.baseURI).href) : new URL("assets/3d/gr.glb", document.baseURI).href;',
-    )
-    .replace(
-      /const PRELOAD_TIMEOUT_MS\s*=\s*\d+;/,
-      "const PRELOAD_TIMEOUT_MS = window.schoolHero3dConfig?.preloadTimeoutMs ?? 10000;",
-    )
-    .replace(
-      /const BASE_ROTATION_X\s*=\s*-?[\d.]+;/,
-      "const BASE_ROTATION_X = window.schoolHero3dConfig?.transform?.rotation?.x ?? -0.20;",
-    )
-    .replace(
-      /const BASE_ROTATION_Y\s*=\s*-?[\d.]+;/,
-      "const BASE_ROTATION_Y = window.schoolHero3dConfig?.transform?.rotation?.y ?? -0.21;",
-    )
-    .replace(
-      /const BASE_ROTATION_Z\s*=\s*-?[\d.]+;/,
-      "const BASE_ROTATION_Z = window.schoolHero3dConfig?.transform?.rotation?.z ?? 0.20;",
-    )
-    .replace(
-      /const MODEL_SCALE_TARGET\s*=\s*[\d.]+;/,
-      "const MODEL_SCALE_TARGET = window.schoolHero3dConfig?.transform?.scale ?? 4.5;",
-    )
-    .replace(
-      /const CAP_BODY_COLOR\s*=\s*new THREE\.Color\(0x[0-9a-fA-F]+\);/,
-      "const CAP_BODY_COLOR = new THREE.Color(window.schoolHero3dConfig?.materials?.capBodyColor || 0x060d1e);",
-    )
-    .replace(
-      /const CAP_BODY_EMISSIVE\s*=\s*new THREE\.Color\(0x[0-9a-fA-F]+\);/,
-      "const CAP_BODY_EMISSIVE = new THREE.Color(window.schoolHero3dConfig?.materials?.capBodyEmissiveColor || 0x010408);",
-    )
-    .replace(
-      /const TASSEL_CORD_COLOR\s*=\s*new THREE\.Color\(0x[0-9a-fA-F]+\);/,
-      "const TASSEL_CORD_COLOR = new THREE.Color(window.schoolHero3dConfig?.materials?.tasselCordColor || 0x2a5fc0);",
-    )
-    .replace(
-      /const TASSEL_TIP_COLOR\s*=\s*new THREE\.Color\(0x[0-9a-fA-F]+\);/,
-      "const TASSEL_TIP_COLOR = new THREE.Color(window.schoolHero3dConfig?.materials?.tasselTipColor || 0x1a3d8a);",
-    )
-    .replace(
-      /obj\.position\.x \+= sz2\.x \* 0\.10;/,
-      "obj.position.x += sz2.x * (window.schoolHero3dConfig?.transform?.offset?.x ?? 0.10);",
-    )
-    .replace(
-      /obj\.position\.y -= sz2\.y \* 0\.18;/,
-      "obj.position.y -= sz2.y * Math.abs(window.schoolHero3dConfig?.transform?.offset?.y ?? -0.18);",
-    );
+function getPreviewHero3dModuleMarkup() {
+  return '<script type="module" src="js/hero-3d.js?dextaPreview=3d-config-v2" data-dexta-preview-hero-3d="external"></script>';
 }
 
-async function getPreviewHero3dModuleMarkup(sourceDir: string) {
-  const scriptPath = assertSafeTemplatePath(sourceDir, "js/hero-3d.js");
-  const script = await readFile(scriptPath, "utf8");
+function isFilled(value: unknown) {
+  return value !== null && value !== undefined && value !== "";
+}
 
-  return `<script type="module" data-dexta-preview-hero-3d="true">
-${patchHero3dPreviewScript(script)}
-</script>`;
+function setDeep(
+  target: Record<string, unknown>,
+  pathName: string,
+  value: unknown,
+) {
+  const parts = pathName.split(".");
+  let cursor = target;
+
+  parts.forEach((part, index) => {
+    if (index === parts.length - 1) {
+      cursor[part] = value;
+      return;
+    }
+
+    if (!cursor[part] || typeof cursor[part] !== "object") {
+      cursor[part] = {};
+    }
+
+    cursor = cursor[part] as Record<string, unknown>;
+  });
+}
+
+function applyThreeConfigSection(
+  sectionContent: SchoolTemplateProjectSectionContent,
+  sectionSnapshot: SchoolTemplateProjectSectionSnapshot | undefined,
+  threeConfig: Record<string, unknown>,
+) {
+  if (!sectionSnapshot) {
+    return;
+  }
+
+  for (const field of sectionSnapshot.fields) {
+    if (field.target !== "threeConfig" || !field.configPath) {
+      continue;
+    }
+
+    const value = sectionContent.fields[field.key];
+    if (!isFilled(value)) {
+      continue;
+    }
+
+    setDeep(
+      threeConfig,
+      field.configPath,
+      field.type === "model3d"
+        ? resolveSchoolTemplateAsset(value, field, {
+            cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "",
+            proxyCloudinaryRawModels: false,
+          })
+        : value,
+    );
+  }
+}
+
+function buildPreviewThreeConfig({
+  content,
+  sourceSnapshot,
+  page,
+}: {
+  content: SchoolTemplateProjectContent;
+  sourceSnapshot: SchoolTemplateSourceSnapshot;
+  page: SchoolTemplateProjectPageContent;
+}) {
+  const threeConfig: Record<string, unknown> = {};
+  const pageSnapshot = sourceSnapshot.pages.find(
+    (item) => item.slug === page.slug,
+  );
+
+  for (const sectionContent of content.sharedSections) {
+    applyThreeConfigSection(
+      sectionContent,
+      sourceSnapshot.sharedSections.find(
+        (item) => item.id === sectionContent.id,
+      ),
+      threeConfig,
+    );
+  }
+
+  if (pageSnapshot) {
+    for (const sectionContent of page.sections) {
+      applyThreeConfigSection(
+        sectionContent,
+        pageSnapshot.sections.find((item) => item.id === sectionContent.id),
+        threeConfig,
+      );
+    }
+  }
+
+  return threeConfig;
+}
+
+function hasThreeConfig(config: Record<string, unknown>) {
+  return Object.keys(config).length > 0;
+}
+
+function renderThreeConfigMarkup(config: Record<string, unknown>) {
+  return `<script>window.schoolHero3dConfig = ${escapeScriptJson(config)};</script>`;
 }
 
 function getPreviewRuntimeScript(input: {
@@ -130,6 +182,7 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
   content: ${escapeScriptJson(input.content)},
   sourceSnapshot: ${escapeScriptJson(input.sourceSnapshot)},
   pageSlug: ${escapeScriptJson(input.page.slug)},
+  environment: ${escapeScriptJson(process.env.NODE_ENV ?? "development")},
   cloudName: ${escapeScriptJson(cloudName)}
 };
 (function () {
@@ -138,18 +191,6 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 
 	  function isFilled(value) {
 	    return value !== null && value !== undefined && value !== "";
-	  }
-
-	  function isCloudinaryRawGlbUrl(value) {
-	    try {
-	      var url = new URL(value);
-	      return url.protocol === "https:" &&
-	        url.hostname === "res.cloudinary.com" &&
-	        url.pathname.indexOf("/raw/upload/") !== -1 &&
-	        /\\.glb$/i.test(url.pathname);
-	    } catch (error) {
-	      return false;
-	    }
 	  }
 
   function toText(value) {
@@ -163,22 +204,14 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
     return text + unit;
   }
 
-		function resolveAsset(value, field) {
-	    var source = toText(value).trim();
-	    if (!source) return "";
-	    if (field.type === "model3d" && isCloudinaryRawGlbUrl(source)) {
-	      return "/api/cloudinary/raw?url=" + encodeURIComponent(source);
-	    }
-	    if (/^(https?:|data:|blob:|\\/|\\.\\/|\\.\\.\\/)/i.test(source)) return source;
-    if (/^(assets|css|fonts|img|images|js|lib|scss|school-)/i.test(source)) return source;
-    if (field.type === "image" && preview.cloudName) {
-      return "https://res.cloudinary.com/" + preview.cloudName + "/image/upload/f_auto,q_auto/" + source;
-    }
-    if (field.type === "model3d" && preview.cloudName) {
-      return "https://res.cloudinary.com/" + preview.cloudName + "/raw/upload/" + source;
-    }
-    return source;
-	  }
+${getSchoolTemplateAssetResolverBrowserScript()}
+
+  function resolveAsset(value, field) {
+    return resolveSchoolTemplateAsset(value, field, {
+      cloudName: preview.cloudName,
+      proxyCloudinaryRawModels: true
+    });
+  }
 	
 	  function getCssVariableValue(value, field) {
 	    if (field.type === "image" || field.type === "model3d") {
@@ -225,12 +258,6 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 
 	  function applyField(node, field, value) {
 	    if (field.target === "threeConfig") {
-	      window.schoolHero3dConfig = window.schoolHero3dConfig || {};
-	      setDeep(
-	        window.schoolHero3dConfig,
-	        field.configPath,
-	        field.type === "model3d" ? resolveAsset(value, field) : value
-	      );
 	      return;
 	    }
 
@@ -269,7 +296,6 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
       if (!isFilled(value)) return;
 
       if (field.target === "threeConfig") {
-        applyField(document.documentElement, field, value);
         return;
       }
 
@@ -292,6 +318,7 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 	        sectionSnapshot.fields.forEach(function (field) {
 	          var value = itemContent[field.key];
 	          if (!isFilled(value)) return;
+	          if (field.target === "threeConfig") return;
 
 	          queryWithin(itemRoot, field.selector).forEach(function (node) {
 	            applyField(node, field, value);
@@ -519,9 +546,15 @@ export async function renderSchoolTemplatePreview({
   const usesHero3d =
     sourceSnapshot.templateSlug === "dexta-academy-4" &&
     page.fileName === "index.html";
-  const hero3dModuleMarkup = usesHero3d
-    ? await getPreviewHero3dModuleMarkup(sourceSnapshot.sourceDir)
+  const threeConfig = buildPreviewThreeConfig({
+    content,
+    sourceSnapshot,
+    page,
+  });
+  const threeConfigMarkup = hasThreeConfig(threeConfig)
+    ? renderThreeConfigMarkup(threeConfig)
     : "";
+  const hero3dModuleMarkup = usesHero3d ? getPreviewHero3dModuleMarkup() : "";
 
   if (usesHero3d) {
     sourceHtml = removeHero3dModuleScript(sourceHtml);
@@ -539,7 +572,7 @@ export async function renderSchoolTemplatePreview({
 
   return injectBeforeBodyClose(
     withHeadMarkup,
-    `${getPreviewRuntimeScript({
+    `${threeConfigMarkup}${getPreviewRuntimeScript({
       content,
       sourceSnapshot,
       page,

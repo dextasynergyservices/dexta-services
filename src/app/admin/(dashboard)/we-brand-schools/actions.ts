@@ -459,13 +459,26 @@ function getUnsupportedWeBrandSchoolsContentFields(
 }
 
 function normalizeTemplateData(data: SchoolWebsiteTemplateInput) {
+  const normalizeTemplateMediaValue = (value: string) => {
+    const trimmedValue = value.trim();
+
+    if (
+      trimmedValue.startsWith("/") ||
+      trimmedValue.startsWith("http://") ||
+      trimmedValue.startsWith("https://")
+    ) {
+      return trimmedValue;
+    }
+
+    return getCloudinaryPublicId(trimmedValue) ?? trimmedValue;
+  };
+
   const assets = data.assets.map((asset, index) => ({
     id: asset.id?.trim() || randomUUID(),
-    publicId: getCloudinaryPublicId(asset.publicId) ?? asset.publicId,
+    publicId: normalizeTemplateMediaValue(asset.publicId),
     mediaType: asset.mediaType,
     thumbnailPublicId: asset.thumbnailPublicId
-      ? (getCloudinaryPublicId(asset.thumbnailPublicId) ??
-        asset.thumbnailPublicId)
+      ? normalizeTemplateMediaValue(asset.thumbnailPublicId)
       : null,
     caption: asset.caption ?? null,
     position: index,

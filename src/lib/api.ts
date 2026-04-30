@@ -47,10 +47,7 @@ import {
   type OffersAudienceType,
   type OffersPageContentData,
 } from "./offers-defaults";
-import {
-  SCHOOL_WEBSITE_TEMPLATES_TAG,
-  WE_BRAND_SCHOOLS_CONTENT_TAG,
-} from "./we-brand-schools-cache";
+import { WE_BRAND_SCHOOLS_CONTENT_TAG } from "./we-brand-schools-cache";
 import {
   WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS,
   parseJsonStringArray as parseWeBrandSchoolsJsonStringArray,
@@ -980,9 +977,7 @@ const fetchWeBrandSchoolsPageContentCached = unstable_cache(
   { tags: [WE_BRAND_SCHOOLS_CONTENT_TAG] },
 );
 
-export async function fetchWeBrandSchoolsPageContent(): Promise<
-  WeBrandSchoolsPageContentData
-> {
+export async function fetchWeBrandSchoolsPageContent(): Promise<WeBrandSchoolsPageContentData> {
   return fetchWeBrandSchoolsPageContentCached();
 }
 
@@ -1013,7 +1008,9 @@ export async function fetchSchoolWebsiteTestimonials(): Promise<
   return readSchoolWebsiteTestimonials();
 }
 
-async function readSchoolWebsiteTemplates(): Promise<SchoolWebsiteTemplateData[]> {
+async function readSchoolWebsiteTemplates(): Promise<
+  SchoolWebsiteTemplateData[]
+> {
   try {
     const rows = await weBrandSchoolsPrisma.schoolWebsiteTemplate.findMany({
       where: { isVisible: true },
@@ -1047,60 +1044,56 @@ async function readSchoolWebsiteTemplates(): Promise<SchoolWebsiteTemplateData[]
       return [];
     }
 
-    return rows.map((row: {
-      id: string;
-      name: string;
-      slug: string;
-      summary: string;
-      description: string | null;
-      websiteUrl: string | null;
-      highlights: string;
-      coverAssetId: string | null;
-      isVisible: boolean;
-      position: number;
-      assets: {
+    return rows.map(
+      (row: {
         id: string;
-        publicId: string;
-        mediaType: "IMAGE" | "VIDEO";
-        thumbnailPublicId: string | null;
-        caption: string | null;
+        name: string;
+        slug: string;
+        summary: string;
+        description: string | null;
+        websiteUrl: string | null;
+        highlights: string;
+        coverAssetId: string | null;
+        isVisible: boolean;
         position: number;
-      }[];
-    }) => ({
-      id: row.id,
-      name: row.name,
-      slug: row.slug,
-      summary: row.summary,
-      description: row.description,
-      websiteUrl: row.websiteUrl,
-      highlights: parseWeBrandSchoolsJsonStringArray(row.highlights),
-      coverAssetId: row.coverAssetId,
-      isVisible: row.isVisible,
-      position: row.position,
-      assets: row.assets.map((asset) => ({
-        id: asset.id,
-        publicId: asset.publicId,
-        mediaType: asset.mediaType,
-        thumbnailPublicId: asset.thumbnailPublicId,
-        caption: asset.caption,
-        position: asset.position,
-      })),
-    }));
+        assets: {
+          id: string;
+          publicId: string;
+          mediaType: "IMAGE" | "VIDEO";
+          thumbnailPublicId: string | null;
+          caption: string | null;
+          position: number;
+        }[];
+      }) => ({
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        summary: row.summary,
+        description: row.description,
+        websiteUrl: row.websiteUrl,
+        highlights: parseWeBrandSchoolsJsonStringArray(row.highlights),
+        coverAssetId: row.coverAssetId,
+        isVisible: row.isVisible,
+        position: row.position,
+        assets: row.assets.map((asset) => ({
+          id: asset.id,
+          publicId: asset.publicId,
+          mediaType: asset.mediaType,
+          thumbnailPublicId: asset.thumbnailPublicId,
+          caption: asset.caption,
+          position: asset.position,
+        })),
+      }),
+    );
   } catch {
     return [];
   }
 }
 
-const fetchSchoolWebsiteTemplatesCached = unstable_cache(
-  readSchoolWebsiteTemplates,
-  ["school-website-templates"],
-  { tags: [SCHOOL_WEBSITE_TEMPLATES_TAG] },
-);
-
 export async function fetchSchoolWebsiteTemplates(): Promise<
   SchoolWebsiteTemplateData[]
 > {
-  return fetchSchoolWebsiteTemplatesCached();
+  return readSchoolWebsiteTemplates();
 }
 
 // ─── Contact Page ─────────────────────────────────────────────────────────────
@@ -1455,7 +1448,9 @@ async function readAboutSpaceItems(): Promise<AboutSpaceItemData[]> {
         description: row.description,
         mediaType: row.mediaType,
         mediaPublicId: normalizeStoredCloudinaryValue(row.mediaPublicId),
-        thumbnailPublicId: normalizeStoredCloudinaryValue(row.thumbnailPublicId),
+        thumbnailPublicId: normalizeStoredCloudinaryValue(
+          row.thumbnailPublicId,
+        ),
         isVisible: row.isVisible,
         position: row.position,
       }),
