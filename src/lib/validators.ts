@@ -90,6 +90,14 @@ function requiredTrimmedString(label: string, max: number) {
     .max(max, `${label} must be ${max} characters or less`);
 }
 
+function requiredRichTextString(label: string) {
+  return z
+    .string()
+    .trim()
+    .min(1, `${label} is required`)
+    .max(12000, `${label} has too much formatting data`);
+}
+
 function optionalTrimmedString(label: string, max: number) {
   return z.preprocess(
     (value) => {
@@ -554,9 +562,9 @@ const aboutIconKeySchema = z.enum([
 
 export const offersPageContentSchema = z.object({
   // Hero
-  heroEyebrow: requiredTrimmedString("Hero eyebrow", 120),
-  heroHeadline: requiredTrimmedString("Hero headline", 220),
-  heroBody: requiredTrimmedString("Hero body", 2000),
+  heroEyebrow: requiredRichTextString("Hero eyebrow"),
+  heroHeadline: requiredRichTextString("Hero headline"),
+  heroBody: requiredRichTextString("Hero body"),
   heroBgImagePublicId: optionalCloudinaryPublicIdSchema,
   heroCtaText: requiredTrimmedString("Hero CTA text", 100),
   heroCtaHref: requiredTrimmedString("Hero CTA link", 500),
@@ -655,12 +663,12 @@ export const weBrandSchoolsPageContentSchema = z.object({
   heroPrimaryCtaHref: requiredTrimmedString("Primary CTA link", 500),
   heroSecondaryCtaText: requiredTrimmedString("Secondary CTA text", 100),
   heroSecondaryCtaHref: requiredTrimmedString("Secondary CTA link", 500),
-  heroFeature1: requiredTrimmedString("Hero feature 1", 120),
-  heroFeature2: requiredTrimmedString("Hero feature 2", 120),
-  heroFeature3: requiredTrimmedString("Hero feature 3", 120),
-  overviewLabel: requiredTrimmedString("Overview label", 120),
-  overviewTitle: requiredTrimmedString("Overview title", 220),
-  overviewBody: requiredTrimmedString("Overview body", 2000),
+  heroFeature1: requiredRichTextString("Hero feature 1"),
+  heroFeature2: requiredRichTextString("Hero feature 2"),
+  heroFeature3: requiredRichTextString("Hero feature 3"),
+  overviewLabel: requiredRichTextString("Overview label"),
+  overviewTitle: requiredRichTextString("Overview title"),
+  overviewBody: requiredRichTextString("Overview body"),
   overviewPrimaryCtaText: requiredTrimmedString(
     "Overview primary CTA text",
     100,
@@ -677,25 +685,25 @@ export const weBrandSchoolsPageContentSchema = z.object({
     "Overview secondary CTA link",
     500,
   ),
-  overviewBenefitsLabel: requiredTrimmedString("Overview benefits label", 120),
-  overviewBenefit1: requiredTrimmedString("Overview benefit 1", 220),
-  overviewBenefit2: requiredTrimmedString("Overview benefit 2", 220),
-  overviewBenefit3: requiredTrimmedString("Overview benefit 3", 220),
-  overviewBenefit4: requiredTrimmedString("Overview benefit 4", 220),
-  processLabel: requiredTrimmedString("Process label", 120),
-  processTitle: requiredTrimmedString("Process title", 220),
-  processBody: requiredTrimmedString("Process body", 1600),
-  processStep1Title: requiredTrimmedString("Process step 1 title", 120),
-  processStep1Body: requiredTrimmedString("Process step 1 body", 600),
-  processStep2Title: requiredTrimmedString("Process step 2 title", 120),
-  processStep2Body: requiredTrimmedString("Process step 2 body", 600),
-  processStep3Title: requiredTrimmedString("Process step 3 title", 120),
-  processStep3Body: requiredTrimmedString("Process step 3 body", 600),
-  processStep4Title: requiredTrimmedString("Process step 4 title", 120),
-  processStep4Body: requiredTrimmedString("Process step 4 body", 600),
-  templatesLabel: requiredTrimmedString("Templates label", 120),
-  templatesTitle: requiredTrimmedString("Templates title", 220),
-  templatesBody: requiredTrimmedString("Templates body", 1600),
+  overviewBenefitsLabel: requiredRichTextString("Overview benefits label"),
+  overviewBenefit1: requiredRichTextString("Overview benefit 1"),
+  overviewBenefit2: requiredRichTextString("Overview benefit 2"),
+  overviewBenefit3: requiredRichTextString("Overview benefit 3"),
+  overviewBenefit4: requiredRichTextString("Overview benefit 4"),
+  processLabel: requiredRichTextString("Process label"),
+  processTitle: requiredRichTextString("Process title"),
+  processBody: requiredRichTextString("Process body"),
+  processStep1Title: requiredRichTextString("Process step 1 title"),
+  processStep1Body: requiredRichTextString("Process step 1 body"),
+  processStep2Title: requiredRichTextString("Process step 2 title"),
+  processStep2Body: requiredRichTextString("Process step 2 body"),
+  processStep3Title: requiredRichTextString("Process step 3 title"),
+  processStep3Body: requiredRichTextString("Process step 3 body"),
+  processStep4Title: requiredRichTextString("Process step 4 title"),
+  processStep4Body: requiredRichTextString("Process step 4 body"),
+  templatesLabel: requiredRichTextString("Templates label"),
+  templatesTitle: requiredRichTextString("Templates title"),
+  templatesBody: requiredRichTextString("Templates body"),
 });
 
 export type WeBrandSchoolsPageContentInput = z.infer<

@@ -12,10 +12,14 @@ import {
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/admin/events/image-upload";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  normalizeHeroRichText,
+  type HeroRichTextMode,
+} from "@/lib/hero-rich-text";
 import {
   weBrandSchoolsPageContentSchema,
   type WeBrandSchoolsPageContentInput,
@@ -46,10 +50,53 @@ const PROCESS_FIELDS: Array<{
   { field: "processStep4Body", label: "Step 4 body", isBody: true },
 ];
 
+const RICH_TEXT_FIELD_MODES = {
+  heroEyebrow: "inline",
+  heroHeadline: "inline",
+  heroBody: "block",
+  heroFeature1: "inline",
+  heroFeature2: "inline",
+  heroFeature3: "inline",
+  overviewLabel: "inline",
+  overviewTitle: "inline",
+  overviewBody: "block",
+  overviewBenefitsLabel: "inline",
+  overviewBenefit1: "inline",
+  overviewBenefit2: "inline",
+  overviewBenefit3: "inline",
+  overviewBenefit4: "inline",
+  processLabel: "inline",
+  processTitle: "inline",
+  processBody: "block",
+  processStep1Title: "inline",
+  processStep1Body: "block",
+  processStep2Title: "inline",
+  processStep2Body: "block",
+  processStep3Title: "inline",
+  processStep3Body: "block",
+  processStep4Title: "inline",
+  processStep4Body: "block",
+  templatesLabel: "inline",
+  templatesTitle: "inline",
+  templatesBody: "block",
+} satisfies Partial<
+  Record<keyof WeBrandSchoolsPageContentInput, HeroRichTextMode>
+>;
+
+type RichTextFieldName = keyof typeof RICH_TEXT_FIELD_MODES;
+
 function formDefaults(
   content: WeBrandSchoolsPageContentRow,
 ): WeBrandSchoolsPageContentInput {
-  return { ...content };
+  const defaults = { ...content };
+
+  for (const [field, mode] of Object.entries(RICH_TEXT_FIELD_MODES) as Array<
+    [RichTextFieldName, HeroRichTextMode]
+  >) {
+    defaults[field] = normalizeHeroRichText(defaults[field], mode);
+  }
+
+  return defaults;
 }
 
 function FieldError({ message }: { message?: string }) {
@@ -149,6 +196,27 @@ export function WeBrandSchoolsContentForm({
     toast.success(result.message);
   };
 
+  const renderRichTextField = (
+    field: RichTextFieldName,
+    label: string,
+    minHeight = RICH_TEXT_FIELD_MODES[field] === "block" ? 220 : 160,
+  ) => (
+    <div>
+      <Label className="mb-1.5 block text-xs text-[#888]">{label}</Label>
+      <RichTextEditor
+        minHeight={minHeight}
+        value={watch(field) ?? ""}
+        onChange={(value) =>
+          setValue(field, value, {
+            shouldDirty: true,
+            shouldTouch: true,
+          })
+        }
+      />
+      <FieldError message={errors[field]?.message} />
+    </div>
+  );
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <SectionCard
@@ -174,7 +242,9 @@ export function WeBrandSchoolsContentForm({
           </div>
           <div>
             <input type="hidden" {...register("heroImagePublicId")} />
-            <Label className="mb-1.5 block text-xs text-[#888]">Hero image</Label>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Hero image
+            </Label>
             <ImageUpload
               value={watch("heroImagePublicId") ?? undefined}
               onChange={(value) => {
@@ -199,32 +269,9 @@ export function WeBrandSchoolsContentForm({
         description="Edit the intro messaging and CTA buttons shown at the top of the page."
         icon={<FileText className="h-5 w-5" />}
       >
-        <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Eyebrow</Label>
-          <Input
-            className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-            {...register("heroEyebrow")}
-          />
-          <FieldError message={errors.heroEyebrow?.message} />
-        </div>
-        <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Headline</Label>
-          <Textarea
-            rows={3}
-            className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-            {...register("heroHeadline")}
-          />
-          <FieldError message={errors.heroHeadline?.message} />
-        </div>
-        <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Body</Label>
-          <Textarea
-            rows={5}
-            className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-            {...register("heroBody")}
-          />
-          <FieldError message={errors.heroBody?.message} />
-        </div>
+        {renderRichTextField("heroEyebrow", "Eyebrow")}
+        {renderRichTextField("heroHeadline", "Headline", 220)}
+        {renderRichTextField("heroBody", "Body", 260)}
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <Label className="mb-1.5 block text-xs text-[#888]">
@@ -268,36 +315,9 @@ export function WeBrandSchoolsContentForm({
           </div>
         </div>
         <div className="grid gap-4 lg:grid-cols-3">
-          <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">
-              Hero feature 1
-            </Label>
-            <Input
-              className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-              {...register("heroFeature1")}
-            />
-            <FieldError message={errors.heroFeature1?.message} />
-          </div>
-          <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">
-              Hero feature 2
-            </Label>
-            <Input
-              className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-              {...register("heroFeature2")}
-            />
-            <FieldError message={errors.heroFeature2?.message} />
-          </div>
-          <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">
-              Hero feature 3
-            </Label>
-            <Input
-              className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-              {...register("heroFeature3")}
-            />
-            <FieldError message={errors.heroFeature3?.message} />
-          </div>
+          {renderRichTextField("heroFeature1", "Hero feature 1")}
+          {renderRichTextField("heroFeature2", "Hero feature 2")}
+          {renderRichTextField("heroFeature3", "Hero feature 3")}
         </div>
       </SectionCard>
 
@@ -306,32 +326,9 @@ export function WeBrandSchoolsContentForm({
         description="Control the post-hero introduction block, its action buttons, and the school benefits panel."
         icon={<LayoutTemplate className="h-5 w-5" />}
       >
-        <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Label</Label>
-          <Input
-            className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-            {...register("overviewLabel")}
-          />
-          <FieldError message={errors.overviewLabel?.message} />
-        </div>
-        <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Title</Label>
-          <Textarea
-            rows={2}
-            className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-            {...register("overviewTitle")}
-          />
-          <FieldError message={errors.overviewTitle?.message} />
-        </div>
-        <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Body</Label>
-          <Textarea
-            rows={5}
-            className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-            {...register("overviewBody")}
-          />
-          <FieldError message={errors.overviewBody?.message} />
-        </div>
+        {renderRichTextField("overviewLabel", "Label")}
+        {renderRichTextField("overviewTitle", "Title", 220)}
+        {renderRichTextField("overviewBody", "Body", 260)}
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <Label className="mb-1.5 block text-xs text-[#888]">
@@ -374,53 +371,12 @@ export function WeBrandSchoolsContentForm({
             <FieldError message={errors.overviewSecondaryCtaHref?.message} />
           </div>
         </div>
-        <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">
-            Benefits panel label
-          </Label>
-          <Input
-            className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-            {...register("overviewBenefitsLabel")}
-          />
-          <FieldError message={errors.overviewBenefitsLabel?.message} />
-        </div>
+        {renderRichTextField("overviewBenefitsLabel", "Benefits panel label")}
         <div className="grid gap-4 lg:grid-cols-2">
-          <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Benefit 1</Label>
-            <Textarea
-              rows={3}
-              className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-              {...register("overviewBenefit1")}
-            />
-            <FieldError message={errors.overviewBenefit1?.message} />
-          </div>
-          <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Benefit 2</Label>
-            <Textarea
-              rows={3}
-              className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-              {...register("overviewBenefit2")}
-            />
-            <FieldError message={errors.overviewBenefit2?.message} />
-          </div>
-          <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Benefit 3</Label>
-            <Textarea
-              rows={3}
-              className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-              {...register("overviewBenefit3")}
-            />
-            <FieldError message={errors.overviewBenefit3?.message} />
-          </div>
-          <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Benefit 4</Label>
-            <Textarea
-              rows={3}
-              className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-              {...register("overviewBenefit4")}
-            />
-            <FieldError message={errors.overviewBenefit4?.message} />
-          </div>
+          {renderRichTextField("overviewBenefit1", "Benefit 1")}
+          {renderRichTextField("overviewBenefit2", "Benefit 2")}
+          {renderRichTextField("overviewBenefit3", "Benefit 3")}
+          {renderRichTextField("overviewBenefit4", "Benefit 4")}
         </div>
       </SectionCard>
 
@@ -429,50 +385,27 @@ export function WeBrandSchoolsContentForm({
         description="Update the section intro and the four-step workflow shown on the page."
         icon={<Layers className="h-5 w-5" />}
       >
-        <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Label</Label>
-          <Input
-            className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-            {...register("processLabel")}
-          />
-          <FieldError message={errors.processLabel?.message} />
-        </div>
-        <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Title</Label>
-          <Textarea
-            rows={2}
-            className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-            {...register("processTitle")}
-          />
-          <FieldError message={errors.processTitle?.message} />
-        </div>
-        <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Body</Label>
-          <Textarea
-            rows={4}
-            className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-            {...register("processBody")}
-          />
-          <FieldError message={errors.processBody?.message} />
-        </div>
+        {renderRichTextField("processLabel", "Label")}
+        {renderRichTextField("processTitle", "Title", 220)}
+        {renderRichTextField("processBody", "Body", 240)}
 
         <div className="grid gap-4 lg:grid-cols-2">
           {PROCESS_FIELDS.map(({ field, label, isBody }) => {
             return (
               <div key={field}>
-                <Label className="mb-1.5 block text-xs text-[#888]">{label}</Label>
-                {isBody ? (
-                  <Textarea
-                    rows={4}
-                    className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-                    {...register(field)}
-                  />
-                ) : (
-                  <Input
-                    className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-                    {...register(field)}
-                  />
-                )}
+                <Label className="mb-1.5 block text-xs text-[#888]">
+                  {label}
+                </Label>
+                <RichTextEditor
+                  minHeight={isBody ? 220 : 160}
+                  value={watch(field) ?? ""}
+                  onChange={(value) =>
+                    setValue(field, value, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    })
+                  }
+                />
                 <FieldError message={errors[field]?.message} />
               </div>
             );
@@ -485,32 +418,9 @@ export function WeBrandSchoolsContentForm({
         description="Manage the heading copy above the template grid."
         icon={<LayoutTemplate className="h-5 w-5" />}
       >
-        <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Label</Label>
-          <Input
-            className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-            {...register("templatesLabel")}
-          />
-          <FieldError message={errors.templatesLabel?.message} />
-        </div>
-        <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Title</Label>
-          <Textarea
-            rows={2}
-            className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-            {...register("templatesTitle")}
-          />
-          <FieldError message={errors.templatesTitle?.message} />
-        </div>
-        <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Body</Label>
-          <Textarea
-            rows={4}
-            className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#444]"
-            {...register("templatesBody")}
-          />
-          <FieldError message={errors.templatesBody?.message} />
-        </div>
+        {renderRichTextField("templatesLabel", "Label")}
+        {renderRichTextField("templatesTitle", "Title", 220)}
+        {renderRichTextField("templatesBody", "Body", 240)}
       </SectionCard>
 
       <div className="flex justify-end">
