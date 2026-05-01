@@ -9,14 +9,17 @@ type WeBrandSchoolsPrismaDelegates = {
   schoolWebsiteTestimonial: any;
   schoolWebsiteTemplate: any;
   schoolWebsiteTemplateAsset: any;
+  schoolPortalSectionContent: any;
+  schoolPortalFeatureCard: any;
+  schoolPortalFeatureAsset: any;
   schoolWebsiteApplication: any;
   schoolWebsiteProject: any;
   schoolWebsiteProjectRevision: any;
   schoolWebsiteProjectExportLog: any;
 };
 
-export const weBrandSchoolsPrisma =
-  prisma as typeof prisma & WeBrandSchoolsPrismaDelegates;
+export const weBrandSchoolsPrisma = prisma as typeof prisma &
+  WeBrandSchoolsPrismaDelegates;
 
 export type SchoolWebsiteTestimonialStoreInput = {
   schoolName: string;
@@ -28,20 +31,25 @@ export type SchoolWebsiteTestimonialStoreInput = {
   position: number;
 };
 
-export type SchoolWebsiteTestimonialStoreRow = SchoolWebsiteTestimonialStoreInput & {
-  id: string;
-  createdAt: Date;
-};
+export type SchoolWebsiteTestimonialStoreRow =
+  SchoolWebsiteTestimonialStoreInput & {
+    id: string;
+    createdAt: Date;
+  };
 
 function getSchoolWebsiteTestimonialDelegate() {
-  return (weBrandSchoolsPrisma as typeof weBrandSchoolsPrisma & {
-    schoolWebsiteTestimonial?: {
-      findMany?: (args: unknown) => Promise<SchoolWebsiteTestimonialStoreRow[]>;
-      create?: (args: unknown) => Promise<unknown>;
-      update?: (args: unknown) => Promise<unknown>;
-      delete?: (args: unknown) => Promise<unknown>;
-    };
-  }).schoolWebsiteTestimonial;
+  return (
+    weBrandSchoolsPrisma as typeof weBrandSchoolsPrisma & {
+      schoolWebsiteTestimonial?: {
+        findMany?: (
+          args: unknown,
+        ) => Promise<SchoolWebsiteTestimonialStoreRow[]>;
+        create?: (args: unknown) => Promise<unknown>;
+        update?: (args: unknown) => Promise<unknown>;
+        delete?: (args: unknown) => Promise<unknown>;
+      };
+    }
+  ).schoolWebsiteTestimonial;
 }
 
 export async function listSchoolWebsiteTestimonials(options?: {

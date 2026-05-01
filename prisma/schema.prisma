@@ -622,6 +622,55 @@ model SchoolWebsiteTemplateAsset {
   @@index([templateId, position])
 }
 
+// Singleton content for the free portal section on the We Brand Schools page.
+model SchoolPortalSectionContent {
+  id          Int      @id @default(autoincrement())
+  eyebrow     String   @default("Free Portal Included")
+  title       String   @default("Every free school website also comes with a free school portal.")
+  description String   @default("Give your school a connected digital space for administration, parent communication, student records, and day-to-day school operations.")
+  ctaText     String?
+  ctaHref     String?
+  isVisible   Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+}
+
+model SchoolPortalFeatureCard {
+  id           String                     @id @default(uuid())
+  title        String
+  summary      String
+  description  String
+  features     String                     @default("[]")
+  coverAssetId String?
+  coverAsset   SchoolPortalFeatureAsset?  @relation("SchoolPortalFeatureCardCoverAsset", fields: [coverAssetId], references: [id], onDelete: SetNull)
+  assets       SchoolPortalFeatureAsset[] @relation("SchoolPortalFeatureCardAssets")
+  youtubeUrl   String?
+  isVisible    Boolean                    @default(true)
+  position     Int                        @default(0)
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+
+  @@index([position])
+  @@index([isVisible])
+  @@index([title])
+}
+
+model SchoolPortalFeatureAsset {
+  id                  String                    @id @default(uuid())
+  cardId              String
+  card                SchoolPortalFeatureCard   @relation("SchoolPortalFeatureCardAssets", fields: [cardId], references: [id], onDelete: Cascade)
+  publicId            String
+  mediaType           MediaType                 @default(IMAGE)
+  thumbnailPublicId   String?
+  caption             String?
+  position            Int                       @default(0)
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  coverForPortalCards SchoolPortalFeatureCard[] @relation("SchoolPortalFeatureCardCoverAsset")
+
+  @@index([cardId])
+  @@index([cardId, position])
+}
+
 model SchoolWebsiteApplication {
   id                   String                    @id @default(uuid())
   templateId           String?

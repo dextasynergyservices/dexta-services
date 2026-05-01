@@ -83,6 +83,37 @@ export type SchoolWebsiteTemplateData = {
   assets: SchoolWebsiteTemplateAssetData[];
 };
 
+export type SchoolPortalSectionContentData = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  ctaText: string | null;
+  ctaHref: string | null;
+  isVisible: boolean;
+};
+
+export type SchoolPortalFeatureAssetData = {
+  id: string;
+  publicId: string;
+  mediaType: SchoolWebsiteTemplateMediaType;
+  thumbnailPublicId: string | null;
+  caption: string | null;
+  position: number;
+};
+
+export type SchoolPortalFeatureCardData = {
+  id: string;
+  title: string;
+  summary: string;
+  description: string;
+  features: string[];
+  coverAssetId: string | null;
+  youtubeUrl: string | null;
+  isVisible: boolean;
+  position: number;
+  assets: SchoolPortalFeatureAssetData[];
+};
+
 export type SchoolWebsiteApplicationData = {
   templateId: string | null;
   selectedTemplateName: string;
@@ -142,8 +173,7 @@ export const WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS: WeBrandSchoolsPageContentDa
       "A credible public-facing platform for information, communication, and visibility",
     processLabel: "How It Works",
     processTitle: "From template selection to launch in a clear, simple flow.",
-    processBody:
-      "The process is designed to be easy for school administrators and repeatable for our internal team.",
+    processBody: "",
     processStep1Title: "Choose a template",
     processStep1Body:
       "Browse the available templates and open any one to preview images, videos, and the live experience.",
@@ -156,11 +186,230 @@ export const WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS: WeBrandSchoolsPageContentDa
     processStep4Title: "Review and go live",
     processStep4Body:
       "After review and approval, we prepare the website, complete minor revisions, and move it to launch.",
-    templatesLabel: "Website Templates",
+    templatesLabel: "Website Styles",
     templatesTitle: "Templates schools can preview and apply for.",
     templatesBody:
       "Each template supports a gallery of images and videos, a preview link, and a direct selection flow into the school application form.",
   };
+
+export const SCHOOL_PORTAL_SECTION_CONTENT_DEFAULTS: SchoolPortalSectionContentData =
+  {
+    eyebrow: "Free School Portal Included",
+    title: "A complete school portal is included with every free school website.",
+    description:
+      "School owners get real dashboards for administrators, teachers, students, and parents, with records, CBT, quizzes, games, communication, and academic tracking in one connected system.",
+    ctaText: "Watch Demo",
+    ctaHref: "",
+    isVisible: true,
+  };
+
+export const SCHOOL_PORTAL_FEATURE_CARD_DEFAULTS: SchoolPortalFeatureCardData[] =
+  [
+    {
+      id: "school-portal-admin-dashboard",
+      title: "School Admin Dashboard",
+      summary:
+        "Run the school from one dashboard with students, teachers, parents, classes, results, notices, analytics, and quick actions.",
+      description:
+        "The school admin dashboard gives owners and administrators a central control room for the portal. It shows key school numbers, quick actions, pending approvals, recent activity, analytics, CBT setup, quiz details, and light or dark dashboard previews for daily management.",
+      features: [
+        "Students, teachers, parents, and classes overview",
+        "Quick actions for students, teachers, results, assignments, notices, imports, and settings",
+        "Analytics and insights for student activity, results upload, assignment coverage, and class occupancy",
+        "CBT and quiz management with published question review",
+        "Light and dark dashboard views for flexible school use",
+      ],
+      coverAssetId: "school-portal-admin-dashboard-cover",
+      youtubeUrl: null,
+      isVisible: true,
+      position: 0,
+      assets: [
+        {
+          id: "school-portal-admin-dashboard-cover",
+          publicId: "/images/portal/school-admin-1-white.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "School admin dashboard overview",
+          position: 0,
+        },
+        {
+          id: "school-portal-admin-analytics",
+          publicId: "/images/portal/school-admin-2-white.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "Admin analytics and student insights dashboard",
+          position: 1,
+        },
+        {
+          id: "school-portal-admin-quiz-detail",
+          publicId: "/images/portal/school-admin-3-white.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "Admin quiz review and CBT question details",
+          position: 2,
+        },
+        {
+          id: "school-portal-admin-dark-mode",
+          publicId: "/images/portal/school-admin-1-black.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "School admin dashboard dark mode",
+          position: 3,
+        },
+      ],
+    },
+    {
+      id: "school-portal-teacher-dashboard",
+      title: "Teacher Dashboard",
+      summary:
+        "Help teachers manage students, upload records, create CBT exams, generate quizzes, publish games, and monitor class progress.",
+      description:
+        "The teacher dashboard gives staff a focused workspace for daily academic activity. Teachers can see their classes, track students, upload results, manage assignments, create exams, generate quizzes from prompts or documents, create learning games, and monitor student performance from one clean dashboard.",
+      features: [
+        "Teacher dashboard with class, result, assignment, quiz, game, and AI credit summaries",
+        "Student list with search, class filtering, and CSV export",
+        "AI-assisted or manual CBT exam creation",
+        "Quiz creation from prompts, documents, or manual entry",
+        "Learning game creation and performance tracking",
+      ],
+      coverAssetId: "school-portal-teacher-dashboard-cover",
+      youtubeUrl: null,
+      isVisible: true,
+      position: 1,
+      assets: [
+        {
+          id: "school-portal-teacher-dashboard-cover",
+          publicId: "/images/portal/teacher-1.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "Teacher dashboard overview",
+          position: 0,
+        },
+        {
+          id: "school-portal-teacher-students",
+          publicId: "/images/portal/teacher-2.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "Teacher student list and class filter",
+          position: 1,
+        },
+        {
+          id: "school-portal-teacher-create-quiz",
+          publicId: "/images/portal/teacher-3.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "Teacher quiz creation screen",
+          position: 2,
+        },
+        {
+          id: "school-portal-teacher-create-game",
+          publicId: "/images/portal/teacher-4.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "Teacher learning game creation screen",
+          position: 3,
+        },
+        {
+          id: "school-portal-teacher-create-exam",
+          publicId: "/images/portal/teacher-5.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "Teacher CBT exam creation screen",
+          position: 4,
+        },
+      ],
+    },
+    {
+      id: "school-portal-student-dashboard",
+      title: "Student Dashboard",
+      summary:
+        "Give students a personal portal for learning activity, quizzes, games, results, notices, achievements, and progress.",
+      description:
+        "The student dashboard gives each learner a simple place to see academic activity and learning progress. Students can view their class information, report cards, uploaded results, assignments, CBT, quizzes, games, notices, achievements, quiz performance, learning progress, and detailed quiz results.",
+      features: [
+        "Student dashboard with class details and academic activity",
+        "Quiz, game, CBT, assignment, report card, notice, and result summaries",
+        "Achievements and learning progress tracking",
+        "Completed quiz list with scores and status",
+        "Detailed quiz result review with answers and explanations",
+      ],
+      coverAssetId: "school-portal-student-dashboard-cover",
+      youtubeUrl: null,
+      isVisible: true,
+      position: 2,
+      assets: [
+        {
+          id: "school-portal-student-dashboard-cover",
+          publicId: "/images/portal/student-1.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "Student dashboard overview",
+          position: 0,
+        },
+        {
+          id: "school-portal-student-quizzes",
+          publicId: "/images/portal/student-2.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "Student completed quizzes screen",
+          position: 1,
+        },
+        {
+          id: "school-portal-student-quiz-results",
+          publicId: "/images/portal/student-3.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "Student quiz result and answer review",
+          position: 2,
+        },
+      ],
+    },
+    {
+      id: "school-portal-parent-dashboard",
+      title: "Parent Dashboard",
+      summary:
+        "Give parents a clear view of their children's academics, CBT results, quizzes, games, notices, and school updates.",
+      description:
+        "The parent dashboard keeps families connected to the school without scattered messages. Parents can view each child, see uploaded results, CBT activity, quiz scores, games, academic records, notices, and school communication from a dedicated parent portal.",
+      features: [
+        "Parent dashboard with all linked children in one place",
+        "Per-child academic and activity summaries",
+        "CBT results and quiz result tracking",
+        "Games, report cards, uploaded results, and notices",
+        "Cleaner communication between school and families",
+      ],
+      coverAssetId: "school-portal-parent-dashboard-cover",
+      youtubeUrl: null,
+      isVisible: true,
+      position: 3,
+      assets: [
+        {
+          id: "school-portal-parent-dashboard-cover",
+          publicId: "/images/portal/Parent-1.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "Parent dashboard overview",
+          position: 0,
+        },
+        {
+          id: "school-portal-parent-cbt-results",
+          publicId: "/images/portal/Parent-2.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "Parent CBT results overview",
+          position: 1,
+        },
+        {
+          id: "school-portal-parent-quizzes",
+          publicId: "/images/portal/Parent-3.png",
+          mediaType: "IMAGE",
+          thumbnailPublicId: null,
+          caption: "Parent quiz results overview",
+          position: 2,
+        },
+      ],
+    },
+  ];
 
 export const SCHOOL_WEBSITE_TESTIMONIAL_DEFAULTS: SchoolWebsiteTestimonialData[] =
   [
@@ -296,6 +545,21 @@ export function withWeBrandSchoolsPageContentDefaults(
     templatesLabel: value?.templatesLabel ?? defaults.templatesLabel,
     templatesTitle: value?.templatesTitle ?? defaults.templatesTitle,
     templatesBody: value?.templatesBody ?? defaults.templatesBody,
+  };
+}
+
+export function withSchoolPortalSectionContentDefaults(
+  value?: Partial<SchoolPortalSectionContentData> | null,
+): SchoolPortalSectionContentData {
+  const defaults = SCHOOL_PORTAL_SECTION_CONTENT_DEFAULTS;
+
+  return {
+    eyebrow: value?.eyebrow ?? defaults.eyebrow,
+    title: value?.title ?? defaults.title,
+    description: value?.description ?? defaults.description,
+    ctaText: value?.ctaText ?? defaults.ctaText,
+    ctaHref: value?.ctaHref ?? defaults.ctaHref,
+    isVisible: value?.isVisible ?? defaults.isVisible,
   };
 }
 

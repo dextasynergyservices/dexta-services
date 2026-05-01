@@ -7,6 +7,7 @@ import {
   serializeJsonStringArray,
 } from "../src/lib/we-brand-schools-defaults";
 import { WE_BRAND_SCHOOLS_TEMPLATE_SEED_DATA } from "./seed-we-brand-schools-data";
+import { seedSchoolPortalContent } from "./seed-we-brand-schools-portal";
 
 const connectionString =
   process.env.DATABASE_URL_UNPOOLED?.trim() || process.env.DATABASE_URL?.trim();
@@ -75,8 +76,10 @@ async function main() {
     }
   }
 
+  await seedSchoolPortalContent(prisma);
+
   console.log(
-    "Seeded We Brand Schools landing page content, testimonials, and templates.",
+    "Seeded We Brand Schools landing page content, testimonials, templates, and portal cards.",
   );
 
   await prisma.$disconnect();
