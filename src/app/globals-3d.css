@@ -4,7 +4,7 @@
 }
 
 /* perspective removed from body — it breaks position:fixed (navbar) on all pages.
-   Use .perspective-3d or .hero-3d-container on specific containers instead. */
+   Use .perspective-3d or .hero-3d-container on specific containers inst */
 
 .perspective-3d {
   perspective: var(--perspective);
