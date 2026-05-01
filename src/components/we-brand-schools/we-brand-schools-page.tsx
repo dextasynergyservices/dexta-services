@@ -2585,6 +2585,22 @@ function WeBrandSchoolsPageContent({
     <>
       <main className="flex flex-col bg-[linear-gradient(180deg,#f8f5ec_0%,#ffffff_20%,#f4f8ff_100%)] text-slate-950">
         <section className="order-1 relative overflow-hidden bg-[var(--dexta-secondary)] text-white">
+          <div className="absolute inset-0 lg:hidden" aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={heroImageSrc}
+              alt=""
+              className="h-full w-full object-cover"
+              loading="eager"
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundColor: "var(--dexta-secondary)",
+                opacity: 0.84,
+              }}
+            />
+          </div>
           <div className="relative mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-28">
             <motion.div
               initial={{ opacity: 0, y: -18 }}
