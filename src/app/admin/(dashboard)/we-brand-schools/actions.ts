@@ -50,6 +50,7 @@ import {
   withSchoolPortalSectionContentDefaults,
   withWeBrandSchoolsPageContentDefaults,
 } from "@/lib/we-brand-schools-defaults";
+import { sanitizeWeBrandSchoolsPageContentInput } from "@/lib/we-brand-schools-rich-text.server";
 import {
   schoolPortalFeatureCardSchema,
   schoolPortalSectionContentSchema,
@@ -731,7 +732,8 @@ export async function updateWeBrandSchoolsPageContent(
       };
     }
 
-    const normalized = normalizeContentData(parsed.data);
+    const sanitized = sanitizeWeBrandSchoolsPageContentInput(parsed.data);
+    const normalized = normalizeContentData(sanitized);
     const unsupportedFields =
       getUnsupportedWeBrandSchoolsContentFields(normalized);
 
