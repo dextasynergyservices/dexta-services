@@ -19,6 +19,7 @@ import {
   serviceContentDefaults,
 } from "./seed-projects-data";
 import { WE_BRAND_SCHOOLS_TEMPLATE_SEED_DATA } from "./seed-we-brand-schools-data";
+import { seedSchoolPortalContent } from "./seed-we-brand-schools-portal";
 
 const connectionString =
   process.env.DATABASE_URL_UNPOOLED?.trim() || process.env.DATABASE_URL?.trim();
@@ -182,11 +183,15 @@ async function main() {
     }
   }
 
+  await seedSchoolPortalContent(prisma);
+
   console.log(`Admin user seeded: ${email}`);
   console.log("Seeded homepage project section defaults.");
   console.log("Seeded projects hero defaults.");
   console.log("Seeded About page content and cards.");
-  console.log("Seeded We Brand Schools landing page defaults and templates.");
+  console.log(
+    "Seeded We Brand Schools landing page defaults, templates, and portal cards.",
+  );
   console.log("IMPORTANT: Change the default password after first login!");
 
   await prisma.$disconnect();

@@ -179,6 +179,11 @@ export function AdminSidebar({
           icon: ImageIcon,
         },
         {
+          href: "/admin/we-brand-schools/portal",
+          label: "Portal",
+          icon: LayoutDashboard,
+        },
+        {
           href: "/admin/we-brand-schools/applications",
           label: "Applications",
           icon: Users,

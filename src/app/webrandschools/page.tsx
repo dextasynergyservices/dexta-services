@@ -4,6 +4,8 @@ import { WeBrandSchoolsPage } from "@/components/we-brand-schools";
 import {
   fetchContactPageContent,
   fetchContactSocialLinks,
+  fetchSchoolPortalFeatureCards,
+  fetchSchoolPortalSectionContent,
   fetchSchoolWebsiteTestimonials,
   fetchSchoolWebsiteTemplates,
   fetchWeBrandSchoolsPageContent,
@@ -22,14 +24,23 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function WeBrandSchoolsRoute() {
-  const [content, testimonials, templates, contactContent, socialLinks] =
-    await Promise.all([
-      fetchWeBrandSchoolsPageContent(),
-      fetchSchoolWebsiteTestimonials(),
-      fetchSchoolWebsiteTemplates(),
-      fetchContactPageContent(),
-      fetchContactSocialLinks(),
-    ]);
+  const [
+    content,
+    testimonials,
+    templates,
+    portalSectionContent,
+    portalCards,
+    contactContent,
+    socialLinks,
+  ] = await Promise.all([
+    fetchWeBrandSchoolsPageContent(),
+    fetchSchoolWebsiteTestimonials(),
+    fetchSchoolWebsiteTemplates(),
+    fetchSchoolPortalSectionContent(),
+    fetchSchoolPortalFeatureCards(),
+    fetchContactPageContent(),
+    fetchContactSocialLinks(),
+  ]);
 
   return (
     <PageTransition>
@@ -37,6 +48,8 @@ export default async function WeBrandSchoolsRoute() {
         content={content}
         testimonials={testimonials}
         templates={templates}
+        portalSectionContent={portalSectionContent}
+        portalCards={portalCards}
         contactContent={contactContent}
         socialLinks={socialLinks}
       />

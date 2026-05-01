@@ -41,6 +41,35 @@ const optionalUrlSchema = z
   .nullable()
   .or(z.literal(""));
 
+const optionalYoutubeUrlSchema = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") {
+      return value;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? null : trimmed;
+  },
+  z
+    .string()
+    .max(500, "YouTube URL must be 500 characters or less")
+    .url("Please enter a valid YouTube URL")
+    .refine((value) => {
+      try {
+        const hostname = new URL(value).hostname.toLowerCase();
+        return (
+          hostname === "youtu.be" ||
+          hostname === "youtube.com" ||
+          hostname.endsWith(".youtube.com")
+        );
+      } catch {
+        return false;
+      }
+    }, "YouTube URL must be from youtube.com or youtu.be")
+    .nullable()
+    .optional(),
+);
+
 const optionalSlugSchema = z
   .string()
   .trim()
@@ -62,14 +91,21 @@ function requiredTrimmedString(label: string, max: number) {
 }
 
 function optionalTrimmedString(label: string, max: number) {
-  return z.preprocess((value) => {
-    if (typeof value !== "string") {
-      return value;
-    }
+  return z.preprocess(
+    (value) => {
+      if (typeof value !== "string") {
+        return value;
+      }
 
-    const trimmed = value.trim();
-    return trimmed.length === 0 ? null : trimmed;
-  }, z.string().max(max, `${label} must be ${max} characters or less`).nullable().optional());
+      const trimmed = value.trim();
+      return trimmed.length === 0 ? null : trimmed;
+    },
+    z
+      .string()
+      .max(max, `${label} must be ${max} characters or less`)
+      .nullable()
+      .optional(),
+  );
 }
 
 export const SCHOOL_WEBSITE_TESTIMONIAL_MAX_CHARACTERS = 170;
@@ -504,10 +540,7 @@ const schoolWebsiteJobStatusSchema = z.enum([
   "LIVE",
   "DECLINED",
 ]);
-const schoolWebsiteDomainChoiceSchema = z.enum([
-  "HAS_DOMAIN",
-  "NEEDS_DOMAIN",
-]);
+const schoolWebsiteDomainChoiceSchema = z.enum(["HAS_DOMAIN", "NEEDS_DOMAIN"]);
 const aboutIconKeySchema = z.enum([
   "ZAP",
   "GLOBE",
@@ -628,8 +661,14 @@ export const weBrandSchoolsPageContentSchema = z.object({
   overviewLabel: requiredTrimmedString("Overview label", 120),
   overviewTitle: requiredTrimmedString("Overview title", 220),
   overviewBody: requiredTrimmedString("Overview body", 2000),
-  overviewPrimaryCtaText: requiredTrimmedString("Overview primary CTA text", 100),
-  overviewPrimaryCtaHref: requiredTrimmedString("Overview primary CTA link", 500),
+  overviewPrimaryCtaText: requiredTrimmedString(
+    "Overview primary CTA text",
+    100,
+  ),
+  overviewPrimaryCtaHref: requiredTrimmedString(
+    "Overview primary CTA link",
+    500,
+  ),
   overviewSecondaryCtaText: requiredTrimmedString(
     "Overview secondary CTA text",
     100,
@@ -749,6 +788,70 @@ export type SchoolWebsiteTemplateInput = z.infer<
   typeof schoolWebsiteTemplateSchema
 >;
 
+export const schoolPortalSectionContentSchema = z.object({
+  eyebrow: requiredTrimmedString("Portal section eyebrow", 120),
+  title: requiredTrimmedString("Portal section title", 260),
+  description: requiredTrimmedString("Portal section description", 1600),
+  ctaText: optionalTrimmedString("Portal CTA text", 100),
+  ctaHref: optionalTrimmedString("Portal CTA link", 500),
+  isVisible: z.boolean(),
+});
+
+export type SchoolPortalSectionContentInput = z.infer<
+  typeof schoolPortalSectionContentSchema
+>;
+
+export const schoolPortalFeatureAssetSchema = z
+  .object({
+    id: z
+      .string()
+      .trim()
+      .max(100, "Asset ID must be 100 characters or less")
+      .optional()
+      .nullable(),
+    publicId: z
+      .string()
+      .trim()
+      .min(1, "Asset public ID is required")
+      .max(500, "Asset public ID must be 500 characters or less"),
+    mediaType: mediaTypeSchema,
+    thumbnailPublicId: optionalCloudinaryPublicIdSchema,
+    caption: optionalTrimmedString("Asset caption", 300),
+    position: z.number().int().min(0, "Position must be zero or greater"),
+  })
+  .refine(
+    (value) => value.mediaType !== "VIDEO" || Boolean(value.thumbnailPublicId),
+    {
+      message: "Video assets require a thumbnail image",
+      path: ["thumbnailPublicId"],
+    },
+  );
+
+export type SchoolPortalFeatureAssetInput = z.infer<
+  typeof schoolPortalFeatureAssetSchema
+>;
+
+export const schoolPortalFeatureCardSchema = z.object({
+  title: requiredTrimmedString("Portal card title", 160),
+  summary: requiredTrimmedString("Portal card summary", 260),
+  description: requiredTrimmedString("Portal card description", 4000),
+  features: jsonStringArrayUpToSchema("Portal card features", 12, 140),
+  coverAssetId: z
+    .string()
+    .trim()
+    .max(100, "Cover asset ID must be 100 characters or less")
+    .optional()
+    .nullable(),
+  youtubeUrl: optionalYoutubeUrlSchema,
+  assets: z.array(schoolPortalFeatureAssetSchema).default([]),
+  isVisible: z.boolean(),
+  position: z.number().int().min(0, "Position must be zero or greater"),
+});
+
+export type SchoolPortalFeatureCardInput = z.infer<
+  typeof schoolPortalFeatureCardSchema
+>;
+
 export const schoolWebsiteApplicationStepOneSchema = z.object({
   templateId: z
     .string()
@@ -827,12 +930,13 @@ export type SchoolWebsiteApplicationStepTwoInput = z.infer<
   typeof schoolWebsiteApplicationStepTwoSchema
 >;
 
-export const schoolWebsiteApplicationSchema = schoolWebsiteApplicationStepOneSchema
-  .merge(schoolWebsiteApplicationStepTwoSchema)
-  .extend({
-    status: schoolWebsiteJobStatusSchema.default("PENDING"),
-    adminNotes: optionalTrimmedString("Admin notes", 4000),
-  });
+export const schoolWebsiteApplicationSchema =
+  schoolWebsiteApplicationStepOneSchema
+    .merge(schoolWebsiteApplicationStepTwoSchema)
+    .extend({
+      status: schoolWebsiteJobStatusSchema.default("PENDING"),
+      adminNotes: optionalTrimmedString("Admin notes", 4000),
+    });
 
 export type SchoolWebsiteApplicationInput = z.infer<
   typeof schoolWebsiteApplicationSchema
@@ -1036,10 +1140,13 @@ export const aboutSpaceItemSchema = z
     isVisible: z.boolean(),
     position: z.number().int().min(0, "Position must be zero or greater"),
   })
-  .refine((value) => value.mediaType !== "VIDEO" || Boolean(value.mediaPublicId), {
-    message: "Video spaces require a video upload",
-    path: ["mediaPublicId"],
-  })
+  .refine(
+    (value) => value.mediaType !== "VIDEO" || Boolean(value.mediaPublicId),
+    {
+      message: "Video spaces require a video upload",
+      path: ["mediaPublicId"],
+    },
+  )
   .refine(
     (value) => value.mediaType !== "VIDEO" || Boolean(value.thumbnailPublicId),
     {

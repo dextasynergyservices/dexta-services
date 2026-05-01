@@ -29,26 +29,36 @@ import {
   weBrandSchoolsPrisma,
 } from "@/lib/we-brand-schools-prisma";
 import {
+  SCHOOL_PORTAL_CARDS_TAG,
+  SCHOOL_PORTAL_SECTION_TAG,
   SCHOOL_WEBSITE_TESTIMONIALS_TAG,
   SCHOOL_WEBSITE_APPLICATIONS_TAG,
   SCHOOL_WEBSITE_TEMPLATES_TAG,
   WE_BRAND_SCHOOLS_CONTENT_TAG,
 } from "@/lib/we-brand-schools-cache";
 import {
+  SCHOOL_PORTAL_SECTION_CONTENT_DEFAULTS,
   WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS,
   parseJsonStringArray,
   serializeJsonStringArray,
+  type SchoolPortalFeatureCardData,
+  type SchoolPortalSectionContentData,
   type SchoolWebsiteApplicationData,
   type SchoolWebsiteTestimonialData,
   type SchoolWebsiteTemplateData,
   type WeBrandSchoolsPageContentData,
+  withSchoolPortalSectionContentDefaults,
   withWeBrandSchoolsPageContentDefaults,
 } from "@/lib/we-brand-schools-defaults";
 import {
+  schoolPortalFeatureCardSchema,
+  schoolPortalSectionContentSchema,
   schoolWebsiteApplicationStatusSchema,
   schoolWebsiteTestimonialSchema,
   schoolWebsiteTemplateSchema,
   weBrandSchoolsPageContentSchema,
+  type SchoolPortalFeatureCardInput,
+  type SchoolPortalSectionContentInput,
   type SchoolWebsiteApplicationStatusInput,
   type SchoolWebsiteTestimonialInput,
   type SchoolWebsiteTemplateInput,
@@ -88,6 +98,14 @@ type SchoolWebsiteProjectExportLogDelegate = {
       detailsJson?: Record<string, unknown>;
     };
   }): Promise<unknown>;
+};
+type SchoolPortalFeatureCardTransactionClient = {
+  schoolPortalFeatureCard: {
+    update(args: unknown): Promise<unknown>;
+  };
+  schoolPortalFeatureAsset: {
+    deleteMany(args: unknown): Promise<unknown>;
+  };
 };
 type SchoolWebsiteProjectRevisionResult = ActionResult & {
   revisionId?: string;
@@ -129,6 +147,8 @@ type SchoolWebsiteProjectStatusRow =
 export type WeBrandSchoolsPageContentRow = WeBrandSchoolsPageContentData;
 export type SchoolWebsiteTestimonialRow = SchoolWebsiteTestimonialData;
 export type SchoolWebsiteTemplateRow = SchoolWebsiteTemplateData;
+export type SchoolPortalSectionContentRow = SchoolPortalSectionContentData;
+export type SchoolPortalFeatureCardRow = SchoolPortalFeatureCardData;
 export type SchoolWebsiteApplicationRow = SchoolWebsiteApplicationData & {
   id: string;
   createdAt: Date;
@@ -159,6 +179,8 @@ export type SchoolWebsiteProjectRow = {
 
 function revalidateWeBrandSchoolsAdmin() {
   updateTag(WE_BRAND_SCHOOLS_CONTENT_TAG);
+  updateTag(SCHOOL_PORTAL_SECTION_TAG);
+  updateTag(SCHOOL_PORTAL_CARDS_TAG);
   updateTag(SCHOOL_WEBSITE_TESTIMONIALS_TAG);
   updateTag(SCHOOL_WEBSITE_TEMPLATES_TAG);
   updateTag(SCHOOL_WEBSITE_APPLICATIONS_TAG);
@@ -167,6 +189,7 @@ function revalidateWeBrandSchoolsAdmin() {
   revalidatePath("/admin/we-brand-schools/content");
   revalidatePath("/admin/we-brand-schools/testimonials");
   revalidatePath("/admin/we-brand-schools/templates");
+  revalidatePath("/admin/we-brand-schools/portal");
   revalidatePath("/admin/we-brand-schools/applications");
   revalidatePath("/admin/we-brand-schools/projects");
 }
@@ -512,6 +535,50 @@ function normalizeTestimonialData(data: SchoolWebsiteTestimonialInput) {
   };
 }
 
+function normalizePortalMediaValue(value: string) {
+  const trimmedValue = value.trim();
+
+  if (
+    trimmedValue.startsWith("/") ||
+    trimmedValue.startsWith("http://") ||
+    trimmedValue.startsWith("https://")
+  ) {
+    return trimmedValue;
+  }
+
+  return getCloudinaryPublicId(trimmedValue) ?? trimmedValue;
+}
+
+function normalizePortalFeatureCardData(data: SchoolPortalFeatureCardInput) {
+  const assets = data.assets.map((asset, index) => ({
+    id: asset.id?.trim() || randomUUID(),
+    publicId: normalizePortalMediaValue(asset.publicId),
+    mediaType: asset.mediaType,
+    thumbnailPublicId: asset.thumbnailPublicId
+      ? normalizePortalMediaValue(asset.thumbnailPublicId)
+      : null,
+    caption: asset.caption ?? null,
+    position: index,
+  }));
+
+  const normalizedCoverAssetId =
+    assets.find((asset) => asset.id === data.coverAssetId)?.id ??
+    assets[0]?.id ??
+    null;
+
+  return {
+    title: data.title,
+    summary: data.summary,
+    description: data.description,
+    features: serializeJsonStringArray(parseJsonStringArray(data.features)),
+    coverAssetId: normalizedCoverAssetId,
+    youtubeUrl: data.youtubeUrl ?? null,
+    isVisible: data.isVisible,
+    position: data.position,
+    assets,
+  };
+}
+
 function mapTemplateRow(row: {
   id: string;
   name: string;
@@ -541,6 +608,46 @@ function mapTemplateRow(row: {
     websiteUrl: row.websiteUrl,
     highlights: parseJsonStringArray(row.highlights),
     coverAssetId: row.coverAssetId,
+    isVisible: row.isVisible,
+    position: row.position,
+    assets: row.assets.map((asset) => ({
+      id: asset.id,
+      publicId: asset.publicId,
+      mediaType: asset.mediaType,
+      thumbnailPublicId: asset.thumbnailPublicId,
+      caption: asset.caption,
+      position: asset.position,
+    })),
+  };
+}
+
+function mapPortalFeatureCardRow(row: {
+  id: string;
+  title: string;
+  summary: string;
+  description: string;
+  features: string;
+  coverAssetId: string | null;
+  youtubeUrl: string | null;
+  isVisible: boolean;
+  position: number;
+  assets: Array<{
+    id: string;
+    publicId: string;
+    mediaType: "IMAGE" | "VIDEO";
+    thumbnailPublicId: string | null;
+    caption: string | null;
+    position: number;
+  }>;
+}): SchoolPortalFeatureCardRow {
+  return {
+    id: row.id,
+    title: row.title,
+    summary: row.summary,
+    description: row.description,
+    features: parseJsonStringArray(row.features),
+    coverAssetId: row.coverAssetId,
+    youtubeUrl: row.youtubeUrl,
     isVisible: row.isVisible,
     position: row.position,
     assets: row.assets.map((asset) => ({
@@ -989,6 +1096,295 @@ export async function deleteSchoolWebsiteTemplate(
       success: false,
       message:
         error instanceof Error ? error.message : "Failed to delete template.",
+    };
+  }
+}
+
+export async function getSchoolPortalSectionContentAdmin(): Promise<SchoolPortalSectionContentRow> {
+  try {
+    const row = await weBrandSchoolsPrisma.schoolPortalSectionContent.findFirst(
+      {
+        orderBy: { id: "asc" },
+        select: {
+          eyebrow: true,
+          title: true,
+          description: true,
+          ctaText: true,
+          ctaHref: true,
+          isVisible: true,
+        },
+      },
+    );
+
+    if (!row) {
+      return SCHOOL_PORTAL_SECTION_CONTENT_DEFAULTS;
+    }
+
+    return withSchoolPortalSectionContentDefaults({
+      eyebrow: row.eyebrow,
+      title: row.title,
+      description: row.description,
+      ctaText: row.ctaText ?? null,
+      ctaHref: row.ctaHref ?? null,
+      isVisible: row.isVisible,
+    });
+  } catch (error) {
+    console.error("[getSchoolPortalSectionContentAdmin]", error);
+    return SCHOOL_PORTAL_SECTION_CONTENT_DEFAULTS;
+  }
+}
+
+export async function updateSchoolPortalSectionContent(
+  data: SchoolPortalSectionContentInput,
+): Promise<ActionResult> {
+  try {
+    await requireAuth();
+
+    const parsed = schoolPortalSectionContentSchema.safeParse(data);
+    if (!parsed.success) {
+      return {
+        success: false,
+        message: parsed.error.issues[0]?.message ?? "Validation failed",
+      };
+    }
+
+    const existing =
+      await weBrandSchoolsPrisma.schoolPortalSectionContent.findFirst({
+        orderBy: { id: "asc" },
+        select: { id: true },
+      });
+
+    if (existing) {
+      await weBrandSchoolsPrisma.schoolPortalSectionContent.update({
+        where: { id: existing.id },
+        data: parsed.data,
+      });
+    } else {
+      await weBrandSchoolsPrisma.schoolPortalSectionContent.create({
+        data: parsed.data,
+      });
+    }
+
+    revalidateWeBrandSchoolsAdmin();
+    return {
+      success: true,
+      message: "Portal section content updated successfully.",
+    };
+  } catch (error) {
+    console.error("[updateSchoolPortalSectionContent]", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to update portal section content.",
+    };
+  }
+}
+
+export async function getSchoolPortalFeatureCardsAdmin(): Promise<
+  SchoolPortalFeatureCardRow[]
+> {
+  try {
+    const rows = await weBrandSchoolsPrisma.schoolPortalFeatureCard.findMany({
+      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+      select: {
+        id: true,
+        title: true,
+        summary: true,
+        description: true,
+        features: true,
+        coverAssetId: true,
+        youtubeUrl: true,
+        isVisible: true,
+        position: true,
+        assets: {
+          orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true,
+            publicId: true,
+            mediaType: true,
+            thumbnailPublicId: true,
+            caption: true,
+            position: true,
+          },
+        },
+      },
+    });
+
+    return rows.map(mapPortalFeatureCardRow);
+  } catch (error) {
+    console.error("[getSchoolPortalFeatureCardsAdmin]", error);
+    return [];
+  }
+}
+
+export async function createSchoolPortalFeatureCard(
+  data: SchoolPortalFeatureCardInput,
+): Promise<ActionResult> {
+  try {
+    await requireAuth();
+
+    const parsed = schoolPortalFeatureCardSchema.safeParse(data);
+    if (!parsed.success) {
+      return {
+        success: false,
+        message: parsed.error.issues[0]?.message ?? "Validation failed",
+      };
+    }
+
+    const normalized = normalizePortalFeatureCardData(parsed.data);
+
+    const created = await weBrandSchoolsPrisma.schoolPortalFeatureCard.create({
+      data: {
+        title: normalized.title,
+        summary: normalized.summary,
+        description: normalized.description,
+        features: normalized.features,
+        coverAssetId: null,
+        youtubeUrl: normalized.youtubeUrl,
+        isVisible: normalized.isVisible,
+        position: normalized.position,
+        assets: {
+          create: normalized.assets.map((asset) => ({
+            id: asset.id,
+            publicId: asset.publicId,
+            mediaType: asset.mediaType,
+            thumbnailPublicId: asset.thumbnailPublicId,
+            caption: asset.caption,
+            position: asset.position,
+          })),
+        },
+      },
+      select: { id: true },
+    });
+
+    if (normalized.coverAssetId) {
+      await weBrandSchoolsPrisma.schoolPortalFeatureCard.update({
+        where: { id: created.id },
+        data: { coverAssetId: normalized.coverAssetId },
+      });
+    }
+
+    revalidateWeBrandSchoolsAdmin();
+    return {
+      success: true,
+      message: "Portal card created successfully.",
+    };
+  } catch (error) {
+    console.error("[createSchoolPortalFeatureCard]", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to create portal card.",
+    };
+  }
+}
+
+export async function updateSchoolPortalFeatureCard(
+  id: string,
+  data: SchoolPortalFeatureCardInput,
+): Promise<ActionResult> {
+  try {
+    await requireAuth();
+
+    const parsed = schoolPortalFeatureCardSchema.safeParse(data);
+    if (!parsed.success) {
+      return {
+        success: false,
+        message: parsed.error.issues[0]?.message ?? "Validation failed",
+      };
+    }
+
+    const normalized = normalizePortalFeatureCardData(parsed.data);
+
+    await weBrandSchoolsPrisma.$transaction(async (tx) => {
+      const portalTx = tx as typeof tx &
+        SchoolPortalFeatureCardTransactionClient;
+
+      await portalTx.schoolPortalFeatureCard.update({
+        where: { id },
+        data: { coverAssetId: null },
+      });
+
+      await portalTx.schoolPortalFeatureAsset.deleteMany({
+        where: { cardId: id },
+      });
+
+      await portalTx.schoolPortalFeatureCard.update({
+        where: { id },
+        data: {
+          title: normalized.title,
+          summary: normalized.summary,
+          description: normalized.description,
+          features: normalized.features,
+          coverAssetId: null,
+          youtubeUrl: normalized.youtubeUrl,
+          isVisible: normalized.isVisible,
+          position: normalized.position,
+          assets: {
+            create: normalized.assets.map((asset) => ({
+              id: asset.id,
+              publicId: asset.publicId,
+              mediaType: asset.mediaType,
+              thumbnailPublicId: asset.thumbnailPublicId,
+              caption: asset.caption,
+              position: asset.position,
+            })),
+          },
+        },
+      });
+
+      if (normalized.coverAssetId) {
+        await portalTx.schoolPortalFeatureCard.update({
+          where: { id },
+          data: { coverAssetId: normalized.coverAssetId },
+        });
+      }
+    });
+
+    revalidateWeBrandSchoolsAdmin();
+    return {
+      success: true,
+      message: "Portal card updated successfully.",
+    };
+  } catch (error) {
+    console.error("[updateSchoolPortalFeatureCard]", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to update portal card.",
+    };
+  }
+}
+
+export async function deleteSchoolPortalFeatureCard(
+  id: string,
+): Promise<ActionResult> {
+  try {
+    await requireAuth();
+
+    await weBrandSchoolsPrisma.schoolPortalFeatureCard.delete({
+      where: { id },
+    });
+
+    revalidateWeBrandSchoolsAdmin();
+    return {
+      success: true,
+      message: "Portal card deleted successfully.",
+    };
+  } catch (error) {
+    console.error("[deleteSchoolPortalFeatureCard]", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to delete portal card.",
     };
   }
 }

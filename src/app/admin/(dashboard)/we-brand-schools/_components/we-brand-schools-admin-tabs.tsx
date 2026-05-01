@@ -18,6 +18,10 @@ const TABS = [
     label: "Templates",
   },
   {
+    href: "/admin/we-brand-schools/portal",
+    label: "Portal",
+  },
+  {
     href: "/admin/we-brand-schools/applications",
     label: "Applications",
   },

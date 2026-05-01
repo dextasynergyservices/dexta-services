@@ -47,12 +47,20 @@ import {
   type OffersAudienceType,
   type OffersPageContentData,
 } from "./offers-defaults";
-import { WE_BRAND_SCHOOLS_CONTENT_TAG } from "./we-brand-schools-cache";
 import {
+  SCHOOL_PORTAL_CARDS_TAG,
+  SCHOOL_PORTAL_SECTION_TAG,
+  WE_BRAND_SCHOOLS_CONTENT_TAG,
+} from "./we-brand-schools-cache";
+import {
+  SCHOOL_PORTAL_SECTION_CONTENT_DEFAULTS,
   WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS,
   parseJsonStringArray as parseWeBrandSchoolsJsonStringArray,
+  type SchoolPortalFeatureCardData,
+  type SchoolPortalSectionContentData,
   type SchoolWebsiteTestimonialData,
   type SchoolWebsiteTemplateData,
+  withSchoolPortalSectionContentDefaults,
   type WeBrandSchoolsPageContentData,
   withWeBrandSchoolsPageContentDefaults,
 } from "./we-brand-schools-defaults";
@@ -1094,6 +1102,138 @@ export async function fetchSchoolWebsiteTemplates(): Promise<
   SchoolWebsiteTemplateData[]
 > {
   return readSchoolWebsiteTemplates();
+}
+
+async function readSchoolPortalSectionContent(): Promise<SchoolPortalSectionContentData> {
+  const row = await weBrandSchoolsPrisma.schoolPortalSectionContent.findFirst({
+    orderBy: { id: "asc" },
+    select: {
+      eyebrow: true,
+      title: true,
+      description: true,
+      ctaText: true,
+      ctaHref: true,
+      isVisible: true,
+    },
+  });
+
+  if (!row) {
+    return SCHOOL_PORTAL_SECTION_CONTENT_DEFAULTS;
+  }
+
+  return withSchoolPortalSectionContentDefaults({
+    eyebrow: row.eyebrow,
+    title: row.title,
+    description: row.description,
+    ctaText: row.ctaText ?? null,
+    ctaHref: row.ctaHref ?? null,
+    isVisible: row.isVisible,
+  });
+}
+
+const fetchSchoolPortalSectionContentCached = unstable_cache(
+  readSchoolPortalSectionContent,
+  ["school-portal-section-content-v3"],
+  { tags: [SCHOOL_PORTAL_SECTION_TAG] },
+);
+
+export async function fetchSchoolPortalSectionContent(): Promise<SchoolPortalSectionContentData> {
+  try {
+    return await fetchSchoolPortalSectionContentCached();
+  } catch {
+    return SCHOOL_PORTAL_SECTION_CONTENT_DEFAULTS;
+  }
+}
+
+async function readSchoolPortalFeatureCards(): Promise<
+  SchoolPortalFeatureCardData[]
+> {
+  const rows = await weBrandSchoolsPrisma.schoolPortalFeatureCard.findMany({
+    where: { isVisible: true },
+    orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      title: true,
+      summary: true,
+      description: true,
+      features: true,
+      coverAssetId: true,
+      youtubeUrl: true,
+      isVisible: true,
+      position: true,
+      assets: {
+        orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true,
+          publicId: true,
+          mediaType: true,
+          thumbnailPublicId: true,
+          caption: true,
+          position: true,
+        },
+      },
+    },
+  });
+
+  if (!rows.length) {
+    return [];
+  }
+
+  return rows.map(
+    (row: {
+      id: string;
+      title: string;
+      summary: string;
+      description: string;
+      features: string;
+      coverAssetId: string | null;
+      youtubeUrl: string | null;
+      isVisible: boolean;
+      position: number;
+      assets: {
+        id: string;
+        publicId: string;
+        mediaType: "IMAGE" | "VIDEO";
+        thumbnailPublicId: string | null;
+        caption: string | null;
+        position: number;
+      }[];
+    }) => ({
+      id: row.id,
+      title: row.title,
+      summary: row.summary,
+      description: row.description,
+      features: parseWeBrandSchoolsJsonStringArray(row.features),
+      coverAssetId: row.coverAssetId,
+      youtubeUrl: row.youtubeUrl,
+      isVisible: row.isVisible,
+      position: row.position,
+      assets: row.assets.map((asset) => ({
+        id: asset.id,
+        publicId: asset.publicId,
+        mediaType: asset.mediaType,
+        thumbnailPublicId: asset.thumbnailPublicId,
+        caption: asset.caption,
+        position: asset.position,
+      })),
+    }),
+  );
+}
+
+const fetchSchoolPortalFeatureCardsCached = unstable_cache(
+  readSchoolPortalFeatureCards,
+  ["school-portal-feature-cards-v3"],
+  { tags: [SCHOOL_PORTAL_CARDS_TAG] },
+);
+
+export async function fetchSchoolPortalFeatureCards(): Promise<
+  SchoolPortalFeatureCardData[]
+> {
+  try {
+    return await fetchSchoolPortalFeatureCardsCached();
+  } catch {
+    return [];
+  }
 }
 
 // ─── Contact Page ─────────────────────────────────────────────────────────────

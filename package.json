@@ -26,6 +26,7 @@
     "prisma:seed:services": "tsx prisma/seed-services.ts",
     "prisma:seed:about": "tsx prisma/seed-about.ts",
     "prisma:seed:we-brand-schools": "tsx prisma/seed-we-brand-schools.ts",
+    "prisma:seed:we-brand-schools-portal": "tsx prisma/seed-we-brand-schools-portal-only.ts",
     "prisma:seed:we-brand-schools-videos": "tsx prisma/seed-we-brand-schools-videos.ts",
     "prisma:seed:contact": "tsx prisma/seed-contact.ts",
     "prisma:seed:offers": "tsx prisma/seed-offers.ts",

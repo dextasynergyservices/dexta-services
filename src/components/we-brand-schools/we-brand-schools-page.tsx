@@ -59,6 +59,9 @@ import {
   schoolWebsiteApplicationStepTwoSchema,
 } from "@/lib/validators";
 import type {
+  SchoolPortalFeatureAssetData,
+  SchoolPortalFeatureCardData,
+  SchoolPortalSectionContentData,
   SchoolWebsiteTestimonialData,
   SchoolWebsiteTemplateAssetData,
   SchoolWebsiteTemplateData,
@@ -153,6 +156,19 @@ function resolveTemplateCardPreview(template: SchoolWebsiteTemplateData) {
   return resolveAssetPreview(coverAsset);
 }
 
+function resolvePortalCardPreview(card: SchoolPortalFeatureCardData) {
+  const coverAsset =
+    card.assets.find((asset) => asset.id === card.coverAssetId) ??
+    card.assets[0] ??
+    null;
+
+  if (!coverAsset) {
+    return null;
+  }
+
+  return resolveAssetPreview(coverAsset);
+}
+
 function resolveFullImageSource(asset: SchoolWebsiteTemplateAssetData) {
   if (asset.mediaType === "VIDEO") {
     return resolveAssetPreview(asset);
@@ -172,6 +188,47 @@ function getVideoUrl(publicId: string) {
   }
 
   return `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload/q_auto/${publicId}`;
+}
+
+function getYoutubeVideoId(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLowerCase();
+    const pathParts = url.pathname.split("/").filter(Boolean);
+
+    if (hostname === "youtu.be") {
+      return pathParts[0] ?? null;
+    }
+
+    if (hostname === "youtube.com" || hostname.endsWith(".youtube.com")) {
+      const watchId = url.searchParams.get("v");
+      if (watchId) {
+        return watchId;
+      }
+
+      if (["embed", "shorts", "live"].includes(pathParts[0] ?? "")) {
+        return pathParts[1] ?? null;
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function getSafeYoutubeEmbedUrl(value: string | null) {
+  const videoId = getYoutubeVideoId(value);
+
+  if (!videoId || !/^[A-Za-z0-9_-]{6,128}$/.test(videoId)) {
+    return null;
+  }
+
+  return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}`;
 }
 
 function getSchoolInitials(value: string) {
@@ -1723,22 +1780,584 @@ function TemplateApplicationDialog({
   );
 }
 
+function PortalFeaturePreviewDialog({
+  card,
+  onOpenChange,
+}: {
+  card: SchoolPortalFeatureCardData | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [imageZoom, setImageZoom] = useState(TEMPLATE_PREVIEW_MIN_ZOOM);
+  const [fullscreenAsset, setFullscreenAsset] =
+    useState<SchoolPortalFeatureAssetData | null>(null);
+  const [fullscreenZoom, setFullscreenZoom] = useState(
+    TEMPLATE_PREVIEW_MIN_ZOOM,
+  );
+  const imagePanStateRef = useRef<TemplatePreviewPanState | null>(null);
+  const fullscreenPanStateRef = useRef<TemplatePreviewPanState | null>(null);
+  const coverAsset =
+    card?.assets.find((asset) => asset.id === card.coverAssetId) ??
+    card?.assets[0] ??
+    null;
+  const [activeAssetId, setActiveAssetId] = useState<string | null>(
+    coverAsset?.id ?? null,
+  );
+  const galleryAssets = card?.assets ?? [];
+  const activeAsset =
+    galleryAssets.find((asset) => asset.id === activeAssetId) ??
+    coverAsset ??
+    galleryAssets[0] ??
+    null;
+  const activeAssetPreview = activeAsset
+    ? resolveAssetPreview(activeAsset)
+    : null;
+
+  useEffect(() => {
+    setActiveAssetId(coverAsset?.id ?? card?.assets[0]?.id ?? null);
+    setImageZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+    setFullscreenAsset(null);
+    setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+  }, [card?.id, coverAsset?.id, card?.assets]);
+
+  useEffect(() => {
+    setImageZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+    setFullscreenAsset(null);
+    setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+  }, [activeAsset?.id]);
+
+  const createPanStartHandler = useCallback(
+    (
+      zoom: number,
+      panStateRef: MutableRefObject<TemplatePreviewPanState | null>,
+    ) =>
+      (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (zoom <= TEMPLATE_PREVIEW_MIN_ZOOM) return;
+        if (event.target instanceof HTMLElement) {
+          const interactiveElement = event.target.closest("button, a, video");
+          if (interactiveElement) return;
+        }
+
+        event.currentTarget.setPointerCapture(event.pointerId);
+        panStateRef.current = {
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          scrollLeft: event.currentTarget.scrollLeft,
+          scrollTop: event.currentTarget.scrollTop,
+        };
+      },
+    [],
+  );
+
+  const createPanMoveHandler = useCallback(
+    (panStateRef: MutableRefObject<TemplatePreviewPanState | null>) =>
+      (event: ReactPointerEvent<HTMLDivElement>) => {
+        const panState = panStateRef.current;
+        if (!panState || panState.pointerId !== event.pointerId) return;
+
+        event.currentTarget.scrollLeft =
+          panState.scrollLeft - (event.clientX - panState.startX);
+        event.currentTarget.scrollTop =
+          panState.scrollTop - (event.clientY - panState.startY);
+      },
+    [],
+  );
+
+  const createPanEndHandler = useCallback(
+    (panStateRef: MutableRefObject<TemplatePreviewPanState | null>) =>
+      (event: ReactPointerEvent<HTMLDivElement>) => {
+        const panState = panStateRef.current;
+        if (!panState || panState.pointerId !== event.pointerId) return;
+
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+        panStateRef.current = null;
+      },
+    [],
+  );
+
+  const imagePanHandlers = {
+    onPointerDown: createPanStartHandler(imageZoom, imagePanStateRef),
+    onPointerMove: createPanMoveHandler(imagePanStateRef),
+    onPointerUp: createPanEndHandler(imagePanStateRef),
+    onPointerCancel: createPanEndHandler(imagePanStateRef),
+  };
+  const fullscreenPanHandlers = {
+    onPointerDown: createPanStartHandler(fullscreenZoom, fullscreenPanStateRef),
+    onPointerMove: createPanMoveHandler(fullscreenPanStateRef),
+    onPointerUp: createPanEndHandler(fullscreenPanStateRef),
+    onPointerCancel: createPanEndHandler(fullscreenPanStateRef),
+  };
+
+  return (
+    <Dialog
+      open={Boolean(card)}
+      onOpenChange={(open) => {
+        if (!open) {
+          setImageZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+          setFullscreenAsset(null);
+          setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+        }
+        onOpenChange(open);
+      }}
+	    >
+	      <DialogContent
+	        className={
+	          fullscreenAsset
+	            ? "fixed inset-0 left-0 top-0 z-[100] h-screen max-h-screen w-screen max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-none border-0 bg-white p-0 text-[#07193f] shadow-none sm:max-w-none"
+	            : "max-h-[92vh] overflow-hidden border-[#07193f]/20 bg-white p-0 text-[#07193f] sm:max-w-6xl"
+	        }
+	        showCloseButton={!fullscreenAsset}
+	        onInteractOutside={(event) => {
+	          if (fullscreenAsset) {
+	            event.preventDefault();
+          }
+        }}
+        onPointerDownOutside={(event) => {
+          if (fullscreenAsset) {
+            event.preventDefault();
+          }
+        }}
+      >
+        {card ? (
+          <div>
+            <div className="grid gap-0 lg:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)]">
+              <div className="bg-[#f5f9ff] p-5 sm:p-6">
+                <div className="relative overflow-hidden rounded-lg border border-[#07193f]/10 bg-white">
+                  {activeAsset?.mediaType === "VIDEO" ? (
+	                    <video
+	                      src={getVideoUrl(activeAsset.publicId)}
+	                      poster={activeAssetPreview ?? undefined}
+	                      controls
+	                      preload="metadata"
+	                      className="h-[280px] w-full bg-[#07193f] object-contain sm:h-[360px]"
+	                    />
+	                  ) : activeAssetPreview ? (
+	                    <>
+	                      <div
+	                        className={`h-[280px] w-full overscroll-contain bg-white sm:h-[360px] ${
+	                          imageZoom > TEMPLATE_PREVIEW_MIN_ZOOM
+	                            ? "overflow-auto cursor-grab active:cursor-grabbing"
+	                            : "overflow-hidden cursor-zoom-in"
+	                        }`}
+	                        role="button"
+	                        tabIndex={0}
+	                        aria-label={`Open ${card.title} preview fullscreen`}
+	                        onClick={() => {
+	                          if (imageZoom > TEMPLATE_PREVIEW_MIN_ZOOM) {
+	                            return;
+	                          }
+	
+	                          setFullscreenAsset(activeAsset);
+	                          setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+	                        }}
+	                        onKeyDown={(event) => {
+	                          if (event.key !== "Enter" && event.key !== " ") {
+	                            return;
+	                          }
+	
+	                          event.preventDefault();
+	                          setFullscreenAsset(activeAsset);
+	                          setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+	                        }}
+	                        {...imagePanHandlers}
+	                      >
+	                        <div
+	                          className="flex min-h-full min-w-full items-center justify-center transition-[height,width] duration-200"
+	                          style={{
+	                            height: `${imageZoom * 100}%`,
+	                            width: `${imageZoom * 100}%`,
+	                          }}
+	                        >
+	                          {/* eslint-disable-next-line @next/next/no-img-element */}
+	                          <img
+	                            src={activeAssetPreview}
+	                            alt={activeAsset?.caption ?? card.title}
+	                            className="h-full w-full select-none object-contain"
+	                            draggable={false}
+	                          />
+	                        </div>
+	                      </div>
+	                      <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full border border-[#07193f]/12 bg-white/90 p-1 text-[#07193f] shadow-sm">
+	                        <button
+	                          type="button"
+	                          onPointerDown={(event) => {
+	                            event.preventDefault();
+	                            event.stopPropagation();
+	                            setImageZoom((currentZoom) =>
+	                              getNextTemplatePreviewZoom(
+	                                currentZoom,
+	                                -TEMPLATE_PREVIEW_ZOOM_STEP,
+	                              ),
+	                            );
+	                          }}
+	                          onClick={(event) => event.stopPropagation()}
+	                          onKeyDown={(event) => {
+	                            if (event.key !== "Enter" && event.key !== " ") {
+	                              return;
+	                            }
+
+	                            event.preventDefault();
+	                            event.stopPropagation();
+	                            setImageZoom((currentZoom) =>
+	                              getNextTemplatePreviewZoom(
+	                                currentZoom,
+	                                -TEMPLATE_PREVIEW_ZOOM_STEP,
+	                              ),
+	                            );
+	                          }}
+	                          disabled={imageZoom <= TEMPLATE_PREVIEW_MIN_ZOOM}
+	                          className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[#07193f]/8 disabled:cursor-not-allowed disabled:opacity-40"
+	                          aria-label="Zoom portal image out"
+	                        >
+	                          <ZoomOut className="h-4 w-4" />
+	                        </button>
+	                        <span className="min-w-12 text-center text-xs font-semibold">
+	                          {Math.round(imageZoom * 100)}%
+	                        </span>
+	                        <button
+	                          type="button"
+	                          onPointerDown={(event) => {
+	                            event.preventDefault();
+	                            event.stopPropagation();
+	                            setImageZoom((currentZoom) =>
+	                              getNextTemplatePreviewZoom(
+	                                currentZoom,
+	                                TEMPLATE_PREVIEW_ZOOM_STEP,
+	                              ),
+	                            );
+	                          }}
+	                          onClick={(event) => event.stopPropagation()}
+	                          onKeyDown={(event) => {
+	                            if (event.key !== "Enter" && event.key !== " ") {
+	                              return;
+	                            }
+
+	                            event.preventDefault();
+	                            event.stopPropagation();
+	                            setImageZoom((currentZoom) =>
+	                              getNextTemplatePreviewZoom(
+	                                currentZoom,
+	                                TEMPLATE_PREVIEW_ZOOM_STEP,
+	                              ),
+	                            );
+	                          }}
+	                          disabled={imageZoom >= TEMPLATE_PREVIEW_MAX_ZOOM}
+	                          className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[#07193f]/8 disabled:cursor-not-allowed disabled:opacity-40"
+	                          aria-label="Zoom portal image in"
+	                        >
+	                          <ZoomIn className="h-4 w-4" />
+	                        </button>
+	                        <button
+	                          type="button"
+	                          onPointerDown={(event) => {
+	                            event.preventDefault();
+	                            event.stopPropagation();
+	                            setImageZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+	                          }}
+	                          onClick={(event) => event.stopPropagation()}
+	                          onKeyDown={(event) => {
+	                            if (event.key !== "Enter" && event.key !== " ") {
+	                              return;
+	                            }
+
+	                            event.preventDefault();
+	                            event.stopPropagation();
+	                            setImageZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+	                          }}
+	                          className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[#07193f]/8"
+	                          aria-label="Reset portal image zoom"
+	                        >
+	                          <RotateCcw className="h-4 w-4" />
+	                        </button>
+	                      </div>
+	                      <button
+	                        type="button"
+	                        onClick={() => {
+	                          setFullscreenAsset(activeAsset);
+	                          setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+	                        }}
+	                        className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-[#07193f]/12 bg-white/90 text-[#07193f] transition hover:bg-white"
+	                        aria-label="Open portal image fullscreen"
+	                      >
+	                        <Maximize2 className="h-5 w-5" />
+	                      </button>
+	                    </>
+	                  ) : (
+	                    <div className="flex h-[280px] w-full items-center justify-center text-[11px] font-semibold uppercase tracking-[0.22em] text-[#07193f]/48 sm:h-[360px]">
+	                      Portal preview
+                    </div>
+                  )}
+                </div>
+
+                {galleryAssets.length > 1 ? (
+                  <div className="mt-3 grid grid-cols-4 gap-2">
+                    {galleryAssets.map(
+                      (asset: SchoolPortalFeatureAssetData) => {
+                        const previewSrc = resolveAssetPreview(asset);
+                        const isActive = asset.id === activeAsset?.id;
+
+                        return (
+                          <button
+                            type="button"
+                            key={asset.id}
+                            onClick={() => setActiveAssetId(asset.id)}
+                            className={`relative aspect-[4/3] overflow-hidden rounded-lg border bg-white transition ${
+                              isActive
+                                ? "border-[#00abff] ring-2 ring-[#00abff]/25"
+                                : "border-[#07193f]/10 hover:border-[#00abff]/50"
+                            }`}
+                            aria-label={`Show ${asset.caption ?? card.title}`}
+                          >
+                            {previewSrc ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={previewSrc}
+                                alt={asset.caption ?? card.title}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : null}
+                            {asset.mediaType === "VIDEO" ? (
+                              <div className="absolute inset-0 flex items-center justify-center bg-[#07193f]/45 text-white">
+                                <Play className="h-4 w-4" />
+                              </div>
+                            ) : null}
+                          </button>
+                        );
+                      },
+                    )}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="p-6 sm:p-8">
+                <DialogHeader className="text-left">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#00abff]">
+                    Portal Demo
+                  </p>
+                  <DialogTitle className="mt-3 font-display text-4xl leading-tight tracking-[-0.04em] text-[#07193f] sm:text-5xl">
+                    {card.title}
+                  </DialogTitle>
+                  <DialogDescription className="mt-3 text-sm leading-7 text-slate-600">
+                    {card.summary}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <p className="mt-6 whitespace-pre-line text-sm leading-7 text-slate-700">
+                  {card.description}
+                </p>
+
+                {card.features.length ? (
+                  <div className="mt-6 space-y-3">
+                    {card.features.map((feature) => (
+                      <div key={feature} className="flex gap-3">
+                        <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-[#00abff]" />
+                        <p className="text-sm leading-6 text-slate-700">
+                          {feature}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className="mt-8">
+                  <Link
+                    href="#apply"
+                    onClick={() => {
+                      onOpenChange(false);
+                    }}
+                  >
+                    {/* <Button className="h-11 rounded-full bg-[#07193f] px-6 text-sm font-semibold text-white hover:bg-[#0d2458]">
+                      Apply with this portal
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button> */}
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+	          </div>
+	        ) : null}
+
+	        {card && fullscreenAsset ? (
+	          <div
+	            className="absolute inset-0 z-20 flex items-center justify-center bg-white p-0 backdrop-blur-sm"
+	            onPointerDown={(event) => event.stopPropagation()}
+	            onClick={(event) => event.stopPropagation()}
+	          >
+	          <button
+	            type="button"
+	            onPointerDown={(event) => {
+	              event.preventDefault();
+              event.stopPropagation();
+              setFullscreenAsset(null);
+              setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+            }}
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" && event.key !== " ") {
+                return;
+              }
+
+              event.preventDefault();
+              event.stopPropagation();
+              setFullscreenAsset(null);
+              setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+            }}
+            className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-[#07193f]/12 bg-white/90 text-[#07193f] shadow-sm transition hover:bg-[#07193f] hover:text-white"
+            aria-label="Close portal fullscreen preview"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <div className="absolute left-1/2 top-4 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-[#07193f]/12 bg-white/90 p-1 text-[#07193f] shadow-sm backdrop-blur">
+            <button
+              type="button"
+              onPointerDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setFullscreenZoom((currentZoom) =>
+                  getNextTemplatePreviewZoom(
+                    currentZoom,
+                    -TEMPLATE_PREVIEW_ZOOM_STEP,
+                  ),
+                );
+              }}
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" && event.key !== " ") {
+                  return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                setFullscreenZoom((currentZoom) =>
+                  getNextTemplatePreviewZoom(
+                    currentZoom,
+                    -TEMPLATE_PREVIEW_ZOOM_STEP,
+                  ),
+                );
+              }}
+              disabled={fullscreenZoom <= TEMPLATE_PREVIEW_MIN_ZOOM}
+              className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[#07193f]/8 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Zoom portal fullscreen image out"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </button>
+            <span className="min-w-12 text-center text-xs font-semibold">
+              {Math.round(fullscreenZoom * 100)}%
+            </span>
+            <button
+              type="button"
+              onPointerDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setFullscreenZoom((currentZoom) =>
+                  getNextTemplatePreviewZoom(
+                    currentZoom,
+                    TEMPLATE_PREVIEW_ZOOM_STEP,
+                  ),
+                );
+              }}
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" && event.key !== " ") {
+                  return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                setFullscreenZoom((currentZoom) =>
+                  getNextTemplatePreviewZoom(
+                    currentZoom,
+                    TEMPLATE_PREVIEW_ZOOM_STEP,
+                  ),
+                );
+              }}
+              disabled={fullscreenZoom >= TEMPLATE_PREVIEW_MAX_ZOOM}
+              className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[#07193f]/8 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Zoom portal fullscreen image in"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onPointerDown={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+              }}
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" && event.key !== " ") {
+                  return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                setFullscreenZoom(TEMPLATE_PREVIEW_MIN_ZOOM);
+              }}
+              className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[#07193f]/8"
+              aria-label="Reset portal fullscreen image zoom"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          </div>
+          <div
+            className={`h-screen w-screen overscroll-contain px-3 pb-4 pt-20 sm:px-6 sm:pb-6 ${
+              fullscreenZoom > TEMPLATE_PREVIEW_MIN_ZOOM
+                ? "overflow-auto cursor-grab active:cursor-grabbing"
+                : "overflow-hidden cursor-default"
+            }`}
+            {...fullscreenPanHandlers}
+          >
+            <div
+              className="flex min-h-[calc(100vh-6rem)] min-w-full items-center justify-center transition-[height,width] duration-200"
+              style={{
+                height: `calc((100vh - 6rem) * ${fullscreenZoom})`,
+                width: `calc((100vw - 2rem) * ${fullscreenZoom})`,
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={resolveFullImageSource(fullscreenAsset) ?? ""}
+                alt={`${card.title} fullscreen preview`}
+                className="h-full max-h-full w-full max-w-full select-none object-contain"
+                draggable={false}
+              />
+	            </div>
+	          </div>
+	          </div>
+	        ) : null}
+	      </DialogContent>
+	    </Dialog>
+	  );
+	}
+
 function WeBrandSchoolsPageContent({
   content,
   testimonials,
   templates,
+  portalSectionContent,
+  portalCards,
   contactContent,
   socialLinks,
 }: {
   content: WeBrandSchoolsPageContentData;
   testimonials: SchoolWebsiteTestimonialData[];
   templates: SchoolWebsiteTemplateData[];
+  portalSectionContent: SchoolPortalSectionContentData;
+  portalCards: SchoolPortalFeatureCardData[];
   contactContent: ContactPageContentData;
   socialLinks: ContactSocialLinkData[];
 }) {
   const safeContent = withWeBrandSchoolsPageContentDefaults(content);
   const [previewTemplate, setPreviewTemplate] =
     useState<SchoolWebsiteTemplateData | null>(null);
+  const [previewPortalCard, setPreviewPortalCard] =
+    useState<SchoolPortalFeatureCardData | null>(null);
+  const [isPortalSectionVideoOpen, setIsPortalSectionVideoOpen] =
+    useState(false);
   const [applicationTemplate, setApplicationTemplate] =
     useState<SchoolWebsiteTemplateData | null>(null);
   const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
@@ -1813,7 +2432,21 @@ function WeBrandSchoolsPageContent({
     () => templates.slice(0, visibleTemplateCount),
     [templates, visibleTemplateCount],
   );
+  const visiblePortalCards = useMemo(
+    () => portalCards.filter((card) => card.isVisible).slice(0, 6),
+    [portalCards],
+  );
   const hasMoreTemplates = visibleTemplateCount < templates.length;
+  const shouldShowPortalSection =
+    portalSectionContent.isVisible && visiblePortalCards.length > 0;
+  const portalSectionCtaHref = portalSectionContent.ctaHref?.trim() ?? "";
+  const hasPortalSectionCtaLink =
+    portalSectionCtaHref.length > 0 &&
+    portalSectionCtaHref !== "#" &&
+    portalSectionCtaHref !== "#school-portal";
+  const portalSectionYoutubeEmbedUrl = getSafeYoutubeEmbedUrl(
+    hasPortalSectionCtaLink ? portalSectionCtaHref : null,
+  );
   const firstTestimonial = testimonials[0] ?? null;
   const activeMobileTestimonial =
     testimonials[activeTestimonialIndex] ?? firstTestimonial;
@@ -1950,8 +2583,8 @@ function WeBrandSchoolsPageContent({
 
   return (
     <>
-      <main className="bg-[linear-gradient(180deg,#f8f5ec_0%,#ffffff_20%,#f4f8ff_100%)] text-slate-950">
-        <section className="relative overflow-hidden bg-[var(--dexta-secondary)] text-white">
+      <main className="flex flex-col bg-[linear-gradient(180deg,#f8f5ec_0%,#ffffff_20%,#f4f8ff_100%)] text-slate-950">
+        <section className="order-1 relative overflow-hidden bg-[var(--dexta-secondary)] text-white">
           <div className="relative mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-28">
             <motion.div
               initial={{ opacity: 0, y: -18 }}
@@ -2052,7 +2685,7 @@ function WeBrandSchoolsPageContent({
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <section className="order-2 mx-auto w-full max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-24">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1.06fr)_minmax(0,0.94fr)] lg:items-start">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#00abff]">
@@ -2108,9 +2741,116 @@ function WeBrandSchoolsPageContent({
           </div>
         </section>
 
+        {shouldShowPortalSection ? (
+          <section
+            id="school-portal"
+            className="order-4 py-20 text-white lg:py-24"
+            style={
+              {
+                backgroundColor: "var(--dexta-secondary)",
+                "--about-brand": "var(--dexta-primary)",
+                "--about-brand-deep": "var(--dexta-secondary)",
+                "--about-accent": "var(--dexta)",
+                "--about-border": "var(--dexta-primary)",
+              } as CSSProperties
+            }
+          >
+            <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <div className="max-w-3xl">
+                  <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--about-accent)]">
+                    {portalSectionContent.eyebrow}
+                  </p>
+                  <h2 className="mt-4 font-display text-4xl leading-tight tracking-[-0.04em] text-white sm:text-5xl">
+                    {portalSectionContent.title}
+                  </h2>
+                  <p className="mt-5 max-w-2xl text-base leading-8 text-white/78">
+                    {portalSectionContent.description}
+                  </p>
+                </div>
+
+                {portalSectionContent.ctaText && hasPortalSectionCtaLink ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (portalSectionYoutubeEmbedUrl) {
+                        setIsPortalSectionVideoOpen(true);
+                        return;
+                      }
+
+                      window.location.href = portalSectionCtaHref;
+                    }}
+                    className="h-12 rounded-full border-[#07193f]/20 bg-white px-7 text-sm font-semibold text-[#07193f] hover:bg-[#07193f] hover:text-white"
+                  >
+                    {portalSectionContent.ctaText}
+                    {portalSectionYoutubeEmbedUrl ? (
+                      <Play className="ml-2 h-4 w-4 fill-current" />
+                    ) : null}
+                  </Button>
+                ) : null}
+              </div>
+
+              <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                {visiblePortalCards.map((card) => {
+                  const previewSrc = resolvePortalCardPreview(card);
+
+                  return (
+                    <article
+                      key={card.id}
+                      className="group flex min-h-[390px] flex-col overflow-hidden rounded-lg border border-[var(--about-border)]/12 bg-white shadow-[0_22px_64px_-48px_rgba(7,25,63,0.35)] transition duration-300 hover:-translate-y-1 hover:border-[var(--about-accent)]/40"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setPreviewPortalCard(card)}
+                        className="block w-full text-left"
+                      >
+                        <div className="relative h-52 overflow-hidden bg-white">
+                          {previewSrc ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={previewSrc}
+                              alt={card.title}
+                              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-[11px] font-semibold uppercase tracking-[0.22em] text-[#07193f]/45">
+                              Portal feature
+                            </div>
+                          )}
+                        </div>
+                      </button>
+
+                      <div className="flex flex-1 flex-col p-5">
+                        <h3 className="text-xl font-semibold tracking-[-0.03em] text-[#07193f]">
+                          {card.title}
+                        </h3>
+                        <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-700">
+                          {card.summary}
+                        </p>
+
+                        <div className="mt-auto pt-5">
+                          <Button
+                            type="button"
+                            onClick={() => setPreviewPortalCard(card)}
+                            className="h-10 rounded-full bg-[#07193f] px-5 text-sm font-semibold text-white hover:bg-[#0d2458]"
+                          >
+                            View
+                          </Button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        ) : null}
+
         {/* Testimonials */}
         <section
-          className="bg-[color-mix(in_srgb,var(--about-accent)_9%,white)] py-20 lg:py-24"
+          className="order-3 bg-[color-mix(in_srgb,var(--about-accent)_9%,white)] py-20 lg:py-24"
           style={
             {
               "--about-brand": "var(--dexta-primary)",
@@ -2128,11 +2868,11 @@ function WeBrandSchoolsPageContent({
               <h2 className="mt-4 font-display text-4xl leading-tight tracking-[-0.04em] text-[var(--about-brand-deep)] sm:text-5xl">
                 Trusted by schools across Nigeria
               </h2>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--about-brand-deep)]/80">
+              {/* <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--about-brand-deep)]/80">
                 Real feedback from school leaders using Dexta’s template-led
                 website rollout to sharpen how their institutions show up
                 online.
-              </p>
+              </p> */}
             </div>
 
             {testimonials.length ? (
@@ -2211,8 +2951,8 @@ function WeBrandSchoolsPageContent({
                     ) : null}
                   </div>
 
-                  <div className="pointer-events-none absolute inset-y-[3.5rem] left-0 z-10 w-8 bg-gradient-to-r from-[color-mix(in_srgb,var(--about-accent)_8%,white)] to-transparent lg:w-12" />
-                  <div className="pointer-events-none absolute inset-y-[3.5rem] right-0 z-10 w-8 bg-gradient-to-l from-[color-mix(in_srgb,var(--about-accent)_8%,white)] to-transparent lg:w-12" />
+                  <div className="pointer-events-none absolute inset-y-[3.5rem] left-0 z-10 w-8 bg-gradient-to-r from-[color-mix(in_srgb,var(--about-accent)_9%,white)] to-transparent lg:w-12" />
+                  <div className="pointer-events-none absolute inset-y-[3.5rem] right-0 z-10 w-8 bg-gradient-to-l from-[color-mix(in_srgb,var(--about-accent)_9%,white)] to-transparent lg:w-12" />
 
                   <div
                     ref={desktopTestimonialsRef}
@@ -2276,73 +3016,80 @@ function WeBrandSchoolsPageContent({
         {/* How it works section */}
         <section
           id="apply"
-          className="mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-24"
+          className="order-5 w-full bg-[color-mix(in_srgb,var(--about-accent)_9%,white)] py-20 lg:py-24"
+          style={
+            {
+              "--about-brand": "var(--dexta-primary)",
+              "--about-brand-deep": "var(--dexta-secondary)",
+              "--about-accent": "var(--dexta)",
+              "--about-border": "var(--dexta-primary)",
+            } as CSSProperties
+          }
         >
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#00abff]">
-                {content.processLabel}
-              </p>
-              <h2 className="mt-4 font-display text-4xl leading-tight tracking-[-0.04em] text-[#07193f] sm:text-5xl">
-                {content.processTitle}
-              </h2>
-              <p className="mt-5 text-base leading-8 text-slate-700">
-                {content.processBody}
-              </p>
+          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--about-accent)]">
+                  {content.processLabel}
+                </p>
+                <h2 className="mt-4 font-display text-4xl leading-tight tracking-[-0.04em] text-[var(--about-brand-deep)] sm:text-5xl">
+                  {content.processTitle}
+                </h2>
+              </div>
+
+              <Link href="#templates">
+                <Button className="h-12 rounded-full bg-[#07193f] px-7 text-sm font-semibold text-white hover:bg-[#0d2458]">
+                  Start Here
+                </Button>
+              </Link>
             </div>
 
-            <Link href="#templates">
-              <Button className="h-12 rounded-full bg-[#07193f] px-7 text-sm font-semibold text-white hover:bg-[#0d2458]">
-                Start with templates
-              </Button>
-            </Link>
-          </div>
-
-          <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {[
-              {
-                step: "01",
-                title: content.processStep1Title,
-                body: content.processStep1Body,
-              },
-              {
-                step: "02",
-                title: content.processStep2Title,
-                body: content.processStep2Body,
-              },
-              {
-                step: "03",
-                title: content.processStep3Title,
-                body: content.processStep3Body,
-              },
-              {
-                step: "04",
-                title: content.processStep4Title,
-                body: content.processStep4Body,
-              },
-            ].map((item) => (
-              <div
-                key={item.step}
-                className="rounded-[28px] border border-[#07193f]/10 bg-[#f8fbff] p-6"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#00abff]">
-                  Step {item.step}
-                </p>
-                <h3 className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-[#07193f]">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-700">
-                  {item.body}
-                </p>
-              </div>
-            ))}
+            <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+              {[
+                {
+                  step: "01",
+                  title: content.processStep1Title,
+                  body: content.processStep1Body,
+                },
+                {
+                  step: "02",
+                  title: content.processStep2Title,
+                  body: content.processStep2Body,
+                },
+                {
+                  step: "03",
+                  title: content.processStep3Title,
+                  body: content.processStep3Body,
+                },
+                {
+                  step: "04",
+                  title: content.processStep4Title,
+                  body: content.processStep4Body,
+                },
+              ].map((item) => (
+                <div
+                  key={item.step}
+                  className="rounded-[28px] border border-[var(--about-border)]/12 bg-white p-6"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--about-accent)]">
+                    Step {item.step}
+                  </p>
+                  <h3 className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-[var(--about-brand-deep)]">
+                    {item.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 text-[var(--about-brand-deep)]/76">
+                    {item.body}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
         {/* Templates */}
         <section
           id="templates"
-          className="py-20 text-white lg:py-24"
+          className="order-6 py-20 text-white lg:py-24"
           style={{ backgroundColor: "var(--dexta-secondary)" }}
         >
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
@@ -2480,8 +3227,7 @@ function WeBrandSchoolsPageContent({
         {/* Help Section */}
         <section
           id="help"
-          className="w-full py-20 lg:py-24"
-          style={{ backgroundColor: "var(--background)" }}
+          className="order-7 w-full bg-white py-20 text-[#07193f] lg:py-24"
         >
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
@@ -2492,56 +3238,47 @@ function WeBrandSchoolsPageContent({
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <a href={whatsappHref} target="_blank" rel="noreferrer">
                     <Button
-                      className="h-12 rounded-full px-7 text-sm font-semibold text-white hover:opacity-90"
-                      style={{ backgroundColor: "var(--dexta-secondary)" }}
+                      className="h-12 rounded-full bg-[#00abff] px-7 text-sm font-semibold text-white shadow-[0_18px_42px_-24px_rgba(0,171,255,0.9)] hover:bg-[#24baff]"
                     >
                       Contact Us
                     </Button>
                   </a>
-                  <Link href="#templates">
-                    <Button
-                      variant="outline"
-                      className="h-12 rounded-full border-[#07193f]/15 bg-white px-7 text-sm font-semibold text-[#07193f] hover:bg-[#07193f] hover:text-white"
-                    >
-                      Back to templates
-                    </Button>
-                  </Link>
+	                  <Link href="#templates">
+	                    <Button
+	                      variant="outline"
+	                      className="h-12 rounded-full border-[#07193f]/20 bg-white px-7 text-sm font-semibold text-[#07193f] hover:bg-[#07193f] hover:text-white"
+	                    >
+	                      Back to templates
+	                    </Button>
+	                  </Link>
                 </div>
               </div>
 
-              <div className="rounded-[32px] border border-[#07193f]/10 bg-white p-7">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4 rounded-[24px] p-5">
-                    <div
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
-                      style={{
-                        backgroundColor: "var(--dexta-secondary)",
-                        color: "var(--dexta)",
-                      }}
-                    >
+	              <div className="rounded-[32px] border border-[#07193f]/10 bg-[#f8fbff] p-7">
+	                <div className="space-y-4">
+	                  <div className="flex items-start gap-4 rounded-[24px] border border-[#07193f]/10 bg-white p-5">
+	                    <div
+	                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#00abff]/20 bg-[#00abff]/10 text-[#00abff]"
+	                    >
                       <Mail className="h-5 w-5" />
                     </div>
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#00abff]">
                         {contactContent.emailLabel}
                       </p>
-                      <a
-                        href={`mailto:${primaryEmail}`}
-                        className="mt-2 block text-sm leading-7 text-[#07193f] underline-offset-2 hover:underline"
-                      >
+	                      <a
+	                        href={`mailto:${primaryEmail}`}
+	                        className="mt-2 block text-sm leading-7 text-[#07193f] underline-offset-2 hover:underline"
+	                      >
                         {primaryEmail}
                       </a>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4 rounded-[24px] p-5">
-                    <div
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
-                      style={{
-                        backgroundColor: "var(--dexta-secondary)",
-                        color: "var(--dexta)",
-                      }}
-                    >
+	                  <div className="flex items-start gap-4 rounded-[24px] border border-[#07193f]/10 bg-white p-5">
+	                    <div
+	                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#00abff]/20 bg-[#00abff]/10 text-[#00abff]"
+	                    >
                       <Phone className="h-5 w-5" />
                     </div>
                     <div>
@@ -2550,10 +3287,10 @@ function WeBrandSchoolsPageContent({
                       </p>
                       <a
                         href={whatsappHref}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-2 block text-sm leading-7 text-[#07193f] underline-offset-2 hover:underline"
-                      >
+	                        target="_blank"
+	                        rel="noreferrer"
+	                        className="mt-2 block text-sm leading-7 text-[#07193f] underline-offset-2 hover:underline"
+	                      >
                         {primaryPhone}
                       </a>
                     </div>
@@ -2561,7 +3298,7 @@ function WeBrandSchoolsPageContent({
                 </div>
 
                 {socialLinks.length ? (
-                  <div className="mt-6 border-t border-slate-200 pt-6">
+	                  <div className="mt-6 border-t border-[#07193f]/10 pt-6">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#00abff]">
                       {contactContent.socialsLabel}
                     </p>
@@ -2574,11 +3311,11 @@ function WeBrandSchoolsPageContent({
                           <a
                             key={`${social.platform}-${social.href}`}
                             href={social.href}
-                            title={social.label}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex h-11 w-11 items-center justify-center rounded-full border border-[#07193f]/12 text-[#07193f] transition-colors hover:bg-[#07193f] hover:text-white"
-                          >
+	                            title={social.label}
+	                            target="_blank"
+	                            rel="noreferrer"
+	                            className="flex h-11 w-11 items-center justify-center rounded-full border border-[#07193f]/10 bg-white text-[#07193f] transition-colors hover:bg-[#00abff] hover:text-white"
+	                          >
                             <Icon className="h-4 w-4" />
                           </a>
                         );
@@ -2591,6 +3328,48 @@ function WeBrandSchoolsPageContent({
           </div>
         </section>
       </main>
+
+      <Dialog
+        open={isPortalSectionVideoOpen}
+        onOpenChange={setIsPortalSectionVideoOpen}
+      >
+        <DialogContent className="max-h-[92vh] overflow-hidden border-[#07193f]/20 bg-white p-0 text-[#07193f] sm:max-w-5xl">
+          <div className="border-b border-[#07193f]/10 px-6 py-5">
+            <DialogHeader className="text-left">
+              <DialogTitle className="font-display text-3xl tracking-[-0.04em] text-[#07193f]">
+                {portalSectionContent.ctaText ?? "Portal video"}
+              </DialogTitle>
+              <DialogDescription className="mt-2 max-w-3xl text-sm leading-7 text-slate-600">
+                {portalSectionContent.title}
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <div className="bg-[#f8fbff] p-4 sm:p-6">
+            <div className="aspect-video overflow-hidden rounded-lg border border-[#07193f]/10 bg-[#07193f]">
+              {isPortalSectionVideoOpen && portalSectionYoutubeEmbedUrl ? (
+                <iframe
+                  src={`${portalSectionYoutubeEmbedUrl}?autoplay=1&rel=0`}
+                  title={`${portalSectionContent.title} video`}
+                  className="h-full w-full"
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              ) : null}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <PortalFeaturePreviewDialog
+        card={previewPortalCard}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreviewPortalCard(null);
+          }
+        }}
+      />
 
       <TemplatePreviewDialog
         template={previewTemplate}
@@ -2618,6 +3397,8 @@ export function WeBrandSchoolsPage(props: {
   content: WeBrandSchoolsPageContentData;
   testimonials: SchoolWebsiteTestimonialData[];
   templates: SchoolWebsiteTemplateData[];
+  portalSectionContent: SchoolPortalSectionContentData;
+  portalCards: SchoolPortalFeatureCardData[];
   contactContent: ContactPageContentData;
   socialLinks: ContactSocialLinkData[];
 }) {
