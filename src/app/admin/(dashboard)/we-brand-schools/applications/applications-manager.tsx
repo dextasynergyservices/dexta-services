@@ -1,17 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Loader2 } from "lucide-react";
+import { Eye, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -30,6 +43,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  deleteSchoolWebsiteApplication,
   startSchoolWebsiteProject,
   updateSchoolWebsiteApplicationStatus,
   type SchoolWebsiteApplicationRow,
@@ -41,6 +55,17 @@ const STATUS_OPTIONS = [
   { value: "LIVE", label: "Live" },
   { value: "DECLINED", label: "Declined" },
 ] as const;
+
+type ReferralFilterValue =
+  | "ALL"
+  | "DIRECT"
+  | "REFERRED"
+  | "ACTIVE"
+  | "EXPIRED"
+  | `REFERRAL:${string}`;
+
+const DEFAULT_GO_LIVE_ADMIN_MESSAGE =
+  "Please change your portal password after your first login.";
 
 function statusClassName(status: SchoolWebsiteApplicationRow["status"]) {
   switch (status) {
@@ -70,12 +95,126 @@ function formatDate(value: Date) {
   }).format(value);
 }
 
+function hasReferralSource(application: SchoolWebsiteApplicationRow) {
+  return Boolean(
+    application.referralLinkId ||
+    application.referralCodeSnapshot ||
+    application.referralNameSnapshot ||
+    application.referralSlugSnapshot,
+  );
+}
+
+function getReferralName(application: SchoolWebsiteApplicationRow) {
+  return (
+    application.referralNameSnapshot ??
+    application.referralLink?.displayName ??
+    "Referral"
+  );
+}
+
+function getReferralSlug(application: SchoolWebsiteApplicationRow) {
+  return (
+    application.referralSlugSnapshot ?? application.referralLink?.slug ?? null
+  );
+}
+
+function getReferralCode(application: SchoolWebsiteApplicationRow) {
+  return (
+    application.referralCodeSnapshot ?? application.referralLink?.code ?? null
+  );
+}
+
+function getReferralEmail(application: SchoolWebsiteApplicationRow) {
+  return (
+    application.referralEmailSnapshot ?? application.referralLink?.email ?? null
+  );
+}
+
+function getReferralLocation(application: SchoolWebsiteApplicationRow) {
+  return (
+    application.referralLocationSnapshot ??
+    application.referralLink?.location ??
+    null
+  );
+}
+
+function getReferralFilterKey(application: SchoolWebsiteApplicationRow) {
+  return (
+    application.referralLinkId ??
+    getReferralCode(application) ??
+    getReferralSlug(application) ??
+    null
+  );
+}
+
+function isReferralExpired(application: SchoolWebsiteApplicationRow) {
+  return Boolean(
+    application.referralLink?.expiresAt &&
+    new Date(application.referralLink.expiresAt).getTime() <= Date.now(),
+  );
+}
+
+function isReferralActive(application: SchoolWebsiteApplicationRow) {
+  const referral = application.referralLink;
+  return Boolean(
+    referral &&
+    referral.status === "ACTIVE" &&
+    !referral.deletedAt &&
+    !isReferralExpired(application),
+  );
+}
+
+function referralBadgeClassName(application: SchoolWebsiteApplicationRow) {
+  if (!hasReferralSource(application)) {
+    return "border-[#2a2a2a] bg-[#0d0d0d] text-[#888]";
+  }
+
+  if (isReferralExpired(application)) {
+    return "border-amber-500/20 bg-amber-500/10 text-amber-400";
+  }
+
+  if (isReferralActive(application)) {
+    return "border-cyan-500/20 bg-cyan-500/10 text-cyan-300";
+  }
+
+  return "border-blue-500/20 bg-blue-500/10 text-blue-300";
+}
+
+function referralStatusLabel(application: SchoolWebsiteApplicationRow) {
+  if (!hasReferralSource(application)) return "Direct";
+  if (isReferralExpired(application)) return "Expired referral";
+  if (isReferralActive(application)) return "Active referral";
+  return "Referred";
+}
+
+function normalizeUrlForForm(value?: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed.replace(/^\/+/, "")}`;
+}
+
+function getSuggestedWebsiteUrl(application: SchoolWebsiteApplicationRow) {
+  return normalizeUrlForForm(
+    application.existingDomain ??
+      application.preferredDomain1 ??
+      application.officialWebsiteUrl,
+  );
+}
+
 function ApplicationDetailDialog({
   application,
   onClose,
+  onDelete,
+  onGoLive,
 }: {
   application: SchoolWebsiteApplicationRow | null;
   onClose: () => void;
+  onDelete: (application: SchoolWebsiteApplicationRow) => void;
+  onGoLive: (
+    application: SchoolWebsiteApplicationRow,
+    adminNotes: string,
+  ) => void;
 }) {
   const router = useRouter();
   const [status, setStatus] = useState<SchoolWebsiteApplicationRow["status"]>(
@@ -98,6 +237,11 @@ function ApplicationDetailDialog({
   const handleSave = async () => {
     if (!application) return;
 
+    if (status === "LIVE" && application.status !== "LIVE") {
+      onGoLive(application, adminNotes);
+      return;
+    }
+
     setIsSaving(true);
     const result = await updateSchoolWebsiteApplicationStatus(application.id, {
       status,
@@ -117,7 +261,7 @@ function ApplicationDetailDialog({
 
   return (
     <Dialog open={Boolean(application)} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto border-[#222] bg-[#111] text-white sm:max-w-4xl">
+      <DialogContent className="max-h-[92vh] w-[calc(100vw-2rem)] overflow-y-auto border-[#222] bg-[#111] text-white sm:max-w-4xl">
         {application ? (
           <>
             <DialogHeader>
@@ -128,23 +272,23 @@ function ApplicationDetailDialog({
 
             <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-xl border border-[#222] bg-[#0d0d0d] p-4">
+                <div className="min-w-0 rounded-xl border border-[#222] bg-[#0d0d0d] p-4">
                   <p className="text-[11px] uppercase tracking-[0.22em] text-[#666]">
                     Template
                   </p>
-                  <p className="mt-2 text-sm font-medium text-white">
+                  <p className="mt-2 break-words text-sm font-medium text-white">
                     {application.selectedTemplateName}
                   </p>
                 </div>
-                <div className="rounded-xl border border-[#222] bg-[#0d0d0d] p-4">
+                <div className="min-w-0 rounded-xl border border-[#222] bg-[#0d0d0d] p-4">
                   <p className="text-[11px] uppercase tracking-[0.22em] text-[#666]">
                     Contact Person
                   </p>
-                  <p className="mt-2 text-sm font-medium text-white">
+                  <p className="mt-2 break-words text-sm font-medium text-white">
                     {application.officialContactName || "Not provided"}
                   </p>
                 </div>
-                <div className="rounded-xl border border-[#222] bg-[#0d0d0d] p-4">
+                <div className="min-w-0 rounded-xl border border-[#222] bg-[#0d0d0d] p-4">
                   <p className="text-[11px] uppercase tracking-[0.22em] text-[#666]">
                     Domain State
                   </p>
@@ -152,7 +296,7 @@ function ApplicationDetailDialog({
                     {domainStateLabel(application)}
                   </p>
                 </div>
-                <div className="rounded-xl border border-[#222] bg-[#0d0d0d] p-4">
+                <div className="min-w-0 rounded-xl border border-[#222] bg-[#0d0d0d] p-4">
                   <p className="text-[11px] uppercase tracking-[0.22em] text-[#666]">
                     Submitted
                   </p>
@@ -161,6 +305,67 @@ function ApplicationDetailDialog({
                   </p>
                 </div>
               </div>
+
+              <section className="rounded-2xl border border-[#222] bg-[#0d0d0d] p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-white">
+                    Referral Source
+                  </h3>
+                  <Badge
+                    variant="outline"
+                    className={referralBadgeClassName(application)}
+                  >
+                    {referralStatusLabel(application)}
+                  </Badge>
+                </div>
+
+                {hasReferralSource(application) ? (
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
+                        Name
+                      </p>
+                      <p className="mt-2 break-words text-sm text-white">
+                        {getReferralName(application)}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
+                        Slug / Code
+                      </p>
+                      <p className="mt-2 break-all text-sm text-white">
+                        {getReferralSlug(application)
+                          ? `/r/${getReferralSlug(application)}`
+                          : "No slug snapshot"}
+                      </p>
+                      <p className="mt-1 break-all text-xs text-[#777]">
+                        {getReferralCode(application) ?? "No code snapshot"}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
+                        Email
+                      </p>
+                      <p className="mt-2 break-all text-sm text-white">
+                        {getReferralEmail(application) ?? "Not provided"}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
+                        Location
+                      </p>
+                      <p className="mt-2 break-words text-sm text-white">
+                        {getReferralLocation(application) ?? "Not provided"}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm text-[#888]">
+                    This application was submitted directly, without referral
+                    attribution.
+                  </p>
+                )}
+              </section>
 
               <div className="grid gap-6 lg:grid-cols-2">
                 <section className="rounded-2xl border border-[#222] bg-[#0d0d0d] p-5">
@@ -172,7 +377,9 @@ function ApplicationDetailDialog({
                       <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
                         About School
                       </p>
-                      <p className="mt-2 leading-7">{application.aboutSchool}</p>
+                      <p className="mt-2 leading-7">
+                        {application.aboutSchool}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
@@ -200,51 +407,51 @@ function ApplicationDetailDialog({
                     Official Contacts
                   </h3>
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
                         School Email
                       </p>
-                      <p className="mt-2 text-sm text-white">
+                      <p className="mt-2 break-all text-sm text-white">
                         {application.officialEmail}
                       </p>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
                         School Phone
                       </p>
-                      <p className="mt-2 text-sm text-white">
+                      <p className="mt-2 break-words text-sm text-white">
                         {application.officialPhone}
                       </p>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
                         Contact Name
                       </p>
-                      <p className="mt-2 text-sm text-white">
+                      <p className="mt-2 break-words text-sm text-white">
                         {application.officialContactName || "Not provided"}
                       </p>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
                         Contact Role
                       </p>
-                      <p className="mt-2 text-sm text-white">
+                      <p className="mt-2 break-words text-sm text-white">
                         {application.officialContactRole || "Not provided"}
                       </p>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
                         Contact Phone
                       </p>
-                      <p className="mt-2 text-sm text-white">
+                      <p className="mt-2 break-words text-sm text-white">
                         {application.officialContactPhone || "Not provided"}
                       </p>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
                         Contact Email
                       </p>
-                      <p className="mt-2 text-sm text-white">
+                      <p className="mt-2 break-all text-sm text-white">
                         {application.officialContactEmail || "Not provided"}
                       </p>
                     </div>
@@ -254,7 +461,7 @@ function ApplicationDetailDialog({
                     <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
                       Address
                     </p>
-                    <p className="mt-2 text-sm leading-7 text-white">
+                    <p className="mt-2 break-words text-sm leading-7 text-white">
                       {application.officialAddress}
                     </p>
                   </div>
@@ -263,7 +470,7 @@ function ApplicationDetailDialog({
                     <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
                       Website
                     </p>
-                    <p className="mt-2 text-sm text-white">
+                    <p className="mt-2 break-all text-sm text-white">
                       {application.officialWebsiteUrl || "Not provided"}
                     </p>
                   </div>
@@ -275,28 +482,31 @@ function ApplicationDetailDialog({
                   Domain Information
                 </h3>
                 <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
                       Domain Choice
                     </p>
-                    <p className="mt-2 text-sm text-white">
+                    <p className="mt-2 break-words text-sm text-white">
                       {domainStateLabel(application)}
                     </p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
                       Existing Domain
                     </p>
-                    <p className="mt-2 text-sm text-white">
+                    <p className="mt-2 break-all text-sm text-white">
                       {application.existingDomain || "Not provided"}
                     </p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs uppercase tracking-[0.22em] text-[#666]">
                       Preferred Domains
                     </p>
-                    <p className="mt-2 text-sm text-white">
-                      {[application.preferredDomain1, application.preferredDomain2]
+                    <p className="mt-2 break-all text-sm text-white">
+                      {[
+                        application.preferredDomain1,
+                        application.preferredDomain2,
+                      ]
                         .filter(Boolean)
                         .join(", ") || "Not provided"}
                     </p>
@@ -325,7 +535,9 @@ function ApplicationDetailDialog({
                     <Select
                       value={status}
                       onValueChange={(value) =>
-                        setStatus(value as SchoolWebsiteApplicationRow["status"])
+                        setStatus(
+                          value as SchoolWebsiteApplicationRow["status"],
+                        )
                       }
                     >
                       <SelectTrigger className="w-full border-[#2a2a2a] bg-[#111] text-white">
@@ -354,7 +566,16 @@ function ApplicationDetailDialog({
                   </div>
                 </div>
 
-                <div className="mt-5 flex justify-end">
+                <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onDelete(application)}
+                    className="border-red-500/20 text-red-300 hover:bg-red-500/10 hover:text-red-200"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Application
+                  </Button>
                   <Button
                     type="button"
                     onClick={handleSave}
@@ -389,6 +610,76 @@ export function ApplicationsManager({
   const [selectedApplication, setSelectedApplication] =
     useState<SchoolWebsiteApplicationRow | null>(null);
   const [quickActionId, setQuickActionId] = useState<string | null>(null);
+  const [referralFilter, setReferralFilter] =
+    useState<ReferralFilterValue>("ALL");
+  const [deletingApplication, setDeletingApplication] =
+    useState<SchoolWebsiteApplicationRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [goLiveApplication, setGoLiveApplication] =
+    useState<SchoolWebsiteApplicationRow | null>(null);
+  const [goLiveAdminNotes, setGoLiveAdminNotes] = useState("");
+  const [goLiveWebsiteUrl, setGoLiveWebsiteUrl] = useState("");
+  const [goLivePortalUrl, setGoLivePortalUrl] = useState("");
+  const [goLivePortalPassword, setGoLivePortalPassword] = useState("");
+  const [goLiveAdminMessage, setGoLiveAdminMessage] = useState(
+    DEFAULT_GO_LIVE_ADMIN_MESSAGE,
+  );
+  const [isSendingGoLive, setIsSendingGoLive] = useState(false);
+
+  const referralOptions = useMemo(() => {
+    const options = new Map<
+      string,
+      {
+        key: string;
+        label: string;
+        detail: string;
+      }
+    >();
+
+    applications.forEach((application) => {
+      if (!hasReferralSource(application)) return;
+
+      const key = getReferralFilterKey(application);
+      if (!key || options.has(key)) return;
+
+      const slug = getReferralSlug(application);
+      const code = getReferralCode(application);
+      options.set(key, {
+        key,
+        label: getReferralName(application),
+        detail: slug ? `/r/${slug}` : code ? code : "Referral source",
+      });
+    });
+
+    return Array.from(options.values()).sort((first, second) =>
+      first.label.localeCompare(second.label),
+    );
+  }, [applications]);
+
+  const filteredApplications = useMemo(() => {
+    return applications.filter((application) => {
+      const hasReferral = hasReferralSource(application);
+
+      if (referralFilter === "ALL") return true;
+      if (referralFilter === "DIRECT") return !hasReferral;
+      if (referralFilter === "REFERRED") return hasReferral;
+      if (referralFilter === "ACTIVE") {
+        return hasReferral && isReferralActive(application);
+      }
+      if (referralFilter === "EXPIRED") {
+        return hasReferral && isReferralExpired(application);
+      }
+      if (referralFilter.startsWith("REFERRAL:")) {
+        return (
+          hasReferral &&
+          getReferralFilterKey(application) ===
+            referralFilter.replace("REFERRAL:", "")
+        );
+      }
+
+      return true;
+    });
+  }, [applications, referralFilter]);
 
   const openProjectEditor = (projectId: string) => {
     router.push(`/admin/we-brand-schools/projects/${projectId}/editor`);
@@ -412,16 +703,42 @@ export function ApplicationsManager({
     );
   };
 
-  const runQuickAction = async (
+  const openGoLiveModal = (
     application: SchoolWebsiteApplicationRow,
-    status: SchoolWebsiteApplicationRow["status"],
+    adminNotes = application.adminNotes ?? "",
   ) => {
-    setQuickActionId(`${application.id}:${status}`);
-    const result = await updateSchoolWebsiteApplicationStatus(application.id, {
-      status,
-      adminNotes: application.adminNotes ?? "",
-    });
-    setQuickActionId(null);
+    setGoLiveApplication(application);
+    setGoLiveAdminNotes(adminNotes);
+    setGoLiveWebsiteUrl(getSuggestedWebsiteUrl(application));
+    setGoLivePortalUrl("");
+    setGoLivePortalPassword("");
+    setGoLiveAdminMessage(DEFAULT_GO_LIVE_ADMIN_MESSAGE);
+  };
+
+  const closeGoLiveModal = () => {
+    if (isSendingGoLive) return;
+    setGoLiveApplication(null);
+  };
+
+  const handleGoLiveSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!goLiveApplication) return;
+
+    setIsSendingGoLive(true);
+    const result = await updateSchoolWebsiteApplicationStatus(
+      goLiveApplication.id,
+      {
+        status: "LIVE",
+        adminNotes: goLiveAdminNotes,
+        goLiveDetails: {
+          websiteUrl: goLiveWebsiteUrl,
+          portalUrl: goLivePortalUrl,
+          portalPassword: goLivePortalPassword,
+          adminMessage: goLiveAdminMessage,
+        },
+      },
+    );
+    setIsSendingGoLive(false);
 
     if (!result.success) {
       toast.error(result.message);
@@ -429,11 +746,69 @@ export function ApplicationsManager({
     }
 
     toast.success(result.message);
+    setGoLiveApplication(null);
+    if (selectedApplication?.id === goLiveApplication.id) {
+      setSelectedApplication(null);
+    }
+    router.refresh();
+  };
+
+  const handleDeleteApplication = async () => {
+    if (!deletingApplication) return;
+
+    setIsDeleting(true);
+    const result = await deleteSchoolWebsiteApplication(deletingApplication.id);
+    setIsDeleting(false);
+
+    if (!result.success) {
+      toast.error(result.message);
+      return;
+    }
+
+    toast.success(result.message);
+    if (selectedApplication?.id === deletingApplication.id) {
+      setSelectedApplication(null);
+    }
+    setDeletingApplication(null);
     router.refresh();
   };
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-col gap-3 rounded-2xl border border-[#222] bg-[#111] p-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <Label className="mb-1.5 block text-xs uppercase tracking-[0.22em] text-[#666]">
+            Referral Filter
+          </Label>
+          <Select
+            value={referralFilter}
+            onValueChange={(value) =>
+              setReferralFilter(value as ReferralFilterValue)
+            }
+          >
+            <SelectTrigger className="w-full border-[#2a2a2a] bg-[#0d0d0d] text-white md:w-[280px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="border-[#222] bg-[#111] text-white">
+              <SelectItem value="ALL">All applications</SelectItem>
+              <SelectItem value="DIRECT">Direct only</SelectItem>
+              <SelectItem value="REFERRED">Referred only</SelectItem>
+              <SelectItem value="ACTIVE">Active referral</SelectItem>
+              <SelectItem value="EXPIRED">Expired referral</SelectItem>
+              {referralOptions.map((option) => (
+                <SelectItem key={option.key} value={`REFERRAL:${option.key}`}>
+                  {option.label} - {option.detail}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <p className="text-sm text-[#888]">
+          Showing {filteredApplications.length} of {applications.length}{" "}
+          applications
+        </p>
+      </div>
+
       <div className="overflow-hidden rounded-2xl border border-[#222] bg-[#111]">
         <Table>
           <TableHeader>
@@ -441,24 +816,29 @@ export function ApplicationsManager({
               <TableHead className="text-[#888]">School Name</TableHead>
               <TableHead className="text-[#888]">Template</TableHead>
               <TableHead className="text-[#888]">Contact Person</TableHead>
+              <TableHead className="text-[#888]">Referral</TableHead>
               <TableHead className="text-[#888]">Domain State</TableHead>
               <TableHead className="text-[#888]">Status</TableHead>
               <TableHead className="text-[#888]">Date Submitted</TableHead>
-              <TableHead className="text-right text-[#888]">Quick Actions</TableHead>
+              <TableHead className="text-right text-[#888]">
+                Quick Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {applications.length === 0 ? (
+            {filteredApplications.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={8}
                   className="py-12 text-center text-sm text-[#666]"
                 >
-                  No school website applications have been submitted yet.
+                  {applications.length === 0
+                    ? "No school website applications have been submitted yet."
+                    : "No applications match this referral filter."}
                 </TableCell>
               </TableRow>
             ) : (
-              applications.map((application) => (
+              filteredApplications.map((application) => (
                 <TableRow
                   key={application.id}
                   className="cursor-pointer border-[#222] hover:bg-[#171717]"
@@ -472,6 +852,33 @@ export function ApplicationsManager({
                   </TableCell>
                   <TableCell className="text-[#b3b3b3]">
                     {application.officialContactName || "Not provided"}
+                  </TableCell>
+                  <TableCell>
+                    <div className="max-w-[220px] space-y-1">
+                      <Badge
+                        variant="outline"
+                        className={referralBadgeClassName(application)}
+                      >
+                        {referralStatusLabel(application)}
+                      </Badge>
+                      {hasReferralSource(application) ? (
+                        <>
+                          <p className="truncate text-sm text-white">
+                            {getReferralName(application)}
+                          </p>
+                          <p className="truncate text-xs text-[#777]">
+                            {getReferralSlug(application)
+                              ? `/r/${getReferralSlug(application)}`
+                              : getReferralCode(application)}
+                          </p>
+                          <p className="truncate text-xs text-[#777]">
+                            {getReferralEmail(application) ?? "No email"}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-[#777]">No referral link</p>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-[#b3b3b3]">
                     {domainStateLabel(application)}
@@ -545,18 +952,25 @@ export function ApplicationsManager({
                           size="sm"
                           onClick={(event) => {
                             event.stopPropagation();
-                            void runQuickAction(application, "LIVE");
+                            openGoLiveModal(application);
                           }}
-                          disabled={quickActionId === `${application.id}:LIVE`}
                           className="bg-green-600 text-white hover:bg-green-500"
                         >
-                          {quickActionId === `${application.id}:LIVE` ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            "Go Live"
-                          )}
+                          Go Live
                         </Button>
                       ) : null}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setDeletingApplication(application);
+                        }}
+                        className="border-red-500/20 text-red-300 hover:bg-red-500/10 hover:text-red-200"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -569,7 +983,170 @@ export function ApplicationsManager({
       <ApplicationDetailDialog
         application={selectedApplication}
         onClose={() => setSelectedApplication(null)}
+        onDelete={(application) => setDeletingApplication(application)}
+        onGoLive={openGoLiveModal}
       />
+
+      <Dialog
+        open={Boolean(goLiveApplication)}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeGoLiveModal();
+          }
+        }}
+      >
+        <DialogContent className="max-h-[92vh] overflow-y-auto border-[#222] bg-[#111] text-white sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Go live and send emails</DialogTitle>
+            <DialogDescription className="text-[#888]">
+              Send website access to the school contacts. Referral owners only
+              receive the public website URL.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form className="space-y-4" onSubmit={handleGoLiveSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="go-live-website-url" className="text-[#cfcfcf]">
+                Website URL
+              </Label>
+              <Input
+                id="go-live-website-url"
+                type="url"
+                value={goLiveWebsiteUrl}
+                onChange={(event) => setGoLiveWebsiteUrl(event.target.value)}
+                placeholder="https://schoolname.com"
+                required
+                className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#555]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="go-live-portal-url" className="text-[#cfcfcf]">
+                Portal URL
+              </Label>
+              <Input
+                id="go-live-portal-url"
+                type="url"
+                value={goLivePortalUrl}
+                onChange={(event) => setGoLivePortalUrl(event.target.value)}
+                placeholder="https://schoolname.com/portal"
+                required
+                className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#555]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="go-live-portal-password"
+                className="text-[#cfcfcf]"
+              >
+                Portal Password
+              </Label>
+              <Input
+                id="go-live-portal-password"
+                type="text"
+                value={goLivePortalPassword}
+                onChange={(event) =>
+                  setGoLivePortalPassword(event.target.value)
+                }
+                placeholder="Temporary portal password"
+                required
+                className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#555]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="go-live-admin-message" className="text-[#cfcfcf]">
+                Short Message
+              </Label>
+              <Textarea
+                id="go-live-admin-message"
+                rows={4}
+                value={goLiveAdminMessage}
+                onChange={(event) => setGoLiveAdminMessage(event.target.value)}
+                className="resize-none border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder-[#555]"
+              />
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={closeGoLiveModal}
+                disabled={isSendingGoLive}
+                className="border-[#2a2a2a] bg-transparent text-[#888] hover:bg-[#1a1a1a] hover:text-white"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSendingGoLive}
+                className="bg-green-600 text-white hover:bg-green-500"
+              >
+                {isSendingGoLive ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Emails"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={Boolean(deletingApplication)}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) {
+            setDeletingApplication(null);
+          }
+        }}
+      >
+        <AlertDialogContent className="border-[#222] bg-[#111] text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete application?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[#777]">
+              This will permanently delete{" "}
+              {deletingApplication?.schoolName
+                ? `${deletingApplication.schoolName}'s application`
+                : "this application"}
+              {deletingApplication?.project
+                ? " and its linked website project/editor content."
+                : "."}{" "}
+              Referral reports keep their event history, but this application
+              will no longer appear here.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={isDeleting}
+              className="border-[#2a2a2a] bg-transparent text-[#888] hover:bg-[#1a1a1a] hover:text-white"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              onClick={(event) => {
+                event.preventDefault();
+                void handleDeleteApplication();
+              }}
+              className="bg-red-500 text-white hover:bg-red-400"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete application"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

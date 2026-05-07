@@ -26,6 +26,10 @@ const TABS = [
     label: "Applications",
   },
   {
+    href: "/admin/we-brand-schools/referrals",
+    label: "Referrals",
+  },
+  {
     href: "/admin/we-brand-schools/projects",
     label: "Projects",
   },

@@ -32,7 +32,10 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import { submitSchoolWebsiteApplication } from "@/app/(public)/webrandschools/actions";
+import {
+  recordSchoolWebsiteTemplateSelection,
+  submitSchoolWebsiteApplication,
+} from "@/app/(public)/webrandschools/actions";
 import { RecaptchaProvider } from "@/components/layout/recaptcha-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -2416,6 +2419,7 @@ function WeBrandSchoolsPageContent({
   const selectTemplate = useCallback((template: SchoolWebsiteTemplateData) => {
     setPreviewTemplate(null);
     setApplicationTemplate(template);
+    void recordSchoolWebsiteTemplateSelection(template.slug);
   }, []);
 
   useEffect(() => {

@@ -55,6 +55,29 @@ export function buildEmailHtml({
 </html>`;
 }
 
+export function buildRegularEmailHtml({
+  heading,
+  body,
+  footer,
+}: {
+  heading?: string;
+  body: string;
+  footer?: string;
+}) {
+  return `<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background:#ffffff;color:#222222;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;">
+    <div style="max-width:640px;margin:0;padding:24px;">
+      ${heading ? `<p style="margin:0 0 18px;color:#111111;font-size:16px;font-weight:700;">${heading}</p>` : ""}
+      ${body}
+      <p style="margin:28px 0 0;color:#666666;font-size:13px;">
+        ${footer ?? "Dexta Synergy Services"}
+      </p>
+    </div>
+  </body>
+</html>`;
+}
+
 // ─── Generic Send ────────────────────────────────────────────────────────────
 
 export async function sendEmail({

@@ -306,8 +306,23 @@ export const dextaAcademy2Manifest = {
             textField("eyebrow", "Eyebrow", ".eyebrow"),
             textField("title", "Title", ".section-title"),
             textareaField("body", "Body", ".section-copy"),
+            textField(
+              "featureNumber",
+              "Feature number",
+              ".feature-list__bullet",
+            ),
+            textField(
+              "featureText",
+              "Feature text",
+              "span:not(.feature-list__bullet)",
+            ),
             imageField("image", "Image", ".feature-split__media img"),
           ],
+          repeatable: {
+            itemSelector: ".feature-list li",
+            labelSingular: "Feature",
+            labelPlural: "Features",
+          },
         },
         {
           id: "mission-vision",
@@ -347,23 +362,45 @@ export const dextaAcademy2Manifest = {
         {
           id: "overview",
           label: "Overview",
-          selector: ".section:not(.section--dark)",
+          selector: ".section > .container.info-grid",
           fields: [
-            textField("title", "Title", ".section-title, h2"),
-            textareaField("body", "Body", ".section-copy, p"),
+            textField("overviewIcon", "Overview icon", ".info-card__icon", {
+              target: "attribute",
+              attribute: "data-icon",
+            }),
+            textField("overviewTitle", "Overview title", ".info-card h3"),
+            textareaField("overviewBody", "Overview body", ".info-card p"),
           ],
+          repeatable: {
+            itemSelector: ".info-card",
+            labelSingular: "Overview card",
+            labelPlural: "Overview cards",
+          },
         },
         {
           id: "subjects",
           label: "Subjects",
-          selector: ".section--dark",
+          selector: ".section--dark .programs__cards",
           fields: [
-            textField("title", "Title", "h2"),
-            textField("subjectTitle", "Subject title", "h3"),
-            textareaField("subjectBody", "Subject body", "p"),
+            imageField("subjectImage", "Subject image", ".card__media img"),
+            textField(
+              "subjectImageAlt",
+              "Subject image alt text",
+              ".card__media img",
+              {
+                target: "attribute",
+                attribute: "alt",
+              },
+            ),
+            textField("subjectIcon", "Subject icon", ".card__badge", {
+              target: "attribute",
+              attribute: "data-icon",
+            }),
+            textField("subjectTitle", "Subject title", ".card__title"),
+            textareaField("subjectBody", "Subject body", ".card__text"),
           ],
           repeatable: {
-            itemSelector: "article, .card",
+            itemSelector: ".card",
             labelSingular: "Subject",
             labelPlural: "Subjects",
           },
@@ -376,8 +413,18 @@ export const dextaAcademy2Manifest = {
             textField("eyebrow", "Eyebrow", ".eyebrow"),
             textField("title", "Title", ".section-title"),
             textareaField("body", "Body", ".section-copy"),
-            textField("step", "Step", ".steps li span:last-child"),
+            textField("stepNumber", "Step number", ".steps__number"),
+            textField("stepText", "Step text", "span:not(.steps__number)"),
             imageField("image", "Image", ".feature-split__media img"),
+            textField(
+              "imageAlt",
+              "Image alt text",
+              ".feature-split__media img",
+              {
+                target: "attribute",
+                attribute: "alt",
+              },
+            ),
           ],
           repeatable: {
             itemSelector: ".steps li",

@@ -41,6 +41,15 @@ const optionalUrlSchema = z
   .nullable()
   .or(z.literal(""));
 
+function requiredUrlSchema(label: string) {
+  return z
+    .string()
+    .trim()
+    .min(1, `${label} is required`)
+    .max(500, `${label} must be 500 characters or less`)
+    .url(`Please enter a valid ${label.toLowerCase()}`);
+}
+
 const optionalYoutubeUrlSchema = z.preprocess(
   (value) => {
     if (typeof value !== "string") {
@@ -736,6 +745,52 @@ export type SchoolWebsiteTestimonialInput = z.infer<
   typeof schoolWebsiteTestimonialSchema
 >;
 
+const referralExpirySchema = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") {
+      return value;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? null : trimmed;
+  },
+  z
+    .string()
+    .refine((value) => !Number.isNaN(new Date(value).getTime()), {
+      message: "Expiration date must be a valid date",
+    })
+    .refine((value) => new Date(value).getTime() > Date.now(), {
+      message: "Expiration date must be in the future",
+    })
+    .nullable()
+    .optional(),
+);
+
+export const referralLinkSchema = z.object({
+  displayName: requiredTrimmedString("Name or organization name", 160),
+  slug: z
+    .string()
+    .trim()
+    .min(1, "Referral slug is required")
+    .max(80, "Referral slug must be 80 characters or less")
+    .regex(
+      /^[a-z0-9]+$/,
+      "Referral slug must use lowercase letters and numbers only",
+    ),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Referral owner email is required")
+    .max(254, "Referral owner email must be 254 characters or less")
+    .email("Enter a valid referral owner email"),
+  location: optionalTrimmedString("State/city or location", 160),
+  expiresAt: referralExpirySchema,
+  status: z.enum(["ACTIVE", "INACTIVE"]),
+  notificationEnabled: z.boolean(),
+});
+
+export type ReferralLinkInput = z.infer<typeof referralLinkSchema>;
+
 export const schoolWebsiteTemplateAssetSchema = z
   .object({
     id: z
@@ -953,6 +1008,14 @@ export type SchoolWebsiteApplicationInput = z.infer<
 export const schoolWebsiteApplicationStatusSchema = z.object({
   status: schoolWebsiteJobStatusSchema,
   adminNotes: optionalTrimmedString("Admin notes", 4000),
+  goLiveDetails: z
+    .object({
+      websiteUrl: requiredUrlSchema("Website URL"),
+      portalUrl: requiredUrlSchema("Portal URL"),
+      portalPassword: requiredTrimmedString("Portal password", 500),
+      adminMessage: optionalTrimmedString("Admin message", 1000),
+    })
+    .optional(),
 });
 
 export type SchoolWebsiteApplicationStatusInput = z.infer<
