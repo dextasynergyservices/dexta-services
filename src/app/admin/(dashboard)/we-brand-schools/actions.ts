@@ -3,6 +3,8 @@
 import { type Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
+import { get as httpGet, type IncomingMessage } from "node:http";
+import { get as httpsGet } from "node:https";
 import path from "node:path";
 import { revalidatePath, updateTag } from "next/cache";
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -85,6 +87,19 @@ type ExportSchoolWebsiteProjectResult = ActionResult & {
   status?: SchoolWebsiteProjectStatusRow;
   fileCount?: number;
   pageCount?: number;
+};
+type ResetSchoolWebsiteProjectResult = ActionResult & {
+  contentJson?: SchoolTemplateProjectContent;
+  updatedAt?: string;
+  status?: SchoolWebsiteProjectStatusRow;
+};
+type ExtractedCopySuggestion = {
+  fieldKey: string;
+  label: string;
+  value: string;
+};
+type ExtractSchoolWebsiteCopySuggestionsResult = ActionResult & {
+  suggestions?: ExtractedCopySuggestion[];
 };
 type SchoolWebsiteProjectExportLogDelegate = {
   create(args: {
@@ -357,6 +372,528 @@ function getSafeProjectContent({
     contentJson: sanitizedContent,
     sourceSnapshot: syncedProjectContent.sourceSnapshot,
   };
+}
+
+function normalizeImportUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return null;
+    }
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+function readImportResponseBody(response: IncomingMessage) {
+  return new Promise<string>((resolve, reject) => {
+    const chunks: string[] = [];
+    let receivedLength = 0;
+    const maxLength = 2_000_000;
+
+    response.setEncoding("utf8");
+    response.on("data", (chunk: string) => {
+      receivedLength += chunk.length;
+      if (receivedLength > maxLength) {
+        response.destroy(new Error("That page is too large to import."));
+        return;
+      }
+      chunks.push(chunk);
+    });
+    response.on("end", () => resolve(chunks.join("")));
+    response.on("error", reject);
+  });
+}
+
+async function requestImportedHtml(
+  url: URL,
+  redirectCount = 0,
+): Promise<{
+  ok: boolean;
+  status: number;
+  contentType: string;
+  html: string;
+}> {
+  if (redirectCount > 5) {
+    throw new Error("That URL redirected too many times.");
+  }
+
+  return new Promise((resolve, reject) => {
+    const requestHeaders = {
+      Accept: "text/html,application/xhtml+xml",
+      "User-Agent": "DextaSchoolWebsiteImporter/1.0",
+    };
+    const handleResponse = (response: IncomingMessage) => {
+      const status = response.statusCode ?? 0;
+      const location = response.headers.location;
+
+      if (status >= 300 && status < 400 && location) {
+        response.resume();
+        let nextUrl: URL;
+        try {
+          nextUrl = new URL(location, url);
+        } catch {
+          reject(new Error("That URL redirected to an invalid location."));
+          return;
+        }
+
+        if (nextUrl.protocol !== "http:" && nextUrl.protocol !== "https:") {
+          reject(new Error("That URL redirected to an unsupported protocol."));
+          return;
+        }
+
+        requestImportedHtml(nextUrl, redirectCount + 1)
+          .then(resolve)
+          .catch(reject);
+        return;
+      }
+
+      readImportResponseBody(response)
+        .then((html) =>
+          resolve({
+            ok: status >= 200 && status < 300,
+            status,
+            contentType: String(response.headers["content-type"] ?? ""),
+            html,
+          }),
+        )
+        .catch(reject);
+    };
+    const request =
+      url.protocol === "https:"
+        ? httpsGet(
+            url,
+            {
+              headers: requestHeaders,
+              rejectUnauthorized: false,
+              timeout: 15_000,
+            },
+            handleResponse,
+          )
+        : httpGet(
+            url,
+            {
+              headers: requestHeaders,
+              timeout: 15_000,
+            },
+            handleResponse,
+          );
+
+    request.on("timeout", () => {
+      request.destroy(new Error("That URL took too long to respond."));
+    });
+    request.on("error", reject);
+  });
+}
+
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&rsquo;/gi, "'")
+    .replace(/&lsquo;/gi, "'")
+    .replace(/&rdquo;/gi, '"')
+    .replace(/&ldquo;/gi, '"')
+    .replace(/&mdash;|&ndash;/gi, "-");
+}
+
+function htmlToPlainText(value: string) {
+  return decodeHtmlEntities(
+    value
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
+}
+
+function extractFirstMatch(html: string, pattern: RegExp) {
+  const match = html.match(pattern);
+  return match?.[1] ? htmlToPlainText(match[1]) : "";
+}
+
+function uniqueTextChunks(values: string[]) {
+  const seen = new Set<string>();
+
+  return values
+    .map((value) => htmlToPlainText(value))
+    .map((value) => value.replace(/\s+/g, " ").trim())
+    .filter((value) => value.length >= 3)
+    .filter((value) => {
+      const key = value.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function getTextTokens(value: string) {
+  return new Set(
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((token) => token.length > 2),
+  );
+}
+
+function normalizeCopyMemoryText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isSimilarToUsedCopy(value: string, used: Set<string>) {
+  const normalizedValue = normalizeCopyMemoryText(value);
+  if (!normalizedValue) return true;
+  if (used.has(normalizedValue)) return true;
+
+  const valueTokens = getTextTokens(normalizedValue);
+  if (valueTokens.size < 4) return false;
+
+  for (const usedValue of used) {
+    const usedTokens = getTextTokens(usedValue);
+    if (usedTokens.size < 4) continue;
+
+    let shared = 0;
+    valueTokens.forEach((token) => {
+      if (usedTokens.has(token)) shared += 1;
+    });
+
+    const overlap = shared / Math.min(valueTokens.size, usedTokens.size);
+    if (overlap >= 0.68) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isProtectedCopyImportField(fieldKey: string, label: string) {
+  return /eyebrow|eye\s*brow|kicker|label|category/.test(
+    `${fieldKey} ${label}`.toLowerCase(),
+  );
+}
+
+function scoreTextMatch(value: string, query: string) {
+  const valueTokens = getTextTokens(value);
+  const queryTokens = getTextTokens(query);
+  let score = 0;
+
+  queryTokens.forEach((token) => {
+    if (valueTokens.has(token)) {
+      score += 1;
+    }
+  });
+
+  return score;
+}
+
+function splitSentences(value: string) {
+  return (value.match(/[^.!?]+[.!?]?/g) ?? [value])
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+}
+
+function fitCopyToTargetLength({
+  value,
+  candidates,
+  targetLength,
+  type,
+}: {
+  value: string;
+  candidates: string[];
+  targetLength: number;
+  type: string;
+}) {
+  const normalizedValue = value.replace(/\s+/g, " ").trim();
+  if (!normalizedValue) return "";
+
+  const lowerBound = Math.max(18, Math.floor(targetLength * 0.72));
+  const upperBound = Math.max(32, Math.ceil(targetLength * 1.24));
+
+  if (type === "text" && normalizedValue.length > upperBound) {
+    const sentence =
+      splitSentences(normalizedValue).find(
+        (item) => item.length <= upperBound && item.length >= lowerBound,
+      ) ?? normalizedValue;
+    return sentence.length > upperBound
+      ? `${sentence.slice(0, Math.max(upperBound - 1, 20)).trim()}...`
+      : sentence;
+  }
+
+  let output = normalizedValue;
+  for (const candidate of candidates) {
+    if (output.length >= lowerBound) break;
+    const nextSentence = splitSentences(candidate).find(
+      (sentence) =>
+        !output.toLowerCase().includes(sentence.toLowerCase()) &&
+        output.length + sentence.length + 1 <= upperBound,
+    );
+    if (nextSentence) {
+      output = `${output} ${nextSentence}`.trim();
+    }
+  }
+
+  if (output.length > upperBound) {
+    const sentences = splitSentences(output);
+    let trimmed = "";
+    for (const sentence of sentences) {
+      if (`${trimmed} ${sentence}`.trim().length > upperBound) break;
+      trimmed = `${trimmed} ${sentence}`.trim();
+    }
+
+    return (
+      trimmed || `${output.slice(0, Math.max(upperBound - 1, 20)).trim()}...`
+    );
+  }
+
+  return output;
+}
+
+function getImportedTextBuckets(html: string) {
+  const title =
+    extractFirstMatch(
+      html,
+      /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+    ) ||
+    extractFirstMatch(
+      html,
+      /<meta[^>]+name=["']title["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+    ) ||
+    extractFirstMatch(html, /<title[^>]*>([\s\S]*?)<\/title>/i);
+  const description =
+    extractFirstMatch(
+      html,
+      /<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+    ) ||
+    extractFirstMatch(
+      html,
+      /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+    );
+  const headings = uniqueTextChunks(
+    Array.from(html.matchAll(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi)).map(
+      (match) => match[1],
+    ),
+  );
+  const paragraphs = uniqueTextChunks(
+    Array.from(html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)).map(
+      (match) => match[1],
+    ),
+  ).filter((value) => value.length >= 24);
+  const shortTexts = uniqueTextChunks([
+    ...headings,
+    ...paragraphs.map((value) => value.split(/[.!?]/)[0] ?? value),
+  ]).filter((value) => value.length <= 90);
+  const orderedContent = Array.from(
+    html.matchAll(/<(h[1-3]|p)[^>]*>([\s\S]*?)<\/\1>/gi),
+  )
+    .map((match) => ({
+      tag: match[1].toLowerCase(),
+      text: htmlToPlainText(match[2]),
+    }))
+    .filter((item) => item.text.length >= 3);
+  const sections: Array<{ heading: string; texts: string[] }> = [];
+  let currentSection: { heading: string; texts: string[] } | null = null;
+
+  for (const item of orderedContent) {
+    if (item.tag.startsWith("h")) {
+      currentSection = { heading: item.text, texts: [] };
+      sections.push(currentSection);
+      continue;
+    }
+
+    if (!currentSection) {
+      currentSection = { heading: "Overview", texts: [] };
+      sections.push(currentSection);
+    }
+    if (item.text.length >= 24) {
+      currentSection.texts.push(item.text);
+    }
+  }
+
+  return {
+    title,
+    description,
+    headings,
+    paragraphs,
+    sections,
+    shortTexts,
+  };
+}
+
+function getTargetCopyLength(value: unknown, type: string) {
+  const text = typeof value === "string" ? value.trim() : "";
+  if (text.length > 0) {
+    return text.length;
+  }
+
+  return type === "text" ? 48 : 220;
+}
+
+function createFallbackCopy({
+  fieldKey,
+  label,
+  sectionLabel,
+  schoolName,
+  description,
+  type,
+}: {
+  fieldKey: string;
+  label: string;
+  sectionLabel: string;
+  schoolName: string;
+  description: string;
+  type: string;
+}) {
+  const fieldName = `${fieldKey} ${label}`.toLowerCase();
+  const name = schoolName || "the school";
+  const normalizedSection = sectionLabel.toLowerCase();
+
+  if (/cta|button|link/.test(fieldName)) {
+    return /apply|admission/.test(normalizedSection)
+      ? "Apply Now"
+      : `Discover ${name}`;
+  }
+
+  if (/eyebrow|kicker|label|category/.test(fieldName)) {
+    return sectionLabel || "Welcome";
+  }
+
+  if (/title|headline|heading|name/.test(fieldName)) {
+    return sectionLabel ? `${sectionLabel} at ${name}` : name;
+  }
+
+  if (/program|academic|curriculum/.test(normalizedSection)) {
+    return `${name} offers purposeful learning pathways that help students build knowledge, confidence, and readiness for the future.`;
+  }
+
+  if (/admission|apply|enrol|enroll/.test(normalizedSection)) {
+    return `${name} makes the admissions journey clear and supportive, helping families take the next step with confidence.`;
+  }
+
+  if (/student|life|community|club/.test(normalizedSection)) {
+    return `${name} gives students room to belong, lead, explore interests, and grow beyond the classroom.`;
+  }
+
+  if (/value|mission|vision|promise/.test(normalizedSection)) {
+    return `${name} is guided by strong values, purposeful teaching, and a commitment to developing character as well as achievement.`;
+  }
+
+  if (/about|who|legacy|story/.test(normalizedSection)) {
+    return `${name} combines academic care, mentoring, and a warm school culture so every learner can grow with confidence.`;
+  }
+
+  if (type === "text") {
+    return (
+      description || `${name} supports learners with purposeful education.`
+    );
+  }
+
+  return description
+    ? `At ${name}, ${description.charAt(0).toLowerCase()}${description.slice(1)}`
+    : `${name} provides a thoughtful school experience shaped around learning, character, and growth.`;
+}
+
+function pickImportedCopyForField({
+  fieldKey,
+  label,
+  type,
+  currentValue,
+  sectionLabel,
+  buckets,
+  used,
+}: {
+  fieldKey: string;
+  label: string;
+  type: string;
+  currentValue?: unknown;
+  sectionLabel: string;
+  buckets: ReturnType<typeof getImportedTextBuckets>;
+  used: Set<string>;
+}) {
+  const fieldName = `${fieldKey} ${label}`.toLowerCase();
+  const query = `${sectionLabel} ${fieldName}`;
+  const schoolName = buckets.title.split(/[|-]/)[0]?.trim() || buckets.title;
+  const targetLength = getTargetCopyLength(currentValue, type);
+  const relevantSections = [...buckets.sections].sort(
+    (left, right) =>
+      scoreTextMatch(`${right.heading} ${right.texts.join(" ")}`, query) -
+      scoreTextMatch(`${left.heading} ${left.texts.join(" ")}`, query),
+  );
+  const candidates: string[] = [];
+  const relevantSectionTexts = relevantSections.flatMap((section) => [
+    section.heading,
+    ...section.texts,
+  ]);
+
+  if (/eyebrow|kicker|label|category/.test(fieldName)) {
+    candidates.push(...relevantSections.map((section) => section.heading));
+    candidates.push(...buckets.shortTexts);
+  } else if (/title|headline|heading|name/.test(fieldName)) {
+    candidates.push(
+      ...relevantSections.map((section) => section.heading),
+      buckets.title,
+      ...buckets.headings,
+      ...buckets.shortTexts,
+    );
+  } else if (
+    /body|copy|description|intro|lead|excerpt|bio|quote/.test(fieldName)
+  ) {
+    candidates.push(
+      ...relevantSectionTexts,
+      buckets.description,
+      ...buckets.paragraphs,
+    );
+  } else if (/cta|button|link/.test(fieldName)) {
+    candidates.push(...buckets.shortTexts);
+  } else {
+    candidates.push(
+      ...(type === "textarea" || type === "richText"
+        ? relevantSectionTexts
+        : buckets.shortTexts),
+    );
+  }
+
+  const normalizedCandidates = uniqueTextChunks(candidates);
+  const selected =
+    normalizedCandidates.find((candidate) => {
+      const key = normalizeCopyMemoryText(candidate);
+      return key && !isSimilarToUsedCopy(candidate, used);
+    }) ??
+    createFallbackCopy({
+      fieldKey,
+      label,
+      sectionLabel,
+      schoolName,
+      description: buckets.description || buckets.paragraphs[0] || "",
+      type,
+    });
+
+  if (!selected) {
+    return "";
+  }
+
+  const fittedCopy = fitCopyToTargetLength({
+    value: selected,
+    candidates: normalizedCandidates,
+    targetLength,
+    type,
+  });
+  used.add(normalizeCopyMemoryText(fittedCopy));
+  return fittedCopy;
 }
 
 async function createSchoolWebsiteProjectExportLog({
@@ -1910,6 +2447,197 @@ export async function saveSchoolWebsiteProjectDraft(
   options: SaveSchoolWebsiteProjectOptions = { createRevision: true },
 ): Promise<SaveSchoolWebsiteProjectDraftResult> {
   return saveSchoolWebsiteProject(projectId, contentJson, options);
+}
+
+export async function resetSchoolWebsiteProjectToOriginal(
+  projectId: string,
+  applicationId?: string,
+): Promise<ResetSchoolWebsiteProjectResult> {
+  try {
+    await requireAuth();
+
+    const project = await weBrandSchoolsPrisma.schoolWebsiteProject.findUnique({
+      where: { id: projectId },
+      select: {
+        id: true,
+        applicationId: true,
+        templateSlug: true,
+        templateName: true,
+        contentJson: true,
+        sourceSnapshot: true,
+      },
+    });
+
+    if (!project) {
+      return {
+        success: false,
+        message: "School website project was not found.",
+      };
+    }
+
+    if (applicationId && project.applicationId !== applicationId) {
+      return {
+        success: false,
+        message: "Project does not belong to the selected application.",
+      };
+    }
+
+    const manifest = resolveSchoolTemplateManifestForSelection({
+      templateSlug: project.templateSlug,
+    });
+
+    if (!manifest) {
+      return {
+        success: false,
+        message: "Original template settings could not be found.",
+      };
+    }
+
+    const existingProjectContent = getSafeProjectContent({
+      contentJson: project.contentJson,
+      sourceSnapshot: project.sourceSnapshot,
+    });
+
+    if (existingProjectContent.success) {
+      await createSchoolWebsiteProjectRevisionRecord({
+        projectId: project.id,
+        contentJson: existingProjectContent.contentJson,
+        note: "Before restoring original template settings.",
+      });
+    }
+
+    const originalContent = {
+      ...buildSchoolTemplateProjectContent(manifest),
+      templateName: project.templateName,
+      generatedAt: new Date().toISOString(),
+    };
+    const originalSourceSnapshot = buildSchoolTemplateSourceSnapshot(manifest);
+
+    const updatedProject =
+      await weBrandSchoolsPrisma.schoolWebsiteProject.update({
+        where: { id: project.id },
+        data: {
+          status: "IN_PROGRESS",
+          contentJson: originalContent,
+          sourceSnapshot: originalSourceSnapshot,
+        },
+        select: {
+          updatedAt: true,
+          status: true,
+        },
+      });
+
+    revalidateWeBrandSchoolsAdmin();
+    revalidatePath(`/admin/we-brand-schools/projects/${projectId}/editor`);
+
+    return {
+      success: true,
+      message: "Project restored to the original template settings.",
+      contentJson: originalContent,
+      updatedAt: updatedProject.updatedAt.toISOString(),
+      status: updatedProject.status as SchoolWebsiteProjectStatusRow,
+    };
+  } catch (error) {
+    console.error("[resetSchoolWebsiteProjectToOriginal]", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to restore original template settings.",
+    };
+  }
+}
+
+export async function extractSchoolWebsiteCopySuggestions({
+  url,
+  sectionLabel = "",
+  excludedTexts = [],
+  fields,
+}: {
+  url: string;
+  sectionLabel?: string;
+  excludedTexts?: string[];
+  fields: Array<{
+    key: string;
+    label: string;
+    type: string;
+    currentValue?: unknown;
+  }>;
+}): Promise<ExtractSchoolWebsiteCopySuggestionsResult> {
+  try {
+    await requireAuth();
+
+    const normalizedUrl = normalizeImportUrl(url);
+    if (!normalizedUrl) {
+      return {
+        success: false,
+        message: "Enter a valid http or https URL.",
+      };
+    }
+
+    const importedPage = await requestImportedHtml(normalizedUrl);
+
+    if (!importedPage.ok) {
+      return {
+        success: false,
+        message: `Could not read that page. The server returned ${importedPage.status}.`,
+      };
+    }
+
+    const contentType = importedPage.contentType;
+    if (contentType && !contentType.toLowerCase().includes("html")) {
+      return {
+        success: false,
+        message: "That URL did not return an HTML page.",
+      };
+    }
+
+    const html = importedPage.html;
+    const buckets = getImportedTextBuckets(html);
+    const used = new Set(
+      excludedTexts.map(normalizeCopyMemoryText).filter(Boolean),
+    );
+    const suggestions = fields
+      .filter((field) => ["text", "textarea", "richText"].includes(field.type))
+      .filter((field) => !isProtectedCopyImportField(field.key, field.label))
+      .map((field) => ({
+        fieldKey: field.key,
+        label: field.label,
+        value: pickImportedCopyForField({
+          fieldKey: field.key,
+          label: field.label,
+          type: field.type,
+          currentValue: field.currentValue,
+          sectionLabel,
+          buckets,
+          used,
+        }),
+      }))
+      .filter((suggestion) => suggestion.value.trim().length > 0);
+
+    if (!suggestions.length) {
+      return {
+        success: false,
+        message: "No usable write-up was found on that page.",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Copy suggestions extracted. Review and approve each one.",
+      suggestions,
+    };
+  } catch (error) {
+    console.error("[extractSchoolWebsiteCopySuggestions]", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to extract write-up from that URL.",
+    };
+  }
 }
 
 export async function exportSchoolWebsiteProject(

@@ -13,6 +13,8 @@ import {
   Save,
   Smartphone,
   Tablet,
+  Redo2,
+  Undo2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/admin/events/image-upload";
@@ -20,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { resolveSchoolTemplateAsset } from "@/lib/school-template-assets";
 import { cn } from "@/lib/utils";
@@ -32,6 +35,7 @@ import {
   type SchoolTemplateSourceSnapshot,
 } from "@/lib/school-template-project-content";
 import {
+  extractSchoolWebsiteCopySuggestions,
   exportSchoolWebsiteProject,
   saveSchoolWebsiteProjectDraft,
 } from "../../../actions";
@@ -47,7 +51,7 @@ type ProjectEditorWorkspaceProps = {
   exportZipUrl: string | null;
 };
 
-type SelectedScope = "page" | "shared";
+type SelectedScope = "navbar" | "page" | "shared";
 type PreviewMode = "desktop" | "tablet" | "mobile";
 type EditableFieldValue = string | number | boolean | null;
 
@@ -69,6 +73,33 @@ type DraftUpdater =
       currentDraft: SchoolTemplateProjectContent,
     ) => SchoolTemplateProjectContent);
 
+type ComponentHistorySnapshot =
+  | SchoolTemplateProjectContent["theme"]
+  | SchoolTemplateProjectSectionContent;
+
+type ComponentHistoryEntry = {
+  past: ComponentHistorySnapshot[];
+  future: ComponentHistorySnapshot[];
+};
+
+type CopySuggestion = {
+  fieldKey: string;
+  label: string;
+  value: string;
+  previousValue: EditableFieldValue;
+  itemIndex?: number;
+  itemFieldKey?: string;
+};
+
+type CopyImportTarget = {
+  requestKey: string;
+  field: SchoolTemplateProjectFieldSnapshot;
+  label: string;
+  currentValue: EditableFieldValue;
+  itemIndex?: number;
+  itemFieldKey?: string;
+};
+
 type ModelValidationCandidate = {
   field: SchoolTemplateProjectFieldSnapshot;
   value: EditableFieldValue;
@@ -82,6 +113,58 @@ type ModelValidationProbeResult = {
 };
 
 const MODEL_VALIDATION_PREVIEW_KEY = "preview-models";
+const THEME_HISTORY_KEY = "theme";
+const COMPONENT_HISTORY_LIMIT = 50;
+const ORIGINAL_THEME_COLORS: Record<
+  string,
+  Partial<Record<keyof SchoolTemplateProjectContent["theme"], string>>
+> = {
+  "dexta-academy-4": {
+    brandNameColor: "#ffffff",
+    brandTaglineColor: "#dbeafe",
+    logoBorderColor: "#d1d5db",
+    primaryColor: "#4a8fff",
+    secondaryColor: "#6aaeff",
+    loadingBackgroundColor: "#ffffff",
+    navBarColor: "#ffffff",
+  },
+  "dexta-academy-3": {
+    brandNameColor: "#061a40",
+    brandTaglineColor: "#061a40",
+    logoBorderColor: "#ffc43d",
+    primaryColor: "#061a40",
+    secondaryColor: "#f5b82e",
+    loadingBackgroundColor: "#fff7df",
+    navBarColor: "#ffffff",
+  },
+  "dexta-academy-2": {
+    brandNameColor: "#ffffff",
+    brandTaglineColor: "#facc15",
+    logoBorderColor: "#ffc433",
+    primaryColor: "#081827",
+    secondaryColor: "#facc15",
+    loadingBackgroundColor: "#081827",
+    navBarColor: "#081827",
+  },
+  "dexta-academy-1": {
+    brandNameColor: "#0f172a",
+    brandTaglineColor: "#64748b",
+    logoBorderColor: "#0f766e",
+    primaryColor: "#0f766e",
+    secondaryColor: "#f97316",
+    loadingBackgroundColor: "#ffffff",
+    navBarColor: "#ffffff",
+  },
+  default: {
+    brandNameColor: "#111827",
+    brandTaglineColor: "#6b7280",
+    logoBorderColor: "#d1d5db",
+    primaryColor: "#0f766e",
+    secondaryColor: "#facc15",
+    loadingBackgroundColor: "#ffffff",
+    navBarColor: "#ffffff",
+  },
+};
 
 const PREVIEW_MODES: Array<{
   id: PreviewMode;
@@ -119,12 +202,101 @@ function getFieldControlKind(field: SchoolTemplateProjectFieldSnapshot | null) {
   return field?.type ?? "text";
 }
 
+function isProtectedCopyImportField(field: SchoolTemplateProjectFieldSnapshot) {
+  return /eyebrow|eye\s*brow|kicker/.test(
+    `${field.key} ${field.label}`.toLowerCase(),
+  );
+}
+
 function getStringValue(value: unknown) {
   return typeof value === "string" ? value : value == null ? "" : String(value);
 }
 
+function getCopyImportMemoryKey({
+  pageSlug,
+  url,
+}: {
+  pageSlug: string;
+  url: string;
+}) {
+  return `${pageSlug}:${url.trim().toLowerCase()}`;
+}
+
 function getNumberValue(value: unknown) {
   return typeof value === "number" ? value : Number(value) || 0;
+}
+
+function cloneEditorValue<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function getSectionHistoryKey({
+  scope,
+  pageSlug,
+  sectionId,
+}: {
+  scope: SelectedScope;
+  pageSlug: string;
+  sectionId: string;
+}) {
+  return scope === "shared"
+    ? `shared:${sectionId}`
+    : `page:${pageSlug}:${sectionId}`;
+}
+
+function getDraftSection({
+  draft,
+  scope,
+  pageSlug,
+  sectionId,
+}: {
+  draft: SchoolTemplateProjectContent;
+  scope: SelectedScope;
+  pageSlug: string;
+  sectionId: string;
+}) {
+  if (scope === "shared") {
+    return draft.sharedSections.find((section) => section.id === sectionId);
+  }
+
+  return draft.pages
+    .find((page) => page.slug === pageSlug)
+    ?.sections.find((section) => section.id === sectionId);
+}
+
+function replaceDraftSection({
+  draft,
+  scope,
+  pageSlug,
+  section,
+}: {
+  draft: SchoolTemplateProjectContent;
+  scope: SelectedScope;
+  pageSlug: string;
+  section: SchoolTemplateProjectSectionContent;
+}) {
+  if (scope === "shared") {
+    return {
+      ...draft,
+      sharedSections: draft.sharedSections.map((currentSection) =>
+        currentSection.id === section.id ? section : currentSection,
+      ),
+    };
+  }
+
+  return {
+    ...draft,
+    pages: draft.pages.map((page) =>
+      page.slug === pageSlug
+        ? {
+            ...page,
+            sections: page.sections.map((currentSection) =>
+              currentSection.id === section.id ? section : currentSection,
+            ),
+          }
+        : page,
+    ),
+  };
 }
 
 function isFilledFieldValue(value: unknown) {
@@ -140,6 +312,22 @@ function getFieldDisplayValue(
   }
 
   return field.defaultValue ?? value;
+}
+
+function normalizeColorValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function getOriginalThemeColor(
+  templateSlug: string,
+  key: keyof SchoolTemplateProjectContent["theme"],
+  fallback: unknown,
+) {
+  return (
+    ORIGINAL_THEME_COLORS[templateSlug]?.[key] ??
+    ORIGINAL_THEME_COLORS.default[key] ??
+    getStringValue(fallback)
+  );
 }
 
 function getRepeatableItemFields(
@@ -410,12 +598,14 @@ function getPreviewModelValidationCandidates({
 function FieldControl({
   field,
   value,
+  originalValue,
   onChange,
   onValidateModel,
   isValidatingModel = false,
 }: {
   field: SchoolTemplateProjectFieldSnapshot;
   value: EditableFieldValue;
+  originalValue?: EditableFieldValue;
   onChange: (value: EditableFieldValue) => void;
   onValidateModel?: (value: EditableFieldValue) => Promise<void> | void;
   isValidatingModel?: boolean;
@@ -423,6 +613,12 @@ function FieldControl({
   const controlKind = getFieldControlKind(field);
   const displayValue = getFieldDisplayValue(field, value);
   const displayStringValue = getStringValue(displayValue);
+  const originalStringValue = getStringValue(originalValue);
+  const shouldShowOriginalColor =
+    controlKind === "color" &&
+    originalStringValue.trim().length > 0 &&
+    normalizeColorValue(originalStringValue) !==
+      normalizeColorValue(displayStringValue);
   const commonInputClass =
     "border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder:text-[#555]";
 
@@ -486,19 +682,36 @@ function FieldControl({
           ) : null}
         </div>
       ) : controlKind === "color" ? (
-        <div className="grid grid-cols-[44px_minmax(0,1fr)] gap-2">
-          <Input
-            type="color"
-            value={getStringValue(displayValue) || "#000000"}
-            onChange={(event) => onChange(event.target.value)}
-            className="h-10 border-[#2a2a2a] bg-[#0d0d0d] p-1"
-          />
-          <Input
-            value={getStringValue(displayValue)}
-            onChange={(event) => onChange(event.target.value)}
-            className={commonInputClass}
-            placeholder="#000000"
-          />
+        <div className="space-y-2">
+          <div className="grid grid-cols-[44px_minmax(0,1fr)] gap-2">
+            <Input
+              type="color"
+              value={getStringValue(displayValue) || "#000000"}
+              onChange={(event) => onChange(event.target.value)}
+              className="h-10 border-[#2a2a2a] bg-[#0d0d0d] p-1"
+            />
+            <Input
+              value={getStringValue(displayValue)}
+              onChange={(event) => onChange(event.target.value)}
+              className={commonInputClass}
+              placeholder="#000000"
+            />
+          </div>
+          {shouldShowOriginalColor ? (
+            <button
+              type="button"
+              onClick={() => onChange(originalStringValue)}
+              className="flex w-full items-center gap-2 rounded-md border border-[#242424] bg-[#0b0b0b] px-2.5 py-2 text-left text-xs text-[#888] transition-colors hover:border-cyan-500/30 hover:text-white"
+            >
+              <span
+                className="h-4 w-4 shrink-0 rounded border border-white/20"
+                style={{ backgroundColor: originalStringValue }}
+              />
+              <span className="truncate">
+                Original color {originalStringValue}
+              </span>
+            </button>
+          ) : null}
         </div>
       ) : controlKind === "number" ? (
         <div className="space-y-2">
@@ -584,7 +797,17 @@ export function SchoolWebsiteProjectEditor({
   const [validatingModelKey, setValidatingModelKey] = useState<string | null>(
     null,
   );
+  const [copyImportUrl, setCopyImportUrl] = useState("");
+  const [copySuggestions, setCopySuggestions] = useState<CopySuggestion[]>([]);
+  const [copyImportMemory, setCopyImportMemory] = useState<
+    Record<string, string[]>
+  >({});
+  const [isExtractingCopy, setIsExtractingCopy] = useState(false);
+  const [componentHistory, setComponentHistory] = useState<
+    Record<string, ComponentHistoryEntry>
+  >({});
   const draftRef = useRef(draft);
+  const originalDraftRef = useRef(content);
   const isDirtyRef = useRef(isDirty);
   const isSavingRef = useRef(isSaving);
   const dirtyVersionRef = useRef(0);
@@ -616,6 +839,10 @@ export function SchoolWebsiteProjectEditor({
   );
 
   const sectionBindings = useMemo<SectionBinding[]>(() => {
+    if (selectedScope === "navbar") {
+      return [];
+    }
+
     if (selectedScope === "shared") {
       return draft.sharedSections.map((section) => ({
         content: section,
@@ -647,6 +874,21 @@ export function SchoolWebsiteProjectEditor({
     ) ??
     sectionBindings[0] ??
     null;
+  const activeSectionHistoryKey = activeSection
+    ? getSectionHistoryKey({
+        scope: selectedScope,
+        pageSlug: selectedPage?.slug ?? selectedPageSlug,
+        sectionId: activeSection.content.id,
+      })
+    : null;
+  const activeSectionHistory = activeSectionHistoryKey
+    ? componentHistory[activeSectionHistoryKey]
+    : null;
+  const themeHistory = componentHistory[THEME_HISTORY_KEY];
+  const canUndoActiveSection = Boolean(activeSectionHistory?.past.length);
+  const canRedoActiveSection = Boolean(activeSectionHistory?.future.length);
+  const canUndoTheme = Boolean(themeHistory?.past.length);
+  const canRedoTheme = Boolean(themeHistory?.future.length);
 
   const previewHref = selectedPage
     ? getProjectPreviewHref(projectId, selectedPage.slug, previewKey)
@@ -682,11 +924,95 @@ export function SchoolWebsiteProjectEditor({
       ),
     }));
   }, [activeSection?.snapshot?.fields]);
+  const activeRepeatableItemFields = activeSection
+    ? getRepeatableItemFields(activeSection)
+    : [];
+  const hasActiveRepeatableFields = activeRepeatableItemFields.length > 0;
+  const activeImportTargets = useMemo<CopyImportTarget[]>(() => {
+    if (!activeSection) return [];
+
+    const isImportableField = (field: SchoolTemplateProjectFieldSnapshot) =>
+      ["text", "textarea", "richText"].includes(field.type) &&
+      !isProtectedCopyImportField(field) &&
+      !/label|category/.test(`${field.key} ${field.label}`.toLowerCase());
+
+    const sectionTargets = activeFieldGroups
+      .flatMap((group) => group.fields)
+      .filter(isImportableField)
+      .map((field) => ({
+        requestKey: field.key,
+        field,
+        label: field.label,
+        currentValue: activeSection.content.fields[field.key] ?? null,
+      }));
+
+    const repeatableFields = activeSection.content.repeatable
+      ? getRepeatableItemFields(activeSection).filter(isImportableField)
+      : [];
+    const repeatableTargets =
+      activeSection.content.repeatable?.items.flatMap((item, itemIndex) =>
+        repeatableFields.map((field) => ({
+          requestKey: `repeatable:${itemIndex}:${field.key}`,
+          field,
+          label: `${
+            activeSection.snapshot?.repeatable?.labelSingular ?? "Item"
+          } ${itemIndex + 1} ${field.label}`,
+          currentValue: item[field.key] ?? null,
+          itemIndex,
+          itemFieldKey: field.key,
+        })),
+      ) ?? [];
+
+    return [...sectionTargets, ...repeatableTargets];
+  }, [activeFieldGroups, activeSection]);
+  const getOriginalSectionFieldValue = (
+    sectionId: string,
+    field: SchoolTemplateProjectFieldSnapshot,
+  ) =>
+    getDraftSection({
+      draft: originalDraftRef.current,
+      scope: selectedScope,
+      pageSlug: selectedPage?.slug ?? selectedPageSlug,
+      sectionId,
+    })?.fields[field.key] ??
+    field.defaultValue ??
+    null;
+  const getOriginalRepeatableItemFieldValue = (
+    sectionId: string,
+    itemIndex: number,
+    field: SchoolTemplateProjectFieldSnapshot,
+  ) =>
+    getDraftSection({
+      draft: originalDraftRef.current,
+      scope: selectedScope,
+      pageSlug: selectedPage?.slug ?? selectedPageSlug,
+      sectionId,
+    })?.repeatable?.items[itemIndex]?.[field.key] ??
+    field.defaultValue ??
+    null;
+  const getOriginalThemeColorValue = (
+    key: keyof SchoolTemplateProjectContent["theme"],
+  ) =>
+    getOriginalThemeColor(
+      draft.templateSlug,
+      key,
+      originalDraftRef.current.theme[key],
+    );
+
+  useEffect(() => {
+    setCopySuggestions([]);
+    setCopyImportUrl("");
+  }, [activeSectionHistoryKey, selectedScope]);
 
   const selectPage = (page: SchoolTemplateProjectPageContent) => {
     setSelectedScope("page");
     setSelectedPageSlug(page.slug);
     setSelectedSectionId(page.sections[0]?.id ?? "");
+  };
+
+  const selectNavbar = () => {
+    setSelectedScope("navbar");
+    setSelectedSectionId("");
   };
 
   const selectSharedSections = () => {
@@ -705,11 +1031,232 @@ export function SchoolWebsiteProjectEditor({
     setIsDirty(true);
   };
 
-  const updateSectionField = (
-    sectionId: string,
-    fieldKey: string,
-    value: string | number | boolean | null,
+  const recordComponentHistory = (
+    historyKey: string,
+    snapshot: ComponentHistorySnapshot,
   ) => {
+    setComponentHistory((currentHistory) => {
+      const currentEntry = currentHistory[historyKey] ?? {
+        past: [],
+        future: [],
+      };
+
+      return {
+        ...currentHistory,
+        [historyKey]: {
+          past: [
+            ...currentEntry.past.slice(
+              Math.max(
+                currentEntry.past.length - COMPONENT_HISTORY_LIMIT + 1,
+                0,
+              ),
+            ),
+            cloneEditorValue(snapshot),
+          ],
+          future: [],
+        },
+      };
+    });
+  };
+
+  const recordSectionHistory = (sectionId: string) => {
+    const pageSlug = selectedPage?.slug ?? selectedPageSlug;
+    const section = getDraftSection({
+      draft: draftRef.current,
+      scope: selectedScope,
+      pageSlug,
+      sectionId,
+    });
+
+    if (!section) return;
+
+    recordComponentHistory(
+      getSectionHistoryKey({
+        scope: selectedScope,
+        pageSlug,
+        sectionId,
+      }),
+      section,
+    );
+  };
+
+  const undoSectionChange = () => {
+    if (!activeSection || !activeSectionHistoryKey || !activeSectionHistory) {
+      return;
+    }
+
+    const previousSection = activeSectionHistory.past.at(-1);
+    const currentSection = getDraftSection({
+      draft: draftRef.current,
+      scope: selectedScope,
+      pageSlug: selectedPage?.slug ?? selectedPageSlug,
+      sectionId: activeSection.content.id,
+    });
+
+    if (!previousSection || !currentSection) return;
+
+    setComponentHistory((currentHistory) => {
+      const currentEntry = currentHistory[activeSectionHistoryKey] ?? {
+        past: [],
+        future: [],
+      };
+
+      return {
+        ...currentHistory,
+        [activeSectionHistoryKey]: {
+          past: currentEntry.past.slice(0, -1),
+          future: [cloneEditorValue(currentSection), ...currentEntry.future],
+        },
+      };
+    });
+    updateDraft((currentDraft) =>
+      replaceDraftSection({
+        draft: currentDraft,
+        scope: selectedScope,
+        pageSlug: selectedPage?.slug ?? selectedPageSlug,
+        section: cloneEditorValue(
+          previousSection as SchoolTemplateProjectSectionContent,
+        ),
+      }),
+    );
+  };
+
+  const redoSectionChange = () => {
+    if (!activeSection || !activeSectionHistoryKey || !activeSectionHistory) {
+      return;
+    }
+
+    const nextSection = activeSectionHistory.future[0];
+    const currentSection = getDraftSection({
+      draft: draftRef.current,
+      scope: selectedScope,
+      pageSlug: selectedPage?.slug ?? selectedPageSlug,
+      sectionId: activeSection.content.id,
+    });
+
+    if (!nextSection || !currentSection) return;
+
+    setComponentHistory((currentHistory) => {
+      const currentEntry = currentHistory[activeSectionHistoryKey] ?? {
+        past: [],
+        future: [],
+      };
+
+      return {
+        ...currentHistory,
+        [activeSectionHistoryKey]: {
+          past: [
+            ...currentEntry.past.slice(
+              Math.max(
+                currentEntry.past.length - COMPONENT_HISTORY_LIMIT + 1,
+                0,
+              ),
+            ),
+            cloneEditorValue(currentSection),
+          ],
+          future: currentEntry.future.slice(1),
+        },
+      };
+    });
+    updateDraft((currentDraft) =>
+      replaceDraftSection({
+        draft: currentDraft,
+        scope: selectedScope,
+        pageSlug: selectedPage?.slug ?? selectedPageSlug,
+        section: cloneEditorValue(
+          nextSection as SchoolTemplateProjectSectionContent,
+        ),
+      }),
+    );
+  };
+
+  const undoThemeChange = () => {
+    const previousTheme = themeHistory?.past.at(-1);
+    if (!previousTheme) return;
+
+    const currentTheme = draftRef.current.theme;
+    setComponentHistory((currentHistory) => {
+      const currentEntry = currentHistory[THEME_HISTORY_KEY] ?? {
+        past: [],
+        future: [],
+      };
+
+      return {
+        ...currentHistory,
+        [THEME_HISTORY_KEY]: {
+          past: currentEntry.past.slice(0, -1),
+          future: [cloneEditorValue(currentTheme), ...currentEntry.future],
+        },
+      };
+    });
+    updateDraft((currentDraft) => ({
+      ...currentDraft,
+      theme: cloneEditorValue(
+        previousTheme as SchoolTemplateProjectContent["theme"],
+      ),
+    }));
+  };
+
+  const redoThemeChange = () => {
+    const nextTheme = themeHistory?.future[0];
+    if (!nextTheme) return;
+
+    const currentTheme = draftRef.current.theme;
+    setComponentHistory((currentHistory) => {
+      const currentEntry = currentHistory[THEME_HISTORY_KEY] ?? {
+        past: [],
+        future: [],
+      };
+
+      return {
+        ...currentHistory,
+        [THEME_HISTORY_KEY]: {
+          past: [
+            ...currentEntry.past.slice(
+              Math.max(
+                currentEntry.past.length - COMPONENT_HISTORY_LIMIT + 1,
+                0,
+              ),
+            ),
+            cloneEditorValue(currentTheme),
+          ],
+          future: currentEntry.future.slice(1),
+        },
+      };
+    });
+    updateDraft((currentDraft) => ({
+      ...currentDraft,
+      theme: cloneEditorValue(
+        nextTheme as SchoolTemplateProjectContent["theme"],
+      ),
+    }));
+  };
+
+  const updateSectionFields = (
+    sectionId: string,
+    values: Record<string, EditableFieldValue>,
+    { saveHistory = true }: { saveHistory?: boolean } = {},
+  ) => {
+    const currentSection = getDraftSection({
+      draft: draftRef.current,
+      scope: selectedScope,
+      pageSlug: selectedPage?.slug ?? selectedPageSlug,
+      sectionId,
+    });
+
+    if (
+      !currentSection ||
+      Object.entries(values).every(
+        ([fieldKey, value]) => currentSection.fields[fieldKey] === value,
+      )
+    ) {
+      return;
+    }
+
+    if (saveHistory) {
+      recordSectionHistory(sectionId);
+    }
+
     if (selectedScope === "shared") {
       updateDraft((currentDraft) => ({
         ...currentDraft,
@@ -719,7 +1266,7 @@ export function SchoolWebsiteProjectEditor({
                 ...section,
                 fields: {
                   ...section.fields,
-                  [fieldKey]: value,
+                  ...values,
                 },
               }
             : section,
@@ -740,7 +1287,7 @@ export function SchoolWebsiteProjectEditor({
                       ...section,
                       fields: {
                         ...section.fields,
-                        [fieldKey]: value,
+                        ...values,
                       },
                     }
                   : section,
@@ -751,12 +1298,36 @@ export function SchoolWebsiteProjectEditor({
     }));
   };
 
+  const updateSectionField = (
+    sectionId: string,
+    fieldKey: string,
+    value: string | number | boolean | null,
+  ) => {
+    updateSectionFields(sectionId, { [fieldKey]: value });
+  };
+
   const updateRepeatableItemField = (
     sectionId: string,
     itemIndex: number,
     fieldKey: string,
     value: string | number | boolean | null,
+    { saveHistory = true }: { saveHistory?: boolean } = {},
   ) => {
+    const currentSection = getDraftSection({
+      draft: draftRef.current,
+      scope: selectedScope,
+      pageSlug: selectedPage?.slug ?? selectedPageSlug,
+      sectionId,
+    });
+
+    if (currentSection?.repeatable?.items[itemIndex]?.[fieldKey] === value) {
+      return;
+    }
+
+    if (saveHistory) {
+      recordSectionHistory(sectionId);
+    }
+
     const updateSection = (
       section: SchoolTemplateProjectSectionContent,
     ): SchoolTemplateProjectSectionContent =>
@@ -798,6 +1369,8 @@ export function SchoolWebsiteProjectEditor({
   };
 
   const addRepeatableItem = (sectionId: string) => {
+    recordSectionHistory(sectionId);
+
     const updateSection = (
       section: SchoolTemplateProjectSectionContent,
     ): SchoolTemplateProjectSectionContent =>
@@ -831,10 +1404,16 @@ export function SchoolWebsiteProjectEditor({
     }));
   };
 
-  const updateTheme = (
-    key: keyof SchoolTemplateProjectContent["theme"],
-    value: string,
+  const updateTheme = <Key extends keyof SchoolTemplateProjectContent["theme"]>(
+    key: Key,
+    value: SchoolTemplateProjectContent["theme"][Key],
   ) => {
+    if (draftRef.current.theme[key] === value) {
+      return;
+    }
+
+    recordComponentHistory(THEME_HISTORY_KEY, draftRef.current.theme);
+
     updateDraft((currentDraft) => ({
       ...currentDraft,
       theme: {
@@ -1135,6 +1714,178 @@ export function SchoolWebsiteProjectEditor({
     }
   };
 
+  const extractCopySuggestions = async () => {
+    if (!activeSection || !activeImportTargets.length) {
+      toast.error("Select a component with editable text fields first.");
+      return;
+    }
+
+    const copyMemoryKey = getCopyImportMemoryKey({
+      pageSlug: selectedPage?.slug ?? selectedPageSlug,
+      url: copyImportUrl,
+    });
+
+    setIsExtractingCopy(true);
+
+    try {
+      const result = await extractSchoolWebsiteCopySuggestions({
+        url: copyImportUrl,
+        sectionLabel: activeSection.content.label,
+        excludedTexts: copyImportMemory[copyMemoryKey] ?? [],
+        fields: activeImportTargets.map((target) => ({
+          key: target.requestKey,
+          label: target.label,
+          type: target.field.type,
+          currentValue: target.currentValue ?? "",
+        })),
+      });
+
+      if (!result.success || !result.suggestions?.length) {
+        toast.error(result.message);
+        return;
+      }
+
+      const nextSuggestions = result.suggestions.map((suggestion) => {
+        const target = activeImportTargets.find(
+          (item) => item.requestKey === suggestion.fieldKey,
+        );
+
+        return {
+          ...suggestion,
+          label: target?.label ?? suggestion.label,
+          previousValue: target?.currentValue ?? null,
+          itemIndex: target?.itemIndex,
+          itemFieldKey: target?.itemFieldKey,
+        };
+      });
+      updateSectionFields(
+        activeSection.content.id,
+        Object.fromEntries(
+          nextSuggestions
+            .filter((suggestion) => suggestion.itemIndex === undefined)
+            .map((suggestion) => [suggestion.fieldKey, suggestion.value]),
+        ),
+      );
+      nextSuggestions
+        .filter(
+          (
+            suggestion,
+          ): suggestion is CopySuggestion & {
+            itemIndex: number;
+            itemFieldKey: string;
+          } =>
+            suggestion.itemIndex !== undefined &&
+            suggestion.itemFieldKey !== undefined,
+        )
+        .forEach((suggestion) => {
+          updateRepeatableItemField(
+            activeSection.content.id,
+            suggestion.itemIndex,
+            suggestion.itemFieldKey,
+            suggestion.value,
+            { saveHistory: false },
+          );
+        });
+      setCopySuggestions(nextSuggestions);
+      setCopyImportMemory((currentMemory) => ({
+        ...currentMemory,
+        [copyMemoryKey]: Array.from(
+          new Set([
+            ...(currentMemory[copyMemoryKey] ?? []),
+            ...nextSuggestions.map((suggestion) => suggestion.value),
+          ]),
+        ),
+      }));
+      toast.success(result.message);
+    } finally {
+      setIsExtractingCopy(false);
+    }
+  };
+
+  const updateCopySuggestion = (fieldKey: string, value: string) => {
+    const suggestion = copySuggestions.find(
+      (currentSuggestion) => currentSuggestion.fieldKey === fieldKey,
+    );
+
+    if (
+      activeSection &&
+      suggestion?.itemIndex !== undefined &&
+      suggestion.itemFieldKey
+    ) {
+      updateRepeatableItemField(
+        activeSection.content.id,
+        suggestion.itemIndex,
+        suggestion.itemFieldKey,
+        value,
+        { saveHistory: false },
+      );
+    } else if (activeSection) {
+      updateSectionFields(
+        activeSection.content.id,
+        { [fieldKey]: value },
+        { saveHistory: false },
+      );
+    }
+
+    setCopySuggestions((currentSuggestions) =>
+      currentSuggestions.map((suggestion) =>
+        suggestion.fieldKey === fieldKey
+          ? { ...suggestion, value }
+          : suggestion,
+      ),
+    );
+
+    const copyMemoryKey = getCopyImportMemoryKey({
+      pageSlug: selectedPage?.slug ?? selectedPageSlug,
+      url: copyImportUrl,
+    });
+    setCopyImportMemory((currentMemory) => ({
+      ...currentMemory,
+      [copyMemoryKey]: Array.from(
+        new Set([...(currentMemory[copyMemoryKey] ?? []), value]),
+      ),
+    }));
+  };
+
+  const declineCopySuggestion = (fieldKey: string) => {
+    const suggestion = copySuggestions.find(
+      (currentSuggestion) => currentSuggestion.fieldKey === fieldKey,
+    );
+    if (
+      activeSection &&
+      suggestion?.itemIndex !== undefined &&
+      suggestion.itemFieldKey
+    ) {
+      updateRepeatableItemField(
+        activeSection.content.id,
+        suggestion.itemIndex,
+        suggestion.itemFieldKey,
+        suggestion.previousValue,
+        { saveHistory: false },
+      );
+    } else if (activeSection && suggestion) {
+      updateSectionFields(
+        activeSection.content.id,
+        { [fieldKey]: suggestion.previousValue },
+        { saveHistory: false },
+      );
+    }
+
+    setCopySuggestions((currentSuggestions) =>
+      currentSuggestions.filter(
+        (suggestion) => suggestion.fieldKey !== fieldKey,
+      ),
+    );
+  };
+
+  const approveCopySuggestion = (fieldKey: string) => {
+    setCopySuggestions((currentSuggestions) =>
+      currentSuggestions.filter(
+        (suggestion) => suggestion.fieldKey !== fieldKey,
+      ),
+    );
+  };
+
   return (
     <div className="min-h-[calc(100vh-11rem)] overflow-hidden rounded-2xl border border-[#222] bg-[#080808]">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#222] bg-[#101010] px-4 py-3">
@@ -1250,6 +2001,20 @@ export function SchoolWebsiteProjectEditor({
           </div>
 
           <div className="space-y-1">
+            <button
+              type="button"
+              onClick={selectNavbar}
+              className={cn(
+                "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                selectedScope === "navbar"
+                  ? "bg-cyan-500/10 text-cyan-300"
+                  : "text-[#888] hover:bg-[#171717] hover:text-white",
+              )}
+            >
+              <span className="truncate">Navbar</span>
+              <span className="text-[11px] text-[#555]">Identity</span>
+            </button>
+
             {draft.pages.map((page) => (
               <button
                 key={page.slug}
@@ -1289,9 +2054,35 @@ export function SchoolWebsiteProjectEditor({
           </div>
 
           <div className="mt-6 rounded-xl border border-[#222] bg-[#111] p-3">
-            <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
-              <Palette className="h-3.5 w-3.5" />
-              Theme
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                <Palette className="h-3.5 w-3.5" />
+                Theme
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={undoThemeChange}
+                  disabled={!canUndoTheme}
+                  className="h-8 border-[#2a2a2a] px-2 text-[#888] hover:bg-[#1a1a1a] hover:text-white disabled:text-[#444]"
+                  title="Restore last theme change"
+                >
+                  <Undo2 className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={redoThemeChange}
+                  disabled={!canRedoTheme}
+                  className="h-8 border-[#2a2a2a] px-2 text-[#888] hover:bg-[#1a1a1a] hover:text-white disabled:text-[#444]"
+                  title="Redo last theme change"
+                >
+                  <Redo2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
             <div className="space-y-3">
               <FieldControl
@@ -1303,6 +2094,7 @@ export function SchoolWebsiteProjectEditor({
                   target: "cssVariable",
                 }}
                 value={draft.theme.primaryColor}
+                originalValue={getOriginalThemeColorValue("primaryColor")}
                 onChange={(value) =>
                   updateTheme("primaryColor", getStringValue(value))
                 }
@@ -1316,6 +2108,7 @@ export function SchoolWebsiteProjectEditor({
                   target: "cssVariable",
                 }}
                 value={draft.theme.secondaryColor}
+                originalValue={getOriginalThemeColorValue("secondaryColor")}
                 onChange={(value) =>
                   updateTheme("secondaryColor", getStringValue(value))
                 }
@@ -1333,6 +2126,22 @@ export function SchoolWebsiteProjectEditor({
                   updateTheme("fontFamily", getStringValue(value))
                 }
               />
+              <FieldControl
+                field={{
+                  key: "loadingBackgroundColor",
+                  label: "Loading background",
+                  type: "color",
+                  selector: "body",
+                  target: "inlineStyle",
+                }}
+                value={draft.theme.loadingBackgroundColor}
+                originalValue={getOriginalThemeColorValue(
+                  "loadingBackgroundColor",
+                )}
+                onChange={(value) =>
+                  updateTheme("loadingBackgroundColor", getStringValue(value))
+                }
+              />
             </div>
           </div>
         </aside>
@@ -1341,12 +2150,18 @@ export function SchoolWebsiteProjectEditor({
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-white">
-                {selectedScope === "shared" ? "Sitewide" : selectedPage?.title}
+                {selectedScope === "navbar"
+                  ? "Navbar"
+                  : selectedScope === "shared"
+                    ? "Sitewide"
+                    : selectedPage?.title}
               </p>
               <p className="text-xs text-[#666]">
-                {selectedScope === "shared"
-                  ? "Shared sections"
-                  : selectedPage?.fileName}
+                {selectedScope === "navbar"
+                  ? "Logo, name, and navigation styling"
+                  : selectedScope === "shared"
+                    ? "Shared sections"
+                    : selectedPage?.fileName}
               </p>
             </div>
             {currentLastExportedAt ? (
@@ -1356,185 +2171,628 @@ export function SchoolWebsiteProjectEditor({
             ) : null}
           </div>
 
-          <div className="mb-5 rounded-xl border border-[#222] bg-[#0d0d0d] p-3">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
-              Sections
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {sectionBindings.map((section) => (
-                <button
-                  key={section.content.id}
-                  type="button"
-                  onClick={() => setSelectedSectionId(section.content.id)}
-                  className={cn(
-                    "rounded-lg px-3 py-2 text-left text-sm transition-colors",
-                    activeSection?.content.id === section.content.id
-                      ? "bg-cyan-500/10 text-cyan-300"
-                      : "text-[#888] hover:bg-[#171717] hover:text-white",
-                  )}
-                >
-                  {section.content.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {activeSection ? (
+          {selectedScope === "navbar" ? (
             <div className="rounded-xl border border-[#222] bg-[#0d0d0d] p-4">
-              <div className="mb-5">
-                <h2 className="text-base font-semibold text-white">
-                  {activeSection.content.label}
-                </h2>
-                {activeSection.snapshot?.description ? (
+              <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-semibold text-white">
+                    Navbar controls
+                  </h2>
                   <p className="mt-1 max-w-3xl text-sm leading-6 text-[#777]">
-                    {activeSection.snapshot.description}
+                    Update the logo, brand text, logo frame, and navigation
+                    background used across the website.
                   </p>
-                ) : null}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={undoThemeChange}
+                    disabled={!canUndoTheme}
+                    className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white disabled:text-[#444]"
+                    title="Restore last navbar change"
+                  >
+                    <Undo2 className="mr-1.5 h-4 w-4" />
+                    Restore
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={redoThemeChange}
+                    disabled={!canRedoTheme}
+                    className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white disabled:text-[#444]"
+                    title="Redo last restored navbar change"
+                  >
+                    <Redo2 className="mr-1.5 h-4 w-4" />
+                    Redo
+                  </Button>
+                </div>
               </div>
 
-              {activeFieldGroups.length ? (
-                <div className="space-y-5">
-                  {activeFieldGroups.map((group) => (
-                    <div
-                      key={group.name}
-                      className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4"
-                    >
-                      <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
-                        {group.name}
-                      </p>
-                      <div className="grid gap-4 xl:grid-cols-2">
-                        {group.fields.map((field) => {
-                          const modelValidationKey = `${activeSection.content.id}:${field.key}:model-preview`;
-
-                          return (
-                            <FieldControl
-                              key={`${activeSection.content.id}:${field.key}`}
-                              field={field}
-                              value={
-                                activeSection.content.fields[field.key] ?? null
-                              }
-                              onChange={(value) =>
-                                updateSectionField(
-                                  activeSection.content.id,
-                                  field.key,
-                                  value,
-                                )
-                              }
-                              onValidateModel={
-                                field.type === "model3d"
-                                  ? (nextValue) =>
-                                      validateActiveModelField(
-                                        field,
-                                        nextValue,
-                                        modelValidationKey,
-                                        `${activeSection.content.label} ${field.label}`,
-                                      )
-                                  : undefined
-                              }
-                              isValidatingModel={
-                                validatingModelKey === modelValidationKey
-                              }
-                            />
-                          );
-                        })}
-                      </div>
+              <div className="grid gap-5 xl:grid-cols-2">
+                <div className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4">
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                    Logo
+                  </p>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="block text-xs font-medium text-[#b3b3b3]">
+                        School logo
+                      </label>
+                      <ImageUpload
+                        value={draft.theme.logoUrl}
+                        onChange={(publicId) =>
+                          updateTheme("logoUrl", publicId)
+                        }
+                        onRemove={() => updateTheme("logoUrl", "")}
+                        emptyLabel="Upload school logo"
+                        previewAlt="School logo"
+                        resourceType="image"
+                        deletePreviousOnReplace={false}
+                      />
                     </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FieldControl
+                        field={{
+                          key: "logoWidth",
+                          label: "Logo width",
+                          type: "number",
+                          selector: "nav",
+                          target: "inlineStyle",
+                          unit: "px",
+                          min: 16,
+                          max: 240,
+                          step: 1,
+                        }}
+                        value={draft.theme.logoWidth}
+                        onChange={(value) =>
+                          updateTheme("logoWidth", getNumberValue(value))
+                        }
+                      />
+                      <FieldControl
+                        field={{
+                          key: "logoHeight",
+                          label: "Logo height",
+                          type: "number",
+                          selector: "nav",
+                          target: "inlineStyle",
+                          unit: "px",
+                          min: 16,
+                          max: 240,
+                          step: 1,
+                        }}
+                        value={draft.theme.logoHeight}
+                        onChange={(value) =>
+                          updateTheme("logoHeight", getNumberValue(value))
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4">
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                    Brand text
+                  </p>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#222] bg-[#0d0d0d] p-3">
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          Show name on navbar
+                        </p>
+                        <p className="text-xs text-[#666]">
+                          Turn off or clear both lines to show only the logo.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={draft.theme.brandTextVisible}
+                        onCheckedChange={(checked) =>
+                          updateTheme("brandTextVisible", checked)
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-4 xl:grid-cols-2">
+                      <FieldControl
+                        field={{
+                          key: "brandName",
+                          label: "Name line 1",
+                          type: "text",
+                          selector: "nav",
+                          target: "textContent",
+                        }}
+                        value={draft.theme.brandName}
+                        onChange={(value) =>
+                          updateTheme("brandName", getStringValue(value))
+                        }
+                      />
+                      <FieldControl
+                        field={{
+                          key: "brandTagline",
+                          label: "Name line 2",
+                          type: "text",
+                          selector: "nav",
+                          target: "textContent",
+                        }}
+                        value={draft.theme.brandTagline}
+                        onChange={(value) =>
+                          updateTheme("brandTagline", getStringValue(value))
+                        }
+                      />
+                      <FieldControl
+                        field={{
+                          key: "brandNameColor",
+                          label: "Line 1 color",
+                          type: "color",
+                          selector: "nav",
+                          target: "inlineStyle",
+                        }}
+                        value={draft.theme.brandNameColor}
+                        originalValue={getOriginalThemeColorValue(
+                          "brandNameColor",
+                        )}
+                        onChange={(value) =>
+                          updateTheme("brandNameColor", getStringValue(value))
+                        }
+                      />
+                      <FieldControl
+                        field={{
+                          key: "brandTaglineColor",
+                          label: "Line 2 color",
+                          type: "color",
+                          selector: "nav",
+                          target: "inlineStyle",
+                        }}
+                        value={draft.theme.brandTaglineColor}
+                        originalValue={getOriginalThemeColorValue(
+                          "brandTaglineColor",
+                        )}
+                        onChange={(value) =>
+                          updateTheme(
+                            "brandTaglineColor",
+                            getStringValue(value),
+                          )
+                        }
+                      />
+                      <FieldControl
+                        field={{
+                          key: "brandNameFontSize",
+                          label: "Line 1 size",
+                          type: "number",
+                          selector: "nav",
+                          target: "inlineStyle",
+                          unit: "px",
+                          min: 8,
+                          max: 48,
+                          step: 1,
+                        }}
+                        value={draft.theme.brandNameFontSize}
+                        onChange={(value) =>
+                          updateTheme(
+                            "brandNameFontSize",
+                            getNumberValue(value),
+                          )
+                        }
+                      />
+                      <FieldControl
+                        field={{
+                          key: "brandTaglineFontSize",
+                          label: "Line 2 size",
+                          type: "number",
+                          selector: "nav",
+                          target: "inlineStyle",
+                          unit: "px",
+                          min: 8,
+                          max: 40,
+                          step: 1,
+                        }}
+                        value={draft.theme.brandTaglineFontSize}
+                        onChange={(value) =>
+                          updateTheme(
+                            "brandTaglineFontSize",
+                            getNumberValue(value),
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4">
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                    Logo border
+                  </p>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#222] bg-[#0d0d0d] p-3">
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          Show logo border
+                        </p>
+                        <p className="text-xs text-[#666]">
+                          Controls the frame around every school logo.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={draft.theme.logoBorderEnabled}
+                        onCheckedChange={(checked) =>
+                          updateTheme("logoBorderEnabled", checked)
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FieldControl
+                        field={{
+                          key: "logoBorderColor",
+                          label: "Border color",
+                          type: "color",
+                          selector: "nav",
+                          target: "inlineStyle",
+                        }}
+                        value={draft.theme.logoBorderColor}
+                        originalValue={getOriginalThemeColorValue(
+                          "logoBorderColor",
+                        )}
+                        onChange={(value) =>
+                          updateTheme("logoBorderColor", getStringValue(value))
+                        }
+                      />
+                      <FieldControl
+                        field={{
+                          key: "logoBorderRadius",
+                          label: "Rounded edges",
+                          type: "number",
+                          selector: "nav",
+                          target: "inlineStyle",
+                          unit: "px",
+                          min: 0,
+                          max: 999,
+                          step: 1,
+                        }}
+                        value={draft.theme.logoBorderRadius}
+                        onChange={(value) =>
+                          updateTheme("logoBorderRadius", getNumberValue(value))
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4">
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                    Navbar background
+                  </p>
+                  <div className="space-y-4">
+                    <FieldControl
+                      field={{
+                        key: "navBarColor",
+                        label: "Navbar color",
+                        type: "color",
+                        selector: "nav",
+                        target: "inlineStyle",
+                      }}
+                      value={draft.theme.navBarColor}
+                      originalValue={getOriginalThemeColorValue("navBarColor")}
+                      onChange={(value) =>
+                        updateTheme("navBarColor", getStringValue(value))
+                      }
+                    />
+                    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#222] bg-[#0d0d0d] p-3">
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          Transparent navbar
+                        </p>
+                        <p className="text-xs text-[#666]">
+                          Let the page show through behind the navbar.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={draft.theme.navBarTransparent}
+                        onCheckedChange={(checked) =>
+                          updateTheme("navBarTransparent", checked)
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="mb-5 rounded-xl border border-[#222] bg-[#0d0d0d] p-3">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                  Sections
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {sectionBindings.map((section) => (
+                    <button
+                      key={section.content.id}
+                      type="button"
+                      onClick={() => setSelectedSectionId(section.content.id)}
+                      className={cn(
+                        "rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                        activeSection?.content.id === section.content.id
+                          ? "bg-cyan-500/10 text-cyan-300"
+                          : "text-[#888] hover:bg-[#171717] hover:text-white",
+                      )}
+                    >
+                      {section.content.label}
+                    </button>
                   ))}
+                </div>
+              </div>
+
+              {activeSection ? (
+                <div className="rounded-xl border border-[#222] bg-[#0d0d0d] p-4">
+                  <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-base font-semibold text-white">
+                        {activeSection.content.label}
+                      </h2>
+                      {activeSection.snapshot?.description ? (
+                        <p className="mt-1 max-w-3xl text-sm leading-6 text-[#777]">
+                          {activeSection.snapshot.description}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={undoSectionChange}
+                        disabled={!canUndoActiveSection}
+                        className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white disabled:text-[#444]"
+                        title="Restore last change in this component"
+                      >
+                        <Undo2 className="mr-1.5 h-4 w-4" />
+                        Restore
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={redoSectionChange}
+                        disabled={!canRedoActiveSection}
+                        className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white disabled:text-[#444]"
+                        title="Redo last restored change in this component"
+                      >
+                        <Redo2 className="mr-1.5 h-4 w-4" />
+                        Redo
+                      </Button>
+                    </div>
+                  </div>
+
+                  {activeImportTargets.length ? (
+                    <div className="mb-5 rounded-xl border border-[#1f1f1f] bg-[#090909] p-4">
+                      <div className="mb-3 flex flex-wrap items-end gap-3">
+                        <div className="min-w-[220px] flex-1 space-y-2">
+                          <label className="block text-xs font-medium text-[#b3b3b3]">
+                            Import write-up from URL
+                          </label>
+                          <Input
+                            value={copyImportUrl}
+                            onChange={(event) =>
+                              setCopyImportUrl(event.target.value)
+                            }
+                            className="border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder:text-[#555]"
+                            placeholder="https://example.com/about"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => void extractCopySuggestions()}
+                          disabled={isExtractingCopy || !copyImportUrl.trim()}
+                          className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white disabled:text-[#444]"
+                        >
+                          {isExtractingCopy ? (
+                            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                          ) : (
+                            <FileText className="mr-1.5 h-4 w-4" />
+                          )}
+                          Extract Copy
+                        </Button>
+                      </div>
+
+                      {copySuggestions.length ? (
+                        <div className="space-y-3">
+                          {copySuggestions.map((suggestion) => (
+                            <div
+                              key={suggestion.fieldKey}
+                              className="rounded-lg border border-[#222] bg-[#0d0d0d] p-3"
+                            >
+                              <label className="mb-2 block text-xs font-medium text-[#b3b3b3]">
+                                {suggestion.label}
+                              </label>
+                              <Textarea
+                                rows={4}
+                                value={suggestion.value}
+                                onChange={(event) =>
+                                  updateCopySuggestion(
+                                    suggestion.fieldKey,
+                                    event.target.value,
+                                  )
+                                }
+                                className="resize-none border-[#2a2a2a] bg-[#090909] text-white placeholder:text-[#555]"
+                              />
+                              <div className="mt-3 flex flex-wrap justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() =>
+                                    declineCopySuggestion(suggestion.fieldKey)
+                                  }
+                                  className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white"
+                                >
+                                  Decline
+                                </Button>
+                                <Button
+                                  type="button"
+                                  onClick={() =>
+                                    approveCopySuggestion(suggestion.fieldKey)
+                                  }
+                                  className="bg-cyan-500 text-black hover:bg-cyan-400"
+                                >
+                                  Approve
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {activeFieldGroups.length ? (
+                    <div className="space-y-5">
+                      {activeFieldGroups.map((group) => (
+                        <div
+                          key={group.name}
+                          className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4"
+                        >
+                          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                            {group.name}
+                          </p>
+                          <div className="grid gap-4 xl:grid-cols-2">
+                            {group.fields.map((field) => {
+                              const modelValidationKey = `${activeSection.content.id}:${field.key}:model-preview`;
+
+                              return (
+                                <FieldControl
+                                  key={`${activeSection.content.id}:${field.key}`}
+                                  field={field}
+                                  value={
+                                    activeSection.content.fields[field.key] ??
+                                    null
+                                  }
+                                  originalValue={getOriginalSectionFieldValue(
+                                    activeSection.content.id,
+                                    field,
+                                  )}
+                                  onChange={(value) =>
+                                    updateSectionField(
+                                      activeSection.content.id,
+                                      field.key,
+                                      value,
+                                    )
+                                  }
+                                  onValidateModel={
+                                    field.type === "model3d"
+                                      ? (nextValue) =>
+                                          validateActiveModelField(
+                                            field,
+                                            nextValue,
+                                            modelValidationKey,
+                                            `${activeSection.content.label} ${field.label}`,
+                                          )
+                                      : undefined
+                                  }
+                                  isValidatingModel={
+                                    validatingModelKey === modelValidationKey
+                                  }
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : hasActiveRepeatableFields ? null : (
+                    <div className="rounded-xl border border-[#222] bg-[#111] p-4 text-sm text-[#777]">
+                      No editable fields for this section yet.
+                    </div>
+                  )}
+
+                  {activeSection.content.repeatable &&
+                  activeSection.snapshot?.repeatable ? (
+                    <div className="mt-5 rounded-xl border border-[#222] bg-[#111] p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 text-sm font-medium text-white">
+                          <ImageIcon className="h-4 w-4 text-cyan-400" />
+                          {activeSection.snapshot.repeatable.labelPlural}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() =>
+                            addRepeatableItem(activeSection.content.id)
+                          }
+                          className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white"
+                        >
+                          Add {activeSection.snapshot.repeatable.labelSingular}
+                        </Button>
+                      </div>
+                      {activeSection.content.repeatable.items.length ? (
+                        <div className="mt-4 space-y-4">
+                          {activeSection.content.repeatable.items.map(
+                            (item, itemIndex) => (
+                              <div
+                                key={`${activeSection.content.id}:item:${itemIndex}`}
+                                className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4"
+                              >
+                                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                                  {activeSection.snapshot?.repeatable
+                                    ?.labelSingular ?? "Item"}{" "}
+                                  {itemIndex + 1}
+                                </p>
+                                <div className="grid gap-4 xl:grid-cols-2">
+                                  {activeRepeatableItemFields.map((field) => {
+                                    const modelValidationKey = `${activeSection.content.id}:${itemIndex}:${field.key}:model-preview`;
+
+                                    return (
+                                      <FieldControl
+                                        key={`${activeSection.content.id}:${itemIndex}:${field.key}`}
+                                        field={field}
+                                        value={item[field.key] ?? null}
+                                        originalValue={getOriginalRepeatableItemFieldValue(
+                                          activeSection.content.id,
+                                          itemIndex,
+                                          field,
+                                        )}
+                                        onChange={(value) =>
+                                          updateRepeatableItemField(
+                                            activeSection.content.id,
+                                            itemIndex,
+                                            field.key,
+                                            value,
+                                          )
+                                        }
+                                        onValidateModel={
+                                          field.type === "model3d"
+                                            ? (nextValue) =>
+                                                validateActiveModelField(
+                                                  field,
+                                                  nextValue,
+                                                  modelValidationKey,
+                                                  `${activeSection.content.label} item ${itemIndex + 1} ${field.label}`,
+                                                )
+                                            : undefined
+                                        }
+                                        isValidatingModel={
+                                          validatingModelKey ===
+                                          modelValidationKey
+                                        }
+                                      />
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-sm text-[#777]">
+                          Add an item to edit individual{" "}
+                          {activeSection.snapshot.repeatable.labelPlural.toLowerCase()}
+                          .
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <div className="rounded-xl border border-[#222] bg-[#111] p-4 text-sm text-[#777]">
-                  No editable fields for this section yet.
+                  Select a section to edit.
                 </div>
               )}
-
-              {activeSection.content.repeatable &&
-              activeSection.snapshot?.repeatable ? (
-                <div className="mt-5 rounded-xl border border-[#222] bg-[#111] p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 text-sm font-medium text-white">
-                      <ImageIcon className="h-4 w-4 text-cyan-400" />
-                      {activeSection.snapshot.repeatable.labelPlural}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() =>
-                        addRepeatableItem(activeSection.content.id)
-                      }
-                      className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white"
-                    >
-                      Add {activeSection.snapshot.repeatable.labelSingular}
-                    </Button>
-                  </div>
-                  {activeSection.content.repeatable.items.length ? (
-                    <div className="mt-4 space-y-4">
-                      {activeSection.content.repeatable.items.map(
-                        (item, itemIndex) => (
-                          <div
-                            key={`${activeSection.content.id}:item:${itemIndex}`}
-                            className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4"
-                          >
-                            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
-                              {activeSection.snapshot?.repeatable
-                                ?.labelSingular ?? "Item"}{" "}
-                              {itemIndex + 1}
-                            </p>
-                            <div className="grid gap-4 xl:grid-cols-2">
-                              {getRepeatableItemFields(activeSection).map(
-                                (field) => {
-                                  const modelValidationKey = `${activeSection.content.id}:${itemIndex}:${field.key}:model-preview`;
-
-                                  return (
-                                    <FieldControl
-                                      key={`${activeSection.content.id}:${itemIndex}:${field.key}`}
-                                      field={field}
-                                      value={item[field.key] ?? null}
-                                      onChange={(value) =>
-                                        updateRepeatableItemField(
-                                          activeSection.content.id,
-                                          itemIndex,
-                                          field.key,
-                                          value,
-                                        )
-                                      }
-                                      onValidateModel={
-                                        field.type === "model3d"
-                                          ? (nextValue) =>
-                                              validateActiveModelField(
-                                                field,
-                                                nextValue,
-                                                modelValidationKey,
-                                                `${activeSection.content.label} item ${itemIndex + 1} ${field.label}`,
-                                              )
-                                          : undefined
-                                      }
-                                      isValidatingModel={
-                                        validatingModelKey ===
-                                        modelValidationKey
-                                      }
-                                    />
-                                  );
-                                },
-                              )}
-                            </div>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-sm text-[#777]">
-                      Add an item to edit individual{" "}
-                      {activeSection.snapshot.repeatable.labelPlural.toLowerCase()}
-                      .
-                    </p>
-                  )}
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <div className="rounded-xl border border-[#222] bg-[#111] p-4 text-sm text-[#777]">
-              Select a section to edit.
-            </div>
+            </>
           )}
         </main>
       </div>

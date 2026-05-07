@@ -13,9 +13,25 @@ import { z } from "zod";
 export type SchoolTemplateProjectFieldValue = string | number | boolean | null;
 
 export type SchoolTemplateProjectTheme = {
+  logoUrl: string;
+  logoWidth: number;
+  logoHeight: number;
+  brandName: string;
+  brandTagline: string;
+  brandTextVisible: boolean;
+  brandNameColor: string;
+  brandTaglineColor: string;
+  brandNameFontSize: number;
+  brandTaglineFontSize: number;
+  logoBorderEnabled: boolean;
+  logoBorderColor: string;
+  logoBorderRadius: number;
   primaryColor: string;
   secondaryColor: string;
   fontFamily: string;
+  loadingBackgroundColor: string;
+  navBarColor: string;
+  navBarTransparent: boolean;
 };
 
 export type SchoolTemplateProjectAsset = {
@@ -192,9 +208,25 @@ export const schoolTemplateProjectContentSchema = z.object({
   templateName: z.string().min(1),
   generatedAt: z.string().min(1),
   theme: z.object({
+    logoUrl: z.string().default(""),
+    logoWidth: z.number().default(56),
+    logoHeight: z.number().default(56),
+    brandName: z.string().default(""),
+    brandTagline: z.string().default(""),
+    brandTextVisible: z.boolean().default(true),
+    brandNameColor: z.string().default("#111827"),
+    brandTaglineColor: z.string().default("#6b7280"),
+    brandNameFontSize: z.number().default(16),
+    brandTaglineFontSize: z.number().default(12),
+    logoBorderEnabled: z.boolean().default(true),
+    logoBorderColor: z.string().default("#d1d5db"),
+    logoBorderRadius: z.number().default(18),
     primaryColor: z.string().min(1),
     secondaryColor: z.string().min(1),
     fontFamily: z.string().min(1),
+    loadingBackgroundColor: z.string().default("#ffffff"),
+    navBarColor: z.string().default("#ffffff"),
+    navBarTransparent: z.boolean().default(false),
   }),
   assets: z.array(schoolTemplateProjectAssetSchema),
   sharedSections: z.array(schoolTemplateProjectSectionContentSchema),
@@ -286,15 +318,6 @@ const VOID_TAGS = new Set([
   "track",
   "wbr",
 ]);
-const SECTION_LEVEL_REPEATABLE_KEYS = new Set([
-  "body",
-  "ctaHref",
-  "ctaText",
-  "eyebrow",
-  "intro",
-  "title",
-]);
-
 function sanitizePlainText(value: string) {
   return sanitizeHtml(value, {
     allowedTags: [],
@@ -778,15 +801,6 @@ function sectionTargetsRepeatableItems(section: SchoolTemplateSection) {
     .includes(itemSelector);
 }
 
-function isRepeatableItemField(
-  section: SchoolTemplateSection,
-  field: SchoolTemplateField,
-) {
-  if (!section.repeatable) return false;
-  if (sectionTargetsRepeatableItems(section)) return true;
-  return !SECTION_LEVEL_REPEATABLE_KEYS.has(field.key);
-}
-
 function buildRepeatableItems(
   roots: TemplateElementNode[],
   section: SchoolTemplateSection,
@@ -968,9 +982,33 @@ export function sanitizeSchoolTemplateProjectContent(
     templateSlug: sanitizePlainText(content.templateSlug),
     templateName: sanitizePlainText(content.templateName),
     theme: {
+      logoUrl: sanitizePlainText(content.theme.logoUrl ?? ""),
+      logoWidth: Number(content.theme.logoWidth ?? 56),
+      logoHeight: Number(content.theme.logoHeight ?? 56),
+      brandName: sanitizePlainText(content.theme.brandName ?? ""),
+      brandTagline: sanitizePlainText(content.theme.brandTagline ?? ""),
+      brandTextVisible: Boolean(content.theme.brandTextVisible ?? true),
+      brandNameColor: sanitizePlainText(
+        content.theme.brandNameColor ?? "#111827",
+      ),
+      brandTaglineColor: sanitizePlainText(
+        content.theme.brandTaglineColor ?? "#6b7280",
+      ),
+      brandNameFontSize: Number(content.theme.brandNameFontSize ?? 16),
+      brandTaglineFontSize: Number(content.theme.brandTaglineFontSize ?? 12),
+      logoBorderEnabled: Boolean(content.theme.logoBorderEnabled),
+      logoBorderColor: sanitizePlainText(
+        content.theme.logoBorderColor ?? "#d1d5db",
+      ),
+      logoBorderRadius: Number(content.theme.logoBorderRadius ?? 18),
       primaryColor: sanitizePlainText(content.theme.primaryColor),
       secondaryColor: sanitizePlainText(content.theme.secondaryColor),
       fontFamily: sanitizePlainText(content.theme.fontFamily),
+      loadingBackgroundColor: sanitizePlainText(
+        content.theme.loadingBackgroundColor ?? "#ffffff",
+      ),
+      navBarColor: sanitizePlainText(content.theme.navBarColor ?? "#ffffff"),
+      navBarTransparent: Boolean(content.theme.navBarTransparent),
     },
     assets: content.assets.map((asset) => ({
       ...asset,
@@ -1085,33 +1123,115 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
   switch (templateSlug) {
     case "dexta-academy-4":
       return {
+        logoUrl:
+          "https://res.cloudinary.com/dxoorukfj/image/upload/v1776778370/schoolportal/4/branding/umnqe2oopwmohrth30en.png",
+        logoWidth: 72,
+        logoHeight: 48,
+        brandName: "School B",
+        brandTagline: "",
+        brandTextVisible: true,
+        brandNameColor: "#ffffff",
+        brandTaglineColor: "#dbeafe",
+        brandNameFontSize: 16,
+        brandTaglineFontSize: 12,
+        logoBorderEnabled: false,
+        logoBorderColor: "#d1d5db",
+        logoBorderRadius: 0,
         primaryColor: "#4a8fff",
         secondaryColor: "#6aaeff",
         fontFamily: "Manrope",
+        loadingBackgroundColor: "#ffffff",
+        navBarColor: "#ffffff",
+        navBarTransparent: true,
       };
     case "dexta-academy-3":
       return {
+        logoUrl: "",
+        logoWidth: 46,
+        logoHeight: 46,
+        brandName: "DXT Academy",
+        brandTagline: "Nurturing. Inspiring. Leading.",
+        brandTextVisible: true,
+        brandNameColor: "#061a40",
+        brandTaglineColor: "#061a40",
+        brandNameFontSize: 16,
+        brandTaglineFontSize: 16,
+        logoBorderEnabled: true,
+        logoBorderColor: "#ffc43d",
+        logoBorderRadius: 18,
         primaryColor: "#061a40",
         secondaryColor: "#f5b82e",
         fontFamily: "Sora",
+        loadingBackgroundColor: "#fff7df",
+        navBarColor: "#ffffff",
+        navBarTransparent: false,
       };
     case "dexta-academy-2":
       return {
+        logoUrl: "",
+        logoWidth: 48,
+        logoHeight: 48,
+        brandName: "DXT ACADEMY",
+        brandTagline: "Nurturing. Inspiring. Leading.",
+        brandTextVisible: true,
+        brandNameColor: "#ffffff",
+        brandTaglineColor: "#facc15",
+        brandNameFontSize: 26,
+        brandTaglineFontSize: 13,
+        logoBorderEnabled: true,
+        logoBorderColor: "#ffc433",
+        logoBorderRadius: 12,
         primaryColor: "#081827",
         secondaryColor: "#facc15",
         fontFamily: "Plus Jakarta Sans",
+        loadingBackgroundColor: "#081827",
+        navBarColor: "#081827",
+        navBarTransparent: true,
       };
     case "dexta-academy-1":
       return {
+        logoUrl:
+          "https://res.cloudinary.com/dxoorukfj/image/upload/v1776695413/DXT-Logo_mmyi2e.png",
+        logoWidth: 72,
+        logoHeight: 56,
+        brandName: "DXT GRADE",
+        brandTagline: "",
+        brandTextVisible: true,
+        brandNameColor: "#0f172a",
+        brandTaglineColor: "#64748b",
+        brandNameFontSize: 16,
+        brandTaglineFontSize: 12,
+        logoBorderEnabled: false,
+        logoBorderColor: "#0f766e",
+        logoBorderRadius: 0,
         primaryColor: "#0f766e",
         secondaryColor: "#f97316",
         fontFamily: "Manrope",
+        loadingBackgroundColor: "#ffffff",
+        navBarColor: "#ffffff",
+        navBarTransparent: false,
       };
     default:
       return {
+        logoUrl: "",
+        logoWidth: 56,
+        logoHeight: 56,
+        brandName: "",
+        brandTagline: "",
+        brandTextVisible: true,
+        brandNameColor: "#111827",
+        brandTaglineColor: "#6b7280",
+        brandNameFontSize: 16,
+        brandTaglineFontSize: 12,
+        logoBorderEnabled: true,
+        logoBorderColor: "#d1d5db",
+        logoBorderRadius: 18,
         primaryColor: "#0f766e",
         secondaryColor: "#facc15",
         fontFamily: "Inter",
+        loadingBackgroundColor: "#ffffff",
+        navBarColor: "#ffffff",
+        navBarTransparent: false,
       };
   }
 }
@@ -1144,6 +1264,7 @@ function buildSectionContent(
 ): SchoolTemplateProjectSectionContent {
   const roots = getSectionRoots(pageRoot, section);
   const repeatableItemFieldKeys = getRepeatableItemFieldKeys(roots, section);
+  const sectionRootsAreRepeatableItems = sectionTargetsRepeatableItems(section);
 
   return {
     id: section.id,
@@ -1151,8 +1272,7 @@ function buildSectionContent(
     fields: Object.fromEntries(
       section.fields.map((field) => [
         field.key,
-        isRepeatableItemField(section, field) ||
-        repeatableItemFieldKeys.has(field.key)
+        sectionRootsAreRepeatableItems || repeatableItemFieldKeys.has(field.key)
           ? getDefaultFieldValue(field)
           : getFieldDefaultFromRoots(roots, field),
       ]),
