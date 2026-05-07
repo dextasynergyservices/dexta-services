@@ -29,12 +29,13 @@ model ContactMessage {
 }
 
 model AdminUser {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                   String         @id @default(uuid())
+  email                String         @unique
+  password             String
+  name                 String
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  referralLinksCreated ReferralLink[] @relation("ReferralLinkCreatedBy")
 
   @@index([email])
 }
@@ -354,6 +355,31 @@ enum SchoolWebsiteDomainChoice {
   NEEDS_DOMAIN
 }
 
+enum ReferralLinkStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ReferralEventType {
+  VISIT
+  TEMPLATE_SELECTED
+  APPLICATION_SUBMITTED
+  SITE_LIVE
+}
+
+enum ReferralNotificationType {
+  APPLICATION_SUBMITTED
+  SITE_LIVE
+  REFERRAL_EXPIRING_SOON
+  REFERRAL_EXPIRED
+}
+
+enum ReferralNotificationStatus {
+  SENT
+  FAILED
+  SKIPPED
+}
+
 enum AboutIconKey {
   ZAP
   GLOBE
@@ -582,6 +608,34 @@ model SchoolWebsiteTestimonial {
   @@index([schoolName])
 }
 
+model ReferralLink {
+  id                  String                     @id @default(uuid())
+  code                String                     @unique
+  slug                String                     @unique
+  displayName         String
+  email               String
+  location            String?
+  expiresAt           DateTime?
+  status              ReferralLinkStatus         @default(ACTIVE)
+  notificationEnabled Boolean                    @default(true)
+  createdByAdminId    String?
+  createdByAdmin      AdminUser?                 @relation("ReferralLinkCreatedBy", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  applications        SchoolWebsiteApplication[] @relation("ReferralLinkApplications")
+  events              ReferralEvent[]
+  notificationLogs    ReferralNotificationLog[]
+  deletedAt           DateTime?
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+
+  @@index([code])
+  @@index([slug])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([deletedAt])
+  @@index([createdByAdminId])
+  @@index([createdAt])
+}
+
 model SchoolWebsiteTemplate {
   id           String                       @id @default(uuid())
   name         String
@@ -672,38 +726,94 @@ model SchoolPortalFeatureAsset {
 }
 
 model SchoolWebsiteApplication {
-  id                   String                    @id @default(uuid())
-  templateId           String?
-  template             SchoolWebsiteTemplate?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  project              SchoolWebsiteProject?
-  selectedTemplateName String
-  schoolName           String
-  aboutSchool          String
-  vision               String
-  mission              String
-  coreValues           String
-  officialPhone        String
-  officialEmail        String
-  officialAddress      String
-  officialWebsiteUrl   String?
-  officialContactName  String?
-  officialContactRole  String?
-  officialContactPhone String?
-  officialContactEmail String?
-  domainChoice         SchoolWebsiteDomainChoice
-  existingDomain       String?
-  preferredDomain1     String?
-  preferredDomain2     String?
-  status               SchoolWebsiteJobStatus    @default(PENDING)
-  adminNotes           String?
-  createdAt            DateTime                  @default(now())
-  updatedAt            DateTime                  @updatedAt
+  id                       String                    @id @default(uuid())
+  templateId               String?
+  template                 SchoolWebsiteTemplate?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  project                  SchoolWebsiteProject?
+  referralLinkId           String?
+  referralLink             ReferralLink?             @relation("ReferralLinkApplications", fields: [referralLinkId], references: [id], onDelete: SetNull)
+  referralCodeSnapshot     String?
+  referralNameSnapshot     String?
+  referralSlugSnapshot     String?
+  referralEmailSnapshot    String?
+  referralLocationSnapshot String?
+  selectedTemplateName     String
+  schoolName               String
+  aboutSchool              String
+  vision                   String
+  mission                  String
+  coreValues               String
+  officialPhone            String
+  officialEmail            String
+  officialAddress          String
+  officialWebsiteUrl       String?
+  officialContactName      String?
+  officialContactRole      String?
+  officialContactPhone     String?
+  officialContactEmail     String?
+  domainChoice             SchoolWebsiteDomainChoice
+  existingDomain           String?
+  preferredDomain1         String?
+  preferredDomain2         String?
+  status                   SchoolWebsiteJobStatus    @default(PENDING)
+  adminNotes               String?
+  referralEvents           ReferralEvent[]
+  referralNotificationLogs ReferralNotificationLog[]
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
 
   @@index([templateId])
+  @@index([referralLinkId])
+  @@index([referralCodeSnapshot])
+  @@index([referralSlugSnapshot])
   @@index([schoolName])
   @@index([status])
   @@index([domainChoice])
   @@index([createdAt])
+}
+
+model ReferralEvent {
+  id             String                    @id @default(uuid())
+  referralLinkId String
+  referralLink   ReferralLink              @relation(fields: [referralLinkId], references: [id], onDelete: Cascade)
+  eventType      ReferralEventType
+  templateSlug   String?
+  applicationId  String?
+  application    SchoolWebsiteApplication? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  metadata       Json?
+  createdAt      DateTime                  @default(now())
+
+  @@index([referralLinkId])
+  @@index([eventType])
+  @@index([templateSlug])
+  @@index([applicationId])
+  @@index([createdAt])
+  @@index([referralLinkId, eventType])
+  @@index([referralLinkId, createdAt])
+}
+
+model ReferralNotificationLog {
+  id             String                     @id @default(uuid())
+  referralLinkId String
+  referralLink   ReferralLink               @relation(fields: [referralLinkId], references: [id], onDelete: Cascade)
+  applicationId  String?
+  application    SchoolWebsiteApplication?  @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  type           ReferralNotificationType
+  recipientEmail String
+  subject        String
+  status         ReferralNotificationStatus
+  errorMessage   String?
+  sentAt         DateTime?
+  createdAt      DateTime                   @default(now())
+
+  @@index([referralLinkId])
+  @@index([applicationId])
+  @@index([type])
+  @@index([status])
+  @@index([sentAt])
+  @@index([createdAt])
+  @@index([referralLinkId, type])
+  @@index([applicationId, type])
 }
 
 model SchoolWebsiteProject {

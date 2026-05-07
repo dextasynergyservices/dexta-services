@@ -25,6 +25,7 @@ import {
   HandCoins,
   Info,
   GraduationCap,
+  Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -187,6 +188,11 @@ export function AdminSidebar({
           href: "/admin/we-brand-schools/applications",
           label: "Applications",
           icon: Users,
+        },
+        {
+          href: "/admin/we-brand-schools/referrals",
+          label: "Referrals",
+          icon: Share2,
         },
       ],
     },

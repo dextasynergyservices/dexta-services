@@ -10,6 +10,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { getCloudinaryPublicId } from "@/lib/cloudinary";
 import { uploadRawBufferToCloudinary } from "@/lib/cloudinary-server";
+import { buildRegularEmailHtml, sendEmail } from "@/lib/email";
 import { buildSchoolWebsiteProjectExportZip } from "@/lib/school-template-exporter";
 import {
   buildSchoolTemplateProjectContent,
@@ -35,6 +36,7 @@ import {
   SCHOOL_PORTAL_SECTION_TAG,
   SCHOOL_WEBSITE_TESTIMONIALS_TAG,
   SCHOOL_WEBSITE_APPLICATIONS_TAG,
+  SCHOOL_WEBSITE_REFERRALS_TAG,
   SCHOOL_WEBSITE_TEMPLATES_TAG,
   WE_BRAND_SCHOOLS_CONTENT_TAG,
 } from "@/lib/we-brand-schools-cache";
@@ -56,12 +58,14 @@ import { sanitizeWeBrandSchoolsPageContentInput } from "@/lib/we-brand-schools-r
 import {
   schoolPortalFeatureCardSchema,
   schoolPortalSectionContentSchema,
+  referralLinkSchema,
   schoolWebsiteApplicationStatusSchema,
   schoolWebsiteTestimonialSchema,
   schoolWebsiteTemplateSchema,
   weBrandSchoolsPageContentSchema,
   type SchoolPortalFeatureCardInput,
   type SchoolPortalSectionContentInput,
+  type ReferralLinkInput,
   type SchoolWebsiteApplicationStatusInput,
   type SchoolWebsiteTestimonialInput,
   type SchoolWebsiteTemplateInput,
@@ -115,6 +119,43 @@ type SchoolWebsiteProjectExportLogDelegate = {
     };
   }): Promise<unknown>;
 };
+type ReferralGoLiveApplication = {
+  id: string;
+  schoolName: string;
+  selectedTemplateName: string;
+  status: SchoolWebsiteApplicationRow["status"];
+  referralLinkId: string | null;
+  referralCodeSnapshot: string | null;
+  referralNameSnapshot: string | null;
+  referralSlugSnapshot: string | null;
+  referralEmailSnapshot: string | null;
+  officialEmail: string;
+  officialContactName: string | null;
+  officialContactEmail: string | null;
+  existingDomain: string | null;
+  preferredDomain1: string | null;
+  officialWebsiteUrl: string | null;
+  project: {
+    id: string;
+    schoolName: string;
+    templateName: string;
+    exportZipUrl: string | null;
+  } | null;
+  referralLink: {
+    id: string;
+    code: string;
+    slug: string;
+    displayName: string;
+    email: string;
+    notificationEnabled: boolean;
+  } | null;
+  referralNotificationLogs: {
+    id: string;
+  }[];
+};
+type GoLiveEmailDetails = NonNullable<
+  SchoolWebsiteApplicationStatusInput["goLiveDetails"]
+>;
 type SchoolPortalFeatureCardTransactionClient = {
   schoolPortalFeatureCard: {
     update(args: unknown): Promise<unknown>;
@@ -159,19 +200,100 @@ type SchoolWebsiteProjectStatusRow =
   | "READY_FOR_EXPORT"
   | "EXPORTED"
   | "LIVE";
+type ReferralLinkStatusRow = "ACTIVE" | "INACTIVE";
+type ReferralEventTypeRow =
+  | "VISIT"
+  | "TEMPLATE_SELECTED"
+  | "APPLICATION_SUBMITTED"
+  | "SITE_LIVE";
+type ReferralNotificationStatusRow = "SENT" | "FAILED" | "SKIPPED";
 
 export type WeBrandSchoolsPageContentRow = WeBrandSchoolsPageContentData;
 export type SchoolWebsiteTestimonialRow = SchoolWebsiteTestimonialData;
 export type SchoolWebsiteTemplateRow = SchoolWebsiteTemplateData;
 export type SchoolPortalSectionContentRow = SchoolPortalSectionContentData;
 export type SchoolPortalFeatureCardRow = SchoolPortalFeatureCardData;
+export type ReferralLinkRow = {
+  id: string;
+  code: string;
+  slug: string;
+  displayName: string;
+  email: string;
+  location: string | null;
+  expiresAt: Date | null;
+  status: ReferralLinkStatusRow;
+  notificationEnabled: boolean;
+  createdByAdminId: string | null;
+  createdByAdmin: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+  deletedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  applicationCount: number;
+  visitCount: number;
+  templateSelectionCount: number;
+  liveSiteCount: number;
+  conversionRate: number | null;
+  lastActivityAt: Date | null;
+  latestNotificationStatus: ReferralNotificationStatusRow | null;
+  latestNotificationAt: Date | null;
+};
+type ReferralLinkQueryRow = Omit<
+  ReferralLinkRow,
+  | "applicationCount"
+  | "visitCount"
+  | "templateSelectionCount"
+  | "liveSiteCount"
+  | "conversionRate"
+  | "lastActivityAt"
+  | "latestNotificationStatus"
+  | "latestNotificationAt"
+> & {
+  _count: {
+    applications: number;
+  };
+  events: Array<{
+    eventType: ReferralEventTypeRow;
+    createdAt: Date;
+  }>;
+  applications: Array<{
+    status: SchoolWebsiteApplicationRow["status"];
+    templateId: string | null;
+    selectedTemplateName: string;
+  }>;
+  notificationLogs: Array<{
+    status: ReferralNotificationStatusRow;
+    createdAt: Date;
+    sentAt: Date | null;
+  }>;
+};
 export type SchoolWebsiteApplicationRow = SchoolWebsiteApplicationData & {
   id: string;
+  referralLinkId: string | null;
+  referralCodeSnapshot: string | null;
+  referralNameSnapshot: string | null;
+  referralSlugSnapshot: string | null;
+  referralEmailSnapshot: string | null;
+  referralLocationSnapshot: string | null;
   createdAt: Date;
   updatedAt: Date;
   template: {
     id: string;
     name: string;
+  } | null;
+  referralLink: {
+    id: string;
+    code: string;
+    slug: string;
+    displayName: string;
+    email: string;
+    location: string | null;
+    status: ReferralLinkStatusRow;
+    expiresAt: Date | null;
+    deletedAt: Date | null;
   } | null;
   project: {
     id: string;
@@ -200,6 +322,7 @@ function revalidateWeBrandSchoolsAdmin() {
   updateTag(SCHOOL_WEBSITE_TESTIMONIALS_TAG);
   updateTag(SCHOOL_WEBSITE_TEMPLATES_TAG);
   updateTag(SCHOOL_WEBSITE_APPLICATIONS_TAG);
+  updateTag(SCHOOL_WEBSITE_REFERRALS_TAG);
   revalidatePath("/webrandschools");
   revalidatePath("/admin/we-brand-schools");
   revalidatePath("/admin/we-brand-schools/content");
@@ -207,6 +330,7 @@ function revalidateWeBrandSchoolsAdmin() {
   revalidatePath("/admin/we-brand-schools/templates");
   revalidatePath("/admin/we-brand-schools/portal");
   revalidatePath("/admin/we-brand-schools/applications");
+  revalidatePath("/admin/we-brand-schools/referrals");
   revalidatePath("/admin/we-brand-schools/projects");
 }
 
@@ -310,7 +434,311 @@ async function createSchoolWebsiteProjectRevisionRecord({
 }
 
 async function requireAuth() {
-  await requireAdminSession();
+  return requireAdminSession();
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function formatNotificationDate(value: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(value);
+}
+
+function normalizePublicUrlCandidate(value?: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === "http:" || url.protocol === "https:"
+      ? url.toString()
+      : null;
+  } catch {
+    if (!trimmed.includes(".") || /\s/.test(trimmed)) return null;
+    return `https://${trimmed.replace(/^\/+/, "")}`;
+  }
+}
+
+const DEFAULT_GO_LIVE_ADMIN_MESSAGE =
+  "Please change your portal password after your first login.";
+
+function getApplicationLiveUrl(
+  application: ReferralGoLiveApplication,
+  websiteUrl?: string | null,
+) {
+  return (
+    normalizePublicUrlCandidate(websiteUrl) ??
+    normalizePublicUrlCandidate(application.existingDomain) ??
+    normalizePublicUrlCandidate(application.preferredDomain1) ??
+    normalizePublicUrlCandidate(application.officialWebsiteUrl)
+  );
+}
+
+function getUniqueEmailRecipients(
+  recipients: Array<{ email?: string | null; name?: string | null }>,
+) {
+  const seen = new Set<string>();
+
+  return recipients
+    .map((recipient) => ({
+      email: recipient.email?.trim() ?? "",
+      name: recipient.name?.trim() || undefined,
+    }))
+    .filter((recipient) => {
+      if (!recipient.email) return false;
+      const key = recipient.email.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+async function logReferralSiteLiveNotification({
+  referralLinkId,
+  applicationId,
+  recipientEmail,
+  subject,
+  status,
+  errorMessage,
+  sentAt,
+}: {
+  referralLinkId: string;
+  applicationId: string;
+  recipientEmail: string;
+  subject: string;
+  status: "SENT" | "FAILED" | "SKIPPED";
+  errorMessage?: string | null;
+  sentAt?: Date | null;
+}) {
+  try {
+    await weBrandSchoolsPrisma.referralNotificationLog.create({
+      data: {
+        referralLinkId,
+        applicationId,
+        type: "SITE_LIVE",
+        recipientEmail,
+        subject,
+        status,
+        errorMessage: errorMessage ?? null,
+        sentAt: sentAt ?? null,
+      },
+    });
+  } catch (error) {
+    console.error("[Referral Site Live Notification Log Failed]", error);
+  }
+}
+
+async function recordReferralSiteLiveEvent({
+  application,
+  liveUrl,
+  wentLiveAt,
+}: {
+  application: ReferralGoLiveApplication;
+  liveUrl: string | null;
+  wentLiveAt: Date;
+}) {
+  if (!application.referralLinkId) return;
+
+  try {
+    const existingEvent = await weBrandSchoolsPrisma.referralEvent.findFirst({
+      where: {
+        referralLinkId: application.referralLinkId,
+        applicationId: application.id,
+        eventType: "SITE_LIVE",
+      },
+      select: { id: true },
+    });
+
+    if (existingEvent) return;
+
+    await weBrandSchoolsPrisma.referralEvent.create({
+      data: {
+        referralLinkId: application.referralLinkId,
+        eventType: "SITE_LIVE",
+        applicationId: application.id,
+        metadata: {
+          referralCode:
+            application.referralCodeSnapshot ?? application.referralLink?.code,
+          schoolName: application.schoolName,
+          selectedTemplateName: application.selectedTemplateName,
+          projectId: application.project?.id ?? null,
+          projectName:
+            application.project?.schoolName ?? application.schoolName,
+          liveUrl,
+          wentLiveAt: wentLiveAt.toISOString(),
+        },
+      },
+    });
+  } catch (error) {
+    console.error("[Referral Site Live Event Failed]", error);
+  }
+}
+
+async function notifySchoolContactsSiteLive(
+  application: ReferralGoLiveApplication,
+  goLiveDetails: GoLiveEmailDetails,
+) {
+  const wentLiveAt = new Date();
+  const liveUrl = getApplicationLiveUrl(application, goLiveDetails.websiteUrl);
+  const projectName = application.project?.schoolName ?? application.schoolName;
+  const projectTemplate =
+    application.project?.templateName ?? application.selectedTemplateName;
+  const liveUrlMarkup = liveUrl
+    ? `<a href="${escapeHtml(liveUrl)}">${escapeHtml(liveUrl)}</a>`
+    : "Not available";
+  const portalUrlMarkup = `<a href="${escapeHtml(goLiveDetails.portalUrl)}">${escapeHtml(goLiveDetails.portalUrl)}</a>`;
+  const adminMessage =
+    goLiveDetails.adminMessage ?? DEFAULT_GO_LIVE_ADMIN_MESSAGE;
+  const subject = `Your school website is now live — ${application.schoolName}`;
+  const recipients = getUniqueEmailRecipients([
+    {
+      email: application.officialEmail,
+      name: application.schoolName,
+    },
+    {
+      email: application.officialContactEmail,
+      name: application.officialContactName,
+    },
+  ]);
+
+  for (const recipient of recipients) {
+    try {
+      await sendEmail({
+        to: recipient,
+        subject,
+        htmlContent: buildRegularEmailHtml({
+          heading: "Your school website is now live",
+          body: `
+            <p style="margin:0 0 16px;">Hello,</p>
+            <p style="margin:0 0 16px;">Good news. Your We Brand Schools website has been marked live by the Dexta team.</p>
+            <p style="margin:0 0 8px;"><strong>School/person:</strong> ${escapeHtml(application.schoolName)}</p>
+            <p style="margin:0 0 8px;"><strong>Website/project:</strong> ${escapeHtml(projectName)}</p>
+            <p style="margin:0 0 8px;"><strong>Template:</strong> ${escapeHtml(projectTemplate)}</p>
+            <p style="margin:0 0 8px;"><strong>Live URL:</strong> ${liveUrlMarkup}</p>
+            <p style="margin:0 0 8px;"><strong>Portal URL:</strong> ${portalUrlMarkup}</p>
+            <p style="margin:0 0 8px;"><strong>Portal password:</strong> ${escapeHtml(goLiveDetails.portalPassword)}</p>
+            <p style="margin:0 0 16px;"><strong>Go-live date:</strong> ${escapeHtml(formatNotificationDate(wentLiveAt))}</p>
+            <p style="margin:0 0 16px;">${escapeHtml(adminMessage)}</p>
+            <p style="margin:0;">Thank you for working with Dexta. You can reply to this email if you need support or corrections.</p>`,
+        }),
+      });
+    } catch (error) {
+      console.error("[School Site Live Email Failed]", {
+        email: recipient.email,
+        error,
+      });
+    }
+  }
+}
+
+async function notifyReferralOwnerSiteLive(
+  application: ReferralGoLiveApplication,
+  websiteUrl?: string | null,
+) {
+  if (!application.referralLinkId) return;
+
+  const wentLiveAt = new Date();
+  const liveUrl = getApplicationLiveUrl(application, websiteUrl);
+
+  await recordReferralSiteLiveEvent({
+    application,
+    liveUrl,
+    wentLiveAt,
+  });
+
+  if (application.referralNotificationLogs.length > 0) return;
+
+  const referral = application.referralLink;
+  const recipientEmail =
+    referral?.email ?? application.referralEmailSnapshot ?? "";
+  const referralName =
+    application.referralNameSnapshot ?? referral?.displayName ?? "Referral";
+  const subject = `${application.schoolName} is now live`;
+
+  if (!referral) {
+    await logReferralSiteLiveNotification({
+      referralLinkId: application.referralLinkId,
+      applicationId: application.id,
+      recipientEmail: recipientEmail || "unknown",
+      subject,
+      status: "SKIPPED",
+      errorMessage: "Referral link record is no longer available.",
+    });
+    return;
+  }
+
+  if (!referral.notificationEnabled || !recipientEmail) {
+    await logReferralSiteLiveNotification({
+      referralLinkId: referral.id,
+      applicationId: application.id,
+      recipientEmail: recipientEmail || "unknown",
+      subject,
+      status: "SKIPPED",
+      errorMessage: referral.notificationEnabled
+        ? "Referral owner email is missing."
+        : "Referral notifications are disabled.",
+    });
+    return;
+  }
+
+  const projectName = application.project?.schoolName ?? application.schoolName;
+  const projectTemplate =
+    application.project?.templateName ?? application.selectedTemplateName;
+  const liveUrlMarkup = liveUrl
+    ? `<a href="${escapeHtml(liveUrl)}">${escapeHtml(liveUrl)}</a>`
+    : "Not available";
+
+  try {
+    await sendEmail({
+      to: {
+        email: recipientEmail,
+        name: referralName,
+      },
+      subject,
+      htmlContent: buildRegularEmailHtml({
+        heading: "A referred school website is now live",
+        body: `
+          <p style="margin:0 0 16px;">Hello ${escapeHtml(referralName)},</p>
+          <p style="margin:0 0 16px;">The school/person who used your referral link now has their We Brand Schools site marked live.</p>
+          <p style="margin:0 0 8px;"><strong>School/person:</strong> ${escapeHtml(application.schoolName)}</p>
+          <p style="margin:0 0 8px;"><strong>Website/project:</strong> ${escapeHtml(projectName)}</p>
+          <p style="margin:0 0 8px;"><strong>Template:</strong> ${escapeHtml(projectTemplate)}</p>
+          <p style="margin:0 0 8px;"><strong>Live URL:</strong> ${liveUrlMarkup}</p>
+          <p style="margin:0 0 8px;"><strong>Go-live date:</strong> ${escapeHtml(formatNotificationDate(wentLiveAt))}</p>
+          <p style="margin:0 0 16px;"><strong>Referral:</strong> ${escapeHtml(referralName)} (${escapeHtml(`/webrandschools/r/${application.referralSlugSnapshot ?? referral.slug}`)})</p>
+          <p style="margin:0;">Thank you for connecting this school with Dexta. This go-live has been recorded under your referral link.</p>`,
+      }),
+    });
+
+    await logReferralSiteLiveNotification({
+      referralLinkId: referral.id,
+      applicationId: application.id,
+      recipientEmail,
+      subject,
+      status: "SENT",
+      sentAt: new Date(),
+    });
+  } catch (error) {
+    console.error("[Referral Site Live Email Failed]", error);
+    await logReferralSiteLiveNotification({
+      referralLinkId: referral.id,
+      applicationId: application.id,
+      recipientEmail,
+      subject,
+      status: "FAILED",
+      errorMessage:
+        error instanceof Error ? error.message : "Unknown email failure.",
+    });
+  }
 }
 
 function getSafeProjectContent({
@@ -1064,6 +1492,22 @@ function normalizeTemplateData(data: SchoolWebsiteTemplateInput) {
   };
 }
 
+function normalizeReferralLinkData(data: ReferralLinkInput) {
+  return {
+    displayName: data.displayName,
+    slug: data.slug,
+    email: data.email.toLowerCase(),
+    location: data.location ?? null,
+    expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+    status: data.status,
+    notificationEnabled: data.notificationEnabled,
+  };
+}
+
+function createReferralCode() {
+  return `ref_${randomUUID().replaceAll("-", "").slice(0, 20)}`;
+}
+
 function normalizeTestimonialData(data: SchoolWebsiteTestimonialInput) {
   return {
     ...data,
@@ -1434,6 +1878,308 @@ export async function deleteSchoolWebsiteTestimonial(
         error instanceof Error
           ? error.message
           : "Failed to delete testimonial card.",
+    };
+  }
+}
+
+export async function getReferralLinksAdmin(): Promise<ReferralLinkRow[]> {
+  try {
+    const rows = await weBrandSchoolsPrisma.referralLink.findMany({
+      orderBy: [{ createdAt: "desc" }],
+      select: {
+        id: true,
+        code: true,
+        slug: true,
+        displayName: true,
+        email: true,
+        location: true,
+        expiresAt: true,
+        status: true,
+        notificationEnabled: true,
+        createdByAdminId: true,
+        createdByAdmin: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        deletedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            applications: true,
+          },
+        },
+        events: {
+          select: {
+            eventType: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+        applications: {
+          select: {
+            status: true,
+            templateId: true,
+            selectedTemplateName: true,
+          },
+        },
+        notificationLogs: {
+          select: {
+            status: true,
+            createdAt: true,
+            sentAt: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 1,
+        },
+      },
+    });
+
+    return (rows as ReferralLinkQueryRow[]).map((row) => {
+      const visitCount = row.events.filter(
+        (event) => event.eventType === "VISIT",
+      ).length;
+      const templateSelectionEventCount = row.events.filter(
+        (event) => event.eventType === "TEMPLATE_SELECTED",
+      ).length;
+      const submittedTemplateSelectionCount = row.applications.filter(
+        (application) =>
+          Boolean(application.templateId) ||
+          Boolean(application.selectedTemplateName.trim()),
+      ).length;
+      const templateSelectionCount = Math.max(
+        templateSelectionEventCount,
+        submittedTemplateSelectionCount,
+      );
+      const siteLiveEventCount = row.events.filter(
+        (event) => event.eventType === "SITE_LIVE",
+      ).length;
+      const liveApplicationCount = row.applications.filter(
+        (application) => application.status === "LIVE",
+      ).length;
+      const liveSiteCount = Math.max(siteLiveEventCount, liveApplicationCount);
+      const lastEventAt = row.events[0]?.createdAt ?? null;
+      const latestNotification = row.notificationLogs[0] ?? null;
+      const latestNotificationAt =
+        latestNotification?.sentAt ?? latestNotification?.createdAt ?? null;
+      const lastActivityAt = [lastEventAt, latestNotificationAt]
+        .filter((value): value is Date => Boolean(value))
+        .sort((first, second) => second.getTime() - first.getTime())[0];
+
+      return {
+        id: row.id,
+        code: row.code,
+        slug: row.slug,
+        displayName: row.displayName,
+        email: row.email,
+        location: row.location,
+        expiresAt: row.expiresAt,
+        status: row.status as ReferralLinkStatusRow,
+        notificationEnabled: row.notificationEnabled,
+        createdByAdminId: row.createdByAdminId,
+        createdByAdmin: row.createdByAdmin,
+        deletedAt: row.deletedAt,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        applicationCount: row._count.applications,
+        visitCount,
+        templateSelectionCount,
+        liveSiteCount,
+        conversionRate:
+          visitCount > 0 ? row._count.applications / visitCount : null,
+        lastActivityAt: lastActivityAt ?? null,
+        latestNotificationStatus: latestNotification?.status ?? null,
+        latestNotificationAt,
+      };
+    });
+  } catch (error) {
+    console.error("[getReferralLinksAdmin]", error);
+    return [];
+  }
+}
+
+export async function createReferralLink(
+  data: ReferralLinkInput,
+): Promise<ActionResult> {
+  try {
+    const { adminUser } = await requireAuth();
+
+    const parsed = referralLinkSchema.safeParse(data);
+    if (!parsed.success) {
+      return {
+        success: false,
+        message: parsed.error.issues[0]?.message ?? "Validation failed",
+      };
+    }
+
+    const normalized = normalizeReferralLinkData(parsed.data);
+    const existingSlug = await weBrandSchoolsPrisma.referralLink.findUnique({
+      where: { slug: normalized.slug },
+      select: { id: true, deletedAt: true },
+    });
+
+    if (existingSlug) {
+      return {
+        success: false,
+        message: existingSlug.deletedAt
+          ? "That referral slug was used by a deleted link. Use another slug."
+          : "That referral slug is already in use.",
+      };
+    }
+
+    await weBrandSchoolsPrisma.referralLink.create({
+      data: {
+        ...normalized,
+        code: createReferralCode(),
+        createdByAdminId: adminUser.id,
+      },
+    });
+
+    revalidateWeBrandSchoolsAdmin();
+    return {
+      success: true,
+      message: "Referral link created successfully.",
+    };
+  } catch (error) {
+    console.error("[createReferralLink]", error);
+    return {
+      success: false,
+      message: isUniqueConstraintError(error)
+        ? "That referral slug or code is already in use."
+        : error instanceof Error
+          ? error.message
+          : "Failed to create referral link.",
+    };
+  }
+}
+
+export async function updateReferralLink(
+  id: string,
+  data: ReferralLinkInput,
+): Promise<ActionResult> {
+  try {
+    await requireAuth();
+
+    const parsed = referralLinkSchema.safeParse(data);
+    if (!parsed.success) {
+      return {
+        success: false,
+        message: parsed.error.issues[0]?.message ?? "Validation failed",
+      };
+    }
+
+    const normalized = normalizeReferralLinkData(parsed.data);
+    const existing = await weBrandSchoolsPrisma.referralLink.findFirst({
+      where: {
+        slug: normalized.slug,
+        id: { not: id },
+      },
+      select: { id: true, deletedAt: true },
+    });
+
+    if (existing) {
+      return {
+        success: false,
+        message: existing.deletedAt
+          ? "That referral slug was used by a deleted link. Use another slug."
+          : "That referral slug is already in use.",
+      };
+    }
+
+    await weBrandSchoolsPrisma.referralLink.update({
+      where: { id },
+      data: normalized,
+    });
+
+    revalidateWeBrandSchoolsAdmin();
+    return {
+      success: true,
+      message: "Referral link updated successfully.",
+    };
+  } catch (error) {
+    console.error("[updateReferralLink]", error);
+    return {
+      success: false,
+      message: isUniqueConstraintError(error)
+        ? "That referral slug is already in use."
+        : error instanceof Error
+          ? error.message
+          : "Failed to update referral link.",
+    };
+  }
+}
+
+export async function updateReferralLinkStatus(
+  id: string,
+  status: ReferralLinkStatusRow,
+): Promise<ActionResult> {
+  try {
+    await requireAuth();
+
+    if (status !== "ACTIVE" && status !== "INACTIVE") {
+      return {
+        success: false,
+        message: "Invalid referral link status.",
+      };
+    }
+
+    await weBrandSchoolsPrisma.referralLink.update({
+      where: { id },
+      data: { status },
+    });
+
+    revalidateWeBrandSchoolsAdmin();
+    return {
+      success: true,
+      message:
+        status === "ACTIVE"
+          ? "Referral link activated successfully."
+          : "Referral link deactivated successfully.",
+    };
+  } catch (error) {
+    console.error("[updateReferralLinkStatus]", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to update referral link status.",
+    };
+  }
+}
+
+export async function deleteReferralLink(id: string): Promise<ActionResult> {
+  try {
+    await requireAuth();
+
+    await weBrandSchoolsPrisma.referralLink.update({
+      where: { id },
+      data: {
+        status: "INACTIVE",
+        deletedAt: new Date(),
+      },
+    });
+
+    revalidateWeBrandSchoolsAdmin();
+    return {
+      success: true,
+      message: "Referral link deleted successfully.",
+    };
+  } catch (error) {
+    console.error("[deleteReferralLink]", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to delete referral link.",
     };
   }
 }
@@ -1947,6 +2693,19 @@ export async function getSchoolWebsiteApplicationsAdmin(): Promise<
             status: true,
           },
         },
+        referralLink: {
+          select: {
+            id: true,
+            code: true,
+            slug: true,
+            displayName: true,
+            email: true,
+            location: true,
+            status: true,
+            expiresAt: true,
+            deletedAt: true,
+          },
+        },
       },
     });
 
@@ -1954,6 +2713,12 @@ export async function getSchoolWebsiteApplicationsAdmin(): Promise<
       (row: {
         id: string;
         templateId: string | null;
+        referralLinkId: string | null;
+        referralCodeSnapshot: string | null;
+        referralNameSnapshot: string | null;
+        referralSlugSnapshot: string | null;
+        referralEmailSnapshot: string | null;
+        referralLocationSnapshot: string | null;
         selectedTemplateName: string;
         schoolName: string;
         aboutSchool: string;
@@ -1980,6 +2745,17 @@ export async function getSchoolWebsiteApplicationsAdmin(): Promise<
           id: string;
           name: string;
         } | null;
+        referralLink: {
+          id: string;
+          code: string;
+          slug: string;
+          displayName: string;
+          email: string;
+          location: string | null;
+          status: ReferralLinkStatusRow;
+          expiresAt: Date | null;
+          deletedAt: Date | null;
+        } | null;
         project: {
           id: string;
           status: SchoolWebsiteProjectStatusRow;
@@ -1987,6 +2763,12 @@ export async function getSchoolWebsiteApplicationsAdmin(): Promise<
       }) => ({
         id: row.id,
         templateId: row.templateId ?? null,
+        referralLinkId: row.referralLinkId ?? null,
+        referralCodeSnapshot: row.referralCodeSnapshot ?? null,
+        referralNameSnapshot: row.referralNameSnapshot ?? null,
+        referralSlugSnapshot: row.referralSlugSnapshot ?? null,
+        referralEmailSnapshot: row.referralEmailSnapshot ?? null,
+        referralLocationSnapshot: row.referralLocationSnapshot ?? null,
         selectedTemplateName: row.selectedTemplateName,
         schoolName: row.schoolName,
         aboutSchool: row.aboutSchool,
@@ -2013,6 +2795,19 @@ export async function getSchoolWebsiteApplicationsAdmin(): Promise<
           ? {
               id: row.template.id,
               name: row.template.name,
+            }
+          : null,
+        referralLink: row.referralLink
+          ? {
+              id: row.referralLink.id,
+              code: row.referralLink.code,
+              slug: row.referralLink.slug,
+              displayName: row.referralLink.displayName,
+              email: row.referralLink.email,
+              location: row.referralLink.location,
+              status: row.referralLink.status as ReferralLinkStatusRow,
+              expiresAt: row.referralLink.expiresAt,
+              deletedAt: row.referralLink.deletedAt,
             }
           : null,
         project: row.project
@@ -2805,13 +3600,152 @@ export async function updateSchoolWebsiteApplicationStatus(
       };
     }
 
-    await weBrandSchoolsPrisma.schoolWebsiteApplication.update({
-      where: { id },
-      data: {
-        status: parsed.data.status,
-        adminNotes: parsed.data.adminNotes ?? null,
-      },
-    });
+    const application =
+      await weBrandSchoolsPrisma.schoolWebsiteApplication.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          schoolName: true,
+          selectedTemplateName: true,
+          status: true,
+          referralLinkId: true,
+          referralCodeSnapshot: true,
+          referralNameSnapshot: true,
+          referralSlugSnapshot: true,
+          referralEmailSnapshot: true,
+          officialEmail: true,
+          officialContactName: true,
+          officialContactEmail: true,
+          existingDomain: true,
+          preferredDomain1: true,
+          officialWebsiteUrl: true,
+          project: {
+            select: {
+              id: true,
+              schoolName: true,
+              templateName: true,
+              exportZipUrl: true,
+            },
+          },
+          referralLink: {
+            select: {
+              id: true,
+              code: true,
+              slug: true,
+              displayName: true,
+              email: true,
+              notificationEnabled: true,
+            },
+          },
+          referralNotificationLogs: {
+            where: {
+              type: "SITE_LIVE",
+              status: "SENT",
+            },
+            select: {
+              id: true,
+            },
+            take: 1,
+          },
+        },
+      });
+
+    if (!application) {
+      return {
+        success: false,
+        message: "School website application was not found.",
+      };
+    }
+
+    if (
+      parsed.data.status === "LIVE" &&
+      application.status !== "LIVE" &&
+      !parsed.data.goLiveDetails
+    ) {
+      return {
+        success: false,
+        message: "Go-live details are required before sending live emails.",
+      };
+    }
+
+    const updateOperations = [
+      weBrandSchoolsPrisma.schoolWebsiteApplication.update({
+        where: { id },
+        data: {
+          status: parsed.data.status,
+          adminNotes: parsed.data.adminNotes ?? null,
+        },
+      }),
+    ];
+
+    if (parsed.data.status === "LIVE" && application.project) {
+      updateOperations.push(
+        weBrandSchoolsPrisma.schoolWebsiteProject.update({
+          where: { id: application.project.id },
+          data: { status: "LIVE" },
+        }),
+      );
+    }
+
+    await weBrandSchoolsPrisma.$transaction(updateOperations);
+
+    if (parsed.data.status === "LIVE") {
+      if (application.status !== "LIVE") {
+        await notifySchoolContactsSiteLive(
+          {
+            ...application,
+            status: "LIVE",
+            project: application.project
+              ? {
+                  id: application.project.id,
+                  schoolName: application.project.schoolName,
+                  templateName: application.project.templateName,
+                  exportZipUrl: application.project.exportZipUrl,
+                }
+              : null,
+            referralLink: application.referralLink
+              ? {
+                  id: application.referralLink.id,
+                  code: application.referralLink.code,
+                  slug: application.referralLink.slug,
+                  displayName: application.referralLink.displayName,
+                  email: application.referralLink.email,
+                  notificationEnabled:
+                    application.referralLink.notificationEnabled,
+                }
+              : null,
+          },
+          parsed.data.goLiveDetails!,
+        );
+      }
+
+      await notifyReferralOwnerSiteLive(
+        {
+          ...application,
+          status: "LIVE",
+          project: application.project
+            ? {
+                id: application.project.id,
+                schoolName: application.project.schoolName,
+                templateName: application.project.templateName,
+                exportZipUrl: application.project.exportZipUrl,
+              }
+            : null,
+          referralLink: application.referralLink
+            ? {
+                id: application.referralLink.id,
+                code: application.referralLink.code,
+                slug: application.referralLink.slug,
+                displayName: application.referralLink.displayName,
+                email: application.referralLink.email,
+                notificationEnabled:
+                  application.referralLink.notificationEnabled,
+              }
+            : null,
+        },
+        parsed.data.goLiveDetails?.websiteUrl,
+      );
+    }
 
     revalidateWeBrandSchoolsAdmin();
     return {
@@ -2826,6 +3760,57 @@ export async function updateSchoolWebsiteApplicationStatus(
         error instanceof Error
           ? error.message
           : "Failed to update application status.",
+    };
+  }
+}
+
+export async function deleteSchoolWebsiteApplication(
+  id: string,
+): Promise<ActionResult> {
+  try {
+    await requireAuth();
+
+    const application =
+      await weBrandSchoolsPrisma.schoolWebsiteApplication.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          schoolName: true,
+          project: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+
+    if (!application) {
+      return {
+        success: false,
+        message: "School website application was not found.",
+      };
+    }
+
+    await weBrandSchoolsPrisma.schoolWebsiteApplication.delete({
+      where: { id },
+    });
+
+    revalidateWeBrandSchoolsAdmin();
+
+    return {
+      success: true,
+      message: application.project
+        ? "Application and linked website project deleted successfully."
+        : "Application deleted successfully.",
+    };
+  } catch (error) {
+    console.error("[deleteSchoolWebsiteApplication]", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to delete application.",
     };
   }
 }

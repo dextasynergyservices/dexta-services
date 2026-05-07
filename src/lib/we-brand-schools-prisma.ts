@@ -12,6 +12,9 @@ type WeBrandSchoolsPrismaDelegates = {
   schoolPortalSectionContent: any;
   schoolPortalFeatureCard: any;
   schoolPortalFeatureAsset: any;
+  referralLink: any;
+  referralEvent: any;
+  referralNotificationLog: any;
   schoolWebsiteApplication: any;
   schoolWebsiteProject: any;
   schoolWebsiteProjectRevision: any;
