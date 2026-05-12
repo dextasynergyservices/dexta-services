@@ -88,6 +88,25 @@ describe("Dexta Academy 5 manifest", () => {
     }
   });
 
+  it("exposes iframe embed code fields for admission and school contact forms", () => {
+    const content = buildSchoolTemplateProjectContent(dextaAcademy5Manifest);
+    const homePage = content.pages.find((page) => page.slug === "home");
+    const contactPage = content.pages.find((page) => page.slug === "contact");
+    const admissionModal = homePage?.sections.find(
+      (section) => section.id === "admission-modal",
+    );
+    const contactModal = homePage?.sections.find(
+      (section) => section.id === "contact-modal",
+    );
+    const contactForm = contactPage?.sections.find(
+      (section) => section.id === "contact-form",
+    );
+
+    assert.equal(admissionModal?.fields.formIframe, "");
+    assert.equal(contactModal?.fields.formIframe, "");
+    assert.equal(contactForm?.fields.formIframe, "");
+  });
+
   it("renders previews for all template pages", async () => {
     const content = buildSchoolTemplateProjectContent(dextaAcademy5Manifest);
     const sourceSnapshot = buildSchoolTemplateSourceSnapshot(

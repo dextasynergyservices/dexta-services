@@ -44,6 +44,7 @@ export async function GET(
   const syncedProjectContent = syncSchoolTemplateProjectContentWithManifest({
     content: parsedContent.data,
     sourceSnapshot: project.sourceSnapshot,
+    rawContent: project.contentJson,
   });
 
   const rawReferenceIssues = validateSchoolTemplateProjectContentReferences(

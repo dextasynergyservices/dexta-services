@@ -766,6 +766,7 @@ function getSafeProjectContent({
   const syncedProjectContent = syncSchoolTemplateProjectContentWithManifest({
     content: parsedContent.data,
     sourceSnapshot,
+    rawContent: contentJson,
   });
 
   const rawReferenceIssues = validateSchoolTemplateProjectContentReferences(

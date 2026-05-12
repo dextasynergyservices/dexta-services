@@ -1,4 +1,5 @@
 const body = document.body;
+const siteLoader = document.querySelector("[data-site-loader]");
 const navToggle = document.querySelector("[data-nav-toggle]");
 const siteNav = document.getElementById("site-nav");
 const scrollTriggers = document.querySelectorAll("[data-scroll-target]");
@@ -45,6 +46,14 @@ const scrollRevealTargets = document.querySelectorAll(
   ].join(",")
 );
 let lastFocusedElement = null;
+
+const hideSiteLoader = () => {
+  if (!siteLoader) {
+    return;
+  }
+
+  siteLoader.setAttribute("aria-hidden", "true");
+};
 
 const closeMenu = () => {
   body.classList.remove("nav-open");
@@ -321,6 +330,14 @@ storyModalCloseButtons.forEach((button) => {
 });
 
 setupScrollReveal();
+
+if (document.readyState === "complete") {
+  hideSiteLoader();
+} else {
+  window.addEventListener("load", hideSiteLoader, { once: true });
+}
+
+window.setTimeout(hideSiteLoader, 5000);
 
 window.addEventListener("resize", () => {
   if (window.innerWidth > 920) {

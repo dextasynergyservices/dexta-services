@@ -21,6 +21,12 @@ const pageHero = {
   ],
 };
 
+const formIframePlaceholder =
+  '<iframe src="https://docs.google.com/forms/..." width="640" height="1602" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>';
+
+const formIframeHelpText =
+  "Paste the full Google Forms iframe embed code. Leave blank to use the Google Form URL field.";
+
 export const dextaAcademy4Manifest = {
   templateSlug: "dexta-academy-4",
   templateName: "Dexta Academy 4",
@@ -621,6 +627,40 @@ export const dextaAcademy4Manifest = {
             textField("eyebrow", "Eyebrow", ".section-kicker"),
             textField("title", "Title", "h2"),
             textareaField("body", "Body", ".section-copy, p"),
+            textField(
+              "formName",
+              "Form name",
+              ".admissions-form-shell-header strong",
+            ),
+            textField(
+              "formDescription",
+              "Form description",
+              ".admissions-form-shell-header span",
+            ),
+            linkField(
+              "openFormHref",
+              "Open form link URL",
+              ".admissions-form-link",
+            ),
+            linkField("formUrl", "Admission Google Form URL", "iframe", {
+              attribute: "src",
+            }),
+            textareaField(
+              "formIframe",
+              "Admission iframe embed code",
+              "iframe",
+              {
+                target: "attribute",
+                attribute: "src",
+                defaultValue: "",
+                placeholder: formIframePlaceholder,
+                helpText: formIframeHelpText,
+              },
+            ),
+            textField("formTitle", "Iframe title", "iframe", {
+              target: "attribute",
+              attribute: "title",
+            }),
           ],
         },
         {
@@ -710,6 +750,40 @@ export const dextaAcademy4Manifest = {
           fields: [
             textField("title", "Title", "h2"),
             textareaField("body", "Body", "p"),
+            textField(
+              "formName",
+              "Form name",
+              ".contact-form-shell-header strong",
+            ),
+            textField(
+              "formDescription",
+              "Form description",
+              ".contact-form-shell-header span",
+            ),
+            linkField(
+              "openFormHref",
+              "Open form link URL",
+              ".contact-form-link",
+            ),
+            linkField("formUrl", "School/contact Google Form URL", "iframe", {
+              attribute: "src",
+            }),
+            textareaField(
+              "formIframe",
+              "School/contact iframe embed code",
+              "iframe",
+              {
+                target: "attribute",
+                attribute: "src",
+                defaultValue: "",
+                placeholder: formIframePlaceholder,
+                helpText: formIframeHelpText,
+              },
+            ),
+            textField("formTitle", "Iframe title", "iframe", {
+              target: "attribute",
+              attribute: "title",
+            }),
           ],
         },
         {

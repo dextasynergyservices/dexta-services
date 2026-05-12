@@ -17,6 +17,334 @@ const heroMobileBackgroundImage =
   "https://res.cloudinary.com/dxoorukfj/image/upload/v1776960442/ChatGPT_Image_Apr_23_2026_05_07_07_PM_spaysy.png";
 const heroStudentsImage =
   "https://res.cloudinary.com/dxoorukfj/image/upload/v1777044586/Untitled_design_6_foe65y.png";
+const aboutLearningImage =
+  "https://res.cloudinary.com/dxoorukfj/image/upload/v1777040923/ChatGPT_Image_Apr_24_2026_03_28_15_PM_afjcpv.png";
+const aboutFamilyChoiceImage =
+  "https://res.cloudinary.com/dxoorukfj/image/upload/v1777041124/ChatGPT_Image_Apr_24_2026_03_31_43_PM_ssnnin.png";
+const aboutFamilyChoiceSecondaryImage =
+  "https://res.cloudinary.com/dxoorukfj/image/upload/v1777041228/ChatGPT_Image_Apr_24_2026_03_33_32_PM_mbqpse.png";
+const admissionFormUrl =
+  "https://docs.google.com/forms/d/e/1FAIpQLSdSXga8Z8UfldowUxZDw8b_fylxfQThhZqiuZUZnWtKWRBeSQ/viewform?embedded=true";
+const contactFormUrl =
+  "https://docs.google.com/forms/d/e/1FAIpQLScHSufroE92p8YNZ2MWkH1lrkH0lWt2aNTmHSM58UwdH7DO2g/viewform?embedded=true";
+const schoolAddress = "12 Excellence Drive, Lagos, Nigeria";
+const schoolPhone = "+234 801 234 5678";
+const schoolPhoneHref = "tel:+2348012345678";
+const schoolEmail = "info@dxtacademy.edu.ng";
+const schoolEmailHref = "mailto:info@dxtacademy.edu.ng";
+const schoolHours = "Monday to Friday, 8:00 AM - 4:00 PM";
+const footerDescription =
+  "DXT Academy is committed to raising confident leaders through academic excellence, strong character, and a deep sense of purpose.";
+
+const academicsOverviewStyleFields = [
+  colorField(
+    "sectionBgColor",
+    "Section background color",
+    "main > section:nth-of-type(2)",
+    {
+      target: "cssVariable",
+      cssVariable: "--dexta-academy-2-academics-overview-section-bg",
+      defaultValue: "#ffffff",
+      uiGroup: "Section style",
+      uiOrder: 100,
+    },
+  ),
+  colorField("cardBgColor", "Card background color", ".info-card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-overview-card-bg",
+    defaultValue: "#ffffff",
+    uiGroup: "Card style",
+    uiOrder: 110,
+  }),
+  colorField("iconBgColor", "Icon background color", ".info-card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-overview-icon-bg",
+    defaultValue: "#fff4cc",
+    uiGroup: "Icon style",
+    uiOrder: 120,
+  }),
+  colorField("iconColor", "Icon color", ".info-card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-overview-icon-color",
+    defaultValue: "#9b7104",
+    uiGroup: "Icon style",
+    uiOrder: 121,
+  }),
+  colorField("titleColor", "Title color", ".info-card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-overview-title-color",
+    defaultValue: "#102034",
+    uiGroup: "Text style",
+    uiOrder: 130,
+  }),
+  textField("titleFont", "Title font", ".info-card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-overview-title-font",
+    defaultValue: "Manrope",
+    uiGroup: "Text style",
+    uiOrder: 131,
+  }),
+  textField("titleFontStyle", "Title font style", ".info-card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-overview-title-font-style",
+    defaultValue: "normal",
+    helpText: "Use normal, italic, or oblique.",
+    uiGroup: "Text style",
+    uiOrder: 132,
+  }),
+  colorField("descriptionColor", "Description color", ".info-card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-overview-description-color",
+    defaultValue: "#58708a",
+    uiGroup: "Description style",
+    uiOrder: 140,
+  }),
+  textField("descriptionFont", "Description font", ".info-card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-overview-description-font",
+    defaultValue: "Plus Jakarta Sans",
+    uiGroup: "Description style",
+    uiOrder: 141,
+  }),
+  textField("descriptionFontStyle", "Description font style", ".info-card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-overview-description-font-style",
+    defaultValue: "normal",
+    helpText: "Use normal, italic, or oblique.",
+    uiGroup: "Description style",
+    uiOrder: 142,
+  }),
+  colorField("borderColor", "Border color", ".info-card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-overview-border-color",
+    defaultValue: "#e7edf3",
+    uiGroup: "Border style",
+    uiOrder: 150,
+  }),
+  numberField("borderWidth", "Border width", ".info-card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-overview-border-width",
+    defaultValue: 1,
+    min: 0,
+    max: 12,
+    step: 1,
+    unit: "px",
+    helpText: "Set to 0 to remove the border.",
+    uiGroup: "Border style",
+    uiOrder: 151,
+  }),
+];
+
+const academicsSubjectsStyleFields = [
+  colorField(
+    "sectionBgColor",
+    "Section background color",
+    "main > section:nth-of-type(3)",
+    {
+      target: "cssVariable",
+      cssVariable: "--dexta-academy-2-academics-subjects-section-bg",
+      defaultValue: "#081827",
+      uiGroup: "Section style",
+      uiOrder: 100,
+    },
+  ),
+  colorField("cardBgColor", "Card background color", ".card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-subjects-card-bg",
+    defaultValue: "#ffffff",
+    uiGroup: "Card style",
+    uiOrder: 110,
+  }),
+  colorField("iconBgColor", "Icon background color", ".card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-subjects-icon-bg",
+    defaultValue: "#ffc433",
+    uiGroup: "Icon style",
+    uiOrder: 120,
+  }),
+  colorField("iconColor", "Icon color", ".card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-subjects-icon-color",
+    defaultValue: "#091624",
+    uiGroup: "Icon style",
+    uiOrder: 121,
+  }),
+  colorField("titleColor", "Title color", ".card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-subjects-title-color",
+    defaultValue: "#102034",
+    uiGroup: "Text style",
+    uiOrder: 130,
+  }),
+  textField("titleFont", "Title font", ".card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-subjects-title-font",
+    defaultValue: "Manrope",
+    uiGroup: "Text style",
+    uiOrder: 131,
+  }),
+  textField("titleFontStyle", "Title font style", ".card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-subjects-title-font-style",
+    defaultValue: "normal",
+    helpText: "Use normal, italic, or oblique.",
+    uiGroup: "Text style",
+    uiOrder: 132,
+  }),
+  colorField("descriptionColor", "Description color", ".card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-subjects-description-color",
+    defaultValue: "#58708a",
+    uiGroup: "Description style",
+    uiOrder: 140,
+  }),
+  textField("descriptionFont", "Description font", ".card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-subjects-description-font",
+    defaultValue: "Plus Jakarta Sans",
+    uiGroup: "Description style",
+    uiOrder: 141,
+  }),
+  textField("descriptionFontStyle", "Description font style", ".card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-subjects-description-font-style",
+    defaultValue: "normal",
+    helpText: "Use normal, italic, or oblique.",
+    uiGroup: "Description style",
+    uiOrder: 142,
+  }),
+  colorField("borderColor", "Border color", ".card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-subjects-border-color",
+    defaultValue: "#e7edf3",
+    uiGroup: "Border style",
+    uiOrder: 150,
+  }),
+  numberField("borderWidth", "Border width", ".card", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-subjects-border-width",
+    defaultValue: 1,
+    min: 0,
+    max: 12,
+    step: 1,
+    unit: "px",
+    helpText: "Set to 0 to remove the border.",
+    uiGroup: "Border style",
+    uiOrder: 151,
+  }),
+];
+
+const academicsLearningStyleFields = [
+  colorField(
+    "sectionBgColor",
+    "Section background color",
+    "main > section:nth-of-type(4)",
+    {
+      target: "cssVariable",
+      cssVariable: "--dexta-academy-2-academics-learning-section-bg",
+      defaultValue: "#ffffff",
+      uiGroup: "Section style",
+      uiOrder: 100,
+    },
+  ),
+  colorField("titleColor", "Title color", ".feature-split", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-learning-title-color",
+    defaultValue: "#102034",
+    uiGroup: "Text style",
+    uiOrder: 110,
+  }),
+  textField("titleFont", "Title font", ".feature-split", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-learning-title-font",
+    defaultValue: "Manrope",
+    uiGroup: "Text style",
+    uiOrder: 111,
+  }),
+  textField("titleFontStyle", "Title font style", ".feature-split", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-learning-title-font-style",
+    defaultValue: "normal",
+    helpText: "Use normal, italic, or oblique.",
+    uiGroup: "Text style",
+    uiOrder: 112,
+  }),
+  colorField("descriptionColor", "Description color", ".feature-split", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-learning-description-color",
+    defaultValue: "#58708a",
+    uiGroup: "Description style",
+    uiOrder: 120,
+  }),
+  textField("descriptionFont", "Description font", ".feature-split", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-learning-description-font",
+    defaultValue: "Plus Jakarta Sans",
+    uiGroup: "Description style",
+    uiOrder: 121,
+  }),
+  textField(
+    "descriptionFontStyle",
+    "Description font style",
+    ".feature-split",
+    {
+      target: "cssVariable",
+      cssVariable:
+        "--dexta-academy-2-academics-learning-description-font-style",
+      defaultValue: "normal",
+      helpText: "Use normal, italic, or oblique.",
+      uiGroup: "Description style",
+      uiOrder: 122,
+    },
+  ),
+  colorField("stepBgColor", "Step background color", ".steps li", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-learning-step-bg",
+    defaultValue: "#ffffff",
+    uiGroup: "Step style",
+    uiOrder: 130,
+  }),
+  colorField("stepNumberBgColor", "Step number background", ".steps li", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-learning-step-number-bg",
+    defaultValue: "#fff4cc",
+    uiGroup: "Step style",
+    uiOrder: 131,
+  }),
+  colorField("stepNumberColor", "Step number color", ".steps li", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-learning-step-number-color",
+    defaultValue: "#9b7104",
+    uiGroup: "Step style",
+    uiOrder: 132,
+  }),
+  colorField("stepTextColor", "Step text color", ".steps li", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-learning-step-text-color",
+    defaultValue: "#58708a",
+    uiGroup: "Step style",
+    uiOrder: 133,
+  }),
+  colorField("stepBorderColor", "Step border color", ".steps li", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-learning-step-border-color",
+    defaultValue: "#e7edf3",
+    uiGroup: "Step style",
+    uiOrder: 140,
+  }),
+  numberField("stepBorderWidth", "Step border width", ".steps li", {
+    target: "cssVariable",
+    cssVariable: "--dexta-academy-2-academics-learning-step-border-width",
+    defaultValue: 0,
+    min: 0,
+    max: 12,
+    step: 1,
+    unit: "px",
+    helpText: "Set to 0 to remove the border.",
+    uiGroup: "Step style",
+    uiOrder: 141,
+  }),
+];
 
 const pageHeroSection = {
   id: "page-hero",
@@ -27,6 +355,58 @@ const pageHeroSection = {
     textField("eyebrow", "Eyebrow", ".eyebrow"),
     textField("title", "Title", ".page-hero__title, h1"),
     textareaField("body", "Body", ".page-hero__copy"),
+    backgroundImageField("backgroundImage", "Background image", ".page-hero", {
+      target: "cssVariable",
+      cssVariable: "--dexta-academy-2-page-hero-background-image",
+      defaultValue: heroDesktopTreeImage,
+      uiGroup: "Hero images",
+      uiOrder: 10,
+      helpText: "Main background layer behind the page title.",
+    }),
+    backgroundImageField(
+      "buildingImage",
+      "Building overlay image",
+      ".page-hero",
+      {
+        target: "cssVariable",
+        cssVariable: "--dexta-academy-2-page-hero-building-image",
+        defaultValue: heroDesktopBuildingImage,
+        uiGroup: "Hero images",
+        uiOrder: 20,
+        helpText: "Foreground building layer above the background image.",
+      },
+    ),
+    backgroundImageField(
+      "mobileBackgroundImage",
+      "Mobile background image",
+      ".page-hero",
+      {
+        target: "cssVariable",
+        cssVariable: "--dexta-academy-2-page-hero-mobile-background-image",
+        scope: "mobile",
+        defaultValue: heroMobileBackgroundImage,
+        uiGroup: "Mobile hero images",
+        uiOrder: 25,
+        helpText: "Small screens can use a separate page hero background.",
+      },
+    ),
+    colorField("overlayColor", "Overlay color", ".page-hero", {
+      target: "cssVariable",
+      cssVariable: "--dexta-academy-2-page-hero-overlay-color",
+      defaultValue: "#04111d",
+      uiGroup: "Overlay",
+      uiOrder: 30,
+    }),
+    numberField("overlayOpacity", "Overlay opacity", ".page-hero", {
+      target: "cssVariable",
+      cssVariable: "--dexta-academy-2-page-hero-overlay-opacity",
+      defaultValue: 0.62,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      uiGroup: "Overlay",
+      uiOrder: 31,
+    }),
   ],
 };
 
@@ -49,10 +429,32 @@ export const dextaAcademy2Manifest = {
       description:
         "Header is injected by assets/js/app.js and appears on every page.",
       fields: [
-        textField("brandName", "Brand name", "[data-brand-name], .brand__name"),
-        imageField("logo", "Logo", ".brand img, .site-logo"),
-        textField("primaryCtaText", "Primary CTA text", ".site-header .button"),
-        linkField("primaryCtaHref", "Primary CTA link", ".site-header .button"),
+        textField("brandName", "Brand name", ".brand__copy strong"),
+        textField("brandTagline", "Brand tagline", ".brand__copy span"),
+        imageField("logo", "Logo", ".brand__mark", {
+          helpText:
+            "Used when the Navbar theme logo is empty. The Navbar tab logo still takes priority.",
+        }),
+        textField(
+          "portalCtaText",
+          "Portal CTA text",
+          ".site-header__actions .button--outline-light span:nth-of-type(1), .mobile-panel__actions .button--outline-light span:nth-of-type(1)",
+        ),
+        linkField(
+          "portalCtaHref",
+          "Portal CTA link",
+          ".site-header__actions .button--outline-light, .mobile-panel__actions .button--outline-light",
+        ),
+        textField(
+          "primaryCtaText",
+          "Primary CTA text",
+          ".site-header__actions .button--primary span:nth-of-type(1), .mobile-panel__actions .button--primary span:nth-of-type(1)",
+        ),
+        linkField(
+          "primaryCtaHref",
+          "Primary CTA link",
+          ".site-header__actions .button--primary, .mobile-panel__actions .button--primary",
+        ),
       ],
     },
     {
@@ -62,14 +464,276 @@ export const dextaAcademy2Manifest = {
       description:
         "Footer is injected by assets/js/app.js and appears on every page.",
       fields: [
+        textField("brandName", "Brand name", ".brand__copy strong", {
+          defaultValue: "DXT ACADEMY",
+          uiGroup: "Brand",
+          uiOrder: 10,
+        }),
+        textField("brandTagline", "Brand tagline", ".brand__copy span", {
+          defaultValue: "Nurturing. Inspiring. Leading.",
+          uiGroup: "Brand",
+          uiOrder: 11,
+        }),
+        textareaField("description", "Description", ".footer__main > p", {
+          defaultValue: footerDescription,
+          uiGroup: "Brand",
+          uiOrder: 12,
+        }),
         textField(
-          "brandName",
-          "Brand name",
-          ".site-footer [data-brand-name], .footer-brand",
+          "homeLinkText",
+          "Home link label",
+          ".footer__links a:nth-of-type(1)",
+          {
+            defaultValue: "Home",
+            uiGroup: "Navigation",
+            uiOrder: 20,
+          },
         ),
-        textareaField("description", "Description", ".site-footer p"),
-        textField("phone", "Phone", ".site-footer a[href^='tel:']"),
-        textField("email", "Email", ".site-footer a[href^='mailto:']"),
+        linkField(
+          "homeLinkHref",
+          "Home link URL",
+          ".footer__links a:nth-of-type(1)",
+          {
+            defaultValue: "index.html",
+            uiGroup: "Navigation",
+            uiOrder: 21,
+          },
+        ),
+        textField(
+          "aboutLinkText",
+          "About link label",
+          ".footer__links a:nth-of-type(2)",
+          {
+            defaultValue: "About Us",
+            uiGroup: "Navigation",
+            uiOrder: 22,
+          },
+        ),
+        linkField(
+          "aboutLinkHref",
+          "About link URL",
+          ".footer__links a:nth-of-type(2)",
+          {
+            defaultValue: "about.html",
+            uiGroup: "Navigation",
+            uiOrder: 23,
+          },
+        ),
+        textField(
+          "academicsLinkText",
+          "Academics link label",
+          ".footer__links a:nth-of-type(3)",
+          {
+            defaultValue: "Academics",
+            uiGroup: "Navigation",
+            uiOrder: 24,
+          },
+        ),
+        linkField(
+          "academicsLinkHref",
+          "Academics link URL",
+          ".footer__links a:nth-of-type(3)",
+          {
+            defaultValue: "academics.html",
+            uiGroup: "Navigation",
+            uiOrder: 25,
+          },
+        ),
+        textField(
+          "admissionsLinkText",
+          "Admissions link label",
+          ".footer__links a:nth-of-type(4)",
+          {
+            defaultValue: "Admissions",
+            uiGroup: "Navigation",
+            uiOrder: 26,
+          },
+        ),
+        linkField(
+          "admissionsLinkHref",
+          "Admissions link URL",
+          ".footer__links a:nth-of-type(4)",
+          {
+            defaultValue: "admissions.html",
+            uiGroup: "Navigation",
+            uiOrder: 27,
+          },
+        ),
+        textField(
+          "studentLifeLinkText",
+          "Student Life link label",
+          ".footer__links a:nth-of-type(5)",
+          {
+            defaultValue: "Student Life",
+            uiGroup: "Navigation",
+            uiOrder: 28,
+          },
+        ),
+        linkField(
+          "studentLifeLinkHref",
+          "Student Life link URL",
+          ".footer__links a:nth-of-type(5)",
+          {
+            defaultValue: "student-life.html",
+            uiGroup: "Navigation",
+            uiOrder: 29,
+          },
+        ),
+        textField(
+          "galleryLinkText",
+          "Gallery link label",
+          ".footer__links a:nth-of-type(6)",
+          {
+            defaultValue: "Gallery",
+            uiGroup: "Navigation",
+            uiOrder: 30,
+          },
+        ),
+        linkField(
+          "galleryLinkHref",
+          "Gallery link URL",
+          ".footer__links a:nth-of-type(6)",
+          {
+            defaultValue: "gallery.html",
+            uiGroup: "Navigation",
+            uiOrder: 31,
+          },
+        ),
+        textField(
+          "contactLinkText",
+          "Contact link label",
+          ".footer__links a:nth-of-type(7)",
+          {
+            defaultValue: "Contact",
+            uiGroup: "Navigation",
+            uiOrder: 32,
+          },
+        ),
+        linkField(
+          "contactLinkHref",
+          "Contact link URL",
+          ".footer__links a:nth-of-type(7)",
+          {
+            defaultValue: "contact.html",
+            uiGroup: "Navigation",
+            uiOrder: 33,
+          },
+        ),
+        textareaField("address", "Address", ".footer__contact span", {
+          defaultValue: schoolAddress,
+          uiGroup: "Contact",
+          uiOrder: 40,
+        }),
+        textField("phone", "Phone", ".footer__contact a[href^='tel:']", {
+          defaultValue: schoolPhone,
+          uiGroup: "Contact",
+          uiOrder: 41,
+        }),
+        linkField(
+          "phoneHref",
+          "Phone link",
+          ".footer__contact a[href^='tel:']",
+          {
+            defaultValue: schoolPhoneHref,
+            uiGroup: "Contact",
+            uiOrder: 42,
+          },
+        ),
+        textField("email", "Email", ".footer__contact a[href^='mailto:']", {
+          defaultValue: schoolEmail,
+          uiGroup: "Contact",
+          uiOrder: 43,
+        }),
+        linkField(
+          "emailHref",
+          "Email link",
+          ".footer__contact a[href^='mailto:']",
+          {
+            defaultValue: schoolEmailHref,
+            uiGroup: "Contact",
+            uiOrder: 44,
+          },
+        ),
+        textareaField("copyright", "Copyright", ".footer__bottom > p", {
+          defaultValue: "Copyright 2026 DXT Academy. All rights reserved.",
+          uiGroup: "Legal",
+          uiOrder: 50,
+        }),
+        textField(
+          "privacyText",
+          "Privacy link label",
+          ".footer__legal a:nth-of-type(1)",
+          {
+            defaultValue: "Privacy Policy",
+            uiGroup: "Legal",
+            uiOrder: 51,
+          },
+        ),
+        linkField(
+          "privacyHref",
+          "Privacy link URL",
+          ".footer__legal a:nth-of-type(1)",
+          {
+            defaultValue: "privacy.html",
+            uiGroup: "Legal",
+            uiOrder: 52,
+          },
+        ),
+        textField(
+          "termsText",
+          "Terms link label",
+          ".footer__legal a:nth-of-type(2)",
+          {
+            defaultValue: "Terms of Use",
+            uiGroup: "Legal",
+            uiOrder: 53,
+          },
+        ),
+        linkField(
+          "termsHref",
+          "Terms link URL",
+          ".footer__legal a:nth-of-type(2)",
+          {
+            defaultValue: "terms.html",
+            uiGroup: "Legal",
+            uiOrder: 54,
+          },
+        ),
+      ],
+    },
+    {
+      id: "admission-modal",
+      label: "Admission Modal",
+      selector: ".admission-modal__dialog",
+      description:
+        "Admission modal is injected by assets/js/app.js and opens from the admission buttons.",
+      fields: [
+        textField("eyebrow", "Eyebrow", ".admission-modal__header .eyebrow", {
+          defaultValue: "Admissions Form",
+        }),
+        textField("title", "Title", "#admission-modal-title", {
+          defaultValue: "Apply to DXT Academy",
+        }),
+        linkField("formUrl", "Google Form URL", "iframe", {
+          attribute: "data-src",
+          defaultValue: admissionFormUrl,
+          helpText:
+            "This template lazy-loads the form when the modal opens, so the preview updates the iframe data source.",
+        }),
+        textareaField("formIframe", "Google Form iframe embed code", "iframe", {
+          target: "attribute",
+          attribute: "data-src",
+          defaultValue: "",
+          placeholder:
+            '<iframe src="https://docs.google.com/forms/..." width="640" height="1602" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>',
+          helpText:
+            "Paste the full Google Forms iframe embed code. Leave blank to use the Google Form URL field.",
+        }),
+        textField("formTitle", "Iframe title", "iframe", {
+          target: "attribute",
+          attribute: "title",
+          defaultValue: "DXT Academy admission form",
+        }),
       ],
     },
   ],
@@ -301,7 +965,7 @@ export const dextaAcademy2Manifest = {
         {
           id: "who-we-are",
           label: "Who We Are",
-          selector: ".feature-split",
+          selector: ".section--dark .feature-split",
           fields: [
             textField("eyebrow", "Eyebrow", ".eyebrow"),
             textField("title", "Title", ".section-title"),
@@ -316,7 +980,9 @@ export const dextaAcademy2Manifest = {
               "Feature text",
               "span:not(.feature-list__bullet)",
             ),
-            imageField("image", "Image", ".feature-split__media img"),
+            imageField("image", "Image", ".feature-split__media img", {
+              defaultValue: aboutLearningImage,
+            }),
           ],
           repeatable: {
             itemSelector: ".feature-list li",
@@ -333,7 +999,9 @@ export const dextaAcademy2Manifest = {
             textField("title", "Title", ".section-title"),
             textareaField("body", "Preview body", ".section-copy"),
             textField("ctaText", "Read more button text", ".button"),
-            imageField("image", "Image", ".feature-split__media img"),
+            imageField("image", "Image", ".feature-split__media img", {
+              defaultValue: aboutLearningImage,
+            }),
           ],
         },
         {
@@ -376,7 +1044,26 @@ export const dextaAcademy2Manifest = {
           label: "Why Families Choose Us",
           selector: ".feature-split--reverse",
           fields: [
-            imageField("image", "Image", ".feature-split__media img"),
+            imageField(
+              "image",
+              "Founder/family image",
+              ".feature-split__media img",
+              {
+                defaultValue: aboutFamilyChoiceImage,
+                helpText:
+                  "Photo shown beside the Why Families Choose Us quote.",
+              },
+            ),
+            backgroundImageField(
+              "secondaryImage",
+              "Quote side image",
+              ".image-stack__block",
+              {
+                defaultValue: aboutFamilyChoiceSecondaryImage,
+                helpText:
+                  "Background image shown beside the quote card in this section.",
+              },
+            ),
             textField("eyebrow", "Eyebrow", ".eyebrow"),
             textField("title", "Title", ".section-title"),
             textareaField("body", "Body", ".section-copy"),
@@ -395,8 +1082,9 @@ export const dextaAcademy2Manifest = {
         {
           id: "overview",
           label: "Overview",
-          selector: ".section > .container.info-grid",
+          selector: "main > section:nth-of-type(2)",
           fields: [
+            ...academicsOverviewStyleFields,
             textField("overviewIcon", "Overview icon", ".info-card__icon", {
               target: "attribute",
               attribute: "data-icon",
@@ -413,8 +1101,9 @@ export const dextaAcademy2Manifest = {
         {
           id: "subjects",
           label: "Subjects",
-          selector: ".section--dark .programs__cards",
+          selector: "main > section:nth-of-type(3)",
           fields: [
+            ...academicsSubjectsStyleFields,
             imageField("subjectImage", "Subject image", ".card__media img"),
             textField(
               "subjectImageAlt",
@@ -441,8 +1130,9 @@ export const dextaAcademy2Manifest = {
         {
           id: "learning-approach",
           label: "Learning Approach",
-          selector: ".feature-split",
+          selector: "main > section:nth-of-type(4)",
           fields: [
+            ...academicsLearningStyleFields,
             textField("eyebrow", "Eyebrow", ".eyebrow"),
             textField("title", "Title", ".section-title"),
             textareaField("body", "Body", ".section-copy"),
@@ -649,14 +1339,84 @@ export const dextaAcademy2Manifest = {
       sections: [
         pageHeroSection,
         {
+          id: "contact-form",
+          label: "Contact Form",
+          selector: ".google-form-card",
+          fields: [
+            textField("eyebrow", "Eyebrow", ".form-card__heading .eyebrow"),
+            textField("title", "Title", ".form-card__heading .section-title"),
+            textareaField("body", "Body", ".form-card__heading .section-copy"),
+            linkField("formUrl", "Google Form URL", "iframe", {
+              attribute: "src",
+              defaultValue: contactFormUrl,
+            }),
+            textareaField(
+              "formIframe",
+              "Google Form iframe embed code",
+              "iframe",
+              {
+                target: "attribute",
+                attribute: "src",
+                defaultValue: "",
+                placeholder:
+                  '<iframe src="https://docs.google.com/forms/..." width="640" height="1602" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>',
+                helpText:
+                  "Paste the full Google Forms iframe embed code. Leave blank to use the Google Form URL field.",
+              },
+            ),
+            textField("formTitle", "Iframe title", "iframe", {
+              target: "attribute",
+              attribute: "title",
+              defaultValue: "DXT Academy contact form",
+            }),
+          ],
+        },
+        {
           id: "contact-details",
           label: "Contact Details",
-          selector: ".section",
+          selector: ".accent-panel",
           fields: [
-            textField("title", "Title", "h2"),
-            textField("phone", "Phone", "a[href^='tel:']"),
-            textField("email", "Email", "a[href^='mailto:']"),
-            textareaField("address", "Address", "address, p"),
+            textField("heading", "Title", "h3"),
+            textareaField(
+              "location",
+              "Address",
+              ".simple-list li:nth-of-type(1) span:nth-of-type(2)",
+              {
+                defaultValue: schoolAddress,
+              },
+            ),
+            textField("phone", "Phone", ".simple-list li:nth-of-type(2) a", {
+              defaultValue: schoolPhone,
+            }),
+            linkField(
+              "phoneHref",
+              "Phone link",
+              ".simple-list li:nth-of-type(2) a",
+              {
+                defaultValue: schoolPhoneHref,
+              },
+            ),
+            textField("email", "Email", ".simple-list li:nth-of-type(3) a", {
+              defaultValue: schoolEmail,
+            }),
+            linkField(
+              "emailHref",
+              "Email link",
+              ".simple-list li:nth-of-type(3) a",
+              {
+                defaultValue: schoolEmailHref,
+              },
+            ),
+            textField(
+              "officeHours",
+              "Office hours",
+              ".simple-list li:nth-of-type(4) span:nth-of-type(2)",
+              {
+                defaultValue: schoolHours,
+              },
+            ),
+            textareaField("quote", "Quote", ".quote-card p"),
+            textField("quoteAuthor", "Quote author", ".quote-card strong"),
           ],
         },
       ],

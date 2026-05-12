@@ -16,6 +16,40 @@ const legacyPageHeader = {
   ],
 };
 
+const formIframePlaceholder =
+  '<iframe src="https://docs.google.com/forms/..." width="640" height="1602" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>';
+
+const formIframeHelpText =
+  "Paste the full Google Forms iframe embed code. Leave blank to use the Google Form URL field.";
+
+const admissionModalSection = {
+  id: "admission-modal",
+  label: "Admission Modal",
+  selector: ".landing-admissions-modal",
+  fields: [
+    textField(
+      "eyebrow",
+      "Eyebrow",
+      ".landing-admissions-modal__header .landing-eyebrow",
+    ),
+    textField("title", "Title", "#admissionsModalLabel"),
+    linkField("formUrl", "Google Form URL", "iframe", {
+      attribute: "src",
+    }),
+    textareaField("formIframe", "Google Form iframe embed code", "iframe", {
+      target: "attribute",
+      attribute: "src",
+      defaultValue: "",
+      placeholder: formIframePlaceholder,
+      helpText: formIframeHelpText,
+    }),
+    textField("formTitle", "Iframe title", "iframe", {
+      target: "attribute",
+      attribute: "title",
+    }),
+  ],
+};
+
 export const dextaAcademy1Manifest = {
   templateSlug: "dexta-academy-1",
   templateName: "Dexta Academy 1",
@@ -197,8 +231,28 @@ export const dextaAcademy1Manifest = {
             textField("phone", "Phone", "a[href^='tel:'], p"),
             textField("email", "Email", "a[href^='mailto:'], p"),
             textareaField("address", "Address", "address, p"),
+            linkField("formUrl", "School/contact Google Form URL", "iframe", {
+              attribute: "src",
+            }),
+            textareaField(
+              "formIframe",
+              "School/contact iframe embed code",
+              "iframe",
+              {
+                target: "attribute",
+                attribute: "src",
+                defaultValue: "",
+                placeholder: formIframePlaceholder,
+                helpText: formIframeHelpText,
+              },
+            ),
+            textField("formTitle", "Iframe title", "iframe", {
+              target: "attribute",
+              attribute: "title",
+            }),
           ],
         },
+        admissionModalSection,
       ],
     },
     {
@@ -532,6 +586,7 @@ export const dextaAcademy1Manifest = {
             textField("ctaText", "CTA text", ".testimonials-page__button"),
           ],
         },
+        admissionModalSection,
       ],
     },
     {

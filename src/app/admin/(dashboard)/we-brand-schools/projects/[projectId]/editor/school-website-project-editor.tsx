@@ -623,7 +623,7 @@ function getFieldDisplayValue(
   field: SchoolTemplateProjectFieldSnapshot,
   value: EditableFieldValue,
 ) {
-  if (value !== null && value !== "") {
+  if (value !== null && value !== undefined) {
     return value;
   }
 
@@ -2544,6 +2544,55 @@ export function SchoolWebsiteProjectEditor({
                   updateTheme("loadingBackgroundColor", getStringValue(value))
                 }
               />
+              <FieldControl
+                field={{
+                  key: "loadingText",
+                  label: "Loading text",
+                  type: "text",
+                  selector: "body",
+                  target: "textContent",
+                }}
+                value={draft.theme.loadingText}
+                onChange={(value) =>
+                  updateTheme("loadingText", getStringValue(value))
+                }
+              />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <FieldControl
+                  field={{
+                    key: "loadingLogoWidth",
+                    label: "Loading logo width",
+                    type: "number",
+                    selector: "body",
+                    target: "inlineStyle",
+                    unit: "px",
+                    min: 16,
+                    max: 320,
+                    step: 1,
+                  }}
+                  value={draft.theme.loadingLogoWidth}
+                  onChange={(value) =>
+                    updateTheme("loadingLogoWidth", getNumberValue(value))
+                  }
+                />
+                <FieldControl
+                  field={{
+                    key: "loadingLogoHeight",
+                    label: "Loading logo height",
+                    type: "number",
+                    selector: "body",
+                    target: "inlineStyle",
+                    unit: "px",
+                    min: 16,
+                    max: 320,
+                    step: 1,
+                  }}
+                  value={draft.theme.loadingLogoHeight}
+                  onChange={(value) =>
+                    updateTheme("loadingLogoHeight", getNumberValue(value))
+                  }
+                />
+              </div>
             </div>
           </div>
         </aside>
