@@ -327,6 +327,42 @@ function admissionModalMarkup() {
   `;
 }
 
+function storyModalMarkup() {
+  return `
+    <div class="story-modal" data-story-modal-root aria-hidden="true">
+      <div class="story-modal__backdrop" data-story-modal-close></div>
+      <section class="story-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="story-modal-title">
+        <div class="story-modal__header">
+          <div>
+            <p class="eyebrow">about us</p>
+            <h2 id="story-modal-title">DXT Academy's Journey</h2>
+          </div>
+          <button class="icon-button story-modal__close" type="button" data-story-modal-close aria-label="Close story">
+            ${icon("close")}
+          </button>
+        </div>
+        <div class="story-modal__content">
+          <p>
+            DXT Academy was founded with a vision: to create an educational institution where rigorous academics, strong character development, and purposeful leadership converge. What began as a small initiative with a handful of passionate educators has blossomed into a thriving community of over 1,500 students.
+          </p>
+          <p>
+            Our story is one of purposeful growth. From day one, we refused to settle for conventional education. We believed that schools should nurture not just brilliant minds but confident, compassionate leaders who understand their role in society. This philosophy became the foundation upon which DXT Academy was built.
+          </p>
+          <p>
+            Over the years, we've invested in world-class facilities, recruited exceptional teachers, and developed innovative curricula that blend traditional excellence with 21st-century skills. Our students don't just excel in examinations—they thrive in life. With a 95% university progression rate and countless alumni making meaningful contributions across industries, we've proven that our approach works.
+          </p>
+          <p>
+            But our greatest pride isn't our statistics. It's the students who leave our halls as thinkers, problem-solvers, and changemakers. It's the parent testimonials that speak of transformation. It's the teacher stories of breakthrough moments with learners. Every day, DXT Academy lives out its mission: nurturing inspired learners and courageous leaders.
+          </p>
+          <p>
+            As we continue to grow, we remain committed to the values that define us—integrity, respect, responsibility, and excellence. We invite you to become part of our story.
+          </p>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
 function mountShell() {
   const page = document.body.dataset.page || "home";
   const header = document.querySelector("[data-site-header]");
@@ -342,6 +378,10 @@ function mountShell() {
 
   if (!document.querySelector("[data-admission-modal-root]")) {
     document.body.insertAdjacentHTML("beforeend", admissionModalMarkup());
+  }
+
+  if (!document.querySelector("[data-story-modal-root]")) {
+    document.body.insertAdjacentHTML("beforeend", storyModalMarkup());
   }
 
   const year = document.querySelector("[data-year]");
@@ -426,6 +466,52 @@ function bindAdmissionModal() {
   });
 }
 
+function bindStoryModal() {
+  const modal = document.querySelector("[data-story-modal-root]");
+  if (!modal) {
+    return;
+  }
+
+  const triggers = document.querySelectorAll("[data-story-modal-trigger]");
+  const closeButtons = modal.querySelectorAll("[data-story-modal-close]");
+  const closeControl = modal.querySelector(".story-modal__close");
+  let previousFocus = null;
+
+  const openModal = (trigger) => {
+    previousFocus = trigger || document.activeElement;
+    modal.classList.add("is-open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+    closeControl?.focus();
+  };
+
+  const closeModal = () => {
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+    if (previousFocus && typeof previousFocus.focus === "function") {
+      previousFocus.focus();
+    }
+  };
+
+  triggers.forEach((trigger) => {
+    trigger.addEventListener("click", (event) => {
+      event.preventDefault();
+      openModal(trigger);
+    });
+  });
+
+  closeButtons.forEach((button) => {
+    button.addEventListener("click", closeModal);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && modal.classList.contains("is-open")) {
+      closeModal();
+    }
+  });
+}
+
 function bindScrollState() {
   const header = document.querySelector("[data-site-header]");
   if (!header) {
@@ -457,7 +543,7 @@ function animateStats() {
         const value = target.dataset.stat;
         const numeric = Number.parseInt(value.replace(/\D/g, ""), 10);
         const suffix = value.replace(/[0-9]/g, "");
-        const start = window.performance.now();
+        const start = performance.now();
         const duration = 900;
 
         const tick = (time) => {
@@ -465,13 +551,13 @@ function animateStats() {
           const current = Math.round(progress * numeric);
           target.textContent = `${current.toLocaleString()}${suffix}`;
           if (progress < 1) {
-            window.requestAnimationFrame(tick);
+            requestAnimationFrame(tick);
           } else {
             target.textContent = value;
           }
         };
 
-        window.requestAnimationFrame(tick);
+        requestAnimationFrame(tick);
         observer.unobserve(target);
       });
     },
@@ -689,7 +775,7 @@ function waitForImageUrl(url) {
       return;
     }
 
-    const image = new window.Image();
+    const image = new Image();
     let isDone = false;
     const finish = () => {
       if (isDone) {
@@ -729,27 +815,14 @@ function waitForImageElement(image) {
       }
     };
 
-    if (image.complete) {
-      if (image.naturalWidth > 0) {
-        decode();
-      } else {
-        resolve();
-      }
-
+    if (image.complete && image.naturalWidth > 0) {
+      decode();
       return;
     }
 
     image.addEventListener("load", decode, { once: true });
     image.addEventListener("error", resolve, { once: true });
   });
-}
-
-function homeBackgroundUrls(element, pseudoElement) {
-  if (!element) {
-    return [];
-  }
-
-  return imageUrlsFromBackground(window.getComputedStyle(element, pseudoElement).backgroundImage);
 }
 
 function initHomePreloader() {
@@ -763,9 +836,9 @@ function initHomePreloader() {
   const heroBuilding = document.querySelector(".hero-home__building");
   const heroStudents = document.querySelector(".hero-home__students");
   const backgroundUrls = [
-    ...homeBackgroundUrls(hero),
-    ...homeBackgroundUrls(hero, "::before"),
-    ...homeBackgroundUrls(heroBuilding),
+    ...imageUrlsFromBackground(hero ? getComputedStyle(hero).backgroundImage : ""),
+    ...imageUrlsFromBackground(hero ? getComputedStyle(hero, "::before").backgroundImage : ""),
+    ...imageUrlsFromBackground(heroBuilding ? getComputedStyle(heroBuilding).backgroundImage : ""),
   ];
   const uniqueBackgroundUrls = Array.from(new Set(backgroundUrls));
   const tasks = [
@@ -775,11 +848,8 @@ function initHomePreloader() {
   const fallbackTimer = new Promise((resolve) => {
     window.setTimeout(resolve, 5000);
   });
-  const minimumDisplayTimer = new Promise((resolve) => {
-    window.setTimeout(resolve, 650);
-  });
 
-  return Promise.all([Promise.race([Promise.all(tasks), fallbackTimer]), minimumDisplayTimer]).then(
+  return Promise.race([Promise.all(tasks), fallbackTimer]).then(
     () =>
       new Promise((resolve) => {
         window.requestAnimationFrame(() => {
@@ -802,11 +872,12 @@ function decorateIcons() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  const homeReady = initHomePreloader();
   mountShell();
   decorateIcons();
+  const homeReady = initHomePreloader();
   bindMobileNavigation();
   bindAdmissionModal();
+  bindStoryModal();
   bindScrollState();
   bindContactForm();
   bindGalleryPagination();

@@ -2951,7 +2951,7 @@ export async function startSchoolWebsiteProject(
       return {
         success: false,
         message:
-          "No editable manifest was found for this template. Use a template slug or URL that matches dexta-academy-1, dexta-academy-2, dexta-academy-3, or dexta-academy-4.",
+          "No editable manifest was found for this template. Use a template slug or URL that matches dexta-academy-1, dexta-academy-2, dexta-academy-3, dexta-academy-4, or dexta-academy-5.",
       };
     }
 

@@ -274,11 +274,16 @@ export function isSchoolTemplateSourceSnapshot(
 const SAFE_RICH_TEXT_TAGS = [
   "p",
   "br",
+  "span",
   "strong",
   "b",
   "em",
   "i",
   "u",
+  "s",
+  "strike",
+  "sub",
+  "sup",
   "ul",
   "ol",
   "li",
@@ -288,6 +293,19 @@ const SAFE_RICH_TEXT_TAGS = [
   "h3",
   "h4",
 ];
+
+const SAFE_CSS_COLOR_PATTERN =
+  /^(?:#[0-9a-fA-F]{3,8}|rgba?\(\s*(?:\d{1,3}\s*,\s*){2}\d{1,3}(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\)|hsla?\(\s*\d{1,3}(?:deg)?\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\)|transparent|currentColor|inherit)$/;
+
+const SAFE_CSS_LENGTH_PATTERN =
+  /^(?:\d+(?:\.\d+)?(?:px|em|rem|%)|small|medium|large|x-large|xx-large|smaller|larger|inherit)$/;
+
+const SAFE_FONT_FAMILY_PATTERN = /^[a-zA-Z0-9\s"',()._-]+$/;
+
+const SAFE_TEXT_ALIGN_PATTERN = /^(?:left|right|center|justify|inherit)$/;
+
+const SAFE_TEXT_DECORATION_PATTERN =
+  /^(?:none|underline|line-through|underline line-through|inherit)$/;
 
 const DANGEROUS_TEXT_PATTERN =
   /<\s*\/?\s*script\b|<\s*\/?\s*(iframe|object|embed|link|meta|base|form|input|button|textarea|select|option)\b|on[a-z]+\s*=|javascript\s*:|vbscript\s*:|data\s*:\s*text\/html/i;
@@ -330,7 +348,18 @@ function sanitizeRichText(value: string) {
   return sanitizeHtml(value, {
     allowedTags: SAFE_RICH_TEXT_TAGS,
     allowedAttributes: {
-      a: ["href", "target", "rel"],
+      "*": ["style"],
+      a: ["href", "target", "rel", "style"],
+    },
+    allowedStyles: {
+      "*": {
+        color: [SAFE_CSS_COLOR_PATTERN],
+        "background-color": [SAFE_CSS_COLOR_PATTERN],
+        "font-size": [SAFE_CSS_LENGTH_PATTERN],
+        "font-family": [SAFE_FONT_FAMILY_PATTERN],
+        "text-align": [SAFE_TEXT_ALIGN_PATTERN],
+        "text-decoration": [SAFE_TEXT_DECORATION_PATTERN],
+      },
     },
     allowedSchemes: ["http", "https", "mailto", "tel"],
     transformTags: {
@@ -340,6 +369,7 @@ function sanitizeRichText(value: string) {
           href: attribs.href ?? "",
           target: "_blank",
           rel: "noopener noreferrer",
+          ...(attribs.style ? { style: attribs.style } : {}),
         },
       }),
     },
@@ -1121,6 +1151,28 @@ export function validateSchoolTemplateProjectContentReferences(
 
 function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
   switch (templateSlug) {
+    case "dexta-academy-5":
+      return {
+        logoUrl: "",
+        logoWidth: 48,
+        logoHeight: 56,
+        brandName: "DXT ACADEMY",
+        brandTagline: "Nurturing. Inspiring. Leading.",
+        brandTextVisible: true,
+        brandNameColor: "#2b2b2b",
+        brandTaglineColor: "#d4a437",
+        brandNameFontSize: 16,
+        brandTaglineFontSize: 12,
+        logoBorderEnabled: false,
+        logoBorderColor: "#d4a437",
+        logoBorderRadius: 0,
+        primaryColor: "#31401c",
+        secondaryColor: "#d4a437",
+        fontFamily: "Manrope",
+        loadingBackgroundColor: "#ffffff",
+        navBarColor: "#ffffff",
+        navBarTransparent: true,
+      };
     case "dexta-academy-4":
       return {
         logoUrl:

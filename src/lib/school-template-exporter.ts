@@ -891,6 +891,12 @@ function getThemeVariableDeclarations(content: SchoolTemplateProjectContent) {
   --primary: ${primary};
   --orange: ${secondary};
   --warning: ${secondary};`;
+    case "dexta-academy-5":
+      return `${common}
+  --navy: ${primary};
+  --navy-soft: ${primaryDark};
+  --gold: ${secondary};
+  --gold-deep: ${secondaryDark};`;
     default:
       return common;
   }
@@ -1026,11 +1032,13 @@ body[data-page="home"] .site-header__bar {
   css.push(`
 .brand__name,
 .brand__copy,
+.brand__text,
 .contact-brand > span {
   display: ${brandTextDisplay} !important;
 }
 .brand__name span,
 .brand__copy span,
+.brand__text span,
 .contact-brand small {
   display: ${brandLine2Display} !important;
 }`);
@@ -1053,6 +1061,7 @@ body[data-page="home"] .site-header__bar {
     css.push(`
 .brand__name strong,
 .brand__copy strong,
+.brand__text strong,
 .contact-brand strong,
 .school-footer-brand h3 {
   color: ${content.theme.brandNameColor} !important;
@@ -1060,6 +1069,7 @@ body[data-page="home"] .site-header__bar {
 }
 .brand__name span,
 .brand__copy span,
+.brand__text span,
 .contact-brand small {
   color: ${content.theme.brandTaglineColor} !important;
   font-size: ${content.theme.brandTaglineFontSize}px !important;
@@ -1253,6 +1263,59 @@ body[data-page="home"] .hero-home__actions .button--primary:hover {
 .gallery-pagination-number {
   border-color: ${primary} !important;
 }`;
+    case "dexta-academy-5":
+      return `
+.hero,
+.site-footer,
+.page-hero--about,
+.page-hero--campus,
+.page-hero--contact,
+.page-hero--center,
+.page-section--olive,
+.value-card--dark,
+.contact-form-panel {
+  background: ${primary} !important;
+}
+.button--primary,
+.hero .button--primary,
+.button--olive,
+.about-preview__button,
+.journey-action {
+  background: ${primary} !important;
+  color: #fff !important;
+}
+.header-cta,
+.approach-section .button--olive,
+.page-actions .button--olive,
+.journey-action__icon,
+.story-read-more {
+  background: ${secondary} !important;
+  color: ${primary} !important;
+}
+.hero__eyebrow,
+.section-heading > p,
+.page-kicker,
+.about-preview__eyebrow,
+.programme-card--gold a,
+.gallery-card span,
+.contact-panel article span {
+  color: ${secondary} !important;
+}
+.programme-card__icon,
+.value-card span,
+.testimonial-card > span {
+  color: ${secondary} !important;
+}
+.site-nav a.is-active,
+.site-nav a:hover,
+.programme-card a {
+  color: ${primary} !important;
+}
+.site-nav a:not(.site-nav__button)::after,
+.testimonial-dots span,
+.about-preview__quote-mark {
+  background: ${secondary} !important;
+}`;
     default:
       return "";
   }
@@ -1389,13 +1452,13 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
 	    setImageLogo(".navbar-brand img, .hero-brand img, .school-footer-brand-logo, .site-preloader-logo, .contact-footer__brand img");
 	    replaceMarkLogo(".brand__mark, .brand__crest, .site-loader__mark, .page-loader__crest");
 
-    setDisplay(".brand__name, .brand__copy, .contact-brand > span", showText);
+    setDisplay(".brand__name, .brand__copy, .brand__text, .contact-brand > span", showText);
     setDisplay(".site-loader__text", showText && Boolean(fullLoaderName));
-    setDisplay(".brand__name span, .brand__copy span, .contact-brand small", showText && Boolean(brandTagline));
+    setDisplay(".brand__name span, .brand__copy span, .brand__text span, .contact-brand small", showText && Boolean(brandTagline));
 
 	    if (!templateTwoDefaultText) {
-	      setText(".brand__name strong, .brand__copy strong, .contact-brand strong, .school-footer-brand h3", brandName);
-	      setText(".brand__name span, .brand__copy span, .contact-brand small", brandTagline);
+	      setText(".brand__name strong, .brand__copy strong, .brand__text strong, .contact-brand strong, .school-footer-brand h3", brandName);
+	      setText(".brand__name span, .brand__copy span, .brand__text span, .contact-brand small", brandTagline);
 	    }
 	    setText(".site-loader__text", fullLoaderName ? "Loading " + fullLoaderName : "");
 

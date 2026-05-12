@@ -413,8 +413,29 @@ export const dextaAcademy4Manifest = {
           fields: [
             textField("eyebrow", "Eyebrow", ".section-kicker"),
             textField("title", "Title", "h2"),
-            textareaField("body", "Body", "p"),
+            textareaField("body1", "Preview paragraph 1", "p:nth-of-type(1)"),
+            textareaField("body2", "Preview paragraph 2", "p:nth-of-type(2)"),
+            textField(
+              "ctaText",
+              "Read more button text",
+              ".about-story-readmore",
+            ),
             imageField("image", "Image", "img"),
+          ],
+        },
+        {
+          id: "story-modal",
+          label: "Story Modal",
+          selector: "#aboutStoryModal .modal-content",
+          fields: [
+            textField("eyebrow", "Eyebrow", ".modal-header .section-kicker"),
+            textField("title", "Modal title", "#aboutStoryModalLabel"),
+            textareaField("bodyHtml", "Full story", ".about-story-modal-body", {
+              type: "richText",
+              target: "innerHTML",
+              helpText:
+                "Paste the full story here. The editor will shorten the visible story preview to fit this template.",
+            }),
           ],
         },
         {

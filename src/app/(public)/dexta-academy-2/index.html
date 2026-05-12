@@ -31,9 +31,95 @@
         z-index: 200;
         display: grid;
         place-items: center;
+        padding: 24px;
         background: #081827;
         color: #ffffff;
         font-family: system-ui, sans-serif;
+        transition: opacity 0.45s ease, visibility 0.45s ease;
+      }
+
+      .site-loader[aria-hidden="true"] {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .site-loader__content {
+        display: grid;
+        justify-items: center;
+        gap: 18px;
+        width: min(100%, 320px);
+        text-align: center;
+      }
+
+      .site-loader__brand {
+        display: grid;
+        justify-items: center;
+        gap: 12px;
+      }
+
+      .site-loader__mark {
+        width: 78px;
+        height: 78px;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 196, 51, 0.76);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffc433;
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      .site-loader__mark svg {
+        width: 52px;
+        height: 52px;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .site-loader__name {
+        font-family: "Manrope", system-ui, sans-serif;
+        font-size: clamp(1.35rem, 1rem + 1vw, 1.9rem);
+        line-height: 1;
+        font-weight: 800;
+      }
+
+      .site-loader__text {
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 0.95rem;
+      }
+
+      .site-loader__bar {
+        position: relative;
+        display: block;
+        width: min(100%, 230px);
+        height: 4px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .site-loader__bar::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        width: 45%;
+        border-radius: inherit;
+        background: #ffc433;
+        animation: site-loader-bar 1.1s ease-in-out infinite;
+      }
+
+      @keyframes site-loader-bar {
+        0% {
+          transform: translateX(-110%);
+        }
+
+        100% {
+          transform: translateX(230%);
+        }
       }
     </style>
     <link rel="stylesheet" href="assets/css/styles.css" />
@@ -60,7 +146,17 @@
   <body data-page="home" class="is-home-loading">
     <div class="site-loader" data-home-loader role="status" aria-live="polite">
       <div class="site-loader__content">
-        <span class="site-loader__mark" aria-hidden="true">DXT</span>
+        <span class="site-loader__brand">
+          <span class="site-loader__mark" aria-hidden="true">
+            <svg viewBox="0 0 64 64">
+              <path d="M32 6L50 13V29C50 41 43 50 32 56C21 50 14 41 14 29V13L32 6Z"></path>
+              <path d="M32 15V45"></path>
+              <path d="M22 28C27 27 30 23 32 18C34 23 37 27 42 28"></path>
+              <path d="M22 37C27 36 30 32 32 27C34 32 37 36 42 37"></path>
+            </svg>
+          </span>
+          <span class="site-loader__name">DXT ACADEMY</span>
+        </span>
         <span class="site-loader__text">Loading DXT Academy</span>
         <span class="site-loader__bar" aria-hidden="true"></span>
       </div>

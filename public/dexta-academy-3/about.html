@@ -137,6 +137,13 @@
                   community known for academic excellence, character formation,
                   and preparing students to lead with confidence.
                 </p>
+                <button 
+                  class="button button--gold button--small" 
+                  data-story-modal-open
+                  aria-label="Read full story"
+                >
+                  Read More <span aria-hidden="true">→</span>
+                </button>
               </div>
               <figure class="about-story-card__media">
                 <img
@@ -524,6 +531,66 @@
           </div>
         </div>
       </footer>
+
+      <!-- Story Modal -->
+      <dialog class="story-modal" id="story-modal" hidden>
+        <div class="story-modal__backdrop"></div>
+        <div class="story-modal__panel">
+          <div class="story-modal__header">
+            <div>
+              <p class="story-modal__eyebrow">Our Story</p>
+              <h2>A Foundation Built For Growth</h2>
+            </div>
+            <button 
+              class="story-modal__close" 
+              data-story-modal-close
+              aria-label="Close modal"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="story-modal__body">
+            <div class="story-modal__content">
+              <h3>Our Journey</h3>
+              <p>
+                Founded in 2005, DXT Academy was established on a simple but powerful belief: every child can achieve greatness when given the right guidance, values, and opportunities.
+              </p>
+
+              <p>
+                What began as a small school with a handful of students and dedicated teachers has blossomed into a thriving learning community recognized for academic excellence, character formation, and preparing students to become confident leaders.
+              </p>
+
+              <h3>Growth and Evolution</h3>
+              <p>
+                Over the years, we have grown steadily while maintaining the core values that define us. We've expanded our facilities, enhanced our curriculum, and recruited world-class educators—all while staying true to our mission of nurturing every learner.
+              </p>
+
+              <p>
+                Today, DXT Academy stands as a beacon of quality education in the region, with thousands of alumni who have gone on to excel in universities and careers around the world.
+              </p>
+
+              <h3>Our Commitment</h3>
+              <p>
+                As we continue to evolve, we remain committed to:
+              </p>
+              <ul>
+                <li>Providing innovative, student-centered education</li>
+                <li>Building strong partnerships between school and parents</li>
+                <li>Developing leaders who will make a positive impact on society</li>
+                <li>Creating a safe, inclusive environment where every child thrives</li>
+              </ul>
+
+              <p>
+                At DXT Academy, we believe that education is more than just imparting knowledge—it's about shaping character, igniting curiosity, and empowering young minds to reach their full potential. This is the foundation upon which our story is built, and it continues to guide everything we do.
+              </p>
+            </div>
+          </div>
+        </div>
+      </dialog>
+      <!-- End Story Modal -->
     </div>
   </body>
 </html>
