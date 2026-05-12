@@ -119,7 +119,7 @@ describe("Dexta Academy 2 manifest", () => {
     assert.equal(contactForm?.fields.formTitle, "DXT Academy contact form");
     assert.equal(contactDetails?.fields.heading, "Contact Information");
     assert.equal(
-      contactDetails?.fields.location,
+      contactDetails?.fields.address,
       "12 Excellence Drive, Lagos, Nigeria",
     );
     assert.equal(contactDetails?.fields.phone, "+234 801 234 5678");
@@ -432,6 +432,9 @@ describe("Dexta Academy 2 manifest", () => {
     const aboutPage = rawContent.pages.find(
       (page: { slug: string }) => page.slug === "about",
     );
+    const contactPage = rawContent.pages.find(
+      (page: { slug: string }) => page.slug === "contact",
+    );
     const hero = homePage.sections.find(
       (section: { id: string }) => section.id === "hero",
     );
@@ -444,6 +447,12 @@ describe("Dexta Academy 2 manifest", () => {
     const siteHeader = rawContent.sharedSections.find(
       (section: { id: string }) => section.id === "site-header",
     );
+    const siteFooter = rawContent.sharedSections.find(
+      (section: { id: string }) => section.id === "site-footer",
+    );
+    const contactDetails = contactPage.sections.find(
+      (section: { id: string }) => section.id === "contact-details",
+    );
 
     hero.fields.desktopTreeImage = "";
     hero.fields.desktopBuildingImage = "custom/river-building.png";
@@ -454,6 +463,8 @@ describe("Dexta Academy 2 manifest", () => {
     aboutHero.fields.mobileBackgroundImage = "custom/about-mobile-bg.png";
     familyChoice.fields.image = "";
     familyChoice.fields.secondaryImage = "custom/family-quote-side.png";
+    delete contactDetails.fields.address;
+    contactDetails.fields.location = "88 Admin Edited Road, Abuja";
     rawContent.theme.logoUrl = "";
     rawContent.theme.brandName = "";
     rawContent.theme.navBarColor = "#112233";
@@ -461,6 +472,7 @@ describe("Dexta Academy 2 manifest", () => {
     siteHeader.fields.logo = "custom/navbar-logo.png";
     siteHeader.fields.brandName = "River Gate Academy";
     siteHeader.fields.brandTagline = "Learn with purpose";
+    siteFooter.fields.address = "88 Admin Edited Road, Abuja";
 
     const parsed = parseSchoolTemplateProjectContent(rawContent);
 
@@ -480,6 +492,9 @@ describe("Dexta Academy 2 manifest", () => {
     const syncedFamilyChoice = synced.contentJson.pages
       .find((page) => page.slug === "about")
       ?.sections.find((section) => section.id === "family-choice");
+    const syncedContactDetails = synced.contentJson.pages
+      .find((page) => page.slug === "contact")
+      ?.sections.find((section) => section.id === "contact-details");
 
     assert.equal(syncedHero?.fields.desktopTreeImage, "");
     assert.equal(
@@ -508,6 +523,17 @@ describe("Dexta Academy 2 manifest", () => {
     assert.equal(syncedSiteHeader?.fields.logo, "custom/navbar-logo.png");
     assert.equal(syncedSiteHeader?.fields.brandName, "River Gate Academy");
     assert.equal(syncedSiteHeader?.fields.brandTagline, "Learn with purpose");
+    const syncedSiteFooter = synced.contentJson.sharedSections.find(
+      (section) => section.id === "site-footer",
+    );
+    assert.equal(
+      syncedSiteFooter?.fields.address,
+      "88 Admin Edited Road, Abuja",
+    );
+    assert.equal(
+      syncedContactDetails?.fields.address,
+      "88 Admin Edited Road, Abuja",
+    );
     assert.equal(synced.contentJson.theme.logoUrl, "");
     assert.equal(synced.contentJson.theme.brandName, "");
     assert.equal(synced.contentJson.theme.navBarColor, "#112233");

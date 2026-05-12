@@ -1701,6 +1701,9 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
   const siteHeader = content.sharedSections.find(
     (section) => section.id === "site-header",
   );
+  const siteFooter = content.sharedSections.find(
+    (section) => section.id === "site-footer",
+  );
   const sharedHeaderLogo = siteHeader?.fields.logo
     ? resolveAsset(siteHeader.fields.logo, THEME_LOGO_FIELD)
     : "";
@@ -1712,17 +1715,37 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
     toText(siteHeader?.fields.brandTagline).trim() ||
     content.theme.brandTagline.trim();
   const loadingText = content.theme.loadingText.trim();
+  const footerAddress = toText(siteFooter?.fields.address).trim();
+  const footerPhone = toText(siteFooter?.fields.phone).trim();
+  const footerPhoneHref = toText(siteFooter?.fields.phoneHref).trim();
+  const footerEmail = toText(siteFooter?.fields.email).trim();
+  const footerEmailHref = toText(siteFooter?.fields.emailHref).trim();
 
-  if (!logoUrl && !brandName && !brandTagline && !loadingText) {
+  if (
+    !logoUrl &&
+    !brandName &&
+    !brandTagline &&
+    !loadingText &&
+    !footerAddress &&
+    !footerPhone &&
+    !footerPhoneHref &&
+    !footerEmail &&
+    !footerEmailHref
+  ) {
     return "";
   }
 
   return `<script data-dexta-export-theme-runtime="true">
 (function () {
   var logoUrl = ${escapeScriptJson(logoUrl)};
-  var brandName = ${escapeScriptJson(brandName)};
-  var brandTagline = ${escapeScriptJson(brandTagline)};
-  var configuredLoadingText = ${escapeScriptJson(loadingText)};
+	  var brandName = ${escapeScriptJson(brandName)};
+	  var brandTagline = ${escapeScriptJson(brandTagline)};
+	  var configuredLoadingText = ${escapeScriptJson(loadingText)};
+	  var footerAddress = ${escapeScriptJson(footerAddress)};
+	  var footerPhone = ${escapeScriptJson(footerPhone)};
+	  var footerPhoneHref = ${escapeScriptJson(footerPhoneHref)};
+	  var footerEmail = ${escapeScriptJson(footerEmail)};
+	  var footerEmailHref = ${escapeScriptJson(footerEmailHref)};
 
   function setImageLogo(selector) {
     if (!logoUrl) return;
@@ -1752,11 +1775,17 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
     });
   }
 
-  function setText(selector, value) {
-    document.querySelectorAll(selector).forEach(function (node) {
-      node.textContent = value;
-    });
-  }
+	  function setText(selector, value) {
+	    document.querySelectorAll(selector).forEach(function (node) {
+	      node.textContent = value;
+	    });
+	  }
+
+	  function setAttribute(selector, name, value) {
+	    document.querySelectorAll(selector).forEach(function (node) {
+	      node.setAttribute(name, value);
+	    });
+	  }
 
 	  function setDisplay(selector, visible) {
 	    document.querySelectorAll(selector).forEach(function (node) {
@@ -1781,7 +1810,7 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
     return node;
   }
 
-  function applyLoadingIdentity(fullLoaderName) {
+	  function applyLoadingIdentity(fullLoaderName) {
     var loadingText = configuredLoadingText || (fullLoaderName ? "Loading " + fullLoaderName : "");
     var hasLoadingText = Boolean(loadingText);
 
@@ -1797,7 +1826,16 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
         var image = ensureChild(logo, "img", "img", "");
         image.alt = "School logo";
         image.src = logoUrl;
-      }
+	  }
+
+	  function applyTemplateTwoFooterContact() {
+	    if (!${escapeScriptJson(content.templateSlug === "dexta-academy-2")}) return;
+	    setText(".footer__contact > span", footerAddress);
+	    setText(".footer__contact a[href^='tel:']", footerPhone);
+	    setText(".footer__contact a[href^='mailto:']", footerEmail);
+	    setAttribute(".footer__contact a[href^='tel:']", "href", footerPhoneHref);
+	    setAttribute(".footer__contact a[href^='mailto:']", "href", footerEmailHref);
+	  }
 
       if (hasLoadingText) {
         var textNode = ensureChild(spinner, ".dexta-loading-text", "span", "dexta-loading-text");
@@ -1844,12 +1882,13 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
       brand.setAttribute("aria-label", label + " home");
     });
 
-    if (logoUrl) {
-      document.querySelectorAll("link[rel~='icon']").forEach(function (link) {
-        link.setAttribute("href", logoUrl);
-      });
-    }
-  }
+	    if (logoUrl) {
+	      document.querySelectorAll("link[rel~='icon']").forEach(function (link) {
+	        link.setAttribute("href", logoUrl);
+	      });
+	    }
+	    applyTemplateTwoFooterContact();
+	  }
 
   applyThemeIdentity();
   if (document.readyState === "loading") {

@@ -1378,7 +1378,7 @@ export const dextaAcademy2Manifest = {
           fields: [
             textField("heading", "Title", "h3"),
             textareaField(
-              "location",
+              "address",
               "Address",
               ".simple-list li:nth-of-type(1) span:nth-of-type(2)",
               {

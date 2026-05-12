@@ -322,6 +322,12 @@ const IFRAME_EMBED_FIELD_KEYS = new Set([
   "iframeEmbedCode",
 ]);
 
+const SECTION_FIELD_ALIASES: Record<string, Record<string, string[]>> = {
+  "contact-details": {
+    address: ["location"],
+  },
+};
+
 const ALLOWED_IMAGE_EXTENSIONS = new Set([
   ".jpg",
   ".jpeg",
@@ -1656,9 +1662,24 @@ function mergeSectionContent(
   existingSection?: SchoolTemplateProjectSectionContent,
 ): SchoolTemplateProjectSectionContent {
   const mergeFieldValue = (
+    key: string,
     freshValue: SchoolTemplateProjectFieldValue,
     existingValue: SchoolTemplateProjectFieldValue | undefined,
-  ) => (existingValue === undefined ? freshValue : existingValue);
+  ) => {
+    if (existingValue !== undefined) {
+      return existingValue;
+    }
+
+    for (const aliasKey of SECTION_FIELD_ALIASES[freshSection.id]?.[key] ??
+      []) {
+      const aliasValue = existingSection?.fields[aliasKey];
+      if (aliasValue !== undefined) {
+        return aliasValue;
+      }
+    }
+
+    return freshValue;
+  };
 
   const freshItems = freshSection.repeatable?.items ?? [];
   const existingItems = existingSection?.repeatable?.items ?? [];
@@ -1670,7 +1691,7 @@ function mergeSectionContent(
       ...Object.fromEntries(
         Object.entries(freshSection.fields).map(([key, freshValue]) => [
           key,
-          mergeFieldValue(freshValue, existingSection?.fields[key]),
+          mergeFieldValue(key, freshValue, existingSection?.fields[key]),
         ]),
       ),
     },
@@ -1681,7 +1702,7 @@ function mergeSectionContent(
             ...Object.fromEntries(
               Object.entries(existingItems[index] ?? {}).map(([key, value]) => [
                 key,
-                mergeFieldValue(freshItems[index]?.[key] ?? "", value),
+                mergeFieldValue(key, freshItems[index]?.[key] ?? "", value),
               ]),
             ),
           })),
