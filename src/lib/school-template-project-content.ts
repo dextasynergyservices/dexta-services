@@ -16,6 +16,9 @@ export type SchoolTemplateProjectTheme = {
   logoUrl: string;
   logoWidth: number;
   logoHeight: number;
+  loadingText: string;
+  loadingLogoWidth: number;
+  loadingLogoHeight: number;
   brandName: string;
   brandTagline: string;
   brandTextVisible: boolean;
@@ -211,6 +214,9 @@ export const schoolTemplateProjectContentSchema = z.object({
     logoUrl: z.string().default(""),
     logoWidth: z.number().default(56),
     logoHeight: z.number().default(56),
+    loadingText: z.string().default("Loading school website"),
+    loadingLogoWidth: z.number().default(64),
+    loadingLogoHeight: z.number().default(64),
     brandName: z.string().default(""),
     brandTagline: z.string().default(""),
     brandTextVisible: z.boolean().default(true),
@@ -310,6 +316,18 @@ const SAFE_TEXT_DECORATION_PATTERN =
 const DANGEROUS_TEXT_PATTERN =
   /<\s*\/?\s*script\b|<\s*\/?\s*(iframe|object|embed|link|meta|base|form|input|button|textarea|select|option)\b|on[a-z]+\s*=|javascript\s*:|vbscript\s*:|data\s*:\s*text\/html/i;
 
+const IFRAME_EMBED_FIELD_KEYS = new Set([
+  "formIframe",
+  "formEmbedCode",
+  "iframeEmbedCode",
+]);
+
+const SECTION_FIELD_ALIASES: Record<string, Record<string, string[]>> = {
+  "contact-details": {
+    address: ["location"],
+  },
+};
+
 const ALLOWED_IMAGE_EXTENSIONS = new Set([
   ".jpg",
   ".jpeg",
@@ -342,6 +360,162 @@ function sanitizePlainText(value: string) {
     allowedAttributes: {},
     disallowedTagsMode: "discard",
   });
+}
+
+function escapeHtmlText(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function escapeHtmlAttribute(value: string) {
+  return escapeHtmlText(value).replace(/"/g, "&quot;");
+}
+
+function decodeHtmlAttributeEntities(value: string) {
+  return value
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;|&#34;/gi, '"')
+    .replace(/&apos;|&#39;/gi, "'")
+    .replace(/&#x2f;|&#47;/gi, "/")
+    .replace(/&#x3a;|&#58;/gi, ":");
+}
+
+function parseIframeAttributes(rawAttributes: string) {
+  const attrs = new Map<string, string>();
+  const pattern =
+    /([^\s"'=<>`]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(rawAttributes))) {
+    attrs.set(
+      match[1].toLowerCase(),
+      decodeHtmlAttributeEntities(match[2] ?? match[3] ?? match[4] ?? ""),
+    );
+  }
+
+  return attrs;
+}
+
+function parseIframeEmbedValue(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const match = trimmed.match(
+    /<\s*iframe\b([\s\S]*?)>([\s\S]*?)<\s*\/\s*iframe\s*>/i,
+  );
+
+  if (!match) {
+    return {
+      attrs: new Map([["src", decodeHtmlAttributeEntities(trimmed)]]),
+      fallbackText: "",
+    };
+  }
+
+  return {
+    attrs: parseIframeAttributes(match[1] ?? ""),
+    fallbackText: sanitizePlainText(match[2] ?? ""),
+  };
+}
+
+function isSafeIframeSrc(value: string) {
+  return /^https?:\/\//i.test(value) || value.startsWith("/");
+}
+
+function isIframeEmbedField(field?: {
+  key: string;
+  type: string;
+  target?: string;
+}) {
+  return (
+    field?.type === "textarea" &&
+    field.target === "attribute" &&
+    IFRAME_EMBED_FIELD_KEYS.has(field.key)
+  );
+}
+
+function sanitizeIframeEmbedValue(value: string) {
+  const parsed = parseIframeEmbedValue(value);
+  const src = parsed?.attrs.get("src")?.trim() ?? "";
+
+  if (!parsed || !src || !isSafeIframeSrc(src)) {
+    return "";
+  }
+
+  const safeAttrs: Array<[string, string | null]> = [
+    ["src", src],
+    ["title", sanitizePlainText(parsed.attrs.get("title") ?? "")],
+    ["width", parsed.attrs.get("width") ?? ""],
+    ["height", parsed.attrs.get("height") ?? ""],
+    ["frameborder", parsed.attrs.get("frameborder") ?? ""],
+    ["marginheight", parsed.attrs.get("marginheight") ?? ""],
+    ["marginwidth", parsed.attrs.get("marginwidth") ?? ""],
+    ["loading", parsed.attrs.get("loading") ?? ""],
+    ["referrerpolicy", parsed.attrs.get("referrerpolicy") ?? ""],
+    ["allow", parsed.attrs.get("allow") ?? ""],
+  ];
+
+  const attrs = safeAttrs
+    .map(([name, rawValue]) => {
+      const attrValue = (rawValue ?? "").trim();
+      if (!attrValue) return null;
+
+      if (
+        (name === "width" || name === "height") &&
+        !/^\d{1,5}%?$/.test(attrValue)
+      ) {
+        return null;
+      }
+
+      if (
+        ["frameborder", "marginheight", "marginwidth"].includes(name) &&
+        !/^\d{1,4}$/.test(attrValue)
+      ) {
+        return null;
+      }
+
+      if (name === "loading" && !/^(lazy|eager)$/i.test(attrValue)) {
+        return null;
+      }
+
+      if (name === "referrerpolicy" && !/^[a-z-]+$/i.test(attrValue)) {
+        return null;
+      }
+
+      if (name === "allow" && !/^[a-z0-9;: *._-]+$/i.test(attrValue)) {
+        return null;
+      }
+
+      return `${name}="${escapeHtmlAttribute(attrValue)}"`;
+    })
+    .filter(Boolean)
+    .join(" ");
+
+  const fallbackText = parsed.fallbackText.trim() || "Loading...";
+
+  return `<iframe ${attrs}>${escapeHtmlText(fallbackText)}</iframe>`;
+}
+
+function validateIframeEmbedValue(value: string) {
+  if (!value.trim()) {
+    return null;
+  }
+
+  const parsed = parseIframeEmbedValue(value);
+  const src = parsed?.attrs.get("src")?.trim() ?? "";
+
+  if (!parsed || !src) {
+    return "Iframe embed code must include an iframe src URL.";
+  }
+
+  if (!isSafeIframeSrc(src)) {
+    return "Iframe src must use an http(s) URL or an absolute path.";
+  }
+
+  return null;
 }
 
 function sanitizeRichText(value: string) {
@@ -809,6 +983,10 @@ function getFieldDefaultFromRoots(
   roots: TemplateElementNode[],
   field: SchoolTemplateField,
 ) {
+  if (isIframeEmbedField(field) && field.defaultValue !== undefined) {
+    return field.defaultValue;
+  }
+
   for (const root of roots) {
     const nodes = queryAll(root, field.selector);
     for (const node of nodes) {
@@ -978,8 +1156,9 @@ function sanitizeSectionContent(
         }
 
         const field = fieldMap.get(`${section.id}:${key}`);
-        const sanitized =
-          field?.type === "richText" || field?.target === "innerHTML"
+        const sanitized = isIframeEmbedField(field)
+          ? sanitizeIframeEmbedValue(value)
+          : field?.type === "richText" || field?.target === "innerHTML"
             ? sanitizeRichText(value)
             : sanitizePlainText(value);
 
@@ -1015,6 +1194,11 @@ export function sanitizeSchoolTemplateProjectContent(
       logoUrl: sanitizePlainText(content.theme.logoUrl ?? ""),
       logoWidth: Number(content.theme.logoWidth ?? 56),
       logoHeight: Number(content.theme.logoHeight ?? 56),
+      loadingText: sanitizePlainText(
+        content.theme.loadingText ?? "Loading school website",
+      ),
+      loadingLogoWidth: Number(content.theme.loadingLogoWidth ?? 64),
+      loadingLogoHeight: Number(content.theme.loadingLogoHeight ?? 64),
       brandName: sanitizePlainText(content.theme.brandName ?? ""),
       brandTagline: sanitizePlainText(content.theme.brandTagline ?? ""),
       brandTextVisible: Boolean(content.theme.brandTextVisible ?? true),
@@ -1081,6 +1265,12 @@ function validateSectionContent(
 
     const field = fieldMap.get(`${section.id}:${key}`);
     const label = field?.label ?? key;
+
+    if (isIframeEmbedField(field)) {
+      const issue = validateIframeEmbedValue(value);
+      if (issue) issues.push(`${location} ${label}: ${issue}`);
+      continue;
+    }
 
     if (DANGEROUS_TEXT_PATTERN.test(value)) {
       issues.push(`${location} ${label} contains blocked script-like content.`);
@@ -1156,6 +1346,9 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoUrl: "",
         logoWidth: 48,
         logoHeight: 56,
+        loadingText: "Loading DXT Academy",
+        loadingLogoWidth: 64,
+        loadingLogoHeight: 72,
         brandName: "DXT ACADEMY",
         brandTagline: "Nurturing. Inspiring. Leading.",
         brandTextVisible: true,
@@ -1179,6 +1372,9 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
           "https://res.cloudinary.com/dxoorukfj/image/upload/v1776778370/schoolportal/4/branding/umnqe2oopwmohrth30en.png",
         logoWidth: 72,
         logoHeight: 48,
+        loadingText: "Preparing School B",
+        loadingLogoWidth: 260,
+        loadingLogoHeight: 112,
         brandName: "School B",
         brandTagline: "",
         brandTextVisible: true,
@@ -1201,6 +1397,9 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoUrl: "",
         logoWidth: 46,
         logoHeight: 46,
+        loadingText: "Preparing DXT Academy",
+        loadingLogoWidth: 88,
+        loadingLogoHeight: 88,
         brandName: "DXT Academy",
         brandTagline: "Nurturing. Inspiring. Leading.",
         brandTextVisible: true,
@@ -1223,6 +1422,9 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoUrl: "",
         logoWidth: 48,
         logoHeight: 48,
+        loadingText: "Loading DXT Academy",
+        loadingLogoWidth: 48,
+        loadingLogoHeight: 48,
         brandName: "DXT ACADEMY",
         brandTagline: "Nurturing. Inspiring. Leading.",
         brandTextVisible: true,
@@ -1246,6 +1448,9 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
           "https://res.cloudinary.com/dxoorukfj/image/upload/v1776695413/DXT-Logo_mmyi2e.png",
         logoWidth: 72,
         logoHeight: 56,
+        loadingText: "Loading DXT Grade",
+        loadingLogoWidth: 72,
+        loadingLogoHeight: 56,
         brandName: "DXT GRADE",
         brandTagline: "",
         brandTextVisible: true,
@@ -1268,6 +1473,9 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoUrl: "",
         logoWidth: 56,
         logoHeight: 56,
+        loadingText: "Loading school website",
+        loadingLogoWidth: 64,
+        loadingLogoHeight: 64,
         brandName: "",
         brandTagline: "",
         brandTextVisible: true,
@@ -1454,14 +1662,24 @@ function mergeSectionContent(
   existingSection?: SchoolTemplateProjectSectionContent,
 ): SchoolTemplateProjectSectionContent {
   const mergeFieldValue = (
+    key: string,
     freshValue: SchoolTemplateProjectFieldValue,
     existingValue: SchoolTemplateProjectFieldValue | undefined,
-  ) =>
-    existingValue === undefined ||
-    existingValue === null ||
-    existingValue === ""
-      ? freshValue
-      : existingValue;
+  ) => {
+    if (existingValue !== undefined) {
+      return existingValue;
+    }
+
+    for (const aliasKey of SECTION_FIELD_ALIASES[freshSection.id]?.[key] ??
+      []) {
+      const aliasValue = existingSection?.fields[aliasKey];
+      if (aliasValue !== undefined) {
+        return aliasValue;
+      }
+    }
+
+    return freshValue;
+  };
 
   const freshItems = freshSection.repeatable?.items ?? [];
   const existingItems = existingSection?.repeatable?.items ?? [];
@@ -1473,7 +1691,7 @@ function mergeSectionContent(
       ...Object.fromEntries(
         Object.entries(freshSection.fields).map(([key, freshValue]) => [
           key,
-          mergeFieldValue(freshValue, existingSection?.fields[key]),
+          mergeFieldValue(key, freshValue, existingSection?.fields[key]),
         ]),
       ),
     },
@@ -1484,7 +1702,7 @@ function mergeSectionContent(
             ...Object.fromEntries(
               Object.entries(existingItems[index] ?? {}).map(([key, value]) => [
                 key,
-                mergeFieldValue(freshItems[index]?.[key] ?? "", value),
+                mergeFieldValue(key, freshItems[index]?.[key] ?? "", value),
               ]),
             ),
           })),
@@ -1496,9 +1714,11 @@ function mergeSectionContent(
 export function syncSchoolTemplateProjectContentWithManifest({
   content,
   sourceSnapshot,
+  rawContent,
 }: {
   content: SchoolTemplateProjectContent;
   sourceSnapshot: SchoolTemplateSourceSnapshot;
+  rawContent?: unknown;
 }) {
   const manifest =
     getSchoolTemplateManifest(content.templateSlug) ??
@@ -1510,14 +1730,37 @@ export function syncSchoolTemplateProjectContentWithManifest({
 
   const freshContent = buildSchoolTemplateProjectContent(manifest);
   const freshSnapshot = buildSchoolTemplateSourceSnapshot(manifest);
+  const rawTheme =
+    rawContent &&
+    typeof rawContent === "object" &&
+    "theme" in rawContent &&
+    rawContent.theme &&
+    typeof rawContent.theme === "object"
+      ? rawContent.theme
+      : null;
+  const wasThemeFieldMissing = (key: keyof SchoolTemplateProjectTheme) =>
+    rawTheme ? !Object.prototype.hasOwnProperty.call(rawTheme, key) : false;
+  const syncedTheme: SchoolTemplateProjectTheme = {
+    ...freshContent.theme,
+    ...content.theme,
+  };
+
+  if (wasThemeFieldMissing("loadingText")) {
+    syncedTheme.loadingText = freshContent.theme.loadingText;
+  }
+
+  if (wasThemeFieldMissing("loadingLogoWidth")) {
+    syncedTheme.loadingLogoWidth = freshContent.theme.loadingLogoWidth;
+  }
+
+  if (wasThemeFieldMissing("loadingLogoHeight")) {
+    syncedTheme.loadingLogoHeight = freshContent.theme.loadingLogoHeight;
+  }
 
   const syncedContent: SchoolTemplateProjectContent = {
     ...freshContent,
     generatedAt: content.generatedAt,
-    theme: {
-      ...freshContent.theme,
-      ...content.theme,
-    },
+    theme: syncedTheme,
     assets: content.assets,
     sharedSections: freshContent.sharedSections.map((section) =>
       mergeSectionContent(

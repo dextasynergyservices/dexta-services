@@ -557,6 +557,20 @@ export const dextaAcademy5Manifest = {
             linkField("formUrl", "Google Form URL", "iframe", {
               attribute: "src",
             }),
+            textareaField(
+              "formIframe",
+              "Google Form iframe embed code",
+              "iframe",
+              {
+                target: "attribute",
+                attribute: "src",
+                defaultValue: "",
+                placeholder:
+                  '<iframe src="https://docs.google.com/forms/..." width="640" height="1602" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>',
+                helpText:
+                  "Paste the full Google Forms iframe embed code. Leave blank to use the Google Form URL field.",
+              },
+            ),
             textField("formTitle", "Iframe title", "iframe", {
               target: "attribute",
               attribute: "title",
@@ -573,6 +587,20 @@ export const dextaAcademy5Manifest = {
             linkField("formUrl", "Google Form URL", "iframe", {
               attribute: "src",
             }),
+            textareaField(
+              "formIframe",
+              "Google Form iframe embed code",
+              "iframe",
+              {
+                target: "attribute",
+                attribute: "src",
+                defaultValue: "",
+                placeholder:
+                  '<iframe src="https://docs.google.com/forms/..." width="640" height="1602" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>',
+                helpText:
+                  "Paste the full Google Forms iframe embed code. Leave blank to use the Google Form URL field.",
+              },
+            ),
             textField("formTitle", "Iframe title", "iframe", {
               target: "attribute",
               attribute: "title",
@@ -767,6 +795,20 @@ export const dextaAcademy5Manifest = {
             linkField("formUrl", "Google Form URL", "iframe", {
               attribute: "src",
             }),
+            textareaField(
+              "formIframe",
+              "Google Form iframe embed code",
+              "iframe",
+              {
+                target: "attribute",
+                attribute: "src",
+                defaultValue: "",
+                placeholder:
+                  '<iframe src="https://docs.google.com/forms/..." width="640" height="1602" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>',
+                helpText:
+                  "Paste the full Google Forms iframe embed code. Leave blank to use the Google Form URL field.",
+              },
+            ),
             textField("formTitle", "Iframe title", "iframe", {
               target: "attribute",
               attribute: "title",

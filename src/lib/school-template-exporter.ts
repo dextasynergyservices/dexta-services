@@ -156,7 +156,7 @@ function getCssVariableValue(
 ) {
   if (field.type === "image" || field.type === "model3d") {
     const asset = resolveAsset(value, field).replace(/"/g, "&quot;");
-    return asset ? `url("${asset}")` : "";
+    return asset ? `url("${asset}")` : "none";
   }
 
   return withUnit(value, field.unit);
@@ -377,6 +377,165 @@ function setInnerHtml(node: ElementNode, value: string) {
   node.children.forEach((child) => {
     child.parent = node;
   });
+}
+
+function createElementNode(
+  tagName: string,
+  parent: ElementNode,
+  attrs: ElementNode["attrs"] = [],
+): ElementNode {
+  return {
+    type: "element",
+    tagName,
+    attrs,
+    children: [],
+    parent,
+  };
+}
+
+function ensureImageChild(node: ElementNode) {
+  const existingImage = node.children.find(
+    (child): child is ElementNode =>
+      child.type === "element" && child.tagName === "img",
+  );
+  if (existingImage) return existingImage;
+
+  const image = createElementNode("img", node, [
+    { name: "alt", value: "School logo" },
+  ]);
+  node.children = [image];
+  return image;
+}
+
+function shouldApplyFieldValue(
+  value: SchoolTemplateProjectFieldValue | undefined,
+  field: SchoolTemplateProjectSectionSnapshot["fields"][number],
+) {
+  if (isFilled(value)) return true;
+  if (
+    field.target === "cssVariable" &&
+    (field.type === "image" || field.type === "model3d")
+  ) {
+    return true;
+  }
+  if (
+    field.type === "image" &&
+    field.defaultValue !== undefined &&
+    (field.target === "attribute" || field.target === "backgroundImage")
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function applyImageAttribute(
+  node: ElementNode,
+  value: SchoolTemplateProjectFieldValue,
+  field: SchoolTemplateProjectSectionSnapshot["fields"][number],
+  attribute: string,
+) {
+  const asset = resolveAsset(value, field);
+
+  if (attribute === "src" && node.tagName !== "img") {
+    if (!asset) {
+      node.children = node.children.filter(
+        (child) => child.type !== "element" || child.tagName !== "img",
+      );
+      setStyleDeclaration(node, "display", "none");
+      return;
+    }
+
+    const image = ensureImageChild(node);
+    setAttr(image, "src", asset);
+    return;
+  }
+
+  if (!asset) {
+    setAttr(node, attribute, "");
+    setStyleDeclaration(node, "display", "none");
+    return;
+  }
+
+  setAttr(node, attribute, asset);
+}
+
+function isIframeEmbedField(
+  field: SchoolTemplateProjectSectionSnapshot["fields"][number],
+) {
+  return (
+    field.type === "textarea" &&
+    field.target === "attribute" &&
+    (field.key === "formIframe" ||
+      field.key === "formEmbedCode" ||
+      field.key === "iframeEmbedCode")
+  );
+}
+
+function parseIframeEmbedValue(value: SchoolTemplateProjectFieldValue) {
+  const text = toText(value).trim();
+  if (!text) {
+    return null;
+  }
+
+  if (!/<\s*iframe\b/i.test(text)) {
+    return {
+      src: decodeUrlHtmlEntities(text),
+      attrs: new Map<string, string>(),
+    };
+  }
+
+  const match = text.match(
+    /<\s*iframe\b([\s\S]*?)>([\s\S]*?)<\s*\/\s*iframe\s*>/i,
+  );
+  if (!match) {
+    return null;
+  }
+
+  const attrs = new Map(
+    parseAttributes(match[1] ?? "").map((attr) => [
+      attr.name.toLowerCase(),
+      decodeUrlHtmlEntities(attr.value ?? ""),
+    ]),
+  );
+
+  return { src: attrs.get("src") ?? "", attrs };
+}
+
+function isSafeIframeSrc(value: string) {
+  return /^https?:\/\//i.test(value) || value.startsWith("/");
+}
+
+function applyIframeEmbedAttribute(
+  node: ElementNode,
+  value: SchoolTemplateProjectFieldValue,
+  field: SchoolTemplateProjectSectionSnapshot["fields"][number],
+  attribute: string,
+) {
+  if (!isIframeEmbedField(field)) return false;
+  if (node.tagName !== "iframe") return false;
+  if (attribute !== "src" && attribute !== "data-src") return false;
+
+  const embed = parseIframeEmbedValue(value);
+  if (!embed?.src || !isSafeIframeSrc(embed.src)) return true;
+
+  setAttr(node, attribute, embed.src);
+
+  for (const name of [
+    "width",
+    "height",
+    "frameborder",
+    "marginheight",
+    "marginwidth",
+    "loading",
+    "referrerpolicy",
+    "allow",
+    "title",
+  ]) {
+    const attrValue = embed.attrs.get(name);
+    if (attrValue) setAttr(node, name, attrValue);
+  }
+
+  return true;
 }
 
 function splitSelectorGroups(selector: string) {
@@ -680,7 +839,7 @@ function applySection(
 
   for (const field of sectionSnapshot.fields) {
     const value = sectionContent.fields[field.key];
-    if (!isFilled(value)) {
+    if (!shouldApplyFieldValue(value, field)) {
       continue;
     }
 
@@ -702,12 +861,20 @@ function applySection(
         } else if (field.target === "attribute") {
           const attribute =
             field.attribute ?? (field.type === "link" ? "href" : "src");
-          setAttr(node, attribute, resolveAsset(value, field));
+          if (applyIframeEmbedAttribute(node, value, field, attribute)) {
+            continue;
+          }
+          if (field.type === "image") {
+            applyImageAttribute(node, value, field, attribute);
+          } else {
+            setAttr(node, attribute, resolveAsset(value, field));
+          }
         } else if (field.target === "backgroundImage") {
+          const asset = resolveAsset(value, field).replace(/"/g, "&quot;");
           setStyleDeclaration(
             node,
             "background-image",
-            `url("${resolveAsset(value, field).replace(/"/g, "&quot;")}")`,
+            asset ? `url("${asset}")` : "none",
           );
         } else if (field.target === "cssVariable" && field.cssVariable) {
           setStyleDeclaration(
@@ -746,7 +913,7 @@ function applySection(
 
       for (const field of sectionSnapshot.fields) {
         const value = itemContent[field.key];
-        if (!isFilled(value)) {
+        if (!shouldApplyFieldValue(value, field)) {
           continue;
         }
 
@@ -756,12 +923,20 @@ function applySection(
           } else if (field.target === "attribute") {
             const attribute =
               field.attribute ?? (field.type === "link" ? "href" : "src");
-            setAttr(node, attribute, resolveAsset(value, field));
+            if (applyIframeEmbedAttribute(node, value, field, attribute)) {
+              continue;
+            }
+            if (field.type === "image") {
+              applyImageAttribute(node, value, field, attribute);
+            } else {
+              setAttr(node, attribute, resolveAsset(value, field));
+            }
           } else if (field.target === "backgroundImage") {
+            const asset = resolveAsset(value, field).replace(/"/g, "&quot;");
             setStyleDeclaration(
               node,
               "background-image",
-              `url("${resolveAsset(value, field).replace(/"/g, "&quot;")}")`,
+              asset ? `url("${asset}")` : "none",
             );
           } else if (field.target === "cssVariable" && field.cssVariable) {
             setStyleDeclaration(
@@ -917,6 +1092,8 @@ function getGlobalAppearanceCss(content: SchoolTemplateProjectContent) {
   const logoRadius = `${content.theme.logoBorderRadius}px`;
   const logoWidth = `${content.theme.logoWidth}px`;
   const logoHeight = `${content.theme.logoHeight}px`;
+  const loadingLogoWidth = `${content.theme.loadingLogoWidth}px`;
+  const loadingLogoHeight = `${content.theme.loadingLogoHeight}px`;
   const brandTextDisplay = content.theme.brandTextVisible ? "" : "none";
   const brandLine2Display =
     content.theme.brandTextVisible && content.theme.brandTagline.trim()
@@ -1025,12 +1202,54 @@ body[data-page="home"] .site-header__bar {
 .school-footer-brand-logo,
 .site-preloader-logo,
 .contact-footer__brand img {
-  object-fit: contain;
-}`);
+	  object-fit: contain;
+	}`);
   }
 
   css.push(`
-.brand__name,
+#spinner {
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+#spinner .dexta-loading-logo,
+#spinner .spinner-border,
+.site-loader__mark,
+.page-loader__crest,
+.dexta-generated-loader__logo {
+  display: grid !important;
+  place-items: center !important;
+  width: ${loadingLogoWidth} !important;
+  height: ${loadingLogoHeight} !important;
+  max-width: ${loadingLogoWidth} !important;
+  object-fit: contain !important;
+}
+.site-preloader-logo {
+  display: block !important;
+  width: ${loadingLogoWidth} !important;
+  height: ${loadingLogoHeight} !important;
+  max-width: ${loadingLogoWidth} !important;
+  object-fit: contain !important;
+}
+#spinner .dexta-loading-logo img,
+.site-loader__mark img,
+.page-loader__crest img,
+.site-preloader-logo,
+.dexta-generated-loader__logo img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+#spinner .dexta-loading-text,
+.dexta-generated-loader__text {
+  color: currentColor;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.4;
+}`);
+
+  css.push(`
+	.brand__name,
 .brand__copy,
 .brand__text,
 .contact-brand > span {
@@ -1348,6 +1567,88 @@ body[data-page="home"] .hero-home__students {
   bottom: var(--dexta-academy-2-hero-students-desktop-bottom, -78px) !important;
   width: var(--dexta-academy-2-hero-students-desktop-width, min(49vw, 790px)) !important;
 }
+body:not([data-page="home"]) .page-hero {
+  background-image: var(--dexta-academy-2-page-hero-background-image) !important;
+  background-position: var(--dexta-academy-2-page-hero-background-position, center center) !important;
+  background-size: var(--dexta-academy-2-page-hero-background-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body:not([data-page="home"]) .page-hero::before {
+  background-image: var(--dexta-academy-2-page-hero-building-image) !important;
+  background-position: var(--dexta-academy-2-page-hero-building-position, center bottom) !important;
+  background-size: var(--dexta-academy-2-page-hero-building-size, 100% auto) !important;
+  background-repeat: no-repeat !important;
+}
+body:not([data-page="home"]) .page-hero::after {
+  background: var(--dexta-academy-2-page-hero-overlay-color, #04111d) !important;
+  opacity: var(--dexta-academy-2-page-hero-overlay-opacity, .62) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(2) {
+  background: var(--dexta-academy-2-academics-overview-section-bg, #fff) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(2) .info-card {
+  background: var(--dexta-academy-2-academics-overview-card-bg, #fff) !important;
+  border: var(--dexta-academy-2-academics-overview-border-width, 1px) solid var(--dexta-academy-2-academics-overview-border-color, #e7edf3) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(2) .info-card__icon {
+  background: var(--dexta-academy-2-academics-overview-icon-bg, #fff4cc) !important;
+  color: var(--dexta-academy-2-academics-overview-icon-color, #9b7104) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(2) .info-card h3 {
+  color: var(--dexta-academy-2-academics-overview-title-color, #102034) !important;
+  font-family: var(--dexta-academy-2-academics-overview-title-font, Manrope), "Segoe UI", sans-serif !important;
+  font-style: var(--dexta-academy-2-academics-overview-title-font-style, normal) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(2) .info-card p {
+  color: var(--dexta-academy-2-academics-overview-description-color, #58708a) !important;
+  font-family: var(--dexta-academy-2-academics-overview-description-font, "Plus Jakarta Sans"), "Segoe UI", sans-serif !important;
+  font-style: var(--dexta-academy-2-academics-overview-description-font-style, normal) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(3) {
+  background: var(--dexta-academy-2-academics-subjects-section-bg, #081827) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(3) .card {
+  background: var(--dexta-academy-2-academics-subjects-card-bg, #fff) !important;
+  border: var(--dexta-academy-2-academics-subjects-border-width, 1px) solid var(--dexta-academy-2-academics-subjects-border-color, #e7edf3) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(3) .card__badge {
+  background: var(--dexta-academy-2-academics-subjects-icon-bg, #ffc433) !important;
+  color: var(--dexta-academy-2-academics-subjects-icon-color, #091624) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(3) .card__title {
+  color: var(--dexta-academy-2-academics-subjects-title-color, #102034) !important;
+  font-family: var(--dexta-academy-2-academics-subjects-title-font, Manrope), "Segoe UI", sans-serif !important;
+  font-style: var(--dexta-academy-2-academics-subjects-title-font-style, normal) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(3) .card__text {
+  color: var(--dexta-academy-2-academics-subjects-description-color, #58708a) !important;
+  font-family: var(--dexta-academy-2-academics-subjects-description-font, "Plus Jakarta Sans"), "Segoe UI", sans-serif !important;
+  font-style: var(--dexta-academy-2-academics-subjects-description-font-style, normal) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(4) {
+  background: var(--dexta-academy-2-academics-learning-section-bg, #fff) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(4) .section-title {
+  color: var(--dexta-academy-2-academics-learning-title-color, #102034) !important;
+  font-family: var(--dexta-academy-2-academics-learning-title-font, Manrope), "Segoe UI", sans-serif !important;
+  font-style: var(--dexta-academy-2-academics-learning-title-font-style, normal) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(4) .section-copy {
+  color: var(--dexta-academy-2-academics-learning-description-color, #58708a) !important;
+  font-family: var(--dexta-academy-2-academics-learning-description-font, "Plus Jakarta Sans"), "Segoe UI", sans-serif !important;
+  font-style: var(--dexta-academy-2-academics-learning-description-font-style, normal) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(4) .steps li {
+  background: var(--dexta-academy-2-academics-learning-step-bg, #fff) !important;
+  border: var(--dexta-academy-2-academics-learning-step-border-width, 0px) solid var(--dexta-academy-2-academics-learning-step-border-color, #e7edf3) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(4) .steps__number {
+  background: var(--dexta-academy-2-academics-learning-step-number-bg, #fff4cc) !important;
+  color: var(--dexta-academy-2-academics-learning-step-number-color, #9b7104) !important;
+}
+body[data-page="academics"] main > section:nth-of-type(4) .steps li span:not(.steps__number) {
+  color: var(--dexta-academy-2-academics-learning-step-text-color, #58708a) !important;
+}
 @media (max-width: 980px) {
   body[data-page="home"] .hero-home {
     background: var(--bg) !important;
@@ -1367,7 +1668,17 @@ body[data-page="home"] .hero-home__students {
     width: var(--dexta-academy-2-hero-students-mobile-width, min(100%, 760px)) !important;
     transform: scale(var(--dexta-academy-2-hero-students-mobile-scale, 1.12)) !important;
   }
-}`;
+  body:not([data-page="home"]) .page-hero {
+    background-image: var(--dexta-academy-2-page-hero-mobile-background-image, var(--dexta-academy-2-page-hero-background-image)) !important;
+    background-position: var(--dexta-academy-2-page-hero-mobile-background-position, center center) !important;
+    background-size: var(--dexta-academy-2-page-hero-mobile-background-size, cover) !important;
+    background-repeat: no-repeat !important;
+	  }
+	  body:not([data-page="home"]) .page-hero::before {
+	    display: none !important;
+	    background-image: none !important;
+	  }
+	}`;
   }
 
   return `${themeCss}${templateCss}`;
@@ -1387,19 +1698,54 @@ ${getTemplateOverrideCss(content)}
 }
 
 function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
-  const logoUrl = getThemeLogoUrl(content);
-  const brandName = content.theme.brandName.trim();
-  const brandTagline = content.theme.brandTagline.trim();
+  const siteHeader = content.sharedSections.find(
+    (section) => section.id === "site-header",
+  );
+  const siteFooter = content.sharedSections.find(
+    (section) => section.id === "site-footer",
+  );
+  const sharedHeaderLogo = siteHeader?.fields.logo
+    ? resolveAsset(siteHeader.fields.logo, THEME_LOGO_FIELD)
+    : "";
+  const logoUrl = getThemeLogoUrl(content) || sharedHeaderLogo;
+  const brandName =
+    toText(siteHeader?.fields.brandName).trim() ||
+    content.theme.brandName.trim();
+  const brandTagline =
+    toText(siteHeader?.fields.brandTagline).trim() ||
+    content.theme.brandTagline.trim();
+  const loadingText = content.theme.loadingText.trim();
+  const footerAddress = toText(siteFooter?.fields.address).trim();
+  const footerPhone = toText(siteFooter?.fields.phone).trim();
+  const footerPhoneHref = toText(siteFooter?.fields.phoneHref).trim();
+  const footerEmail = toText(siteFooter?.fields.email).trim();
+  const footerEmailHref = toText(siteFooter?.fields.emailHref).trim();
 
-  if (!logoUrl && !brandName && !brandTagline) {
+  if (
+    !logoUrl &&
+    !brandName &&
+    !brandTagline &&
+    !loadingText &&
+    !footerAddress &&
+    !footerPhone &&
+    !footerPhoneHref &&
+    !footerEmail &&
+    !footerEmailHref
+  ) {
     return "";
   }
 
   return `<script data-dexta-export-theme-runtime="true">
 (function () {
   var logoUrl = ${escapeScriptJson(logoUrl)};
-  var brandName = ${escapeScriptJson(brandName)};
-  var brandTagline = ${escapeScriptJson(brandTagline)};
+	  var brandName = ${escapeScriptJson(brandName)};
+	  var brandTagline = ${escapeScriptJson(brandTagline)};
+	  var configuredLoadingText = ${escapeScriptJson(loadingText)};
+	  var footerAddress = ${escapeScriptJson(footerAddress)};
+	  var footerPhone = ${escapeScriptJson(footerPhone)};
+	  var footerPhoneHref = ${escapeScriptJson(footerPhoneHref)};
+	  var footerEmail = ${escapeScriptJson(footerEmail)};
+	  var footerEmailHref = ${escapeScriptJson(footerEmailHref)};
 
   function setImageLogo(selector) {
     if (!logoUrl) return;
@@ -1429,22 +1775,92 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
     });
   }
 
-  function setText(selector, value) {
-    document.querySelectorAll(selector).forEach(function (node) {
-      node.textContent = value;
+	  function setText(selector, value) {
+	    document.querySelectorAll(selector).forEach(function (node) {
+	      node.textContent = value;
+	    });
+	  }
+
+	  function setAttribute(selector, name, value) {
+	    document.querySelectorAll(selector).forEach(function (node) {
+	      node.setAttribute(name, value);
+	    });
+	  }
+
+	  function setDisplay(selector, visible) {
+	    document.querySelectorAll(selector).forEach(function (node) {
+	      node.style.display = visible ? "" : "none";
+	    });
+	  }
+
+  function ensureChild(parent, selector, tagName, className, beforeSelector) {
+    var node = parent.querySelector(selector);
+    if (node) return node;
+
+    node = document.createElement(tagName);
+    if (className) node.className = className;
+
+    var beforeNode = beforeSelector ? parent.querySelector(beforeSelector) : null;
+    if (beforeNode) {
+      parent.insertBefore(node, beforeNode);
+    } else {
+      parent.appendChild(node);
+    }
+
+    return node;
+  }
+
+	  function applyLoadingIdentity(fullLoaderName) {
+    var loadingText = configuredLoadingText || (fullLoaderName ? "Loading " + fullLoaderName : "");
+    var hasLoadingText = Boolean(loadingText);
+
+    setText(".site-loader__text", loadingText);
+    setText("#spinner .sr-only", loadingText);
+    setText(".dexta-generated-loader__text", loadingText);
+    setDisplay(".site-loader__text", hasLoadingText);
+    setDisplay(".dexta-generated-loader__text", hasLoadingText);
+
+    document.querySelectorAll("#spinner").forEach(function (spinner) {
+      if (logoUrl) {
+        var logo = ensureChild(spinner, ".dexta-loading-logo", "span", "dexta-loading-logo", ".spinner-border");
+        var image = ensureChild(logo, "img", "img", "");
+        image.alt = "School logo";
+        image.src = logoUrl;
+	  }
+
+	  function applyTemplateTwoFooterContact() {
+	    if (!${escapeScriptJson(content.templateSlug === "dexta-academy-2")}) return;
+	    setText(".footer__contact > span", footerAddress);
+	    setText(".footer__contact a[href^='tel:']", footerPhone);
+	    setText(".footer__contact a[href^='mailto:']", footerEmail);
+	    setAttribute(".footer__contact a[href^='tel:']", "href", footerPhoneHref);
+	    setAttribute(".footer__contact a[href^='mailto:']", "href", footerEmailHref);
+	  }
+
+      if (hasLoadingText) {
+        var textNode = ensureChild(spinner, ".dexta-loading-text", "span", "dexta-loading-text");
+        textNode.textContent = loadingText;
+      }
+    });
+
+    document.querySelectorAll(".page-loader__inner").forEach(function (inner) {
+      if (!hasLoadingText) return;
+      var copy = ensureChild(inner, ".page-loader__copy", "p", "page-loader__copy", ".page-loader__track");
+      copy.textContent = loadingText;
+    });
+
+    document.querySelectorAll(".site-preloader-content").forEach(function (content) {
+      if (!hasLoadingText) return;
+      var status = ensureChild(content, "[data-dexta-loading-text]", "span", "", ".site-preloader-ring");
+      status.setAttribute("data-dexta-loading-text", "true");
+      status.textContent = loadingText;
     });
   }
 
-  function setDisplay(selector, visible) {
-    document.querySelectorAll(selector).forEach(function (node) {
-      node.style.display = visible ? "" : "none";
-    });
-  }
-
-	  function applyThemeIdentity() {
-	    var showText = ${escapeScriptJson(content.theme.brandTextVisible)};
-	    var fullLoaderName = [brandName, brandTagline].filter(Boolean).join(" ");
-	    var templateTwoDefaultText =
+		  function applyThemeIdentity() {
+		    var showText = ${escapeScriptJson(content.theme.brandTextVisible)};
+		    var fullLoaderName = [brandName, brandTagline].filter(Boolean).join(" ");
+		    var templateTwoDefaultText =
 	      ${escapeScriptJson(content.templateSlug === "dexta-academy-2")} &&
 	      (brandName === "DXT Academy" || brandName === "DXT ACADEMY") &&
 	      brandTagline === "Nurturing. Inspiring. Leading.";
@@ -1453,26 +1869,26 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
 	    replaceMarkLogo(".brand__mark, .brand__crest, .site-loader__mark, .page-loader__crest");
 
     setDisplay(".brand__name, .brand__copy, .brand__text, .contact-brand > span", showText);
-    setDisplay(".site-loader__text", showText && Boolean(fullLoaderName));
     setDisplay(".brand__name span, .brand__copy span, .brand__text span, .contact-brand small", showText && Boolean(brandTagline));
 
 	    if (!templateTwoDefaultText) {
 	      setText(".brand__name strong, .brand__copy strong, .brand__text strong, .contact-brand strong, .school-footer-brand h3", brandName);
 	      setText(".brand__name span, .brand__copy span, .brand__text span, .contact-brand small", brandTagline);
 	    }
-	    setText(".site-loader__text", fullLoaderName ? "Loading " + fullLoaderName : "");
+    applyLoadingIdentity(fullLoaderName);
 
     document.querySelectorAll(".brand, .contact-brand, .hero-brand").forEach(function (brand) {
       var label = fullLoaderName || brandName || "School";
       brand.setAttribute("aria-label", label + " home");
     });
 
-    if (logoUrl) {
-      document.querySelectorAll("link[rel~='icon']").forEach(function (link) {
-        link.setAttribute("href", logoUrl);
-      });
-    }
-  }
+	    if (logoUrl) {
+	      document.querySelectorAll("link[rel~='icon']").forEach(function (link) {
+	        link.setAttribute("href", logoUrl);
+	      });
+	    }
+	    applyTemplateTwoFooterContact();
+	  }
 
   applyThemeIdentity();
   if (document.readyState === "loading") {

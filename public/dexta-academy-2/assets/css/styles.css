@@ -1992,8 +1992,8 @@ body[data-page="home"] .hero-home__actions .button--primary:hover {
   }
 
   .page-hero::before {
-    background-size: 100% auto;
-    background-position: center bottom;
+    display: none;
+    background-image: none;
   }
 
   .page-hero::after {
