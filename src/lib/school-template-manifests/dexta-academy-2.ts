@@ -325,6 +325,39 @@ export const dextaAcademy2Manifest = {
           },
         },
         {
+          id: "story",
+          label: "Story",
+          selector: ".about-story-section",
+          fields: [
+            textField("eyebrow", "Eyebrow", ".eyebrow"),
+            textField("title", "Title", ".section-title"),
+            textareaField("body", "Preview body", ".section-copy"),
+            textField("ctaText", "Read more button text", ".button"),
+            imageField("image", "Image", ".feature-split__media img"),
+          ],
+        },
+        {
+          id: "story-modal",
+          label: "Story Modal",
+          selector: ".story-modal__dialog",
+          fields: [
+            textField("eyebrow", "Eyebrow", ".story-modal__header .eyebrow", {
+              defaultValue: "about us",
+            }),
+            textField("title", "Modal title", "#story-modal-title", {
+              defaultValue: "DXT Academy's Journey",
+            }),
+            textareaField("bodyHtml", "Full story", ".story-modal__content", {
+              type: "richText",
+              target: "innerHTML",
+              defaultValue:
+                "<p>DXT Academy was founded with a vision: to create an educational institution where rigorous academics, strong character development, and purposeful leadership converge. What began as a small initiative with a handful of passionate educators has blossomed into a thriving community of over 1,500 students.</p><p>Our story is one of purposeful growth. From day one, we refused to settle for conventional education. We believed that schools should nurture not just brilliant minds but confident, compassionate leaders who understand their role in society. This philosophy became the foundation upon which DXT Academy was built.</p><p>Over the years, we've invested in world-class facilities, recruited exceptional teachers, and developed innovative curricula that blend traditional excellence with 21st-century skills. Our students don't just excel in examinations-they thrive in life. With a 95% university progression rate and countless alumni making meaningful contributions across industries, we've proven that our approach works.</p><p>But our greatest pride isn't our statistics. It's the students who leave our halls as thinkers, problem-solvers, and changemakers. It's the parent testimonials that speak of transformation. It's the teacher stories of breakthrough moments with learners. Every day, DXT Academy lives out its mission: nurturing inspired learners and courageous leaders.</p><p>As we continue to grow, we remain committed to the values that define us-integrity, respect, responsibility, and excellence. We invite you to become part of our story.</p>",
+              helpText:
+                "Paste the full story here. The editor will shorten the visible story preview to fit this template.",
+            }),
+          ],
+        },
+        {
           id: "mission-vision",
           label: "Mission, Vision, Promise",
           selector: ".info-grid",

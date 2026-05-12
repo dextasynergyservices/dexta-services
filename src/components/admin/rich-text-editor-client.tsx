@@ -9,6 +9,7 @@ import "tinymce/plugins/charmap";
 import "tinymce/plugins/code";
 import "tinymce/plugins/help";
 import "tinymce/plugins/help/js/i18n/keynav/en";
+import "tinymce/plugins/link";
 import "tinymce/plugins/lists";
 import "tinymce/plugins/quickbars";
 import "tinymce/plugins/visualchars";
@@ -21,6 +22,7 @@ export type RichTextEditorClientProps = {
   minHeight?: number;
   onChange: (value: string) => void;
   placeholder?: string;
+  tone?: "dark" | "light";
   value: string;
 };
 
@@ -49,15 +51,44 @@ const FONT_SIZE_FORMATS = [
   "64px",
 ].join(" ");
 
+const BLOCK_FORMATS =
+  "Paragraph=p;Heading 2=h2;Heading 3=h3;Heading 4=h4;Quote=blockquote";
+
 export function RichTextEditorClient({
   disabled = false,
   minHeight = 220,
   onChange,
   placeholder,
+  tone = "dark",
   value,
 }: RichTextEditorClientProps) {
+  const isLightTone = tone === "light";
+  const editorPalette = isLightTone
+    ? {
+        background: "#ffffff",
+        border: "border-[#d8dee8]",
+        bodyText: "#1f2937",
+        headingText: "#111827",
+        linkText: "#0369a1",
+        quoteBorder: "#0284c7",
+        quoteText: "#374151",
+        wrapperBackground: "bg-white",
+      }
+    : {
+        background: "#0d0d0d",
+        border: "border-[#2a2a2a]",
+        bodyText: "#f5f5f5",
+        headingText: "#ffffff",
+        linkText: "#67e8f9",
+        quoteBorder: "#22d3ee",
+        quoteText: "#d7d7d7",
+        wrapperBackground: "bg-[#0d0d0d]",
+      };
+
   return (
-    <div className="overflow-hidden rounded-xl border border-[#2a2a2a] bg-[#0d0d0d]">
+    <div
+      className={`overflow-hidden rounded-xl border ${editorPalette.border} ${editorPalette.wrapperBackground}`}
+    >
       <Editor
         disabled={disabled}
         licenseKey="gpl"
@@ -71,8 +102,8 @@ export function RichTextEditorClient({
           content_css: false,
           content_style: `
             body {
-              background: #0d0d0d;
-              color: #f5f5f5;
+              background: ${editorPalette.background};
+              color: ${editorPalette.bodyText};
               font-family: Montserrat, system-ui, sans-serif;
               font-size: 16px;
               margin: 0;
@@ -84,23 +115,42 @@ export function RichTextEditorClient({
             p:last-child {
               margin-bottom: 0;
             }
+            h2, h3, h4 {
+              color: ${editorPalette.headingText};
+              line-height: 1.2;
+              margin: 0 0 0.75rem;
+            }
+            ul, ol {
+              margin: 0 0 0.85rem 1.25rem;
+              padding: 0;
+            }
+            blockquote {
+              border-left: 3px solid ${editorPalette.quoteBorder};
+              color: ${editorPalette.quoteText};
+              margin: 0 0 0.85rem;
+              padding-left: 1rem;
+            }
+            a {
+              color: ${editorPalette.linkText};
+            }
           `,
+          block_formats: BLOCK_FORMATS,
           font_family_formats: FONT_FAMILY_FORMATS,
           font_size_formats: FONT_SIZE_FORMATS,
           menubar: false,
           min_height: minHeight,
           plugins:
-            "autolink charmap code help lists quickbars visualchars wordcount",
+            "autolink charmap code help link lists quickbars visualchars wordcount",
           placeholder,
           promotion: false,
           quickbars_insert_toolbar: false,
           quickbars_selection_toolbar:
-            "fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | removeformat",
+            "blocks fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | link removeformat",
           resize: true,
           skin: false,
           statusbar: true,
           toolbar:
-            "undo redo | fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | removeformat | visualchars code",
+            "undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist blockquote | link unlink | removeformat | visualchars code",
           toolbar_mode: "wrap",
         }}
         onEditorChange={onChange}

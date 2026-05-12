@@ -167,4 +167,33 @@ export const WE_BRAND_SCHOOLS_TEMPLATE_SEED_DATA = [
       },
     ],
   },
+  {
+    id: "school-template-dexta-academy-5",
+    name: "Dexta Academy 5",
+    slug: "dexta-academy-5",
+    summary:
+      "A polished school website template with strong admissions prompts, story sections, gallery, school life, and contact pages.",
+    description:
+      "This template fits schools that want a warm, premium visual tone with editable homepage sections, supporting inner pages, modal forms, and clear parent-facing calls to action.",
+    websiteUrl: "/dexta-academy-5/index.html",
+    highlights: [
+      "Admissions journey",
+      "School life page",
+      "Editable gallery",
+      "Embedded form modals",
+    ],
+    isVisible: true,
+    position: 7,
+    assets: [
+      {
+        id: "school-template-dexta-academy-5-cover",
+        publicId:
+          "https://res.cloudinary.com/dxoorukfj/image/upload/v1778254209/ChatGPT_Image_May_8_2026_04_29_51_PM_fmdlqg.png",
+        mediaType: "IMAGE" as const,
+        thumbnailPublicId: null,
+        caption: "Dexta Academy 5 template preview",
+        position: 0,
+      },
+    ],
+  },
 ];

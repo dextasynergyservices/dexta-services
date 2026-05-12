@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/admin/events/image-upload";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -119,6 +120,15 @@ const ORIGINAL_THEME_COLORS: Record<
   string,
   Partial<Record<keyof SchoolTemplateProjectContent["theme"], string>>
 > = {
+  "dexta-academy-5": {
+    brandNameColor: "#2b2b2b",
+    brandTaglineColor: "#d4a437",
+    logoBorderColor: "#d4a437",
+    primaryColor: "#31401c",
+    secondaryColor: "#d4a437",
+    loadingBackgroundColor: "#ffffff",
+    navBarColor: "#ffffff",
+  },
   "dexta-academy-4": {
     brandNameColor: "#ffffff",
     brandTaglineColor: "#dbeafe",
@@ -210,6 +220,312 @@ function isProtectedCopyImportField(field: SchoolTemplateProjectFieldSnapshot) {
 
 function getStringValue(value: unknown) {
   return typeof value === "string" ? value : value == null ? "" : String(value);
+}
+
+type StoryPreviewUpdate = {
+  pageSlug: "about";
+  sectionId: "story";
+  fields?: Record<string, string>;
+  repeatableItem?: {
+    itemIndex: number;
+    fields: Record<string, string>;
+  };
+};
+
+const STORY_FULL_FIELD_KEYS = new Set(["bodyHtml", "fullStory"]);
+
+const STORY_PREVIEW_FALLBACK_LENGTHS: Record<string, number[]> = {
+  "dexta-academy-1": [250, 170],
+  "dexta-academy-2": [255],
+  "dexta-academy-3": [165, 165],
+  "dexta-academy-4": [220, 210],
+  "dexta-academy-5": [155, 175],
+};
+
+function normalizeStoryText(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function getStoryTextBlocks(value: EditableFieldValue) {
+  const rawValue = getStringValue(value).trim();
+  if (!rawValue) return [];
+
+  if (/<[a-z][\s\S]*>/i.test(rawValue) && typeof document !== "undefined") {
+    const container = document.createElement("div");
+    container.innerHTML = rawValue;
+    const blocks = Array.from(container.querySelectorAll("p, li"))
+      .map((node) => normalizeStoryText(node.textContent ?? ""))
+      .filter(Boolean);
+
+    if (blocks.length) {
+      return blocks;
+    }
+
+    const fallbackText = normalizeStoryText(container.textContent ?? "");
+    return fallbackText ? [fallbackText] : [];
+  }
+
+  return rawValue
+    .split(/\n{2,}/)
+    .map(normalizeStoryText)
+    .filter(Boolean);
+}
+
+function splitStorySentences(value: string) {
+  return (value.match(/[^.!?]+[.!?]?/g) ?? [value])
+    .map(normalizeStoryText)
+    .filter(Boolean);
+}
+
+function fitStoryText(value: string, targetLength: number) {
+  const normalizedValue = normalizeStoryText(value);
+  if (!normalizedValue) return "";
+
+  const upperBound = Math.max(70, Math.round(targetLength * 1.08));
+  if (normalizedValue.length <= upperBound) {
+    return normalizedValue;
+  }
+
+  const sentences = splitStorySentences(normalizedValue);
+  let output = "";
+  for (const sentence of sentences) {
+    const nextOutput = `${output} ${sentence}`.trim();
+    if (nextOutput.length > upperBound) break;
+    output = nextOutput;
+  }
+
+  const clipped =
+    output || normalizedValue.slice(0, Math.max(upperBound - 3, 67)).trimEnd();
+  return clipped.endsWith(".") || clipped.endsWith("!") || clipped.endsWith("?")
+    ? clipped
+    : `${clipped.replace(/[,\s]+$/g, "")}...`;
+}
+
+function getStoryFieldTargetLength(
+  section: SchoolTemplateProjectSectionContent | undefined,
+  fieldKey: string,
+  fallbackLength: number,
+) {
+  const currentLength = normalizeStoryText(
+    getStringValue(section?.fields[fieldKey]),
+  ).length;
+
+  return currentLength > 40 ? currentLength : fallbackLength;
+}
+
+function getStoryRepeatableFieldTargetLength(
+  section: SchoolTemplateProjectSectionContent | undefined,
+  itemIndex: number,
+  fieldKey: string,
+  fallbackLength: number,
+) {
+  const currentLength = normalizeStoryText(
+    getStringValue(section?.repeatable?.items[itemIndex]?.[fieldKey]),
+  ).length;
+
+  return currentLength > 40 ? currentLength : fallbackLength;
+}
+
+function buildStoryPreviewSegments(
+  fullStoryValue: EditableFieldValue,
+  targetLengths: number[],
+) {
+  const blocks = getStoryTextBlocks(fullStoryValue);
+  const fullText = normalizeStoryText(blocks.join(" "));
+
+  if (!blocks.length || !fullText) {
+    return targetLengths.map(() => "");
+  }
+
+  if (targetLengths.length === 1) {
+    return [fitStoryText(fullText, targetLengths[0])];
+  }
+
+  if (blocks.length >= targetLengths.length) {
+    return targetLengths.map((targetLength, index) =>
+      fitStoryText(blocks[index] ?? fullText, targetLength),
+    );
+  }
+
+  const sentences = splitStorySentences(fullText);
+  let sentenceIndex = 0;
+
+  return targetLengths.map((targetLength) => {
+    let output = "";
+    while (sentenceIndex < sentences.length) {
+      const sentence = sentences[sentenceIndex];
+      const nextOutput = `${output} ${sentence}`.trim();
+      if (output && nextOutput.length > targetLength * 1.08) break;
+      output = nextOutput;
+      sentenceIndex += 1;
+      if (output.length >= targetLength * 0.72) break;
+    }
+
+    return fitStoryText(output || fullText, targetLength);
+  });
+}
+
+function buildStoryPreviewUpdate({
+  draft,
+  sectionId,
+  fieldKey,
+  value,
+}: {
+  draft: SchoolTemplateProjectContent;
+  sectionId: string;
+  fieldKey: string;
+  value: EditableFieldValue;
+}): StoryPreviewUpdate | null {
+  if (sectionId !== "story-modal" || !STORY_FULL_FIELD_KEYS.has(fieldKey)) {
+    return null;
+  }
+
+  const aboutPage = draft.pages.find((page) => page.slug === "about");
+  const storySection = aboutPage?.sections.find(
+    (section) => section.id === "story",
+  );
+  if (!storySection) {
+    return null;
+  }
+
+  const fallbackLengths =
+    STORY_PREVIEW_FALLBACK_LENGTHS[draft.templateSlug] ??
+    STORY_PREVIEW_FALLBACK_LENGTHS["dexta-academy-5"];
+
+  switch (draft.templateSlug) {
+    case "dexta-academy-1":
+    case "dexta-academy-4":
+    case "dexta-academy-5": {
+      const targetFields = ["body1", "body2"];
+      const segments = buildStoryPreviewSegments(
+        value,
+        targetFields.map((targetField, index) =>
+          getStoryFieldTargetLength(
+            storySection,
+            targetField,
+            fallbackLengths[index] ?? 180,
+          ),
+        ),
+      );
+
+      return {
+        pageSlug: "about",
+        sectionId: "story",
+        fields: Object.fromEntries(
+          targetFields.map((targetField, index) => [
+            targetField,
+            segments[index] ?? "",
+          ]),
+        ),
+      };
+    }
+    case "dexta-academy-2": {
+      const [segment] = buildStoryPreviewSegments(value, [
+        getStoryFieldTargetLength(storySection, "body", fallbackLengths[0]),
+      ]);
+
+      return {
+        pageSlug: "about",
+        sectionId: "story",
+        fields: { body: segment ?? "" },
+      };
+    }
+    case "dexta-academy-3": {
+      const targetFields = ["cardBody1", "cardBody2"];
+      const segments = buildStoryPreviewSegments(
+        value,
+        targetFields.map((targetField, index) =>
+          getStoryRepeatableFieldTargetLength(
+            storySection,
+            0,
+            targetField,
+            fallbackLengths[index] ?? 165,
+          ),
+        ),
+      );
+
+      return {
+        pageSlug: "about",
+        sectionId: "story",
+        repeatableItem: {
+          itemIndex: 0,
+          fields: Object.fromEntries(
+            targetFields.map((targetField, index) => [
+              targetField,
+              segments[index] ?? "",
+            ]),
+          ),
+        },
+      };
+    }
+    default:
+      return null;
+  }
+}
+
+function storyPreviewUpdateHasChanges(
+  draft: SchoolTemplateProjectContent,
+  update: StoryPreviewUpdate,
+) {
+  const aboutPage = draft.pages.find((page) => page.slug === update.pageSlug);
+  const section = aboutPage?.sections.find(
+    (item) => item.id === update.sectionId,
+  );
+  if (!section) return false;
+
+  const fieldsChanged = Object.entries(update.fields ?? {}).some(
+    ([key, value]) => section.fields[key] !== value,
+  );
+  const repeatableChanged = Object.entries(
+    update.repeatableItem?.fields ?? {},
+  ).some(
+    ([key, value]) =>
+      section.repeatable?.items[update.repeatableItem?.itemIndex ?? 0]?.[
+        key
+      ] !== value,
+  );
+
+  return fieldsChanged || repeatableChanged;
+}
+
+function applyStoryPreviewUpdate(
+  draft: SchoolTemplateProjectContent,
+  update: StoryPreviewUpdate,
+) {
+  return {
+    ...draft,
+    pages: draft.pages.map((page) =>
+      page.slug === update.pageSlug
+        ? {
+            ...page,
+            sections: page.sections.map((section) =>
+              section.id === update.sectionId
+                ? {
+                    ...section,
+                    fields: {
+                      ...section.fields,
+                      ...(update.fields ?? {}),
+                    },
+                    repeatable: update.repeatableItem
+                      ? {
+                          items: (section.repeatable?.items ?? []).map(
+                            (item, index) =>
+                              index === update.repeatableItem?.itemIndex
+                                ? {
+                                    ...item,
+                                    ...update.repeatableItem.fields,
+                                  }
+                                : item,
+                          ),
+                        }
+                      : section.repeatable,
+                  }
+                : section,
+            ),
+          }
+        : page,
+    ),
+  };
 }
 
 function getCopyImportMemoryKey({
@@ -602,6 +918,7 @@ function FieldControl({
   onChange,
   onValidateModel,
   isValidatingModel = false,
+  className,
 }: {
   field: SchoolTemplateProjectFieldSnapshot;
   value: EditableFieldValue;
@@ -609,6 +926,7 @@ function FieldControl({
   onChange: (value: EditableFieldValue) => void;
   onValidateModel?: (value: EditableFieldValue) => Promise<void> | void;
   isValidatingModel?: boolean;
+  className?: string;
 }) {
   const controlKind = getFieldControlKind(field);
   const displayValue = getFieldDisplayValue(field, value);
@@ -623,12 +941,20 @@ function FieldControl({
     "border-[#2a2a2a] bg-[#0d0d0d] text-white placeholder:text-[#555]";
 
   return (
-    <div className="space-y-2">
+    <div className={cn("space-y-2", className)}>
       <label className="block text-xs font-medium text-[#b3b3b3]">
         {field.label}
       </label>
 
-      {controlKind === "textarea" || controlKind === "richText" ? (
+      {controlKind === "richText" ? (
+        <RichTextEditor
+          minHeight={320}
+          placeholder={field.placeholder ?? ""}
+          tone="light"
+          value={getStringValue(displayValue)}
+          onChange={(nextValue) => onChange(nextValue)}
+        />
+      ) : controlKind === "textarea" ? (
         <Textarea
           rows={4}
           value={getStringValue(displayValue)}
@@ -1303,6 +1629,82 @@ export function SchoolWebsiteProjectEditor({
     fieldKey: string,
     value: string | number | boolean | null,
   ) => {
+    const storyPreviewUpdate = buildStoryPreviewUpdate({
+      draft: draftRef.current,
+      sectionId,
+      fieldKey,
+      value,
+    });
+
+    if (storyPreviewUpdate) {
+      const currentSection = getDraftSection({
+        draft: draftRef.current,
+        scope: selectedScope,
+        pageSlug: selectedPage?.slug ?? selectedPageSlug,
+        sectionId,
+      });
+      const sourceChanged = currentSection?.fields[fieldKey] !== value;
+      const previewChanged = storyPreviewUpdateHasChanges(
+        draftRef.current,
+        storyPreviewUpdate,
+      );
+
+      if (!sourceChanged && !previewChanged) {
+        return;
+      }
+
+      recordSectionHistory(sectionId);
+      if (previewChanged && storyPreviewUpdate.sectionId !== sectionId) {
+        recordSectionHistory(storyPreviewUpdate.sectionId);
+      }
+
+      updateDraft((currentDraft) => {
+        const draftWithSourceValue =
+          selectedScope === "shared"
+            ? {
+                ...currentDraft,
+                sharedSections: currentDraft.sharedSections.map((section) =>
+                  section.id === sectionId
+                    ? {
+                        ...section,
+                        fields: {
+                          ...section.fields,
+                          [fieldKey]: value,
+                        },
+                      }
+                    : section,
+                ),
+              }
+            : {
+                ...currentDraft,
+                pages: currentDraft.pages.map((page) =>
+                  page.slug === selectedPageSlug
+                    ? {
+                        ...page,
+                        sections: page.sections.map((section) =>
+                          section.id === sectionId
+                            ? {
+                                ...section,
+                                fields: {
+                                  ...section.fields,
+                                  [fieldKey]: value,
+                                },
+                              }
+                            : section,
+                        ),
+                      }
+                    : page,
+                ),
+              };
+
+        return applyStoryPreviewUpdate(
+          draftWithSourceValue,
+          storyPreviewUpdate,
+        );
+      });
+      return;
+    }
+
     updateSectionFields(sectionId, { [fieldKey]: value });
   };
 
@@ -2687,6 +3089,11 @@ export function SchoolWebsiteProjectEditor({
                                   isValidatingModel={
                                     validatingModelKey === modelValidationKey
                                   }
+                                  className={
+                                    field.type === "richText"
+                                      ? "xl:col-span-2"
+                                      : undefined
+                                  }
                                 />
                               );
                             })}
@@ -2768,6 +3175,11 @@ export function SchoolWebsiteProjectEditor({
                                         isValidatingModel={
                                           validatingModelKey ===
                                           modelValidationKey
+                                        }
+                                        className={
+                                          field.type === "richText"
+                                            ? "xl:col-span-2"
+                                            : undefined
                                         }
                                       />
                                     );

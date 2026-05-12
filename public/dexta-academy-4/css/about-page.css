@@ -200,6 +200,67 @@
   line-height: 1.8;
 }
 
+.about-story-readmore {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.about-story-modal .modal-content {
+  overflow: hidden;
+  border: 0;
+  border-radius: 28px;
+  box-shadow: 0 32px 70px rgba(15, 23, 42, 0.24);
+}
+
+.about-story-modal .modal-header {
+  align-items: flex-start;
+  padding: 30px 34px 22px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: #f7fafc;
+}
+
+.about-story-modal .modal-title {
+  margin: 8px 0 0;
+  color: #102542;
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+}
+
+.about-story-modal .close {
+  width: 42px;
+  height: 42px;
+  margin: 0 0 0 20px;
+  padding: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #102542;
+  opacity: 1;
+  text-shadow: none;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
+}
+
+.about-story-modal .close:hover,
+.about-story-modal .close:focus {
+  color: #0f766e;
+  opacity: 1;
+}
+
+.about-story-modal-body {
+  padding: 30px 34px 34px;
+}
+
+.about-story-modal-body p {
+  margin-bottom: 18px;
+  color: #425466;
+  font-size: 1rem;
+  line-height: 1.9;
+}
+
+.about-story-modal-body p:last-child {
+  margin-bottom: 0;
+}
+
 .about-principles-section {
   background: linear-gradient(180deg, #f5f8fb 0%, #edf3f6 100%);
 }
@@ -495,5 +556,11 @@
 
   .student-experience-image img {
     min-height: 360px;
+  }
+
+  .about-story-modal .modal-header,
+  .about-story-modal-body {
+    padding-left: 24px;
+    padding-right: 24px;
   }
 }

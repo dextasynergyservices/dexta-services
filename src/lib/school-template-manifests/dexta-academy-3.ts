@@ -229,10 +229,16 @@ export const dextaAcademy3Manifest = {
             ),
             textField("cardTitle", "Card title", ".about-story-card h3"),
             textareaField(
-              "cardBody",
-              "Card body",
-              ".about-story-card__copy p:not(.eyebrow)",
+              "cardBody1",
+              "Preview paragraph 1",
+              ".about-story-card__copy p:nth-of-type(2)",
             ),
+            textareaField(
+              "cardBody2",
+              "Preview paragraph 2",
+              ".about-story-card__copy p:nth-of-type(3)",
+            ),
+            textField("ctaText", "Read more button text", "button"),
             imageField("cardImage", "Card image", ".about-story-card img"),
           ],
           repeatable: {
@@ -240,6 +246,21 @@ export const dextaAcademy3Manifest = {
             labelSingular: "Story card",
             labelPlural: "Story cards",
           },
+        },
+        {
+          id: "story-modal",
+          label: "Story Modal",
+          selector: "#story-modal",
+          fields: [
+            textField("eyebrow", "Eyebrow", ".story-modal__eyebrow"),
+            textField("title", "Modal title", ".story-modal__header h2"),
+            textareaField("bodyHtml", "Full story", ".story-modal__content", {
+              type: "richText",
+              target: "innerHTML",
+              helpText:
+                "Paste the full story here. The editor will shorten the visible story preview to fit this template.",
+            }),
+          ],
         },
         {
           id: "values",

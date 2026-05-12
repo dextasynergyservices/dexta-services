@@ -85,6 +85,13 @@ const admissionOpenButtons = document.querySelectorAll(
 const admissionCloseButtons = document.querySelectorAll(
   "[data-admission-modal-close]",
 );
+const storyModal = document.getElementById("story-modal");
+const storyOpenButtons = document.querySelectorAll(
+  "[data-story-modal-open]",
+);
+const storyCloseButtons = document.querySelectorAll(
+  "[data-story-modal-close]",
+);
 
 const shouldUseLoader = Boolean(body && pageLoader && isHomePage);
 const shouldResetScroll = !window.location.hash;
@@ -288,6 +295,89 @@ function handleAdmissionModalKeydown(event) {
   const lastElement = focusableElements[focusableElements.length - 1];
 
   if (!admissionModal.contains(document.activeElement)) {
+    event.preventDefault();
+    firstElement.focus();
+    return;
+  }
+
+  if (event.shiftKey && document.activeElement === firstElement) {
+    event.preventDefault();
+    lastElement.focus();
+    return;
+  }
+
+  if (!event.shiftKey && document.activeElement === lastElement) {
+    event.preventDefault();
+    firstElement.focus();
+  }
+}
+
+function getStoryModalFocusableElements() {
+  if (!storyModal) {
+    return [];
+  }
+
+  return Array.from(
+    storyModal.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    ),
+  );
+}
+
+function setStoryModalState(isOpen) {
+  if (!storyModal || !body) {
+    return;
+  }
+
+  if (isOpen && !storyModal.hidden) {
+    return;
+  }
+
+  if (!isOpen && storyModal.hidden) {
+    return;
+  }
+
+  if (isOpen) {
+    storyModal.hidden = false;
+    body.classList.add("is-story-modal-open");
+
+    requestAnimationFrame(() => {
+      const closeButton = storyModal.querySelector(".story-modal__close");
+      const focusTarget = closeButton || getStoryModalFocusableElements()[0];
+      focusTarget?.focus();
+    });
+  } else {
+    storyModal.hidden = true;
+    body.classList.remove("is-story-modal-open");
+  }
+}
+
+function handleStoryModalKeydown(event) {
+  if (!storyModal || storyModal.hidden) {
+    return;
+  }
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    setStoryModalState(false);
+    return;
+  }
+
+  if (event.key !== "Tab") {
+    return;
+  }
+
+  const focusableElements = getStoryModalFocusableElements();
+
+  if (!focusableElements.length) {
+    event.preventDefault();
+    return;
+  }
+
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+
+  if (!storyModal.contains(document.activeElement)) {
     event.preventDefault();
     firstElement.focus();
     return;
@@ -605,7 +695,31 @@ admissionCloseButtons.forEach((button) => {
   });
 });
 
+storyOpenButtons.forEach((button) => {
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    setStoryModalState(true);
+  });
+});
+
+storyCloseButtons.forEach((button) => {
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    setStoryModalState(false);
+  });
+});
+
+// Close story modal when clicking on backdrop
+if (storyModal) {
+  storyModal.addEventListener("click", (event) => {
+    if (event.target === storyModal || event.target.classList.contains("story-modal__backdrop")) {
+      setStoryModalState(false);
+    }
+  });
+}
+
 document.addEventListener("keydown", handleAdmissionModalKeydown);
+document.addEventListener("keydown", handleStoryModalKeydown);
 
 if (window.location.hash === "#admission") {
   setAdmissionModalState(true);
