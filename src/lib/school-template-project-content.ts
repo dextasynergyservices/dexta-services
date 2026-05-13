@@ -17,6 +17,7 @@ export type SchoolTemplateProjectTheme = {
   logoWidth: number;
   logoHeight: number;
   loadingText: string;
+  loadingTextColor: string;
   loadingLogoWidth: number;
   loadingLogoHeight: number;
   brandName: string;
@@ -216,6 +217,7 @@ export const schoolTemplateProjectContentSchema = z.object({
     logoWidth: z.number().default(56),
     logoHeight: z.number().default(56),
     loadingText: z.string().default("Loading school website"),
+    loadingTextColor: z.string().default("#111827"),
     loadingLogoWidth: z.number().default(64),
     loadingLogoHeight: z.number().default(64),
     brandName: z.string().default(""),
@@ -1217,6 +1219,9 @@ export function sanitizeSchoolTemplateProjectContent(
       loadingText: sanitizePlainText(
         content.theme.loadingText ?? "Loading school website",
       ),
+      loadingTextColor: sanitizePlainText(
+        content.theme.loadingTextColor ?? "#111827",
+      ),
       loadingLogoWidth: Number(content.theme.loadingLogoWidth ?? 64),
       loadingLogoHeight: Number(content.theme.loadingLogoHeight ?? 64),
       brandName: sanitizePlainText(content.theme.brandName ?? ""),
@@ -1370,6 +1375,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoWidth: 48,
         logoHeight: 56,
         loadingText: "Loading DXT Academy",
+        loadingTextColor: "#2b2b2b",
         loadingLogoWidth: 64,
         loadingLogoHeight: 72,
         brandName: "DXT ACADEMY",
@@ -1397,6 +1403,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoWidth: 72,
         logoHeight: 48,
         loadingText: "Preparing School B",
+        loadingTextColor: "#111827",
         loadingLogoWidth: 260,
         loadingLogoHeight: 112,
         brandName: "School B",
@@ -1423,6 +1430,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoWidth: 46,
         logoHeight: 46,
         loadingText: "Preparing DXT Academy",
+        loadingTextColor: "#061a40",
         loadingLogoWidth: 88,
         loadingLogoHeight: 88,
         brandName: "DXT Academy",
@@ -1449,6 +1457,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoWidth: 48,
         logoHeight: 48,
         loadingText: "Loading DXT Academy",
+        loadingTextColor: "#ffffff",
         loadingLogoWidth: 48,
         loadingLogoHeight: 48,
         brandName: "DXT ACADEMY",
@@ -1464,7 +1473,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         primaryColor: "#081827",
         secondaryColor: "#facc15",
         fontFamily: "Plus Jakarta Sans",
-        navLinkFontFamily: "Plus Jakarta Sans",
+        navLinkFontFamily: "Montserrat",
         loadingBackgroundColor: "#081827",
         navBarColor: "#081827",
         navBarTransparent: true,
@@ -1476,6 +1485,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoWidth: 72,
         logoHeight: 56,
         loadingText: "Loading DXT Grade",
+        loadingTextColor: "#0f172a",
         loadingLogoWidth: 72,
         loadingLogoHeight: 56,
         brandName: "DXT GRADE",
@@ -1502,6 +1512,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoWidth: 56,
         logoHeight: 56,
         loadingText: "Loading school website",
+        loadingTextColor: "#111827",
         loadingLogoWidth: 64,
         loadingLogoHeight: 64,
         brandName: "",
@@ -1924,6 +1935,10 @@ export function syncSchoolTemplateProjectContentWithManifest({
 
   if (wasThemeFieldMissing("loadingText")) {
     syncedTheme.loadingText = freshContent.theme.loadingText;
+  }
+
+  if (wasThemeFieldMissing("loadingTextColor")) {
+    syncedTheme.loadingTextColor = freshContent.theme.loadingTextColor;
   }
 
   if (wasThemeFieldMissing("loadingLogoWidth")) {

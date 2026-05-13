@@ -44,6 +44,10 @@ function injectBeforeBodyClose(html: string, markup: string) {
   return `${html}\n${markup}`;
 }
 
+function getPreviewBootMarkup() {
+  return `<script>document.documentElement.setAttribute("data-dexta-project-preview","loading");window.setTimeout(function(){if(document.documentElement.getAttribute("data-dexta-project-preview")==="loading"){document.documentElement.setAttribute("data-dexta-project-preview","ready");}},2500);</script><style>html[data-dexta-project-preview="loading"] body{opacity:0!important;}html[data-dexta-project-preview="ready"] body{opacity:1!important;transition:opacity .16s ease;}</style>`;
+}
+
 function removeHero3dModuleScript(html: string) {
   return html.replace(
     /<script\b(?=[^>]*\btype=["']module["'])(?=[^>]*\bsrc=["']js\/hero-3d\.js["'])[^>]*>\s*<\/script>/i,
@@ -378,6 +382,10 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	      var text = String(value || "").trim();
 	      if (!text || !isSafeFontStylesheetUrl(text) || urls.indexOf(text) >= 0) return;
 	      urls.push(text);
+	    }
+
+	    if (preview.content.templateSlug === "dexta-academy-2") {
+	      addValue("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
 	    }
 
 	    function scanSection(section) {
@@ -819,10 +827,18 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      getTemplateOverrideCss();
 		  }
 
+		  function getTemplateChromeFont() {
+		    var font = String(preview.content.theme.navLinkFontFamily || preview.content.theme.fontFamily || "").trim();
+		    if (preview.content.templateSlug !== "dexta-academy-2") return font;
+
+		    var normalized = font.replace(/["']/g, "").toLowerCase();
+		    return !font || normalized.indexOf("plus jakarta sans") !== -1 ? "Montserrat" : font;
+		  }
+
 		  function getNavLinkFontCss() {
-		    var navLinkFont = preview.content.theme.navLinkFontFamily || preview.content.theme.fontFamily;
+		    var navLinkFont = getTemplateChromeFont();
 		    if (!navLinkFont) return "";
-		    return [
+		    var selectors = [
 		      ".navbar-nav .nav-link",
 		      ".navbar-nav a",
 		      ".site-nav a",
@@ -831,12 +847,33 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      ".mobile-nav__link",
 		      ".site-header__nav a",
 		      ".site-header__links a",
-		      ".main-nav a"
-		    ].join(",") + "{font-family:" + JSON.stringify(navLinkFont) + ", var(--font-family, inherit)!important;}";
+		      ".main-nav a",
+		      ".site-footer",
+		      ".site-footer a",
+		      ".footer__links a",
+		      ".footer__contact",
+		      ".footer__bottom"
+		    ];
+
+		    if (preview.content.templateSlug === "dexta-academy-2") {
+		      selectors = selectors.concat([
+		        ".button",
+		        ".site-header .button",
+		        ".mobile-panel .button",
+		        ".hero-home__actions .button",
+		        ".cta-banner .button",
+		        ".admission-modal .button",
+		        ".story-modal .button",
+		        ".card__link"
+		      ]);
+		    }
+
+		    return selectors.join(",") + "{font-family:" + JSON.stringify(navLinkFont) + ", var(--font-family, inherit)!important;}";
 		  }
 
 		  function getGlobalAppearanceCss() {
 		    var loadingBackground = preview.content.theme.loadingBackgroundColor || "#ffffff";
+		    var loadingTextColor = preview.content.theme.loadingTextColor || "currentColor";
 		    var isTemplateTwo = preview.content.templateSlug === "dexta-academy-2";
 		    var navbarBackground = preview.content.theme.navBarTransparent
 		      ? "transparent"
@@ -855,7 +892,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 			    var brandTextDisplay = preview.content.theme.brandTextVisible ? "" : "none";
 		    var brandLine2Display = preview.content.theme.brandTextVisible && String(preview.content.theme.brandTagline || "").trim() ? "" : "none";
 		    var css = [
-		      "#spinner,.site-loader,.site-preloader,#ftco-loader,#ftco-loader.fullscreen,#ftco-loader.show.fullscreen{background:" + loadingBackground + "!important;background-color:" + loadingBackground + "!important;}"
+		      "#spinner,.site-loader,.site-preloader,#ftco-loader,#ftco-loader.fullscreen,#ftco-loader.show.fullscreen{background:" + loadingBackground + "!important;background-color:" + loadingBackground + "!important;color:" + loadingTextColor + "!important;}"
 		    ];
 
 			    if (isTemplateTwo) {
@@ -895,7 +932,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 			    css.push("#spinner .dexta-loading-logo,#spinner .spinner-border,.site-loader__mark,.page-loader__crest,.dexta-generated-loader__logo{display:grid!important;place-items:center!important;width:" + loadingLogoWidth + "!important;height:" + loadingLogoHeight + "!important;max-width:" + loadingLogoWidth + "!important;object-fit:contain!important;}");
 			    css.push(".site-preloader-logo{display:block!important;width:" + loadingLogoWidth + "!important;height:" + loadingLogoHeight + "!important;max-width:" + loadingLogoWidth + "!important;object-fit:contain!important;}");
 			    css.push("#spinner .dexta-loading-logo img,.site-loader__mark img,.page-loader__crest img,.site-preloader-logo,.dexta-generated-loader__logo img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;}");
-			    css.push("#spinner .dexta-loading-text,.dexta-generated-loader__text{color:currentColor;font-size:.95rem;font-weight:700;line-height:1.4;}");
+			    css.push("#spinner .dexta-loading-text,.site-loader__text,.page-loader__copy,.site-preloader-content [data-dexta-loading-text],.dexta-generated-loader__text{color:" + loadingTextColor + "!important;font-size:.95rem;font-weight:700;line-height:1.4;}");
 
 					    css.push(".brand__name,.brand__copy,.brand__text,.contact-brand>span{display:" + brandTextDisplay + "!important;}");
 				    css.push(".brand__name span,.brand__copy span,.brand__text span,.contact-brand small{display:" + brandLine2Display + "!important;}");
@@ -1461,7 +1498,7 @@ export async function renderSchoolTemplatePreview({
 
   const withHeadMarkup = injectIntoHead(
     sourceHtml,
-    `${baseMarkup}\n${noIndexMarkup}`,
+    `${baseMarkup}\n${noIndexMarkup}\n${getPreviewBootMarkup()}`,
   );
 
   return injectBeforeBodyClose(

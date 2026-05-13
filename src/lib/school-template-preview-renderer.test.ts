@@ -98,4 +98,30 @@ describe("school template preview renderer", () => {
     assert.match(html, /setElementHtml\(node, value\)/);
     assert.match(html, /Correct legacy intro title/);
   });
+
+  it("uses Montserrat for Template 2 navbar, footer, and buttons when projects carry the old default font", async () => {
+    const content = buildSchoolTemplateProjectContent(dextaAcademy2Manifest);
+    const sourceSnapshot = buildSchoolTemplateSourceSnapshot(
+      dextaAcademy2Manifest,
+    );
+
+    content.theme.navLinkFontFamily =
+      '"Plus Jakarta Sans", "Segoe UI", sans-serif';
+
+    const html = await renderSchoolTemplatePreview({
+      content,
+      sourceSnapshot,
+      pageSlug: "home",
+    });
+
+    assert.ok(html, "Expected Template 2 home preview HTML.");
+    assert.match(html, /function getTemplateChromeFont/);
+    assert.match(html, /\.site-footer/);
+    assert.match(html, /\.button/);
+    assert.match(
+      html,
+      /Montserrat:ital,wght@0,100\.\.900;1,100\.\.900&display=swap/,
+    );
+    assert.match(html, /normalized\.indexOf\("plus jakarta sans"\) !== -1/);
+  });
 });

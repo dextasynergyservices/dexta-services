@@ -1125,6 +1125,7 @@ function getThemeVariableDeclarations(content: SchoolTemplateProjectContent) {
 
 function getGlobalAppearanceCss(content: SchoolTemplateProjectContent) {
   const loadingBackground = content.theme.loadingBackgroundColor;
+  const loadingTextColor = content.theme.loadingTextColor || "currentColor";
   const isTemplateTwo = content.templateSlug === "dexta-academy-2";
   const navbarBackground = content.theme.navBarTransparent
     ? "transparent"
@@ -1155,6 +1156,7 @@ function getGlobalAppearanceCss(content: SchoolTemplateProjectContent) {
 #ftco-loader.show.fullscreen {
   background: ${loadingBackground} !important;
   background-color: ${loadingBackground} !important;
+  color: ${loadingTextColor} !important;
 }`,
   ];
 
@@ -1287,8 +1289,11 @@ body[data-page="home"] .site-header__bar {
   object-fit: contain !important;
 }
 #spinner .dexta-loading-text,
+.site-loader__text,
+.page-loader__copy,
+.site-preloader-content [data-dexta-loading-text],
 .dexta-generated-loader__text {
-  color: currentColor;
+  color: ${loadingTextColor} !important;
   font-size: 0.95rem;
   font-weight: 700;
   line-height: 1.4;
@@ -2059,6 +2064,12 @@ function isSafeFontStylesheetUrl(value: string) {
 
 function collectFontStylesheetUrls(content: SchoolTemplateProjectContent) {
   const urls = new Set<string>();
+  if (content.templateSlug === "dexta-academy-2") {
+    urls.add(
+      "https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap",
+    );
+  }
+
   const scanFields = (fields: Record<string, unknown>) => {
     for (const [key, value] of Object.entries(fields)) {
       const normalizedKey = key.toLowerCase();
@@ -2096,9 +2107,29 @@ function getFontStylesheetMarkup(content: SchoolTemplateProjectContent) {
 }
 
 function getNavLinkFontCss(content: SchoolTemplateProjectContent) {
-  const navLinkFont =
+  const rawNavLinkFont =
     content.theme.navLinkFontFamily || content.theme.fontFamily;
+  const normalizedNavLinkFont = rawNavLinkFont
+    .replace(/["']/g, "")
+    .toLowerCase();
+  const navLinkFont =
+    content.templateSlug === "dexta-academy-2" &&
+    (!rawNavLinkFont || normalizedNavLinkFont.includes("plus jakarta sans"))
+      ? "Montserrat"
+      : rawNavLinkFont;
   if (!navLinkFont) return "";
+  const templateTwoButtonSelectors =
+    content.templateSlug === "dexta-academy-2"
+      ? `,
+.button,
+.site-header .button,
+.mobile-panel .button,
+.hero-home__actions .button,
+.cta-banner .button,
+.admission-modal .button,
+.story-modal .button,
+.card__link`
+      : "";
 
   return `
 .navbar-nav .nav-link,
@@ -2109,7 +2140,12 @@ function getNavLinkFontCss(content: SchoolTemplateProjectContent) {
 .mobile-nav__link,
 .site-header__nav a,
 .site-header__links a,
-.main-nav a {
+.main-nav a,
+.site-footer,
+.site-footer a,
+.footer__links a,
+.footer__contact,
+.footer__bottom${templateTwoButtonSelectors} {
   font-family: ${JSON.stringify(navLinkFont)}, var(--font-family, inherit) !important;
 }`;
 }

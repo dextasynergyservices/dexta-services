@@ -15,7 +15,9 @@ describe("school template loading theme", () => {
       const content = buildSchoolTemplateProjectContent(manifest);
 
       assert.equal(typeof content.theme.loadingText, "string");
+      assert.equal(typeof content.theme.loadingTextColor, "string");
       assert.ok(content.theme.loadingText.length > 0);
+      assert.ok(content.theme.loadingTextColor.length > 0);
       assert.ok(content.theme.loadingLogoWidth > 0);
       assert.ok(content.theme.loadingLogoHeight > 0);
     }
@@ -32,6 +34,7 @@ describe("school template loading theme", () => {
     const sourceSnapshot = buildSchoolTemplateSourceSnapshot(manifest);
 
     content.theme.loadingText = "Opening River Gate Academy";
+    content.theme.loadingTextColor = "#f8fafc";
     content.theme.loadingLogoWidth = 104;
     content.theme.loadingLogoHeight = 76;
 
@@ -43,6 +46,7 @@ describe("school template loading theme", () => {
 
     assert.ok(html, "Expected home preview HTML.");
     assert.match(html, /Opening River Gate Academy/);
+    assert.match(html, /loadingTextColor":"#f8fafc"/);
     assert.match(html, /loadingLogoWidth":104/);
     assert.match(html, /loadingLogoHeight":76/);
     assert.match(html, /site-loader__mark/);
@@ -60,6 +64,7 @@ describe("school template loading theme", () => {
     const legacyContent = JSON.parse(JSON.stringify(content));
 
     delete legacyContent.theme.loadingText;
+    delete legacyContent.theme.loadingTextColor;
     delete legacyContent.theme.loadingLogoWidth;
     delete legacyContent.theme.loadingLogoHeight;
 
@@ -67,6 +72,7 @@ describe("school template loading theme", () => {
 
     assert.ok(parsed.success, "Expected legacy content to parse.");
     assert.equal(parsed.data.theme.loadingText, "Loading school website");
+    assert.equal(parsed.data.theme.loadingTextColor, "#111827");
 
     const synced = syncSchoolTemplateProjectContentWithManifest({
       content: parsed.data,
@@ -75,6 +81,7 @@ describe("school template loading theme", () => {
     });
 
     assert.equal(synced.contentJson.theme.loadingText, "Loading DXT Academy");
+    assert.equal(synced.contentJson.theme.loadingTextColor, "#ffffff");
     assert.equal(synced.contentJson.theme.loadingLogoWidth, 48);
     assert.equal(synced.contentJson.theme.loadingLogoHeight, 48);
   });
