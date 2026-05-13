@@ -148,6 +148,7 @@ const ORIGINAL_THEME_COLORS: Record<
     primaryColor: "#31401c",
     secondaryColor: "#d4a437",
     loadingBackgroundColor: "#ffffff",
+    loadingTextColor: "#2b2b2b",
     navBarColor: "#ffffff",
   },
   "dexta-academy-4": {
@@ -157,6 +158,7 @@ const ORIGINAL_THEME_COLORS: Record<
     primaryColor: "#4a8fff",
     secondaryColor: "#6aaeff",
     loadingBackgroundColor: "#ffffff",
+    loadingTextColor: "#111827",
     navBarColor: "#ffffff",
   },
   "dexta-academy-3": {
@@ -166,6 +168,7 @@ const ORIGINAL_THEME_COLORS: Record<
     primaryColor: "#061a40",
     secondaryColor: "#f5b82e",
     loadingBackgroundColor: "#fff7df",
+    loadingTextColor: "#061a40",
     navBarColor: "#ffffff",
   },
   "dexta-academy-2": {
@@ -175,6 +178,7 @@ const ORIGINAL_THEME_COLORS: Record<
     primaryColor: "#081827",
     secondaryColor: "#facc15",
     loadingBackgroundColor: "#081827",
+    loadingTextColor: "#ffffff",
     navBarColor: "#081827",
   },
   "dexta-academy-1": {
@@ -184,6 +188,7 @@ const ORIGINAL_THEME_COLORS: Record<
     primaryColor: "#0f766e",
     secondaryColor: "#f97316",
     loadingBackgroundColor: "#ffffff",
+    loadingTextColor: "#0f172a",
     navBarColor: "#ffffff",
   },
   default: {
@@ -193,6 +198,7 @@ const ORIGINAL_THEME_COLORS: Record<
     primaryColor: "#0f766e",
     secondaryColor: "#facc15",
     loadingBackgroundColor: "#ffffff",
+    loadingTextColor: "#111827",
     navBarColor: "#ffffff",
   },
 };
@@ -2775,6 +2781,20 @@ export function SchoolWebsiteProjectEditor({
                 )}
                 onChange={(value) =>
                   updateTheme("loadingBackgroundColor", getStringValue(value))
+                }
+              />
+              <FieldControl
+                field={{
+                  key: "loadingTextColor",
+                  label: "Loading text color",
+                  type: "color",
+                  selector: "body",
+                  target: "inlineStyle",
+                }}
+                value={draft.theme.loadingTextColor}
+                originalValue={getOriginalThemeColorValue("loadingTextColor")}
+                onChange={(value) =>
+                  updateTheme("loadingTextColor", getStringValue(value))
                 }
               />
               <FieldControl
