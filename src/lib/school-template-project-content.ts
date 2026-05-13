@@ -1396,6 +1396,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         fontFamily: "Manrope",
         navLinkFontFamily: "Manrope",
         loadingBackgroundColor: "#ffffff",
+        loadingBarColor: "",
         navBarColor: "#ffffff",
         navBarTransparent: true,
       };
@@ -1424,6 +1425,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         fontFamily: "Manrope",
         navLinkFontFamily: "Manrope",
         loadingBackgroundColor: "#ffffff",
+        loadingBarColor: "",
         navBarColor: "#ffffff",
         navBarTransparent: true,
       };
@@ -1451,6 +1453,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         fontFamily: "Sora",
         navLinkFontFamily: "Sora",
         loadingBackgroundColor: "#fff7df",
+        loadingBarColor: "",
         navBarColor: "#ffffff",
         navBarTransparent: false,
       };
@@ -1478,6 +1481,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         fontFamily: "Montserrat",
         navLinkFontFamily: "Montserrat",
         loadingBackgroundColor: "#081827",
+        loadingBarColor: "",
         navBarColor: "#081827",
         navBarTransparent: true,
       };
@@ -1506,6 +1510,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         fontFamily: "Manrope",
         navLinkFontFamily: "Manrope",
         loadingBackgroundColor: "#ffffff",
+        loadingBarColor: "",
         navBarColor: "#ffffff",
         navBarTransparent: false,
       };
@@ -1533,6 +1538,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         fontFamily: "Inter",
         navLinkFontFamily: "Inter",
         loadingBackgroundColor: "#ffffff",
+        loadingBarColor: "",
         navBarColor: "#ffffff",
         navBarTransparent: false,
       };
