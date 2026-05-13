@@ -717,9 +717,7 @@ function bindGalleryLightbox() {
   cards.forEach((card) => {
     const image = card.querySelector("img");
     const caption =
-      card.querySelector("figcaption")?.textContent.trim() ||
-      image?.alt ||
-      "Gallery image";
+      card.querySelector("figcaption")?.textContent.trim() || "Gallery image";
     card.tabIndex = 0;
     card.setAttribute("role", "button");
     card.setAttribute("aria-label", `View ${caption}`);
@@ -727,8 +725,7 @@ function bindGalleryLightbox() {
 
   const openLightbox = (card) => {
     const image = card.querySelector("img");
-    const caption =
-      card.querySelector("figcaption")?.textContent.trim() || image?.alt || "";
+    const caption = card.querySelector("figcaption")?.textContent.trim() || "";
 
     if (!image) {
       return;
