@@ -221,7 +221,7 @@ const sharedFooterFields = [
 export const dextaAcademy5Manifest = {
   templateSlug: "dexta-academy-5",
   templateName: "Dexta Academy 5",
-  sourceDir: "public/dexta-academy-5",
+  sourceDir: "src/app/(public)/dexta-academy-5",
   entryFile: "index.html",
   previewPath: "/dexta-academy-5/index.html",
   assetInventory: {

@@ -35,6 +35,7 @@ export type SchoolTemplateProjectTheme = {
   fontFamily: string;
   navLinkFontFamily: string;
   loadingBackgroundColor: string;
+  loadingBarColor: string;
   navBarColor: string;
   navBarTransparent: boolean;
 };
@@ -235,6 +236,7 @@ export const schoolTemplateProjectContentSchema = z.object({
     fontFamily: z.string().min(1),
     navLinkFontFamily: z.string().default(""),
     loadingBackgroundColor: z.string().default("#ffffff"),
+    loadingBarColor: z.string().default(""),
     navBarColor: z.string().default("#ffffff"),
     navBarTransparent: z.boolean().default(false),
   }),
@@ -1249,6 +1251,7 @@ export function sanitizeSchoolTemplateProjectContent(
       loadingBackgroundColor: sanitizePlainText(
         content.theme.loadingBackgroundColor ?? "#ffffff",
       ),
+      loadingBarColor: sanitizePlainText(content.theme.loadingBarColor ?? ""),
       navBarColor: sanitizePlainText(content.theme.navBarColor ?? "#ffffff"),
       navBarTransparent: Boolean(content.theme.navBarTransparent),
     },
@@ -1472,7 +1475,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoBorderRadius: 12,
         primaryColor: "#081827",
         secondaryColor: "#facc15",
-        fontFamily: "Plus Jakarta Sans",
+        fontFamily: "Montserrat",
         navLinkFontFamily: "Montserrat",
         loadingBackgroundColor: "#081827",
         navBarColor: "#081827",

@@ -2810,6 +2810,20 @@ export function SchoolWebsiteProjectEditor({
                   updateTheme("loadingText", getStringValue(value))
                 }
               />
+              <FieldControl
+                field={{
+                  key: "loadingBarColor",
+                  label: "Loading bar color",
+                  type: "color",
+                  selector: "body",
+                  target: "inlineStyle",
+                }}
+                value={draft.theme.loadingBarColor}
+                originalValue={getOriginalThemeColorValue("loadingBarColor")}
+                onChange={(value) =>
+                  updateTheme("loadingBarColor", getStringValue(value))
+                }
+              />
               <div className="grid gap-3 sm:grid-cols-2">
                 <FieldControl
                   field={{
