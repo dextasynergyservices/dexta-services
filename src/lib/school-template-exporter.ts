@@ -2071,6 +2071,14 @@ body[data-page="contact"] .accent-panel .feature-list__bullet {
 	    display: none !important;
 	    background-image: none !important;
 	  }
+	  body[data-page="about"] main > section:nth-of-type(6) .feature-split__media {
+	    min-height: 420px !important;
+	  }
+	  body[data-page="about"] main > section:nth-of-type(6) .feature-split__media img {
+	    height: 100% !important;
+	    min-height: 420px !important;
+	    object-fit: contain !important;
+	  }
 	}`;
   }
 
