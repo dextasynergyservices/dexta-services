@@ -53,7 +53,7 @@ const admissionModalSection = {
 export const dextaAcademy1Manifest = {
   templateSlug: "dexta-academy-1",
   templateName: "Dexta Academy 1",
-  sourceDir: "public/dexta-academy-1",
+  sourceDir: "src/app/(public)/dexta-academy-1",
   entryFile: "index.html",
   previewPath: "/dexta-academy-1/index.html",
   assetInventory: {

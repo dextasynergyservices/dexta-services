@@ -44,6 +44,13 @@ function injectBeforeBodyClose(html: string, markup: string) {
   return `${html}\n${markup}`;
 }
 
+function injectBeforeHeadClose(html: string, markup: string) {
+  if (/<\/head>/i.test(html)) {
+    return html.replace(/<\/head>/i, `${markup}\n</head>`);
+  }
+  return `${markup}\n${html}`;
+}
+
 function getPreviewBootMarkup() {
   return `<script>document.documentElement.setAttribute("data-dexta-project-preview","loading");window.setTimeout(function(){if(document.documentElement.getAttribute("data-dexta-project-preview")==="loading"){document.documentElement.setAttribute("data-dexta-project-preview","ready");}},2500);</script><style>html[data-dexta-project-preview="loading"] body{opacity:0!important;}html[data-dexta-project-preview="ready"] body{opacity:1!important;transition:opacity .16s ease;}</style>`;
 }
@@ -58,10 +65,16 @@ function removeHero3dModuleScript(html: string) {
 function assertSafeTemplatePath(sourceDir: string, fileName: string) {
   const workspaceRoot = process.cwd();
   const publicRoot = path.resolve(workspaceRoot, "public");
+  const appPublicRoot = path.resolve(workspaceRoot, "src", "app", "(public)");
   const resolvedPath = path.resolve(workspaceRoot, sourceDir, fileName);
 
-  if (!resolvedPath.startsWith(`${publicRoot}${path.sep}`)) {
-    throw new Error("Template source path must stay inside the public folder.");
+  const isInPublic = resolvedPath.startsWith(`${publicRoot}${path.sep}`);
+  const isInAppPublic = resolvedPath.startsWith(`${appPublicRoot}${path.sep}`);
+
+  if (!isInPublic && !isInAppPublic) {
+    throw new Error(
+      "Template source path must stay inside an allowed template folder.",
+    );
   }
 
   return resolvedPath;
@@ -818,9 +831,17 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    return "";
 	  }
 	
+		  function getTemplateBodyFont() {
+		    var font = String(preview.content.theme.fontFamily || "").trim();
+		    if (preview.content.templateSlug !== "dexta-academy-2") return font;
+		    var normalized = font.replace(/["']/g, "").toLowerCase();
+		    var isLegacyDefault = normalized.indexOf("plus jakarta sans") !== -1 || normalized.indexOf("manrope") !== -1;
+		    return !font || isLegacyDefault ? "Montserrat" : font;
+		  }
+
 		  function getThemeCss() {
 			    return getThemeScopeSelector() + "{" + getThemeVariableCss() + "}" +
-			      "body{font-family:" + JSON.stringify(preview.content.theme.fontFamily) + ", var(--font-family, inherit);}" +
+			      "body{font-family:" + JSON.stringify(getTemplateBodyFont()) + ", var(--font-family, inherit);}" +
 			      getNavLinkFontCss() +
 		      getGlobalAppearanceCss() +
 		      getTemplateThemeCss() +
@@ -832,7 +853,8 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		    if (preview.content.templateSlug !== "dexta-academy-2") return font;
 
 		    var normalized = font.replace(/["']/g, "").toLowerCase();
-		    return !font || normalized.indexOf("plus jakarta sans") !== -1 ? "Montserrat" : font;
+		    var isLegacyDefault = normalized.indexOf("plus jakarta sans") !== -1 || normalized.indexOf("manrope") !== -1;
+		    return !font || isLegacyDefault ? "Montserrat" : font;
 		  }
 
 		  function getNavLinkFontCss() {
@@ -922,8 +944,8 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      !isTemplateTwo || getThemeLogoUrl() || (!templateTwoLegacyLogoDefaults && !templateTwoOriginalLogoDefaults);
 
 			    if (shouldApplyLogoFrame) {
-		      css.push(".brand__mark,.brand__crest,.site-loader__mark,.page-loader__crest,.contact-brand>img,.navbar-brand img,.hero-brand img,.school-footer-brand-logo,.site-preloader-logo{border:" + logoBorder + "!important;border-radius:" + logoRadius + "!important;width:" + logoWidth + "!important;height:" + logoHeight + "!important;max-width:" + logoWidth + "!important;}");
-		      css.push(".dexta-theme-logo-mark{background:transparent!important;overflow:hidden;}.dexta-theme-logo-mark::before{content:none!important;}.dexta-theme-logo-mark svg,.dexta-theme-logo-mark .brand__crest-inner{display:none!important;}");
+		      css.push(".brand__mark,.brand__crest,.page-loader__crest,.contact-brand>img,.navbar-brand img,.hero-brand img,.school-footer-brand-logo,.site-preloader-logo{border:" + logoBorder + "!important;border-radius:" + logoRadius + "!important;width:" + logoWidth + "!important;height:" + logoHeight + "!important;max-width:" + logoWidth + "!important;}");
+		      css.push(".dexta-theme-logo-mark{background:transparent!important;overflow:hidden;}.dexta-theme-logo-mark::before{content:none!important;}.dexta-theme-logo-mark svg,.dexta-theme-logo-mark .brand__crest-inner{display:none!important;}.site-loader__mark.dexta-theme-logo-mark{overflow:visible!important;}");
 		      css.push(".brand__mark img,.brand__crest img,.site-loader__mark img,.page-loader__crest img{display:block;width:100%;height:100%;object-fit:contain;}");
 			      css.push(".navbar-brand img,.hero-brand img,.school-footer-brand-logo,.site-preloader-logo,.contact-footer__brand img{object-fit:contain;}");
 			    }
@@ -933,6 +955,10 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 			    css.push(".site-preloader-logo{display:block!important;width:" + loadingLogoWidth + "!important;height:" + loadingLogoHeight + "!important;max-width:" + loadingLogoWidth + "!important;object-fit:contain!important;}");
 			    css.push("#spinner .dexta-loading-logo img,.site-loader__mark img,.page-loader__crest img,.site-preloader-logo,.dexta-generated-loader__logo img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;}");
 			    css.push("#spinner .dexta-loading-text,.site-loader__text,.page-loader__copy,.site-preloader-content [data-dexta-loading-text],.dexta-generated-loader__text{color:" + loadingTextColor + "!important;font-size:.95rem;font-weight:700;line-height:1.4;}");
+			    var loadingBarColor = preview.content.theme.loadingBarColor || "";
+			    if (loadingBarColor) {
+			      css.push(".site-loader__bar::after{background:" + loadingBarColor + "!important;}");
+			    }
 
 					    css.push(".brand__name,.brand__copy,.brand__text,.contact-brand>span{display:" + brandTextDisplay + "!important;}");
 				    css.push(".brand__name span,.brand__copy span,.brand__text span,.contact-brand small{display:" + brandLine2Display + "!important;}");
@@ -1382,10 +1408,16 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 
 				    setDisplay(".brand__name, .brand__copy, .brand__text, .contact-brand > span", showText);
 				    setDisplay(".brand__name span, .brand__copy span, .brand__text span, .contact-brand small", showText && Boolean(brandTagline));
+				    if (isTemplateTwo) {
+				      setDisplay(".site-loader__name", showText);
+				    }
 
 				    if (!templateTwoDefaultText) {
 				      setText(".brand__name strong, .brand__copy strong, .brand__text strong, .contact-brand strong, .school-footer-brand h3", brandName);
 				      setText(".brand__name span, .brand__copy span, .brand__text span, .contact-brand small", brandTagline);
+				    }
+				    if (isTemplateTwo && brandName) {
+				      setText(".site-loader__name", brandName);
 				    }
 			    applyLoadingIdentity(logoUrl, fullLoaderName);
 
@@ -1455,6 +1487,65 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	</script>`;
 }
 
+function getServerSideFontOverrideStyle(
+  content: SchoolTemplateProjectContent,
+): string {
+  if (content.templateSlug !== "dexta-academy-2") return "";
+
+  const rawBody = (content.theme.fontFamily ?? "").trim();
+  const normalizedBody = rawBody.replace(/["']/g, "").toLowerCase();
+  const isLegacyBody =
+    !rawBody ||
+    normalizedBody.includes("plus jakarta sans") ||
+    normalizedBody.includes("manrope");
+  const bodyFont = isLegacyBody ? "Montserrat" : rawBody;
+
+  const rawNav = (
+    content.theme.navLinkFontFamily ||
+    content.theme.fontFamily ||
+    ""
+  ).trim();
+  const normalizedNav = rawNav.replace(/["']/g, "").toLowerCase();
+  const isLegacyNav =
+    !rawNav ||
+    normalizedNav.includes("plus jakarta sans") ||
+    normalizedNav.includes("manrope");
+  const navFont = isLegacyNav ? "Montserrat" : rawNav;
+
+  const brandHideCss = !content.theme.brandTextVisible
+    ? `.brand__name,.brand__copy,.brand__text,.contact-brand>span,.site-loader__name{display:none!important;}`
+    : "";
+
+  return `<style data-dexta-font-override="true">
+body{font-family:${JSON.stringify(bodyFont)},"Segoe UI",sans-serif!important;}
+.site-nav a,.site-nav__link,.mobile-nav a,.mobile-nav__link,.site-header__nav a,.site-header__links a,.main-nav a,.site-footer,.site-footer a,.footer__links a,.footer__contact,.footer__bottom,.button,.site-header .button,.mobile-panel .button,.hero-home__actions .button,.cta-banner .button,.admission-modal .button,.story-modal .button,.card__link{font-family:${JSON.stringify(navFont)},"Segoe UI",sans-serif!important;}
+${brandHideCss}
+</style>`;
+}
+
+function getLogoPreloadMarkup(content: SchoolTemplateProjectContent): string {
+  if (!content.theme.logoUrl) return "";
+  const logoField = {
+    key: "logoUrl",
+    label: "Site logo",
+    type: "image" as const,
+    selector: "img",
+    target: "attribute" as const,
+    attribute: "src",
+  };
+  const resolvedUrl = resolveSchoolTemplateAsset(
+    content.theme.logoUrl,
+    logoField,
+    {
+      cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "",
+      proxyCloudinaryRawModels: true,
+    },
+  );
+  if (!resolvedUrl) return "";
+  const safeUrl = resolvedUrl.replace(/"/g, "&quot;");
+  return `<link rel="preload" as="image" href="${safeUrl}">`;
+}
+
 export async function renderSchoolTemplatePreview({
   content,
   sourceSnapshot,
@@ -1501,8 +1592,13 @@ export async function renderSchoolTemplatePreview({
     `${baseMarkup}\n${noIndexMarkup}\n${getPreviewBootMarkup()}`,
   );
 
-  return injectBeforeBodyClose(
+  const withFontOverride = injectBeforeHeadClose(
     withHeadMarkup,
+    `${getServerSideFontOverrideStyle(content)}${getLogoPreloadMarkup(content)}`,
+  );
+
+  return injectBeforeBodyClose(
+    withFontOverride,
     `${threeConfigMarkup}${getPreviewRuntimeScript({
       content,
       sourceSnapshot,

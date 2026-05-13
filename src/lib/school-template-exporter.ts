@@ -170,15 +170,26 @@ function getPublicRoot() {
   return path.resolve(process.cwd(), "public");
 }
 
+function getAppPublicRoot() {
+  return path.resolve(process.cwd(), "src", "app", "(public)");
+}
+
 function assertSafeTemplatePath(sourceDir: string, fileName = "") {
   const publicRoot = getPublicRoot();
+  const appPublicRoot = getAppPublicRoot();
   const resolvedPath = path.resolve(process.cwd(), sourceDir, fileName);
 
-  if (
-    resolvedPath !== publicRoot &&
-    !resolvedPath.startsWith(`${publicRoot}${path.sep}`)
-  ) {
-    throw new Error("Template source path must stay inside the public folder.");
+  const isInPublic =
+    resolvedPath === publicRoot ||
+    resolvedPath.startsWith(`${publicRoot}${path.sep}`);
+  const isInAppPublic =
+    resolvedPath === appPublicRoot ||
+    resolvedPath.startsWith(`${appPublicRoot}${path.sep}`);
+
+  if (!isInPublic && !isInAppPublic) {
+    throw new Error(
+      "Template source path must stay inside an allowed template folder.",
+    );
   }
 
   return resolvedPath;
@@ -1212,7 +1223,6 @@ body[data-page="home"] .site-header__bar {
     css.push(`
 .brand__mark,
 .brand__crest,
-.site-loader__mark,
 .page-loader__crest,
 .contact-brand > img,
 .navbar-brand img,
@@ -1235,6 +1245,9 @@ body[data-page="home"] .site-header__bar {
 .dexta-theme-logo-mark svg,
 .dexta-theme-logo-mark .brand__crest-inner {
   display: none !important;
+}
+.site-loader__mark.dexta-theme-logo-mark {
+  overflow: visible !important;
 }
 .brand__mark img,
 .brand__crest img,
@@ -1299,6 +1312,13 @@ body[data-page="home"] .site-header__bar {
   line-height: 1.4;
 }`);
 
+  const loadingBarColor = content.theme.loadingBarColor || "";
+  if (loadingBarColor) {
+    css.push(
+      `.site-loader__bar::after { background: ${loadingBarColor} !important; }`,
+    );
+  }
+
   css.push(`
 	.brand__name,
 .brand__copy,
@@ -1311,7 +1331,14 @@ body[data-page="home"] .site-header__bar {
 .brand__text span,
 .contact-brand small {
   display: ${brandLine2Display} !important;
-}`);
+}${
+    isTemplateTwo && !content.theme.brandTextVisible
+      ? `
+.site-loader__name {
+  display: none !important;
+}`
+      : ""
+  }`);
 
   const templateTwoLegacyBrandDefaults =
     content.theme.brandNameColor.toLowerCase() === "#ffffff" &&
@@ -2112,9 +2139,12 @@ function getNavLinkFontCss(content: SchoolTemplateProjectContent) {
   const normalizedNavLinkFont = rawNavLinkFont
     .replace(/["']/g, "")
     .toLowerCase();
+  const isLegacyDefaultFont =
+    normalizedNavLinkFont.includes("plus jakarta sans") ||
+    normalizedNavLinkFont.includes("manrope");
   const navLinkFont =
     content.templateSlug === "dexta-academy-2" &&
-    (!rawNavLinkFont || normalizedNavLinkFont.includes("plus jakarta sans"))
+    (!rawNavLinkFont || isLegacyDefaultFont)
       ? "Montserrat"
       : rawNavLinkFont;
   if (!navLinkFont) return "";
@@ -2150,6 +2180,15 @@ function getNavLinkFontCss(content: SchoolTemplateProjectContent) {
 }`;
 }
 
+function getBodyFont(content: SchoolTemplateProjectContent) {
+  const rawFont = content.theme.fontFamily;
+  if (content.templateSlug !== "dexta-academy-2") return rawFont;
+  const normalized = rawFont.replace(/["']/g, "").toLowerCase();
+  const isLegacyDefault =
+    normalized.includes("plus jakarta sans") || normalized.includes("manrope");
+  return !rawFont || isLegacyDefault ? "Montserrat" : rawFont;
+}
+
 function getThemeMarkup(content: SchoolTemplateProjectContent) {
   const fontMarkup = getFontStylesheetMarkup(content);
 
@@ -2158,7 +2197,7 @@ ${THEME_SCOPE_SELECTOR} {
 ${getThemeVariableDeclarations(content)}
 }
 body {
-  font-family: ${JSON.stringify(content.theme.fontFamily)}, var(--font-family, inherit);
+  font-family: ${JSON.stringify(getBodyFont(content))}, var(--font-family, inherit);
 }
 ${getNavLinkFontCss(content)}
 ${getGlobalAppearanceCss(content)}
@@ -2588,10 +2627,16 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
 
     setDisplay(".brand__name, .brand__copy, .brand__text, .contact-brand > span", showText);
     setDisplay(".brand__name span, .brand__copy span, .brand__text span, .contact-brand small", showText && Boolean(brandTagline));
+    if (${escapeScriptJson(content.templateSlug === "dexta-academy-2")}) {
+      setDisplay(".site-loader__name", showText);
+    }
 
 	    if (!templateTwoDefaultText) {
 	      setText(".brand__name strong, .brand__copy strong, .brand__text strong, .contact-brand strong, .school-footer-brand h3", brandName);
 	      setText(".brand__name span, .brand__copy span, .brand__text span, .contact-brand small", brandTagline);
+	    }
+	    if (${escapeScriptJson(content.templateSlug === "dexta-academy-2")} && brandName) {
+	      setText(".site-loader__name", brandName);
 	    }
     applyLoadingIdentity(fullLoaderName);
 

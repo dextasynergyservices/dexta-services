@@ -18,28 +18,20 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
   document.body.classList.add("is-ready");
   if (pagePreloader) pagePreloader.classList.add("is-hidden");
 } else {
-  const DEFAULT_MODEL_URL = new URL("../assets/3d/gr.glb", import.meta.url)
-    .href;
-  const MODEL_URL = resolveHero3dModelUrl(
-    window.schoolHero3dConfig?.model?.url,
-  );
+  const MODEL_URL = new URL("../assets/3d/gr.glb", import.meta.url).href;
   const HERO_IMAGE_URL =
     "https://res.cloudinary.com/dxoorukfj/image/upload/v1777041124/ChatGPT_Image_Apr_24_2026_03_31_43_PM_ssnnin.png";
-  const PRELOAD_TIMEOUT_MS =
-    window.schoolHero3dConfig?.preloadTimeoutMs ?? 10000;
+  const PRELOAD_TIMEOUT_MS = 10000;
 
   // ── Cap orientation ─────────────────────────────────────────
   // X: negative = tip top face toward viewer (show the board properly)
   // Y: slight yaw so it reads as 3-D
   // Z: ZERO — no sideways lean (was the main visual bug before)
-  const BASE_ROTATION_X =
-    window.schoolHero3dConfig?.transform?.rotation?.x ?? -0.2;
-  const BASE_ROTATION_Y =
-    window.schoolHero3dConfig?.transform?.rotation?.y ?? -0.21;
-  const BASE_ROTATION_Z =
-    window.schoolHero3dConfig?.transform?.rotation?.z ?? 0.2;
+  const BASE_ROTATION_X = -0.2;
+  const BASE_ROTATION_Y = -0.21;
+  const BASE_ROTATION_Z = 0.2;
 
-  const MODEL_SCALE_TARGET = window.schoolHero3dConfig?.transform?.scale ?? 4.5;
+  const MODEL_SCALE_TARGET = 4.5;
   const SCROLL_ROTATION_RANGE = Math.PI * 0.04;
   const ROTATION_DAMPING = 0.06;
 
@@ -52,18 +44,10 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
   const WOBBLE_DURATION_MS = 2860;
 
   // ── Cap colours (deep navy, blue sheen) ──────────────────────
-  const CAP_BODY_COLOR = new THREE.Color(
-    window.schoolHero3dConfig?.materials?.capBodyColor || 0x060d1e,
-  ); // deep navy-black
-  const CAP_BODY_EMISSIVE = new THREE.Color(
-    window.schoolHero3dConfig?.materials?.capBodyEmissiveColor || 0x010408,
-  );
-  const TASSEL_CORD_COLOR = new THREE.Color(
-    window.schoolHero3dConfig?.materials?.tasselCordColor || 0x2a5fc0,
-  ); // blue tassel
-  const TASSEL_TIP_COLOR = new THREE.Color(
-    window.schoolHero3dConfig?.materials?.tasselTipColor || 0x1a3d8a,
-  );
+  const CAP_BODY_COLOR = new THREE.Color(0x060d1e); // deep navy-black
+  const CAP_BODY_EMISSIVE = new THREE.Color(0x010408);
+  const TASSEL_CORD_COLOR = new THREE.Color(0x2a5fc0); // blue tassel
+  const TASSEL_TIP_COLOR = new THREE.Color(0x1a3d8a);
 
   const reduceMotionQuery = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
@@ -94,130 +78,12 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
     });
 
   preloadTimeoutId = window.setTimeout(() => {
-    if (!modelReadyForReveal) setStatus("3D cap failed to load.", "error");
     heroImageReady = true;
     modelReadyForReveal = true;
     modelUnavailable = true;
     setPreloaderStatus("Opening page…");
     revealPageAndMaybeStartIntro(true);
   }, PRELOAD_TIMEOUT_MS);
-
-  function resolveHero3dModelUrl(configuredValue) {
-    const rawValue =
-      configuredValue === null || configuredValue === undefined
-        ? ""
-        : String(configuredValue).trim();
-
-    if (!rawValue) return DEFAULT_MODEL_URL;
-
-    if (/^(https?:|blob:|data:)/i.test(rawValue)) return rawValue;
-
-    try {
-      return new URL(rawValue.replace(/^\.\//, ""), document.baseURI).href;
-    } catch (error) {
-      console.warn("[Dexta] Invalid configured 3D model URL:", rawValue, error);
-      return rawValue;
-    }
-  }
-
-  function getHero3dModelFallbackUrls(primaryUrl) {
-    const urls = [];
-
-    function addUrl(value) {
-      if (!value || urls.includes(value)) return;
-      urls.push(value);
-    }
-
-    function isCloudinaryRawModelUrl(value) {
-      try {
-        const url = new URL(value);
-        return (
-          url.protocol === "https:" &&
-          url.hostname === "res.cloudinary.com" &&
-          url.pathname.includes("/raw/upload/") &&
-          /\.(glb|gltf)$/i.test(url.pathname)
-        );
-      } catch (error) {
-        return false;
-      }
-    }
-
-    function getProxyUrl(value) {
-      return new URL(
-        "/api/cloudinary/raw?url=" + encodeURIComponent(value),
-        window.location.origin,
-      ).href;
-    }
-
-    addUrl(primaryUrl);
-    if (isCloudinaryRawModelUrl(primaryUrl)) addUrl(getProxyUrl(primaryUrl));
-    addUrl(DEFAULT_MODEL_URL);
-
-    return urls;
-  }
-
-  function loadHeroModelWithFallback(
-    loader,
-    primaryUrl,
-    onLoad,
-    onProgress,
-    onError,
-  ) {
-    const urls = getHero3dModelFallbackUrls(primaryUrl);
-    const timeoutMs =
-      window.schoolHero3dConfig?.model?.attemptTimeoutMs ?? 12000;
-    let activeAttempt = 0;
-    let completed = false;
-
-    function tryUrl(index, previousError) {
-      if (completed) return;
-
-      if (index >= urls.length) {
-        completed = true;
-        onError(previousError);
-        return;
-      }
-
-      const url = urls[index];
-      const attempt = ++activeAttempt;
-      let timedOut = false;
-      const timeoutId = window.setTimeout(() => {
-        timedOut = true;
-        console.warn("[Dexta] Hero 3D model load timed out:", url);
-        tryUrl(index + 1, new Error("3D model load timed out: " + url));
-      }, timeoutMs);
-
-      if (index > 0) {
-        setStatus("Loading fallback 3D cap...", "loading");
-      }
-
-      console.info("[Dexta] Loading hero 3D model:", url);
-
-      loader.load(
-        url,
-        (gltf) => {
-          if (completed || attempt !== activeAttempt) return;
-          window.clearTimeout(timeoutId);
-          completed = true;
-          if (index > 0) {
-            console.warn("[Dexta] Hero 3D model loaded from fallback:", url);
-          }
-          onLoad(gltf);
-        },
-        onProgress,
-        (error) => {
-          if (completed || attempt !== activeAttempt) return;
-          window.clearTimeout(timeoutId);
-          if (!timedOut) {
-            console.warn("[Dexta] Hero 3D model load failed:", url, error);
-            tryUrl(index + 1, error);
-          }
-        },
-      );
-    }
-
-    tryUrl(0);
-  }
 
   function revealHeroImmediately() {
     heroSection.classList.add("hero-intro-complete");
@@ -383,8 +249,7 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
     updateRendererSize();
 
     const loader = new GLTFLoader();
-    loadHeroModelWithFallback(
-      loader,
+    loader.load(
       MODEL_URL,
       (gltf) => {
         modelRoot = gltf.scene || gltf.scenes[0];
@@ -583,11 +448,8 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
       const sz2 = bb2.getSize(new THREE.Vector3());
       const ctr2 = bb2.getCenter(new THREE.Vector3());
       obj.position.sub(ctr2);
-      obj.position.x +=
-        sz2.x * (window.schoolHero3dConfig?.transform?.offset?.x ?? 0.1);
-      obj.position.y -=
-        sz2.y *
-        Math.abs(window.schoolHero3dConfig?.transform?.offset?.y ?? -0.18);
+      obj.position.x += sz2.x * 0.1;
+      obj.position.y -= sz2.y * 0.18;
     }
 
     // ── Intro orchestration ──────────────────────────────────

@@ -916,7 +916,7 @@ const pageHeroSection = {
 export const dextaAcademy2Manifest = {
   templateSlug: "dexta-academy-2",
   templateName: "Dexta Academy 2",
-  sourceDir: "public/dexta-academy-2",
+  sourceDir: "src/app/(public)/dexta-academy-2",
   entryFile: "index.html",
   previewPath: "/dexta-academy-2/index.html",
   assetInventory: {

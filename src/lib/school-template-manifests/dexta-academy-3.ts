@@ -15,7 +15,7 @@ const formIframeHelpText =
 export const dextaAcademy3Manifest = {
   templateSlug: "dexta-academy-3",
   templateName: "Dexta Academy 3",
-  sourceDir: "public/dexta-academy-3",
+  sourceDir: "src/app/(public)/dexta-academy-3",
   entryFile: "index.html",
   previewPath: "/dexta-academy-3/index.html",
   assetInventory: {
