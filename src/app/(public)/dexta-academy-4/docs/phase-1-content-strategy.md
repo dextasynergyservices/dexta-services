@@ -9,21 +9,27 @@ Important: The school identity below is a proposed direction so the website can 
 ## 1. Proposed School Identity
 
 ### School Name
+
 - School B
 
 Short brand name:
+
 - School B
 
 ### Motto
+
 - Discipline, Knowledge, Service.
 
 ### Vision Statement
+
 - To raise confident, disciplined, and innovative learners who excel academically and lead with integrity in Nigeria and beyond.
 
 ### Mission Statement
+
 - To provide quality secondary education in a safe and inspiring environment where students grow in character, scholarship, leadership, and service.
 
 ### Core Values
+
 - Excellence
 - Discipline
 - Integrity
@@ -32,11 +38,13 @@ Short brand name:
 - Service
 
 ### Establishment and History
+
 - Established in 2008 in Port Harcourt, Rivers State.
 - Founded to provide strong academic training, moral instruction, and practical leadership development for Nigerian students.
 - Operates as a day and boarding secondary school serving Junior Secondary and Senior Secondary students.
 
 ### Contact Details
+
 - Address: Plot 12 East-West Road, Rumuodara, Port Harcourt, Rivers State, Nigeria
 - General inquiries phone: +234 803 456 7812
 - Admissions phone: +234 809 332 1456
@@ -45,10 +53,12 @@ Short brand name:
 - Office hours: Monday to Friday, 8:00 AM to 4:00 PM
 
 ### School Leadership
+
 - Principal: Mrs. Nnenna D. Okoro, B.Ed., M.Ed., TRCN
 - Suggested profile line: A seasoned education administrator with over 18 years of experience in secondary education, curriculum development, and student mentorship.
 
 ### Logo Direction
+
 - Style: clean academic crest
 - Symbols: shield, open book, torch, and laurel
 - Tone: trustworthy, aspirational, and modern
@@ -61,10 +71,12 @@ Short brand name:
 ## 2. Brand Positioning
 
 ### Primary Audience
+
 - Parents in Port Harcourt seeking a disciplined, academically strong, value-driven secondary school
 - Families looking for a balanced mix of academics, moral instruction, sports, and leadership development
 
 ### Key Selling Points
+
 - Strong WAEC and NECO preparation
 - Qualified and experienced teachers
 - Functional science and ICT laboratories
@@ -73,6 +85,7 @@ Short brand name:
 - Balanced extracurricular life including sports, clubs, and cultural activities
 
 ### Recommended Brand Voice
+
 - Warm and reassuring
 - Professional and credible
 - Proudly Nigerian
@@ -83,26 +96,28 @@ Short brand name:
 
 The current template already supports most required pages. The table below maps the existing files to the planned school site structure.
 
-| Current File | Planned Page | Recommended Action |
-| --- | --- | --- |
-| `index.html` | Homepage | Rewrite content |
-| `about.html` | About Us | Rewrite content |
-| `admissions.html` | Admissions | Rewrite content |
-| `teacher.html` | Staff | Rewrite content |
-| `gallery.html` | Gallery | Use for campus photos, facilities, and student life |
-| `contact.html` | Contact | Rewrite content |
+| Current File      | Planned Page | Recommended Action                                  |
+| ----------------- | ------------ | --------------------------------------------------- |
+| `index.html`      | Homepage     | Rewrite content                                     |
+| `about.html`      | About Us     | Rewrite content                                     |
+| `admissions.html` | Admissions   | Rewrite content                                     |
+| `teacher.html`    | Staff        | Rewrite content                                     |
+| `gallery.html`    | Gallery      | Use for campus photos, facilities, and student life |
+| `contact.html`    | Contact      | Rewrite content                                     |
 
 ## 4. Page-by-Page Content Strategy
 
 ### Homepage
 
 Purpose:
+
 - Introduce the school quickly
 - Build trust with parents
 - Highlight facilities, results, and admissions
 - Drive users to contact or apply
 
 Recommended sections:
+
 - Hero banner with headline, subheadline, and call to action
 - Four school highlights
 - Short welcome message from the principal
@@ -112,12 +127,14 @@ Recommended sections:
 - Contact summary and map preview
 
 Suggested hero copy:
+
 - Headline: Raising Future-Ready Leaders in Port Harcourt
 - Subheadline: School B offers disciplined, value-based secondary education with modern learning facilities and a supportive school community.
 - Primary CTA: Apply for Admission
 - Secondary CTA: Book a School Visit
 
 Suggested homepage highlights:
+
 - Experienced Teachers
 - Science and ICT Labs
 - Boarding and Day School
@@ -126,11 +143,13 @@ Suggested homepage highlights:
 ### About Us
 
 Purpose:
+
 - Tell the school story
 - Communicate mission, values, and credibility
 - Show parents the environment and educational philosophy
 
 Recommended sections:
+
 - School history
 - Vision, mission, and core values
 - Message from the principal
@@ -140,6 +159,7 @@ Recommended sections:
 - Quick facts and statistics
 
 Suggested quick facts:
+
 - Founded: 2008
 - Students: 620+
 - Teaching staff: 42
@@ -149,11 +169,13 @@ Suggested quick facts:
 ### Admissions
 
 Purpose:
+
 - Explain how parents can apply
 - Reduce confusion around entry requirements
 - Encourage direct inquiry
 
 Recommended sections:
+
 - Who can apply
 - Admission process
 - Entry requirements
@@ -163,10 +185,12 @@ Recommended sections:
 - Admissions contact block
 
 Suggested classes open for admission:
+
 - JSS1 to SS1
 - Limited transfer admission into JSS2, JSS3, and SS2
 
 Suggested admission steps:
+
 1. Complete the admission inquiry form or contact the admissions office.
 2. Obtain and submit the application form with required documents.
 3. Sit for the entrance assessment.
@@ -174,6 +198,7 @@ Suggested admission steps:
 5. Receive admission offer and complete acceptance.
 
 Suggested required documents:
+
 - Completed application form
 - Birth certificate
 - Two recent passport photographs
@@ -182,6 +207,7 @@ Suggested required documents:
 - Medical fitness report for boarding applicants
 
 Suggested downloads:
+
 - Admission form PDF
 - School prospectus PDF
 - Uniform guide PDF
@@ -190,16 +216,19 @@ Suggested downloads:
 ### Staff
 
 Purpose:
+
 - Build trust by showing the people behind the school
 - Demonstrate qualifications and departmental structure
 
 Recommended sections:
+
 - Leadership team
 - Department heads
 - Teaching staff profiles
 - Guidance and pastoral care team
 
 Suggested departments:
+
 - English and Humanities
 - Mathematics
 - Basic Science and Technology
@@ -208,6 +237,7 @@ Suggested departments:
 - Arts and Languages
 
 Suggested profile format:
+
 - Full name
 - Role
 - Qualification
@@ -215,6 +245,7 @@ Suggested profile format:
 - Short one-line teaching philosophy
 
 Suggested sample staff entries:
+
 - Mrs. Nnenna D. Okoro - Principal - B.Ed., M.Ed., TRCN
 - Mr. Tamuno Briggs - Vice Principal Administration - B.Sc. Ed Mathematics
 - Mrs. Chioma Adebayo - Head of English - B.A. Ed English, M.Ed.
@@ -225,10 +256,12 @@ Suggested sample staff entries:
 ### Gallery
 
 Purpose:
+
 - Show real school life visually
 - Help parents picture the learning environment
 
 Recommended categories:
+
 - Classrooms
 - Science laboratory
 - ICT laboratory
@@ -238,15 +271,18 @@ Recommended categories:
 - Cultural day and school events
 
 Recommended gallery rule:
+
 - Use real school images wherever possible. Authentic images build more trust than stock photos.
 
 ### Contact
 
 Purpose:
+
 - Make it easy for parents to reach the school
 - Support inquiries, visits, and admissions follow-up
 
 Recommended sections:
+
 - Full address
 - Phone numbers
 - Email addresses
@@ -256,6 +292,7 @@ Recommended sections:
 - WhatsApp inquiry link
 
 Suggested contact note:
+
 - Visits are by appointment during school hours for security and proper campus guidance.
 
 ## 5. Homepage Content Blocks for Fast Build
@@ -263,6 +300,7 @@ Suggested contact note:
 These are the most important content blocks to prepare first.
 
 ### Block 1: Hero
+
 - School name
 - Strong headline
 - One paragraph introduction
@@ -270,12 +308,14 @@ These are the most important content blocks to prepare first.
 - Visit school button
 
 ### Block 2: Why Choose Us
+
 - Strong learning support
 - Discipline and character
 - Experienced teachers
 - Safe environment
 
 ### Block 3: Gallery
+
 - Science lab
 - ICT suite
 - Library
@@ -283,12 +323,14 @@ These are the most important content blocks to prepare first.
 - Hostel
 
 ### Block 4: Proof and Trust
+
 - Years of operation
 - Student population
 - Staff strength
 - Exam success story
 
 ### Block 5: Contact Prompt
+
 - Address and phone number
 - Visit school button
 - Admissions inquiry button

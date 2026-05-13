@@ -156,8 +156,7 @@ export const ABOUT_PAGE_CONTENT_DEFAULTS: AboutPageContentData = {
   teamNoteLabel: "Professional note",
   teamPortfolioButtonText: "View Portfolio",
   spaceLabel: "Our Space",
-  spaceTitle:
-    "The rooms where Dexta records, builds, welcomes, and recharges.",
+  spaceTitle: "The rooms where Dexta records, builds, welcomes, and recharges.",
   spaceBody:
     "From the podcast studio to the reception, workspace, and wellness corners, our environment is designed to support focus, collaboration, and creative momentum.",
   valuesLabel: "Our Values",

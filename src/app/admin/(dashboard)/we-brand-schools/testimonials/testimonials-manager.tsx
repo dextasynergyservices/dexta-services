@@ -158,7 +158,8 @@ function TestimonialForm({
           <Label className="mb-1.5 block text-xs text-[#888]">
             School name
             <span className="ml-2 text-[11px] text-[#666]">
-              Max {SCHOOL_WEBSITE_TESTIMONIAL_MAX_SCHOOL_NAME_CHARACTERS} characters
+              Max {SCHOOL_WEBSITE_TESTIMONIAL_MAX_SCHOOL_NAME_CHARACTERS}{" "}
+              characters
             </span>
           </Label>
           <Input
@@ -173,7 +174,9 @@ function TestimonialForm({
           <FieldError message={errors.schoolName?.message} />
         </div>
         <div>
-          <Label className="mb-1.5 block text-xs text-[#888]">Display order</Label>
+          <Label className="mb-1.5 block text-xs text-[#888]">
+            Display order
+          </Label>
           <Input
             type="number"
             min={0}
@@ -198,11 +201,12 @@ function TestimonialForm({
           {...register("quote")}
         />
         <p className="mt-2 text-xs text-[#666]">
-          Limit the testimonial to {SCHOOL_WEBSITE_TESTIMONIAL_MAX_CHARACTERS} characters
-          so all lines remain visible on the public card.
+          Limit the testimonial to {SCHOOL_WEBSITE_TESTIMONIAL_MAX_CHARACTERS}{" "}
+          characters so all lines remain visible on the public card.
         </p>
         <p className="mt-1 text-[11px] text-[#777]">
-          {quoteValue.trim().length}/{SCHOOL_WEBSITE_TESTIMONIAL_MAX_CHARACTERS} characters
+          {quoteValue.trim().length}/{SCHOOL_WEBSITE_TESTIMONIAL_MAX_CHARACTERS}{" "}
+          characters
         </p>
         <FieldError message={errors.quote?.message} />
       </div>
@@ -212,7 +216,8 @@ function TestimonialForm({
           <Label className="mb-1.5 block text-xs text-[#888]">
             Contact name
             <span className="ml-2 text-[11px] text-[#666]">
-              Max {SCHOOL_WEBSITE_TESTIMONIAL_MAX_AUTHOR_NAME_CHARACTERS} characters
+              Max {SCHOOL_WEBSITE_TESTIMONIAL_MAX_AUTHOR_NAME_CHARACTERS}{" "}
+              characters
             </span>
           </Label>
           <Input
@@ -230,17 +235,21 @@ function TestimonialForm({
           <Label className="mb-1.5 block text-xs text-[#888]">
             Position in school
             <span className="ml-2 text-[11px] text-[#666]">
-              Max {SCHOOL_WEBSITE_TESTIMONIAL_MAX_AUTHOR_POSITION_CHARACTERS} characters
+              Max {SCHOOL_WEBSITE_TESTIMONIAL_MAX_AUTHOR_POSITION_CHARACTERS}{" "}
+              characters
             </span>
           </Label>
           <Input
-            maxLength={SCHOOL_WEBSITE_TESTIMONIAL_MAX_AUTHOR_POSITION_CHARACTERS}
+            maxLength={
+              SCHOOL_WEBSITE_TESTIMONIAL_MAX_AUTHOR_POSITION_CHARACTERS
+            }
             className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
             {...register("authorPosition")}
           />
           <p className="mt-1 text-[11px] text-[#777]">
             {authorPositionValue.trim().length}/
-            {SCHOOL_WEBSITE_TESTIMONIAL_MAX_AUTHOR_POSITION_CHARACTERS} characters
+            {SCHOOL_WEBSITE_TESTIMONIAL_MAX_AUTHOR_POSITION_CHARACTERS}{" "}
+            characters
           </p>
           <FieldError message={errors.authorPosition?.message} />
         </div>
@@ -284,10 +293,15 @@ export function TestimonialsManager({
 }) {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
-  const [editing, setEditing] = useState<SchoolWebsiteTestimonialRow | null>(null);
-  const [deleting, setDeleting] =
-    useState<SchoolWebsiteTestimonialRow | null>(null);
-  const [viewing, setViewing] = useState<SchoolWebsiteTestimonialRow | null>(null);
+  const [editing, setEditing] = useState<SchoolWebsiteTestimonialRow | null>(
+    null,
+  );
+  const [deleting, setDeleting] = useState<SchoolWebsiteTestimonialRow | null>(
+    null,
+  );
+  const [viewing, setViewing] = useState<SchoolWebsiteTestimonialRow | null>(
+    null,
+  );
 
   const refresh = () => router.refresh();
 
@@ -354,44 +368,44 @@ export function TestimonialsManager({
             the public testimonial carousel.
           </p>
         </div>
-	      ) : (
-	        <div className="overflow-hidden rounded-2xl border border-[#222] bg-[#111]">
-	          <Table>
-	            <TableHeader>
-	              <TableRow className="border-[#222] bg-[#0d0d0d] hover:bg-[#0d0d0d]">
-	                <TableHead className="w-[88px] px-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#777]">
-	                  Logo
-	                </TableHead>
-	                <TableHead className="px-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#777]">
-	                  School
-	                </TableHead>
-	                <TableHead className="px-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#777]">
-	                  Contact
-	                </TableHead>
-	                <TableHead className="w-[120px] px-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#777]">
-	                  Status
-	                </TableHead>
-	                <TableHead className="w-[80px] px-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#777]">
-	                  Order
-	                </TableHead>
-	                <TableHead className="w-[190px] px-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-[#777]">
-	                  Actions
-	                </TableHead>
-	              </TableRow>
-	            </TableHeader>
-	            <TableBody>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-[#222] bg-[#111]">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-[#222] bg-[#0d0d0d] hover:bg-[#0d0d0d]">
+                <TableHead className="w-[88px] px-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#777]">
+                  Logo
+                </TableHead>
+                <TableHead className="px-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#777]">
+                  School
+                </TableHead>
+                <TableHead className="px-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#777]">
+                  Contact
+                </TableHead>
+                <TableHead className="w-[120px] px-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#777]">
+                  Status
+                </TableHead>
+                <TableHead className="w-[80px] px-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#777]">
+                  Order
+                </TableHead>
+                <TableHead className="w-[190px] px-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-[#777]">
+                  Actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {testimonials.map((testimonial) => {
                 const initials = getSchoolInitials(testimonial.schoolName);
 
                 return (
-	                  <TableRow
-	                    key={testimonial.id}
-	                    className="cursor-pointer border-[#222] bg-[#111] text-white hover:bg-[#171717]"
-	                    onClick={() => setViewing(testimonial)}
-	                  >
-	                    <TableCell className="px-3 py-4 whitespace-normal">
-	                      <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-[#222] bg-[#0d0d0d]">
-	                        {testimonial.logoPublicId ? (
+                  <TableRow
+                    key={testimonial.id}
+                    className="cursor-pointer border-[#222] bg-[#111] text-white hover:bg-[#171717]"
+                    onClick={() => setViewing(testimonial)}
+                  >
+                    <TableCell className="px-3 py-4 whitespace-normal">
+                      <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-[#222] bg-[#0d0d0d]">
+                        {testimonial.logoPublicId ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={resolvePreviewSource(testimonial.logoPublicId)}
@@ -402,68 +416,68 @@ export function TestimonialsManager({
                           <span className="text-sm font-semibold tracking-[0.18em] text-white">
                             {initials || "SC"}
                           </span>
-	                        )}
-	                      </div>
-	                    </TableCell>
-	                    <TableCell className="px-3 py-4 align-middle whitespace-normal">
-	                      <div className="min-w-0">
-	                        <p className="line-clamp-2 max-w-[220px] text-sm font-medium leading-5 text-white">
-	                          {testimonial.schoolName}
-	                        </p>
-	                        <p className="mt-1 line-clamp-1 max-w-[220px] text-xs text-[#777]">
-	                          “{testimonial.quote}”
-	                        </p>
-	                      </div>
-	                    </TableCell>
-	                    <TableCell className="px-3 py-4 align-middle whitespace-normal">
-	                      <div className="min-w-0">
-	                        <p className="line-clamp-2 max-w-[180px] text-sm font-medium leading-5 text-white">
-	                          {testimonial.authorName}
-	                        </p>
-	                        <p className="mt-1 line-clamp-2 max-w-[180px] text-xs uppercase tracking-[0.14em] text-[#777]">
-	                          {testimonial.authorPosition}
-	                        </p>
-	                      </div>
-	                    </TableCell>
-	                    <TableCell className="px-3 py-4 align-middle whitespace-normal">
-	                      <span
-	                        className={
-	                          testimonial.isVisible
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-3 py-4 align-middle whitespace-normal">
+                      <div className="min-w-0">
+                        <p className="line-clamp-2 max-w-[220px] text-sm font-medium leading-5 text-white">
+                          {testimonial.schoolName}
+                        </p>
+                        <p className="mt-1 line-clamp-1 max-w-[220px] text-xs text-[#777]">
+                          “{testimonial.quote}”
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-3 py-4 align-middle whitespace-normal">
+                      <div className="min-w-0">
+                        <p className="line-clamp-2 max-w-[180px] text-sm font-medium leading-5 text-white">
+                          {testimonial.authorName}
+                        </p>
+                        <p className="mt-1 line-clamp-2 max-w-[180px] text-xs uppercase tracking-[0.14em] text-[#777]">
+                          {testimonial.authorPosition}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-3 py-4 align-middle whitespace-normal">
+                      <span
+                        className={
+                          testimonial.isVisible
                             ? "rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300"
                             : "rounded-full border border-[#2a2a2a] bg-[#0d0d0d] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#777]"
                         }
-	                      >
-	                        {testimonial.isVisible ? "Visible" : "Hidden"}
-	                      </span>
-	                    </TableCell>
-	                    <TableCell className="px-3 py-4 text-sm text-[#bbb] whitespace-normal">
-	                      {testimonial.position}
-	                    </TableCell>
-	                    <TableCell className="px-3 py-4 whitespace-normal">
-	                      <div className="flex flex-wrap justify-end gap-2">
-	                        <Button
-	                          type="button"
-	                          variant="outline"
+                      >
+                        {testimonial.isVisible ? "Visible" : "Hidden"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="px-3 py-4 text-sm text-[#bbb] whitespace-normal">
+                      {testimonial.position}
+                    </TableCell>
+                    <TableCell className="px-3 py-4 whitespace-normal">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
                           onClick={(event) => {
-	                            event.stopPropagation();
-	                            setEditing(testimonial);
-	                          }}
-	                          className="h-9 border-[#2a2a2a] bg-transparent px-3 text-white hover:bg-[#1a1a1a]"
-	                        >
-	                          <Pencil className="mr-2 h-4 w-4" />
-	                          Edit
+                            event.stopPropagation();
+                            setEditing(testimonial);
+                          }}
+                          className="h-9 border-[#2a2a2a] bg-transparent px-3 text-white hover:bg-[#1a1a1a]"
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edit
                         </Button>
                         <Button
                           type="button"
                           variant="outline"
                           onClick={(event) => {
-	                            event.stopPropagation();
-	                            setDeleting(testimonial);
-	                          }}
-	                          className="h-9 border-red-500/30 bg-transparent px-3 text-red-300 hover:bg-red-500/10 hover:text-red-200"
-	                        >
-	                          <Trash2 className="mr-2 h-4 w-4" />
-	                          Delete
+                            event.stopPropagation();
+                            setDeleting(testimonial);
+                          }}
+                          className="h-9 border-red-500/30 bg-transparent px-3 text-red-300 hover:bg-red-500/10 hover:text-red-200"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
                         </Button>
                       </div>
                     </TableCell>

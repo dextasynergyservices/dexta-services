@@ -99,7 +99,10 @@ describe("school template loading theme", () => {
       rawContent: JSON.parse(JSON.stringify(content)),
     });
 
-    assert.equal(synced.contentJson.theme.loadingText, "Loading school website");
+    assert.equal(
+      synced.contentJson.theme.loadingText,
+      "Loading school website",
+    );
     assert.equal(synced.contentJson.theme.loadingLogoWidth, 64);
     assert.equal(synced.contentJson.theme.loadingLogoHeight, 64);
   });

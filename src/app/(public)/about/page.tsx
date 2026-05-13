@@ -16,15 +16,21 @@ export const metadata = {
 };
 
 export default async function AboutPage() {
-  const [content, milestones, expertiseItems, teamMembers, spaceItems, valueItems] =
-    await Promise.all([
-      fetchAboutPageContent(),
-      fetchAboutMilestones(),
-      fetchAboutExpertiseItems(),
-      fetchAboutTeamMembers(),
-      fetchAboutSpaceItems(),
-      fetchAboutValueItems(),
-    ]);
+  const [
+    content,
+    milestones,
+    expertiseItems,
+    teamMembers,
+    spaceItems,
+    valueItems,
+  ] = await Promise.all([
+    fetchAboutPageContent(),
+    fetchAboutMilestones(),
+    fetchAboutExpertiseItems(),
+    fetchAboutTeamMembers(),
+    fetchAboutSpaceItems(),
+    fetchAboutValueItems(),
+  ]);
 
   return (
     <>

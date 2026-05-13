@@ -6,6 +6,7 @@ import {
   numberField,
   textField,
   textareaField,
+  type SchoolTemplateField,
   type SchoolTemplateManifest,
 } from "./types";
 
@@ -27,6 +28,10 @@ const admissionFormUrl =
   "https://docs.google.com/forms/d/e/1FAIpQLSdSXga8Z8UfldowUxZDw8b_fylxfQThhZqiuZUZnWtKWRBeSQ/viewform?embedded=true";
 const contactFormUrl =
   "https://docs.google.com/forms/d/e/1FAIpQLScHSufroE92p8YNZ2MWkH1lrkH0lWt2aNTmHSM58UwdH7DO2g/viewform?embedded=true";
+const formIframePlaceholder =
+  '<iframe src="https://docs.google.com/forms/..." width="640" height="1602" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>';
+const formIframeHelpText =
+  "Paste the full Google Forms iframe embed code. Leave blank to use the Google Form URL field.";
 const schoolAddress = "12 Excellence Drive, Lagos, Nigeria";
 const schoolPhone = "+234 801 234 5678";
 const schoolPhoneHref = "tel:+2348012345678";
@@ -36,313 +41,785 @@ const schoolHours = "Monday to Friday, 8:00 AM - 4:00 PM";
 const footerDescription =
   "DXT Academy is committed to raising confident leaders through academic excellence, strong character, and a deep sense of purpose.";
 
-const academicsOverviewStyleFields = [
-  colorField(
-    "sectionBgColor",
-    "Section background color",
-    "main > section:nth-of-type(2)",
-    {
+function admissionFormFields({
+  defaultFormUrl = admissionFormUrl,
+  defaultFormTitle = "DXT Academy admission form",
+}: {
+  defaultFormUrl?: string;
+  defaultFormTitle?: string;
+} = {}) {
+  return [
+    linkField("formUrl", "Google Form URL", "iframe", {
+      attribute: "data-src",
+      defaultValue: defaultFormUrl,
+      helpText:
+        "Paste the Google Forms embedded URL for the admissions form. Use the iframe field below when you have the full embed code. Leave blank to keep using the shared admissions form.",
+    }),
+    textareaField("formIframe", "Google Form iframe embed code", "iframe", {
+      target: "attribute",
+      attribute: "data-src",
+      defaultValue: "",
+      placeholder: formIframePlaceholder,
+      helpText: formIframeHelpText,
+    }),
+    textField("formTitle", "Iframe title", "iframe", {
+      target: "attribute",
+      attribute: "title",
+      defaultValue: defaultFormTitle,
+    }),
+  ];
+}
+
+function richTextField(
+  key: string,
+  label: string,
+  selector: string,
+  overrides: Partial<SchoolTemplateField> = {},
+): SchoolTemplateField {
+  return textareaField(key, label, selector, {
+    type: "richText",
+    target: "innerHTML",
+    ...overrides,
+  });
+}
+
+const templateTwoIconHelpText =
+  "Use an installed icon name such as arrow, cap, people, book, trophy, integrity, excellence, respect, responsibility, stem, arts, or sport. Set icon border width to 0 to remove the border.";
+const templateTwoFontImportHelpText =
+  "Optional. Paste a Google Fonts stylesheet URL, then use that font family inside the rich text font menu.";
+
+function templateTwoHeaderCssVariable(token: string) {
+  return `--dexta-academy-2-header-${token}`;
+}
+
+function templateTwoPageCssVariable(
+  pageKey: string,
+  sectionKey: string,
+  token: string,
+) {
+  return `--dexta-academy-2-${pageKey}-${sectionKey}-${token}`;
+}
+
+function templateTwoSectionStyleFields({
+  pageKey,
+  sectionKey,
+  selector,
+  defaultBackgroundColor,
+  defaultBackgroundOpacity = 100,
+  includeBackgroundImage = true,
+}: {
+  pageKey: string;
+  sectionKey: string;
+  selector: string;
+  defaultBackgroundColor: string;
+  defaultBackgroundOpacity?: number;
+  includeBackgroundImage?: boolean;
+}): SchoolTemplateField[] {
+  return [
+    colorField("sectionBgColor", "Section background color", selector, {
       target: "cssVariable",
-      cssVariable: "--dexta-academy-2-academics-overview-section-bg",
-      defaultValue: "#ffffff",
-      uiGroup: "Section style",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "section-bg-color",
+      ),
+      defaultValue: defaultBackgroundColor,
+      uiGroup: "Section background",
       uiOrder: 100,
-    },
-  ),
-  colorField("cardBgColor", "Card background color", ".info-card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-overview-card-bg",
-    defaultValue: "#ffffff",
-    uiGroup: "Card style",
-    uiOrder: 110,
+    }),
+    numberField("sectionBgOpacity", "Section background opacity", selector, {
+      target: "cssVariable",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "section-bg-opacity",
+      ),
+      defaultValue: defaultBackgroundOpacity,
+      min: 0,
+      max: 100,
+      step: 1,
+      unit: "%",
+      uiGroup: "Section background",
+      uiOrder: 101,
+    }),
+    ...(includeBackgroundImage
+      ? [
+          backgroundImageField(
+            "sectionBgImage",
+            "Section background image",
+            selector,
+            {
+              target: "cssVariable",
+              cssVariable: templateTwoPageCssVariable(
+                pageKey,
+                sectionKey,
+                "section-bg-image",
+              ),
+              defaultValue: "",
+              uiGroup: "Section background",
+              uiOrder: 102,
+              helpText:
+                "Use the image control to add, replace, or remove this section background image.",
+            },
+          ),
+          textField(
+            "sectionBgPosition",
+            "Background image position",
+            selector,
+            {
+              target: "cssVariable",
+              cssVariable: templateTwoPageCssVariable(
+                pageKey,
+                sectionKey,
+                "section-bg-position",
+              ),
+              defaultValue: "center center",
+              uiGroup: "Section background",
+              uiOrder: 103,
+            },
+          ),
+          textField("sectionBgSize", "Background image size", selector, {
+            target: "cssVariable",
+            cssVariable: templateTwoPageCssVariable(
+              pageKey,
+              sectionKey,
+              "section-bg-size",
+            ),
+            defaultValue: "cover",
+            helpText:
+              "Use cover, contain, or a custom CSS size such as 100% auto.",
+            uiGroup: "Section background",
+            uiOrder: 104,
+          }),
+        ]
+      : []),
+  ];
+}
+
+function homeSectionStyleFields(
+  options: Omit<Parameters<typeof templateTwoSectionStyleFields>[0], "pageKey">,
+) {
+  return templateTwoSectionStyleFields({ pageKey: "home", ...options });
+}
+
+function aboutSectionStyleFields(
+  options: Omit<Parameters<typeof templateTwoSectionStyleFields>[0], "pageKey">,
+) {
+  return templateTwoSectionStyleFields({ pageKey: "about", ...options });
+}
+
+function academicsSectionStyleFields(
+  options: Omit<Parameters<typeof templateTwoSectionStyleFields>[0], "pageKey">,
+) {
+  return templateTwoSectionStyleFields({ pageKey: "academics", ...options });
+}
+
+function admissionsSectionStyleFields(
+  options: Omit<Parameters<typeof templateTwoSectionStyleFields>[0], "pageKey">,
+) {
+  return templateTwoSectionStyleFields({ pageKey: "admissions", ...options });
+}
+
+function studentLifeSectionStyleFields(
+  options: Omit<Parameters<typeof templateTwoSectionStyleFields>[0], "pageKey">,
+) {
+  return templateTwoSectionStyleFields({ pageKey: "student-life", ...options });
+}
+
+function contactSectionStyleFields(
+  options: Omit<Parameters<typeof templateTwoSectionStyleFields>[0], "pageKey">,
+) {
+  return templateTwoSectionStyleFields({ pageKey: "contact", ...options });
+}
+
+function homeTypographyFields({
+  selector,
+}: {
+  selector: string;
+}): SchoolTemplateField[] {
+  return [
+    linkField("fontStylesheetUrl", "Google Fonts stylesheet URL", selector, {
+      target: "attribute",
+      attribute: "data-dexta-font-stylesheet",
+      defaultValue: "",
+      placeholder:
+        "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap",
+      helpText: templateTwoFontImportHelpText,
+      uiGroup: "Rich text fonts",
+      uiOrder: 200,
+    }),
+  ];
+}
+
+function aboutTypographyFields(
+  options: Parameters<typeof homeTypographyFields>[0],
+) {
+  return homeTypographyFields(options);
+}
+
+function academicsTypographyFields(
+  options: Parameters<typeof homeTypographyFields>[0],
+) {
+  return homeTypographyFields(options);
+}
+
+function admissionsTypographyFields(
+  options: Parameters<typeof homeTypographyFields>[0],
+) {
+  return homeTypographyFields(options);
+}
+
+function studentLifeTypographyFields(
+  options: Parameters<typeof homeTypographyFields>[0],
+) {
+  return homeTypographyFields(options);
+}
+
+function contactTypographyFields(
+  options: Parameters<typeof homeTypographyFields>[0],
+) {
+  return homeTypographyFields(options);
+}
+
+function templateTwoButtonStyleFields({
+  pageKey,
+  sectionKey,
+  selector,
+  defaultBackgroundColor = "#ffc433",
+  defaultBackgroundOpacity = 100,
+  defaultTextColor = "#0c1d2d",
+  defaultBorderColor = "#ffc433",
+  defaultBorderWidth = 0,
+  includeIcon = true,
+  iconSelector = ".button [data-icon]",
+}: {
+  pageKey: string;
+  sectionKey: string;
+  selector: string;
+  defaultBackgroundColor?: string;
+  defaultBackgroundOpacity?: number;
+  defaultTextColor?: string;
+  defaultBorderColor?: string;
+  defaultBorderWidth?: number;
+  includeIcon?: boolean;
+  iconSelector?: string;
+}): SchoolTemplateField[] {
+  return [
+    colorField("buttonBgColor", "Button background color", selector, {
+      target: "cssVariable",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "button-bg-color",
+      ),
+      defaultValue: defaultBackgroundColor,
+      uiGroup: "Button style",
+      uiOrder: 300,
+    }),
+    numberField("buttonBgOpacity", "Button background opacity", selector, {
+      target: "cssVariable",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "button-bg-opacity",
+      ),
+      defaultValue: defaultBackgroundOpacity,
+      min: 0,
+      max: 100,
+      step: 1,
+      unit: "%",
+      uiGroup: "Button style",
+      uiOrder: 301,
+    }),
+    colorField("buttonTextColor", "Button text color", selector, {
+      target: "cssVariable",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "button-text-color",
+      ),
+      defaultValue: defaultTextColor,
+      uiGroup: "Button style",
+      uiOrder: 302,
+    }),
+    colorField("buttonBorderColor", "Button border color", selector, {
+      target: "cssVariable",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "button-border-color",
+      ),
+      defaultValue: defaultBorderColor,
+      uiGroup: "Button style",
+      uiOrder: 303,
+    }),
+    numberField("buttonBorderWidth", "Button border width", selector, {
+      target: "cssVariable",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "button-border-width",
+      ),
+      defaultValue: defaultBorderWidth,
+      min: 0,
+      max: 12,
+      step: 1,
+      unit: "px",
+      helpText: "Set to 0 to remove the border.",
+      uiGroup: "Button style",
+      uiOrder: 304,
+    }),
+    ...(includeIcon
+      ? [
+          textField("buttonIconName", "Button icon name", iconSelector, {
+            target: "attribute",
+            attribute: "data-icon",
+            defaultValue: "arrow",
+            helpText: templateTwoIconHelpText,
+            uiGroup: "Button style",
+            uiOrder: 305,
+          }),
+        ]
+      : []),
+  ];
+}
+
+function homeButtonStyleFields(
+  options: Omit<Parameters<typeof templateTwoButtonStyleFields>[0], "pageKey">,
+) {
+  return templateTwoButtonStyleFields({ pageKey: "home", ...options });
+}
+
+function aboutButtonStyleFields(
+  options: Omit<Parameters<typeof templateTwoButtonStyleFields>[0], "pageKey">,
+) {
+  return templateTwoButtonStyleFields({ pageKey: "about", ...options });
+}
+
+function admissionsButtonStyleFields(
+  options: Omit<Parameters<typeof templateTwoButtonStyleFields>[0], "pageKey">,
+) {
+  return templateTwoButtonStyleFields({ pageKey: "admissions", ...options });
+}
+
+function headerButtonStyleFields({
+  keyPrefix,
+  labelPrefix,
+  tokenPrefix,
+  defaultBackgroundColor,
+  defaultBackgroundOpacity,
+  defaultTextColor,
+  defaultBorderColor,
+  defaultBorderWidth,
+  uiGroup,
+  uiOrder,
+}: {
+  keyPrefix: string;
+  labelPrefix: string;
+  tokenPrefix: string;
+  defaultBackgroundColor: string;
+  defaultBackgroundOpacity: number;
+  defaultTextColor: string;
+  defaultBorderColor: string;
+  defaultBorderWidth: number;
+  uiGroup: string;
+  uiOrder: number;
+}): SchoolTemplateField[] {
+  return [
+    colorField(
+      `${keyPrefix}ButtonBgColor`,
+      `${labelPrefix} background color`,
+      ".site-header",
+      {
+        target: "cssVariable",
+        cssVariable: templateTwoHeaderCssVariable(
+          `${tokenPrefix}-button-bg-color`,
+        ),
+        defaultValue: defaultBackgroundColor,
+        uiGroup,
+        uiOrder,
+      },
+    ),
+    numberField(
+      `${keyPrefix}ButtonBgOpacity`,
+      `${labelPrefix} background opacity`,
+      ".site-header",
+      {
+        target: "cssVariable",
+        cssVariable: templateTwoHeaderCssVariable(
+          `${tokenPrefix}-button-bg-opacity`,
+        ),
+        defaultValue: defaultBackgroundOpacity,
+        min: 0,
+        max: 100,
+        step: 1,
+        unit: "%",
+        uiGroup,
+        uiOrder: uiOrder + 1,
+      },
+    ),
+    colorField(
+      `${keyPrefix}ButtonTextColor`,
+      `${labelPrefix} text color`,
+      ".site-header",
+      {
+        target: "cssVariable",
+        cssVariable: templateTwoHeaderCssVariable(
+          `${tokenPrefix}-button-text-color`,
+        ),
+        defaultValue: defaultTextColor,
+        uiGroup,
+        uiOrder: uiOrder + 2,
+      },
+    ),
+    colorField(
+      `${keyPrefix}ButtonBorderColor`,
+      `${labelPrefix} border color`,
+      ".site-header",
+      {
+        target: "cssVariable",
+        cssVariable: templateTwoHeaderCssVariable(
+          `${tokenPrefix}-button-border-color`,
+        ),
+        defaultValue: defaultBorderColor,
+        uiGroup,
+        uiOrder: uiOrder + 3,
+      },
+    ),
+    numberField(
+      `${keyPrefix}ButtonBorderWidth`,
+      `${labelPrefix} border width`,
+      ".site-header",
+      {
+        target: "cssVariable",
+        cssVariable: templateTwoHeaderCssVariable(
+          `${tokenPrefix}-button-border-width`,
+        ),
+        defaultValue: defaultBorderWidth,
+        min: 0,
+        max: 12,
+        step: 1,
+        unit: "px",
+        helpText: "Set to 0 to remove the border.",
+        uiGroup,
+        uiOrder: uiOrder + 4,
+      },
+    ),
+  ];
+}
+
+function templateTwoIconContainerStyleFields({
+  pageKey,
+  sectionKey,
+  selector,
+  defaultIconColor,
+  defaultIconBgColor = "#ffffff",
+  defaultIconBgOpacity = 0,
+  defaultIconBorderColor = "#ffc433",
+  defaultIconBorderWidth = 1,
+}: {
+  pageKey: string;
+  sectionKey: string;
+  selector: string;
+  defaultIconColor: string;
+  defaultIconBgColor?: string;
+  defaultIconBgOpacity?: number;
+  defaultIconBorderColor?: string;
+  defaultIconBorderWidth?: number;
+}): SchoolTemplateField[] {
+  return [
+    colorField("iconColor", "Icon color", selector, {
+      target: "cssVariable",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "icon-color",
+      ),
+      defaultValue: defaultIconColor,
+      uiGroup: "Icon style",
+      uiOrder: 400,
+    }),
+    colorField("iconBgColor", "Icon background color", selector, {
+      target: "cssVariable",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "icon-bg-color",
+      ),
+      defaultValue: defaultIconBgColor,
+      uiGroup: "Icon style",
+      uiOrder: 401,
+    }),
+    numberField("iconBgOpacity", "Icon background opacity", selector, {
+      target: "cssVariable",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "icon-bg-opacity",
+      ),
+      defaultValue: defaultIconBgOpacity,
+      min: 0,
+      max: 100,
+      step: 1,
+      unit: "%",
+      uiGroup: "Icon style",
+      uiOrder: 402,
+    }),
+    colorField("iconBorderColor", "Icon border color", selector, {
+      target: "cssVariable",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "icon-border-color",
+      ),
+      defaultValue: defaultIconBorderColor,
+      uiGroup: "Icon style",
+      uiOrder: 403,
+    }),
+    numberField("iconBorderWidth", "Icon border width", selector, {
+      target: "cssVariable",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "icon-border-width",
+      ),
+      defaultValue: defaultIconBorderWidth,
+      min: 0,
+      max: 12,
+      step: 1,
+      unit: "px",
+      helpText: "Set to 0 to remove the icon border.",
+      uiGroup: "Icon style",
+      uiOrder: 404,
+    }),
+  ];
+}
+
+function homeIconContainerStyleFields(
+  options: Omit<
+    Parameters<typeof templateTwoIconContainerStyleFields>[0],
+    "pageKey"
+  >,
+) {
+  return templateTwoIconContainerStyleFields({ pageKey: "home", ...options });
+}
+
+function aboutIconContainerStyleFields(
+  options: Omit<
+    Parameters<typeof templateTwoIconContainerStyleFields>[0],
+    "pageKey"
+  >,
+) {
+  return templateTwoIconContainerStyleFields({ pageKey: "about", ...options });
+}
+
+function academicsIconContainerStyleFields(
+  options: Omit<
+    Parameters<typeof templateTwoIconContainerStyleFields>[0],
+    "pageKey"
+  >,
+) {
+  return templateTwoIconContainerStyleFields({
+    pageKey: "academics",
+    ...options,
+  });
+}
+
+function admissionsIconContainerStyleFields(
+  options: Omit<
+    Parameters<typeof templateTwoIconContainerStyleFields>[0],
+    "pageKey"
+  >,
+) {
+  return templateTwoIconContainerStyleFields({
+    pageKey: "admissions",
+    ...options,
+  });
+}
+
+function studentLifeIconContainerStyleFields(
+  options: Omit<
+    Parameters<typeof templateTwoIconContainerStyleFields>[0],
+    "pageKey"
+  >,
+) {
+  return templateTwoIconContainerStyleFields({
+    pageKey: "student-life",
+    ...options,
+  });
+}
+
+function contactIconContainerStyleFields(
+  options: Omit<
+    Parameters<typeof templateTwoIconContainerStyleFields>[0],
+    "pageKey"
+  >,
+) {
+  return templateTwoIconContainerStyleFields({
+    pageKey: "contact",
+    ...options,
+  });
+}
+
+function templateTwoRepeatableIconFields({
+  pageKey,
+  sectionKey,
+  selector,
+  defaultIconName,
+}: {
+  pageKey: string;
+  sectionKey: string;
+  selector: string;
+  defaultIconName: string;
+}): SchoolTemplateField[] {
+  return [
+    textField("iconName", "Icon name", selector, {
+      target: "attribute",
+      attribute: "data-icon",
+      defaultValue: defaultIconName,
+      helpText: templateTwoIconHelpText,
+      uiGroup: "Icon",
+      uiOrder: 20,
+    }),
+    backgroundImageField("iconImage", "Upload icon image", selector, {
+      target: "cssVariable",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "item-icon-image",
+      ),
+      defaultValue: "",
+      helpText:
+        "Optional. Upload a custom icon image, then set SVG icon opacity to 0 if you want to hide the installed icon.",
+      uiGroup: "Icon",
+      uiOrder: 21,
+    }),
+    numberField("iconSvgOpacity", "SVG icon opacity", selector, {
+      target: "cssVariable",
+      cssVariable: templateTwoPageCssVariable(
+        pageKey,
+        sectionKey,
+        "item-icon-opacity",
+      ),
+      defaultValue: 1,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      uiGroup: "Icon",
+      uiOrder: 22,
+    }),
+  ];
+}
+
+function homeRepeatableIconFields(
+  options: Omit<
+    Parameters<typeof templateTwoRepeatableIconFields>[0],
+    "pageKey"
+  >,
+) {
+  return templateTwoRepeatableIconFields({ pageKey: "home", ...options });
+}
+
+function aboutRepeatableIconFields(
+  options: Omit<
+    Parameters<typeof templateTwoRepeatableIconFields>[0],
+    "pageKey"
+  >,
+) {
+  return templateTwoRepeatableIconFields({ pageKey: "about", ...options });
+}
+
+function academicsRepeatableIconFields(
+  options: Omit<
+    Parameters<typeof templateTwoRepeatableIconFields>[0],
+    "pageKey"
+  >,
+) {
+  return templateTwoRepeatableIconFields({ pageKey: "academics", ...options });
+}
+
+function admissionsRepeatableIconFields(
+  options: Omit<
+    Parameters<typeof templateTwoRepeatableIconFields>[0],
+    "pageKey"
+  >,
+) {
+  return templateTwoRepeatableIconFields({ pageKey: "admissions", ...options });
+}
+
+function studentLifeRepeatableIconFields(
+  options: Omit<
+    Parameters<typeof templateTwoRepeatableIconFields>[0],
+    "pageKey"
+  >,
+) {
+  return templateTwoRepeatableIconFields({
+    pageKey: "student-life",
+    ...options,
+  });
+}
+
+const academicsOverviewStyleFields = [
+  ...academicsSectionStyleFields({
+    sectionKey: "overview",
+    selector: "main > section:nth-of-type(2)",
+    defaultBackgroundColor: "#ffffff",
   }),
-  colorField("iconBgColor", "Icon background color", ".info-card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-overview-icon-bg",
-    defaultValue: "#fff4cc",
-    uiGroup: "Icon style",
-    uiOrder: 120,
+  ...academicsTypographyFields({ selector: "main > section:nth-of-type(2)" }),
+  ...academicsIconContainerStyleFields({
+    sectionKey: "overview",
+    selector: "main > section:nth-of-type(2)",
+    defaultIconColor: "#9b7104",
+    defaultIconBgColor: "#fff4cc",
+    defaultIconBgOpacity: 100,
+    defaultIconBorderColor: "#fff4cc",
+    defaultIconBorderWidth: 0,
   }),
-  colorField("iconColor", "Icon color", ".info-card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-overview-icon-color",
-    defaultValue: "#9b7104",
-    uiGroup: "Icon style",
-    uiOrder: 121,
-  }),
-  colorField("titleColor", "Title color", ".info-card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-overview-title-color",
-    defaultValue: "#102034",
-    uiGroup: "Text style",
-    uiOrder: 130,
-  }),
-  textField("titleFont", "Title font", ".info-card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-overview-title-font",
-    defaultValue: "Manrope",
-    uiGroup: "Text style",
-    uiOrder: 131,
-  }),
-  textField("titleFontStyle", "Title font style", ".info-card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-overview-title-font-style",
-    defaultValue: "normal",
-    helpText: "Use normal, italic, or oblique.",
-    uiGroup: "Text style",
-    uiOrder: 132,
-  }),
-  colorField("descriptionColor", "Description color", ".info-card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-overview-description-color",
-    defaultValue: "#58708a",
-    uiGroup: "Description style",
-    uiOrder: 140,
-  }),
-  textField("descriptionFont", "Description font", ".info-card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-overview-description-font",
-    defaultValue: "Plus Jakarta Sans",
-    uiGroup: "Description style",
-    uiOrder: 141,
-  }),
-  textField("descriptionFontStyle", "Description font style", ".info-card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-overview-description-font-style",
-    defaultValue: "normal",
-    helpText: "Use normal, italic, or oblique.",
-    uiGroup: "Description style",
-    uiOrder: 142,
-  }),
-  colorField("borderColor", "Border color", ".info-card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-overview-border-color",
-    defaultValue: "#e7edf3",
-    uiGroup: "Border style",
-    uiOrder: 150,
-  }),
-  numberField("borderWidth", "Border width", ".info-card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-overview-border-width",
-    defaultValue: 1,
-    min: 0,
-    max: 12,
-    step: 1,
-    unit: "px",
-    helpText: "Set to 0 to remove the border.",
-    uiGroup: "Border style",
-    uiOrder: 151,
+  ...academicsRepeatableIconFields({
+    sectionKey: "overview",
+    selector: ".info-card__icon",
+    defaultIconName: "book",
   }),
 ];
 
 const academicsSubjectsStyleFields = [
-  colorField(
-    "sectionBgColor",
-    "Section background color",
-    "main > section:nth-of-type(3)",
-    {
-      target: "cssVariable",
-      cssVariable: "--dexta-academy-2-academics-subjects-section-bg",
-      defaultValue: "#081827",
-      uiGroup: "Section style",
-      uiOrder: 100,
-    },
-  ),
-  colorField("cardBgColor", "Card background color", ".card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-subjects-card-bg",
-    defaultValue: "#ffffff",
-    uiGroup: "Card style",
-    uiOrder: 110,
+  ...academicsSectionStyleFields({
+    sectionKey: "subjects",
+    selector: "main > section:nth-of-type(3)",
+    defaultBackgroundColor: "#081827",
   }),
-  colorField("iconBgColor", "Icon background color", ".card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-subjects-icon-bg",
-    defaultValue: "#ffc433",
-    uiGroup: "Icon style",
-    uiOrder: 120,
+  ...academicsTypographyFields({ selector: "main > section:nth-of-type(3)" }),
+  ...academicsIconContainerStyleFields({
+    sectionKey: "subjects",
+    selector: "main > section:nth-of-type(3)",
+    defaultIconColor: "#091624",
+    defaultIconBgColor: "#ffc433",
+    defaultIconBgOpacity: 100,
+    defaultIconBorderColor: "#ffc433",
+    defaultIconBorderWidth: 0,
   }),
-  colorField("iconColor", "Icon color", ".card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-subjects-icon-color",
-    defaultValue: "#091624",
-    uiGroup: "Icon style",
-    uiOrder: 121,
-  }),
-  colorField("titleColor", "Title color", ".card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-subjects-title-color",
-    defaultValue: "#102034",
-    uiGroup: "Text style",
-    uiOrder: 130,
-  }),
-  textField("titleFont", "Title font", ".card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-subjects-title-font",
-    defaultValue: "Manrope",
-    uiGroup: "Text style",
-    uiOrder: 131,
-  }),
-  textField("titleFontStyle", "Title font style", ".card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-subjects-title-font-style",
-    defaultValue: "normal",
-    helpText: "Use normal, italic, or oblique.",
-    uiGroup: "Text style",
-    uiOrder: 132,
-  }),
-  colorField("descriptionColor", "Description color", ".card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-subjects-description-color",
-    defaultValue: "#58708a",
-    uiGroup: "Description style",
-    uiOrder: 140,
-  }),
-  textField("descriptionFont", "Description font", ".card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-subjects-description-font",
-    defaultValue: "Plus Jakarta Sans",
-    uiGroup: "Description style",
-    uiOrder: 141,
-  }),
-  textField("descriptionFontStyle", "Description font style", ".card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-subjects-description-font-style",
-    defaultValue: "normal",
-    helpText: "Use normal, italic, or oblique.",
-    uiGroup: "Description style",
-    uiOrder: 142,
-  }),
-  colorField("borderColor", "Border color", ".card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-subjects-border-color",
-    defaultValue: "#e7edf3",
-    uiGroup: "Border style",
-    uiOrder: 150,
-  }),
-  numberField("borderWidth", "Border width", ".card", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-subjects-border-width",
-    defaultValue: 1,
-    min: 0,
-    max: 12,
-    step: 1,
-    unit: "px",
-    helpText: "Set to 0 to remove the border.",
-    uiGroup: "Border style",
-    uiOrder: 151,
+  ...academicsRepeatableIconFields({
+    sectionKey: "subjects",
+    selector: ".card__badge",
+    defaultIconName: "book",
   }),
 ];
 
 const academicsLearningStyleFields = [
-  colorField(
-    "sectionBgColor",
-    "Section background color",
-    "main > section:nth-of-type(4)",
-    {
-      target: "cssVariable",
-      cssVariable: "--dexta-academy-2-academics-learning-section-bg",
-      defaultValue: "#ffffff",
-      uiGroup: "Section style",
-      uiOrder: 100,
-    },
-  ),
-  colorField("titleColor", "Title color", ".feature-split", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-learning-title-color",
-    defaultValue: "#102034",
-    uiGroup: "Text style",
-    uiOrder: 110,
+  ...academicsSectionStyleFields({
+    sectionKey: "learning",
+    selector: "main > section:nth-of-type(4)",
+    defaultBackgroundColor: "#ffffff",
   }),
-  textField("titleFont", "Title font", ".feature-split", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-learning-title-font",
-    defaultValue: "Manrope",
-    uiGroup: "Text style",
-    uiOrder: 111,
-  }),
-  textField("titleFontStyle", "Title font style", ".feature-split", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-learning-title-font-style",
-    defaultValue: "normal",
-    helpText: "Use normal, italic, or oblique.",
-    uiGroup: "Text style",
-    uiOrder: 112,
-  }),
-  colorField("descriptionColor", "Description color", ".feature-split", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-learning-description-color",
-    defaultValue: "#58708a",
-    uiGroup: "Description style",
-    uiOrder: 120,
-  }),
-  textField("descriptionFont", "Description font", ".feature-split", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-learning-description-font",
-    defaultValue: "Plus Jakarta Sans",
-    uiGroup: "Description style",
-    uiOrder: 121,
-  }),
-  textField(
-    "descriptionFontStyle",
-    "Description font style",
-    ".feature-split",
-    {
-      target: "cssVariable",
-      cssVariable:
-        "--dexta-academy-2-academics-learning-description-font-style",
-      defaultValue: "normal",
-      helpText: "Use normal, italic, or oblique.",
-      uiGroup: "Description style",
-      uiOrder: 122,
-    },
-  ),
-  colorField("stepBgColor", "Step background color", ".steps li", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-learning-step-bg",
-    defaultValue: "#ffffff",
-    uiGroup: "Step style",
-    uiOrder: 130,
-  }),
-  colorField("stepNumberBgColor", "Step number background", ".steps li", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-learning-step-number-bg",
-    defaultValue: "#fff4cc",
-    uiGroup: "Step style",
-    uiOrder: 131,
-  }),
-  colorField("stepNumberColor", "Step number color", ".steps li", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-learning-step-number-color",
-    defaultValue: "#9b7104",
-    uiGroup: "Step style",
-    uiOrder: 132,
-  }),
-  colorField("stepTextColor", "Step text color", ".steps li", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-learning-step-text-color",
-    defaultValue: "#58708a",
-    uiGroup: "Step style",
-    uiOrder: 133,
-  }),
-  colorField("stepBorderColor", "Step border color", ".steps li", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-learning-step-border-color",
-    defaultValue: "#e7edf3",
-    uiGroup: "Step style",
-    uiOrder: 140,
-  }),
-  numberField("stepBorderWidth", "Step border width", ".steps li", {
-    target: "cssVariable",
-    cssVariable: "--dexta-academy-2-academics-learning-step-border-width",
-    defaultValue: 0,
-    min: 0,
-    max: 12,
-    step: 1,
-    unit: "px",
-    helpText: "Set to 0 to remove the border.",
-    uiGroup: "Step style",
-    uiOrder: 141,
+  ...academicsTypographyFields({ selector: "main > section:nth-of-type(4)" }),
+  ...academicsIconContainerStyleFields({
+    sectionKey: "learning",
+    selector: "main > section:nth-of-type(4)",
+    defaultIconColor: "#9b7104",
+    defaultIconBgColor: "#fff4cc",
+    defaultIconBgOpacity: 100,
+    defaultIconBorderColor: "#fff4cc",
+    defaultIconBorderWidth: 0,
   }),
 ];
 
@@ -351,10 +828,36 @@ const pageHeroSection = {
   label: "Page Hero",
   selector: ".page-hero",
   fields: [
+    colorField("sectionBgColor", "Section background color", ".page-hero", {
+      target: "cssVariable",
+      cssVariable: "--dexta-academy-2-page-hero-section-bg-color",
+      defaultValue: "#081827",
+      uiGroup: "Section background",
+      uiOrder: 1,
+    }),
+    numberField(
+      "sectionBgOpacity",
+      "Section background opacity",
+      ".page-hero",
+      {
+        target: "cssVariable",
+        cssVariable: "--dexta-academy-2-page-hero-section-bg-opacity",
+        defaultValue: 100,
+        min: 0,
+        max: 100,
+        step: 1,
+        unit: "%",
+        uiGroup: "Section background",
+        uiOrder: 2,
+      },
+    ),
+    ...homeTypographyFields({
+      selector: ".page-hero",
+    }),
     textField("breadcrumbs", "Breadcrumbs", ".breadcrumbs"),
-    textField("eyebrow", "Eyebrow", ".eyebrow"),
-    textField("title", "Title", ".page-hero__title, h1"),
-    textareaField("body", "Body", ".page-hero__copy"),
+    richTextField("eyebrow", "Eyebrow", ".eyebrow"),
+    richTextField("title", "Title", ".page-hero__title, h1"),
+    richTextField("body", "Body", ".page-hero__copy"),
     backgroundImageField("backgroundImage", "Background image", ".page-hero", {
       target: "cssVariable",
       cssVariable: "--dexta-academy-2-page-hero-background-image",
@@ -439,22 +942,66 @@ export const dextaAcademy2Manifest = {
           "portalCtaText",
           "Portal CTA text",
           ".site-header__actions .button--outline-light span:nth-of-type(1), .mobile-panel__actions .button--outline-light span:nth-of-type(1)",
+          {
+            defaultValue: "Portal",
+            uiGroup: "Portal button",
+            uiOrder: 10,
+          },
         ),
         linkField(
           "portalCtaHref",
           "Portal CTA link",
           ".site-header__actions .button--outline-light, .mobile-panel__actions .button--outline-light",
+          {
+            defaultValue: "#",
+            uiGroup: "Portal button",
+            uiOrder: 11,
+          },
         ),
+        ...headerButtonStyleFields({
+          keyPrefix: "portal",
+          labelPrefix: "Portal button",
+          tokenPrefix: "portal",
+          defaultBackgroundColor: "#ffc433",
+          defaultBackgroundOpacity: 0,
+          defaultTextColor: "#ffffff",
+          defaultBorderColor: "#ffc433",
+          defaultBorderWidth: 1,
+          uiGroup: "Portal button style",
+          uiOrder: 30,
+        }),
         textField(
           "primaryCtaText",
           "Primary CTA text",
           ".site-header__actions .button--primary span:nth-of-type(1), .mobile-panel__actions .button--primary span:nth-of-type(1)",
+          {
+            defaultValue: "Apply Now",
+            uiGroup: "Primary button",
+            uiOrder: 20,
+          },
         ),
         linkField(
           "primaryCtaHref",
           "Primary CTA link",
           ".site-header__actions .button--primary, .mobile-panel__actions .button--primary",
+          {
+            defaultValue: "admissions.html",
+            uiGroup: "Primary button",
+            uiOrder: 21,
+          },
         ),
+        ...headerButtonStyleFields({
+          keyPrefix: "primary",
+          labelPrefix: "Primary button",
+          tokenPrefix: "primary",
+          defaultBackgroundColor: "#ffc433",
+          defaultBackgroundOpacity: 100,
+          defaultTextColor: "#0c1d2d",
+          defaultBorderColor: "#ffc433",
+          defaultBorderWidth: 0,
+          uiGroup: "Primary button style",
+          uiOrder: 40,
+        }),
       ],
     },
     {
@@ -659,46 +1206,6 @@ export const dextaAcademy2Manifest = {
           uiGroup: "Legal",
           uiOrder: 50,
         }),
-        textField(
-          "privacyText",
-          "Privacy link label",
-          ".footer__legal a:nth-of-type(1)",
-          {
-            defaultValue: "Privacy Policy",
-            uiGroup: "Legal",
-            uiOrder: 51,
-          },
-        ),
-        linkField(
-          "privacyHref",
-          "Privacy link URL",
-          ".footer__legal a:nth-of-type(1)",
-          {
-            defaultValue: "privacy.html",
-            uiGroup: "Legal",
-            uiOrder: 52,
-          },
-        ),
-        textField(
-          "termsText",
-          "Terms link label",
-          ".footer__legal a:nth-of-type(2)",
-          {
-            defaultValue: "Terms of Use",
-            uiGroup: "Legal",
-            uiOrder: 53,
-          },
-        ),
-        linkField(
-          "termsHref",
-          "Terms link URL",
-          ".footer__legal a:nth-of-type(2)",
-          {
-            defaultValue: "terms.html",
-            uiGroup: "Legal",
-            uiOrder: 54,
-          },
-        ),
       ],
     },
     {
@@ -714,26 +1221,7 @@ export const dextaAcademy2Manifest = {
         textField("title", "Title", "#admission-modal-title", {
           defaultValue: "Apply to DXT Academy",
         }),
-        linkField("formUrl", "Google Form URL", "iframe", {
-          attribute: "data-src",
-          defaultValue: admissionFormUrl,
-          helpText:
-            "This template lazy-loads the form when the modal opens, so the preview updates the iframe data source.",
-        }),
-        textareaField("formIframe", "Google Form iframe embed code", "iframe", {
-          target: "attribute",
-          attribute: "data-src",
-          defaultValue: "",
-          placeholder:
-            '<iframe src="https://docs.google.com/forms/..." width="640" height="1602" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>',
-          helpText:
-            "Paste the full Google Forms iframe embed code. Leave blank to use the Google Form URL field.",
-        }),
-        textField("formTitle", "Iframe title", "iframe", {
-          target: "attribute",
-          attribute: "title",
-          defaultValue: "DXT Academy admission form",
-        }),
+        ...admissionFormFields(),
       ],
     },
   ],
@@ -752,12 +1240,30 @@ export const dextaAcademy2Manifest = {
             textField("eyebrow", "Eyebrow", ".eyebrow", {
               defaultValue: "Welcome to DXT Academy",
             }),
-            textField("headline", "Headline", "h1", {
-              defaultValue: "Education That Inspires.",
+            richTextField("headline", "Headline", "h1", {
+              defaultValue: "Education <span>That Inspires.</span>",
             }),
-            textareaField("body", "Body", ".hero-home__lead", {
+            richTextField("body", "Body", ".hero-home__lead", {
               defaultValue:
                 "We nurture confident leaders with academic excellence, strong character, and a deep sense of purpose.",
+            }),
+            ...homeSectionStyleFields({
+              sectionKey: "hero",
+              selector: ".hero-home",
+              defaultBackgroundColor: "#081827",
+              includeBackgroundImage: false,
+            }),
+            ...homeTypographyFields({
+              selector: ".hero-home",
+            }),
+            ...homeButtonStyleFields({
+              sectionKey: "hero",
+              selector: ".hero-home",
+              defaultBackgroundColor: "#ffffff",
+              defaultBackgroundOpacity: 0,
+              defaultTextColor: "#ffffff",
+              defaultBorderColor: "#ffffff",
+              defaultBorderWidth: 1,
             }),
             backgroundImageField(
               "desktopTreeImage",
@@ -856,6 +1362,29 @@ export const dextaAcademy2Manifest = {
           label: "Hero Stats",
           selector: ".hero-home__stats",
           fields: [
+            ...homeSectionStyleFields({
+              sectionKey: "stats",
+              selector: ".hero-home__stats",
+              defaultBackgroundColor: "#081827",
+              defaultBackgroundOpacity: 0,
+            }),
+            ...homeTypographyFields({
+              selector: ".hero-home__stats",
+            }),
+            ...homeIconContainerStyleFields({
+              sectionKey: "stats",
+              selector: ".hero-home__stats",
+              defaultIconColor: "#ffc433",
+              defaultIconBgColor: "#081827",
+              defaultIconBgOpacity: 0,
+              defaultIconBorderColor: "#ffc433",
+              defaultIconBorderWidth: 0,
+            }),
+            ...homeRepeatableIconFields({
+              sectionKey: "stats",
+              selector: "[data-icon]",
+              defaultIconName: "cap",
+            }),
             textField("value", "Value", "[data-stat]"),
             textField("label", "Label", ".hero-home__stat-label"),
           ],
@@ -870,10 +1399,42 @@ export const dextaAcademy2Manifest = {
           label: "Values Strip",
           selector: ".values-strip",
           fields: [
-            textField("title", "Intro title", ".values-strip__intro h2"),
-            textareaField("body", "Intro body", ".values-strip__intro p"),
-            textField("valueTitle", "Value title", ".value-item h3"),
-            textareaField("valueBody", "Value body", ".value-item p"),
+            ...homeSectionStyleFields({
+              sectionKey: "values",
+              selector: ".values-strip",
+              defaultBackgroundColor: "#ffffff",
+            }),
+            ...homeTypographyFields({
+              selector: ".values-strip",
+            }),
+            ...homeIconContainerStyleFields({
+              sectionKey: "values",
+              selector: ".values-strip",
+              defaultIconColor: "#f0b31f",
+              defaultIconBgColor: "#ffffff",
+              defaultIconBgOpacity: 0,
+              defaultIconBorderColor: "#ffc433",
+              defaultIconBorderWidth: 1.5,
+            }),
+            richTextField(
+              "introTitle",
+              "Intro title",
+              ".values-strip__intro h2",
+              {
+                defaultValue: "Our Values. Their Future.",
+              },
+            ),
+            richTextField("introBody", "Intro body", ".values-strip__intro p", {
+              defaultValue:
+                "At DXT Academy, values are not posters on walls. They shape decisions, relationships, and every learning moment.",
+            }),
+            ...homeRepeatableIconFields({
+              sectionKey: "values",
+              selector: ".value-item__icon",
+              defaultIconName: "integrity",
+            }),
+            richTextField("valueTitle", "Value title", ".value-item h3"),
+            richTextField("valueBody", "Value body", ".value-item p"),
           ],
           repeatable: {
             itemSelector: ".value-item",
@@ -886,9 +1447,21 @@ export const dextaAcademy2Manifest = {
           label: "About Preview",
           selector: ".split-showcase",
           fields: [
+            ...homeSectionStyleFields({
+              sectionKey: "about",
+              selector: ".split-showcase",
+              defaultBackgroundColor: "#081827",
+            }),
+            ...homeTypographyFields({
+              selector: ".split-showcase",
+            }),
+            ...homeButtonStyleFields({
+              sectionKey: "about",
+              selector: ".split-showcase",
+            }),
             textField("eyebrow", "Eyebrow", ".eyebrow"),
-            textField("title", "Title", ".section-title"),
-            textareaField("body", "Body", ".section-copy"),
+            richTextField("title", "Title", ".section-title"),
+            richTextField("body", "Body", ".section-copy"),
             imageField("image", "Image", ".media-card img"),
             textField("ctaText", "CTA text", ".button"),
           ],
@@ -898,13 +1471,54 @@ export const dextaAcademy2Manifest = {
           label: "Programs",
           selector: ".programs",
           fields: [
+            ...homeSectionStyleFields({
+              sectionKey: "programs",
+              selector: ".programs",
+              defaultBackgroundColor: "#ffffff",
+            }),
+            ...homeTypographyFields({
+              selector: ".programs",
+            }),
+            ...homeButtonStyleFields({
+              sectionKey: "programs",
+              selector: ".programs",
+            }),
+            ...homeIconContainerStyleFields({
+              sectionKey: "programs",
+              selector: ".programs",
+              defaultIconColor: "#091624",
+              defaultIconBgColor: "#ffc433",
+              defaultIconBgOpacity: 100,
+              defaultIconBorderColor: "#ffc433",
+              defaultIconBorderWidth: 0,
+            }),
+            ...homeRepeatableIconFields({
+              sectionKey: "programs",
+              selector: ".card__badge",
+              defaultIconName: "book",
+            }),
             textField("eyebrow", "Eyebrow", ".eyebrow"),
-            textField("title", "Title", ".section-title"),
-            textareaField("body", "Body", ".section-copy"),
+            richTextField("title", "Title", ".section-title"),
+            richTextField("body", "Body", ".section-copy"),
             imageField("programImage", "Program image", ".card__media img"),
-            textField("programTitle", "Program title", ".card__title"),
-            textareaField("programBody", "Program body", ".card__text"),
+            richTextField("programTitle", "Program title", ".card__title"),
+            richTextField("programBody", "Program body", ".card__text"),
             linkField("programLink", "Program link", ".card__link"),
+            richTextField(
+              "ctaTitle",
+              "Admission banner title",
+              ".cta-banner__copy h2",
+            ),
+            richTextField(
+              "ctaBody",
+              "Admission banner body",
+              ".cta-banner__copy p",
+            ),
+            textField(
+              "ctaText",
+              "Admission button text",
+              ".cta-banner .button",
+            ),
           ],
           repeatable: {
             itemSelector: ".card",
@@ -915,11 +1529,28 @@ export const dextaAcademy2Manifest = {
         {
           id: "student-life-preview",
           label: "Student Life Preview",
-          selector: ".news-heading",
+          selector: "main > section:nth-of-type(5)",
           fields: [
-            textField("eyebrow", "Eyebrow", ".eyebrow"),
-            textField("title", "Title", ".section-title"),
-            textareaField("body", "Body", ".section-copy"),
+            ...homeSectionStyleFields({
+              sectionKey: "student-life",
+              selector: "main > section:nth-of-type(5)",
+              defaultBackgroundColor: "#ffffff",
+            }),
+            ...homeTypographyFields({
+              selector: "main > section:nth-of-type(5)",
+            }),
+            ...homeButtonStyleFields({
+              sectionKey: "student-life",
+              selector: "main > section:nth-of-type(5)",
+              defaultBackgroundColor: "#ffffff",
+              defaultBackgroundOpacity: 0,
+              defaultTextColor: "#12304d",
+              defaultBorderColor: "#d6dde6",
+              defaultBorderWidth: 1,
+            }),
+            textField("eyebrow", "Eyebrow", ".news-heading .eyebrow"),
+            richTextField("title", "Title", ".news-heading .section-title"),
+            richTextField("body", "Body", ".news-heading .section-copy"),
             textField("ctaText", "CTA text", ".button"),
           ],
         },
@@ -928,10 +1559,33 @@ export const dextaAcademy2Manifest = {
           label: "Student Life Cards",
           selector: ".news-grid",
           fields: [
+            ...homeSectionStyleFields({
+              sectionKey: "student-life-cards",
+              selector: ".news-grid",
+              defaultBackgroundColor: "#ffffff",
+              defaultBackgroundOpacity: 0,
+            }),
+            ...homeTypographyFields({
+              selector: ".news-grid",
+            }),
+            ...homeIconContainerStyleFields({
+              sectionKey: "student-life-cards",
+              selector: ".news-grid",
+              defaultIconColor: "#12304d",
+              defaultIconBgColor: "#ffffff",
+              defaultIconBgOpacity: 0,
+              defaultIconBorderColor: "#12304d",
+              defaultIconBorderWidth: 0,
+            }),
+            ...homeRepeatableIconFields({
+              sectionKey: "student-life-cards",
+              selector: ".card__link [data-icon]",
+              defaultIconName: "arrow",
+            }),
             imageField("image", "Image", ".news-card__media img"),
             textField("category", "Category", ".news-card__date"),
-            textField("title", "Title", ".news-card__title"),
-            textareaField("excerpt", "Excerpt", ".news-card__excerpt"),
+            richTextField("title", "Title", ".news-card__title"),
+            richTextField("excerpt", "Excerpt", ".news-card__excerpt"),
             textField("ctaText", "CTA text", ".card__link"),
           ],
           repeatable: {
@@ -951,10 +1605,18 @@ export const dextaAcademy2Manifest = {
         {
           id: "stats",
           label: "Stats",
-          selector: ".stats-grid",
+          selector: "main > section:nth-of-type(2)",
           fields: [
-            textField("value", "Value", ".stat-box strong"),
-            textField("label", "Label", ".stat-box span"),
+            ...aboutSectionStyleFields({
+              sectionKey: "stats",
+              selector: "main > section:nth-of-type(2)",
+              defaultBackgroundColor: "#ffffff",
+            }),
+            ...aboutTypographyFields({
+              selector: "main > section:nth-of-type(2)",
+            }),
+            richTextField("value", "Value", ".stat-box strong"),
+            richTextField("label", "Label", ".stat-box span"),
           ],
           repeatable: {
             itemSelector: ".stat-box",
@@ -965,11 +1627,19 @@ export const dextaAcademy2Manifest = {
         {
           id: "who-we-are",
           label: "Who We Are",
-          selector: ".section--dark .feature-split",
+          selector: "main > section:nth-of-type(3)",
           fields: [
-            textField("eyebrow", "Eyebrow", ".eyebrow"),
-            textField("title", "Title", ".section-title"),
-            textareaField("body", "Body", ".section-copy"),
+            ...aboutSectionStyleFields({
+              sectionKey: "who-we-are",
+              selector: "main > section:nth-of-type(3)",
+              defaultBackgroundColor: "#081827",
+            }),
+            ...aboutTypographyFields({
+              selector: "main > section:nth-of-type(3)",
+            }),
+            richTextField("eyebrow", "Eyebrow", ".eyebrow"),
+            richTextField("title", "Title", ".section-title"),
+            richTextField("body", "Body", ".section-copy"),
             textField(
               "featureNumber",
               "Feature number",
@@ -979,6 +1649,10 @@ export const dextaAcademy2Manifest = {
               "featureText",
               "Feature text",
               "span:not(.feature-list__bullet)",
+              {
+                type: "richText",
+                target: "innerHTML",
+              },
             ),
             imageField("image", "Image", ".feature-split__media img", {
               defaultValue: aboutLearningImage,
@@ -995,9 +1669,22 @@ export const dextaAcademy2Manifest = {
           label: "Story",
           selector: ".about-story-section",
           fields: [
-            textField("eyebrow", "Eyebrow", ".eyebrow"),
-            textField("title", "Title", ".section-title"),
-            textareaField("body", "Preview body", ".section-copy"),
+            ...aboutSectionStyleFields({
+              sectionKey: "story",
+              selector: ".about-story-section",
+              defaultBackgroundColor: "#ffffff",
+            }),
+            ...aboutTypographyFields({
+              selector: ".about-story-section",
+            }),
+            ...aboutButtonStyleFields({
+              sectionKey: "story",
+              selector: ".about-story-section",
+              includeIcon: false,
+            }),
+            richTextField("eyebrow", "Eyebrow", ".eyebrow"),
+            richTextField("title", "Title", ".section-title"),
+            richTextField("body", "Preview body", ".section-copy"),
             textField("ctaText", "Read more button text", ".button"),
             imageField("image", "Image", ".feature-split__media img", {
               defaultValue: aboutLearningImage,
@@ -1009,10 +1696,23 @@ export const dextaAcademy2Manifest = {
           label: "Story Modal",
           selector: ".story-modal__dialog",
           fields: [
-            textField("eyebrow", "Eyebrow", ".story-modal__header .eyebrow", {
-              defaultValue: "about us",
+            ...aboutSectionStyleFields({
+              sectionKey: "story-modal",
+              selector: ".story-modal__dialog",
+              defaultBackgroundColor: "#ffffff",
             }),
-            textField("title", "Modal title", "#story-modal-title", {
+            ...aboutTypographyFields({
+              selector: ".story-modal__dialog",
+            }),
+            richTextField(
+              "eyebrow",
+              "Eyebrow",
+              ".story-modal__header .eyebrow",
+              {
+                defaultValue: "about us",
+              },
+            ),
+            richTextField("title", "Modal title", "#story-modal-title", {
               defaultValue: "DXT Academy's Journey",
             }),
             textareaField("bodyHtml", "Full story", ".story-modal__content", {
@@ -1028,10 +1728,32 @@ export const dextaAcademy2Manifest = {
         {
           id: "mission-vision",
           label: "Mission, Vision, Promise",
-          selector: ".info-grid",
+          selector: "main > section:nth-of-type(5)",
           fields: [
-            textField("cardTitle", "Card title", ".info-card h3"),
-            textareaField("cardBody", "Card body", ".info-card p"),
+            ...aboutSectionStyleFields({
+              sectionKey: "mission-vision",
+              selector: "main > section:nth-of-type(5)",
+              defaultBackgroundColor: "#fff4cc",
+            }),
+            ...aboutTypographyFields({
+              selector: "main > section:nth-of-type(5)",
+            }),
+            ...aboutIconContainerStyleFields({
+              sectionKey: "mission-vision",
+              selector: "main > section:nth-of-type(5)",
+              defaultIconColor: "#091624",
+              defaultIconBgColor: "#ffc433",
+              defaultIconBgOpacity: 100,
+              defaultIconBorderColor: "#ffc433",
+              defaultIconBorderWidth: 0,
+            }),
+            ...aboutRepeatableIconFields({
+              sectionKey: "mission-vision",
+              selector: ".info-card__icon",
+              defaultIconName: "integrity",
+            }),
+            richTextField("cardTitle", "Card title", ".info-card h3"),
+            richTextField("cardBody", "Card body", ".info-card p"),
           ],
           repeatable: {
             itemSelector: ".info-card",
@@ -1042,8 +1764,16 @@ export const dextaAcademy2Manifest = {
         {
           id: "family-choice",
           label: "Why Families Choose Us",
-          selector: ".feature-split--reverse",
+          selector: "main > section:nth-of-type(6)",
           fields: [
+            ...aboutSectionStyleFields({
+              sectionKey: "family-choice",
+              selector: "main > section:nth-of-type(6)",
+              defaultBackgroundColor: "#ffffff",
+            }),
+            ...aboutTypographyFields({
+              selector: "main > section:nth-of-type(6)",
+            }),
             imageField(
               "image",
               "Founder/family image",
@@ -1064,11 +1794,11 @@ export const dextaAcademy2Manifest = {
                   "Background image shown beside the quote card in this section.",
               },
             ),
-            textField("eyebrow", "Eyebrow", ".eyebrow"),
-            textField("title", "Title", ".section-title"),
-            textareaField("body", "Body", ".section-copy"),
-            textareaField("quote", "Quote", ".quote-card p"),
-            textField("quoteAuthor", "Quote author", ".quote-card strong"),
+            richTextField("eyebrow", "Eyebrow", ".eyebrow"),
+            richTextField("title", "Title", ".section-title"),
+            richTextField("body", "Body", ".section-copy"),
+            richTextField("quote", "Quote", ".quote-card p"),
+            richTextField("quoteAuthor", "Quote author", ".quote-card strong"),
           ],
         },
       ],
@@ -1085,12 +1815,8 @@ export const dextaAcademy2Manifest = {
           selector: "main > section:nth-of-type(2)",
           fields: [
             ...academicsOverviewStyleFields,
-            textField("overviewIcon", "Overview icon", ".info-card__icon", {
-              target: "attribute",
-              attribute: "data-icon",
-            }),
-            textField("overviewTitle", "Overview title", ".info-card h3"),
-            textareaField("overviewBody", "Overview body", ".info-card p"),
+            richTextField("overviewTitle", "Overview title", ".info-card h3"),
+            richTextField("overviewBody", "Overview body", ".info-card p"),
           ],
           repeatable: {
             itemSelector: ".info-card",
@@ -1114,12 +1840,8 @@ export const dextaAcademy2Manifest = {
                 attribute: "alt",
               },
             ),
-            textField("subjectIcon", "Subject icon", ".card__badge", {
-              target: "attribute",
-              attribute: "data-icon",
-            }),
-            textField("subjectTitle", "Subject title", ".card__title"),
-            textareaField("subjectBody", "Subject body", ".card__text"),
+            richTextField("subjectTitle", "Subject title", ".card__title"),
+            richTextField("subjectBody", "Subject body", ".card__text"),
           ],
           repeatable: {
             itemSelector: ".card",
@@ -1133,11 +1855,11 @@ export const dextaAcademy2Manifest = {
           selector: "main > section:nth-of-type(4)",
           fields: [
             ...academicsLearningStyleFields,
-            textField("eyebrow", "Eyebrow", ".eyebrow"),
-            textField("title", "Title", ".section-title"),
-            textareaField("body", "Body", ".section-copy"),
+            richTextField("eyebrow", "Eyebrow", ".eyebrow"),
+            richTextField("title", "Title", ".section-title"),
+            richTextField("body", "Body", ".section-copy"),
             textField("stepNumber", "Step number", ".steps__number"),
-            textField("stepText", "Step text", "span:not(.steps__number)"),
+            richTextField("stepText", "Step text", "span:not(.steps__number)"),
             imageField("image", "Image", ".feature-split__media img"),
             textField(
               "imageAlt",
@@ -1166,11 +1888,28 @@ export const dextaAcademy2Manifest = {
         {
           id: "process",
           label: "Admissions Process",
-          selector: ".section",
+          selector: "main > section:nth-of-type(2)",
           fields: [
-            textField("title", "Title", "h2"),
-            textField("stepTitle", "Step title", "h3"),
-            textareaField("stepBody", "Step body", "p"),
+            ...admissionsSectionStyleFields({
+              sectionKey: "process",
+              selector: "main > section:nth-of-type(2)",
+              defaultBackgroundColor: "#ffffff",
+            }),
+            ...admissionsTypographyFields({
+              selector: "main > section:nth-of-type(2)",
+            }),
+            ...admissionsIconContainerStyleFields({
+              sectionKey: "process",
+              selector: "main > section:nth-of-type(2)",
+              defaultIconColor: "#9b7104",
+              defaultIconBgColor: "#fff4cc",
+              defaultIconBgOpacity: 100,
+              defaultIconBorderColor: "#fff4cc",
+              defaultIconBorderWidth: 0,
+            }),
+            richTextField("title", "Title", "h2"),
+            richTextField("stepTitle", "Step title", "h3"),
+            richTextField("stepBody", "Step body", "p"),
           ],
           repeatable: {
             itemSelector: "article, .card",
@@ -1181,10 +1920,30 @@ export const dextaAcademy2Manifest = {
         {
           id: "admissions-support",
           label: "Admissions Support",
-          selector: "#portal .info-grid",
+          selector: "#portal",
           fields: [
-            textField("title", "Title", ".info-card h3"),
-            textareaField("body", "Body", ".info-card p"),
+            ...admissionsSectionStyleFields({
+              sectionKey: "support",
+              selector: "#portal",
+              defaultBackgroundColor: "#081827",
+            }),
+            ...admissionsTypographyFields({ selector: "#portal" }),
+            ...admissionsIconContainerStyleFields({
+              sectionKey: "support",
+              selector: "#portal",
+              defaultIconColor: "#091624",
+              defaultIconBgColor: "#ffc433",
+              defaultIconBgOpacity: 100,
+              defaultIconBorderColor: "#ffc433",
+              defaultIconBorderWidth: 0,
+            }),
+            ...admissionsRepeatableIconFields({
+              sectionKey: "support",
+              selector: ".info-card__icon",
+              defaultIconName: "calendar",
+            }),
+            richTextField("title", "Title", ".info-card h3"),
+            richTextField("body", "Body", ".info-card p"),
           ],
           repeatable: {
             itemSelector: ".info-card",
@@ -1195,11 +1954,68 @@ export const dextaAcademy2Manifest = {
         {
           id: "admissions-cta",
           label: "Admissions CTA",
-          selector: ".cta-banner__panel",
+          selector: "main > section:nth-of-type(4)",
           fields: [
-            textField("title", "Title", "h2"),
-            textareaField("body", "Body", ".cta-banner__copy p"),
+            ...admissionsSectionStyleFields({
+              sectionKey: "cta",
+              selector: "main > section:nth-of-type(4)",
+              defaultBackgroundColor: "#ffffff",
+            }),
+            ...admissionsTypographyFields({
+              selector: "main > section:nth-of-type(4)",
+            }),
+            ...admissionsButtonStyleFields({
+              sectionKey: "cta",
+              selector: ".cta-banner__panel",
+              defaultBackgroundColor: "#ffc433",
+              defaultBackgroundOpacity: 100,
+              defaultTextColor: "#0c1d2d",
+              defaultBorderColor: "#ffc433",
+              defaultBorderWidth: 0,
+            }),
+            ...admissionsIconContainerStyleFields({
+              sectionKey: "cta",
+              selector: ".cta-banner__icon",
+              defaultIconColor: "#091624",
+              defaultIconBgColor: "#ffc433",
+              defaultIconBgOpacity: 100,
+              defaultIconBorderColor: "#ffc433",
+              defaultIconBorderWidth: 0,
+            }),
+            ...admissionsRepeatableIconFields({
+              sectionKey: "cta",
+              selector: ".cta-banner__icon",
+              defaultIconName: "cap",
+            }),
+            richTextField("title", "Title", "h2"),
+            richTextField("body", "Body", ".cta-banner__copy p"),
             textField("ctaText", "CTA text", ".button"),
+          ],
+        },
+        {
+          id: "admission-form",
+          label: "Admission Form",
+          selector: ".admission-modal__dialog",
+          description:
+            "Controls the Google Form opened by the Apply buttons. Use this admissions form separately from the Contact page form.",
+          fields: [
+            ...admissionsSectionStyleFields({
+              sectionKey: "form",
+              selector: ".admission-modal__dialog",
+              defaultBackgroundColor: "#ffffff",
+            }),
+            ...admissionsTypographyFields({
+              selector: ".admission-modal__dialog",
+            }),
+            textField("title", "Modal title", "#admission-modal-title", {
+              defaultValue: "Apply to DXT Academy",
+              uiGroup: "Modal copy",
+              uiOrder: 0,
+            }),
+            ...admissionFormFields({
+              defaultFormTitle: "",
+              defaultFormUrl: "",
+            }),
           ],
         },
       ],
@@ -1213,11 +2029,33 @@ export const dextaAcademy2Manifest = {
         {
           id: "life-highlights",
           label: "Life Highlights",
-          selector: ".section",
+          selector: "main > section:nth-of-type(2)",
           fields: [
-            textField("title", "Title", "h2"),
-            textField("highlightTitle", "Highlight title", "h3"),
-            textareaField("highlightBody", "Highlight body", "p"),
+            ...studentLifeSectionStyleFields({
+              sectionKey: "highlights",
+              selector: "main > section:nth-of-type(2)",
+              defaultBackgroundColor: "#ffffff",
+            }),
+            ...studentLifeTypographyFields({
+              selector: "main > section:nth-of-type(2)",
+            }),
+            ...studentLifeIconContainerStyleFields({
+              sectionKey: "highlights",
+              selector: "main > section:nth-of-type(2)",
+              defaultIconColor: "#091624",
+              defaultIconBgColor: "#ffc433",
+              defaultIconBgOpacity: 100,
+              defaultIconBorderColor: "#ffc433",
+              defaultIconBorderWidth: 0,
+            }),
+            ...studentLifeRepeatableIconFields({
+              sectionKey: "highlights",
+              selector: ".info-card__icon",
+              defaultIconName: "people",
+            }),
+            richTextField("title", "Title", "h2"),
+            richTextField("highlightTitle", "Highlight title", "h3"),
+            richTextField("highlightBody", "Highlight body", "p"),
             imageField("highlightImage", "Highlight image", "img"),
           ],
           repeatable: {
@@ -1229,13 +2067,30 @@ export const dextaAcademy2Manifest = {
         {
           id: "leadership-character",
           label: "Leadership & Character",
-          selector: ".section--dark .feature-split",
+          selector: "main > section:nth-of-type(3)",
           fields: [
+            ...studentLifeSectionStyleFields({
+              sectionKey: "leadership",
+              selector: "main > section:nth-of-type(3)",
+              defaultBackgroundColor: "#081827",
+            }),
+            ...studentLifeTypographyFields({
+              selector: "main > section:nth-of-type(3)",
+            }),
+            ...studentLifeIconContainerStyleFields({
+              sectionKey: "leadership",
+              selector: "main > section:nth-of-type(3)",
+              defaultIconColor: "#9b7104",
+              defaultIconBgColor: "#fff4cc",
+              defaultIconBgOpacity: 100,
+              defaultIconBorderColor: "#fff4cc",
+              defaultIconBorderWidth: 0,
+            }),
             imageField("image", "Image", ".feature-split__media img"),
-            textField("eyebrow", "Eyebrow", ".eyebrow"),
-            textField("title", "Title", ".section-title"),
-            textareaField("body", "Body", ".section-copy"),
-            textField("point", "Point", ".feature-list li span:last-child"),
+            richTextField("eyebrow", "Eyebrow", ".eyebrow"),
+            richTextField("title", "Title", ".section-title"),
+            richTextField("body", "Body", ".section-copy"),
+            richTextField("point", "Point", ".feature-list li span:last-child"),
           ],
           repeatable: {
             itemSelector: ".feature-list li",
@@ -1246,24 +2101,50 @@ export const dextaAcademy2Manifest = {
         {
           id: "portal-events",
           label: "Portal & Events",
-          selector: ".portal-events",
+          selector: "main > section:nth-of-type(4)",
           fields: [
-            textField("eyebrow", "Eyebrow", ".portal-events__heading .eyebrow"),
-            textField(
+            ...studentLifeSectionStyleFields({
+              sectionKey: "portal-events",
+              selector: "main > section:nth-of-type(4)",
+              defaultBackgroundColor: "#ffffff",
+            }),
+            ...studentLifeTypographyFields({
+              selector: "main > section:nth-of-type(4)",
+            }),
+            ...studentLifeIconContainerStyleFields({
+              sectionKey: "portal-events",
+              selector: "main > section:nth-of-type(4)",
+              defaultIconColor: "#091624",
+              defaultIconBgColor: "#ffc433",
+              defaultIconBgOpacity: 100,
+              defaultIconBorderColor: "#ffc433",
+              defaultIconBorderWidth: 0,
+            }),
+            ...studentLifeRepeatableIconFields({
+              sectionKey: "portal-events",
+              selector: ".info-card__icon",
+              defaultIconName: "calendar",
+            }),
+            richTextField(
+              "eyebrow",
+              "Eyebrow",
+              ".portal-events__heading .eyebrow",
+            ),
+            richTextField(
               "title",
               "Title",
               ".portal-events__heading .section-title",
             ),
-            textareaField(
+            richTextField(
               "body",
               "Body",
               ".portal-events__heading .section-copy",
             ),
             imageField("image", "Image", ".portal-events__media img"),
-            textField("cardTitle", "Card title", ".info-card h3"),
-            textareaField("cardBody", "Card body", ".info-card p"),
-            textareaField("quote", "Quote", ".quote-card p"),
-            textField("quoteAuthor", "Quote author", ".quote-card strong"),
+            richTextField("cardTitle", "Card title", ".info-card h3"),
+            richTextField("cardBody", "Card body", ".info-card p"),
+            richTextField("quote", "Quote", ".quote-card p"),
+            richTextField("quoteAuthor", "Quote author", ".quote-card strong"),
           ],
           repeatable: {
             itemSelector: ".info-card",
@@ -1343,9 +2224,19 @@ export const dextaAcademy2Manifest = {
           label: "Contact Form",
           selector: ".google-form-card",
           fields: [
-            textField("eyebrow", "Eyebrow", ".form-card__heading .eyebrow"),
-            textField("title", "Title", ".form-card__heading .section-title"),
-            textareaField("body", "Body", ".form-card__heading .section-copy"),
+            ...contactSectionStyleFields({
+              sectionKey: "form",
+              selector: ".google-form-card",
+              defaultBackgroundColor: "#ffffff",
+            }),
+            ...contactTypographyFields({ selector: ".google-form-card" }),
+            richTextField("eyebrow", "Eyebrow", ".form-card__heading .eyebrow"),
+            richTextField(
+              "title",
+              "Title",
+              ".form-card__heading .section-title",
+            ),
+            richTextField("body", "Body", ".form-card__heading .section-copy"),
             linkField("formUrl", "Google Form URL", "iframe", {
               attribute: "src",
               defaultValue: contactFormUrl,
@@ -1358,10 +2249,8 @@ export const dextaAcademy2Manifest = {
                 target: "attribute",
                 attribute: "src",
                 defaultValue: "",
-                placeholder:
-                  '<iframe src="https://docs.google.com/forms/..." width="640" height="1602" frameborder="0" marginheight="0" marginwidth="0">Loading...</iframe>',
-                helpText:
-                  "Paste the full Google Forms iframe embed code. Leave blank to use the Google Form URL field.",
+                placeholder: formIframePlaceholder,
+                helpText: formIframeHelpText,
               },
             ),
             textField("formTitle", "Iframe title", "iframe", {
@@ -1376,8 +2265,23 @@ export const dextaAcademy2Manifest = {
           label: "Contact Details",
           selector: ".accent-panel",
           fields: [
-            textField("heading", "Title", "h3"),
-            textareaField(
+            ...contactSectionStyleFields({
+              sectionKey: "details",
+              selector: ".accent-panel",
+              defaultBackgroundColor: "#fff4cc",
+            }),
+            ...contactTypographyFields({ selector: ".accent-panel" }),
+            ...contactIconContainerStyleFields({
+              sectionKey: "details",
+              selector: ".feature-list__bullet",
+              defaultIconColor: "#9b7104",
+              defaultIconBgColor: "#ffffff",
+              defaultIconBgOpacity: 100,
+              defaultIconBorderColor: "#ffc433",
+              defaultIconBorderWidth: 0,
+            }),
+            richTextField("heading", "Title", "h3"),
+            richTextField(
               "address",
               "Address",
               ".simple-list li:nth-of-type(1) span:nth-of-type(2)",
@@ -1407,7 +2311,7 @@ export const dextaAcademy2Manifest = {
                 defaultValue: schoolEmailHref,
               },
             ),
-            textField(
+            richTextField(
               "officeHours",
               "Office hours",
               ".simple-list li:nth-of-type(4) span:nth-of-type(2)",
@@ -1415,8 +2319,8 @@ export const dextaAcademy2Manifest = {
                 defaultValue: schoolHours,
               },
             ),
-            textareaField("quote", "Quote", ".quote-card p"),
-            textField("quoteAuthor", "Quote author", ".quote-card strong"),
+            richTextField("quote", "Quote", ".quote-card p"),
+            richTextField("quoteAuthor", "Quote author", ".quote-card strong"),
           ],
         },
       ],

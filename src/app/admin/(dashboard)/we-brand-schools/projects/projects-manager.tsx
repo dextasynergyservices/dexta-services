@@ -69,7 +69,10 @@ export function ProjectsManager({ projects }: ProjectsManagerProps) {
   const exportProject = async (project: SchoolWebsiteProjectRow) => {
     const projectId = project.id;
     setExportingProjectId(projectId);
-    const result = await exportSchoolWebsiteProject(projectId, project.applicationId);
+    const result = await exportSchoolWebsiteProject(
+      projectId,
+      project.applicationId,
+    );
     setExportingProjectId(null);
 
     if (!result.success) {
@@ -107,10 +110,15 @@ export function ProjectsManager({ projects }: ProjectsManagerProps) {
             </TableRow>
           ) : (
             projects.map((project) => (
-              <TableRow key={project.id} className="border-[#222] hover:bg-[#171717]">
+              <TableRow
+                key={project.id}
+                className="border-[#222] hover:bg-[#171717]"
+              >
                 <TableCell>
                   <div>
-                    <p className="font-medium text-white">{project.schoolName}</p>
+                    <p className="font-medium text-white">
+                      {project.schoolName}
+                    </p>
                     <p className="mt-1 text-xs text-[#666]">
                       {project.templateSlug}
                     </p>
@@ -157,7 +165,10 @@ export function ProjectsManager({ projects }: ProjectsManagerProps) {
                       size="sm"
                       className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white"
                     >
-                      <Link href={getProjectPreviewHref(project)} target="_blank">
+                      <Link
+                        href={getProjectPreviewHref(project)}
+                        target="_blank"
+                      >
                         <Eye className="mr-1.5 h-3.5 w-3.5" />
                         Preview
                       </Link>

@@ -193,9 +193,57 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 	    return value !== null && value !== undefined && value !== "";
 	  }
 
-  function toText(value) {
-    return value === null || value === undefined ? "" : String(value);
-  }
+	  function toText(value) {
+	    return value === null || value === undefined ? "" : String(value);
+	  }
+
+	  function toComparableText(value) {
+	    var node = document.createElement("div");
+	    node.innerHTML = toText(value);
+	    return (node.textContent || node.innerText || "").replace(/\\s+/g, " ").trim();
+	  }
+
+	  function serializeHtmlNode(node) {
+	    var wrapper = document.createElement("div");
+	    wrapper.appendChild(node.cloneNode(true));
+	    return wrapper.innerHTML;
+	  }
+
+	  function isTextBlockElement(node) {
+	    if (!node || node.nodeType !== 1) return false;
+	    return /^(p|div|h[1-6]|blockquote)$/i.test(node.tagName || "");
+	  }
+
+	  function getUnwrappedTextBlockHtml(node) {
+	    var style = node.getAttribute && node.getAttribute("style");
+	    if (!style) return node.innerHTML;
+
+	    var wrapper = document.createElement("span");
+	    wrapper.setAttribute("style", style);
+	    wrapper.innerHTML = node.innerHTML;
+	    return serializeHtmlNode(wrapper);
+	  }
+
+	  function toInlineHtml(value) {
+	    var container = document.createElement("div");
+	    container.innerHTML = toText(value);
+	    var parts = [];
+
+	    Array.from(container.childNodes).forEach(function (node) {
+	      var html = isTextBlockElement(node)
+	        ? getUnwrappedTextBlockHtml(node)
+	        : serializeHtmlNode(node);
+	      html = html.trim();
+	      if (html) parts.push(html);
+	    });
+
+	    return parts.join("<br><br>");
+	  }
+
+	  function setElementHtml(node, value) {
+	    var tagName = String(node.tagName || "").toLowerCase();
+	    node.innerHTML = /^(h[1-6]|p)$/.test(tagName) ? toInlineHtml(value) : toText(value);
+	  }
 
   function withUnit(value, unit) {
     if (value === null || value === undefined || value === "") return "";
@@ -221,23 +269,164 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    return withUnit(value, field.unit);
 	  }
 	
-	  function setDeep(target, path, value) {
-    if (!path) return;
-    var parts = path.split(".");
-    var cursor = target;
+		  function setDeep(target, path, value) {
+	    if (!path) return;
+	    var parts = path.split(".");
+	    var cursor = target;
     parts.forEach(function (part, index) {
       if (index === parts.length - 1) {
         cursor[part] = value;
         return;
       }
       cursor[part] = cursor[part] || {};
-      cursor = cursor[part];
-    });
-  }
+	      cursor = cursor[part];
+	    });
+	  }
 
-  function queryWithin(root, selector) {
-    var nodes = [];
-    try {
+	  function getPreviewRouteBase() {
+	    var match = window.location.pathname.match(/^(.*\\/admin\\/we-brand-schools\\/projects\\/[^/]+\\/preview)\\/[^/]+$/);
+	    if (!match) {
+	      match = window.location.pathname.match(/^(.*\\/webrandschools\\/project-preview\\/[^/]+)\\/[^/]+$/);
+	    }
+	    return match ? match[1] : "";
+	  }
+
+	  function getPreviewNavigationTarget(rawHref) {
+	    var href = String(rawHref || "").trim();
+	    if (!href || href.charAt(0) === "#") return null;
+	    if (/^(mailto|tel|sms|javascript|data):/i.test(href)) return null;
+
+	    var hash = "";
+	    var hashIndex = href.indexOf("#");
+	    if (hashIndex >= 0) {
+	      hash = href.slice(hashIndex);
+	      href = href.slice(0, hashIndex);
+	    }
+
+	    var queryIndex = href.indexOf("?");
+	    if (queryIndex >= 0) {
+	      href = href.slice(0, queryIndex);
+	    }
+
+	    if (!href) return null;
+
+	    var pathname = href;
+	    if (/^https?:\\/\\//i.test(href)) {
+	      try {
+	        var url = new URL(href);
+	        if (url.origin !== window.location.origin) return null;
+	        pathname = url.pathname;
+	      } catch (error) {
+	        return null;
+	      }
+	    }
+
+	    pathname = pathname.replace(/\\\\/g, "/").replace(/^\\.\\//, "");
+	    var pathParts = pathname.split("/").filter(Boolean);
+	    var fileName = pathParts.length ? pathParts[pathParts.length - 1] : "index.html";
+
+	    try {
+	      fileName = decodeURIComponent(fileName);
+	    } catch (error) {
+	      return null;
+	    }
+
+	    if (!fileName || fileName === preview.content.templateSlug) {
+	      fileName = "index.html";
+	    }
+
+	    var page = preview.content.pages.find(function (item) {
+	      return item.fileName === fileName;
+	    });
+	    if (!page) return null;
+
+	    return {
+	      slug: page.slug,
+	      hash: hash
+	    };
+	  }
+
+	  function rewritePreviewInternalLinks() {
+	    var routeBase = getPreviewRouteBase();
+	    if (!routeBase) return;
+
+	    document.querySelectorAll("a[href]").forEach(function (link) {
+	      var target = getPreviewNavigationTarget(link.getAttribute("href"));
+	      if (!target) return;
+
+	      link.setAttribute(
+	        "href",
+	        routeBase + "/" + encodeURIComponent(target.slug) + window.location.search + target.hash
+	      );
+	    });
+	  }
+
+	  function isSafeFontStylesheetUrl(value) {
+	    var text = String(value || "").trim();
+	    if (!text) return false;
+	    try {
+	      var url = new URL(text, window.location.origin);
+	      return url.protocol === "https:" || url.protocol === "http:";
+	    } catch (error) {
+	      return false;
+	    }
+	  }
+
+	  function collectPreviewFontStylesheetUrls() {
+	    var urls = [];
+	    function addValue(value) {
+	      var text = String(value || "").trim();
+	      if (!text || !isSafeFontStylesheetUrl(text) || urls.indexOf(text) >= 0) return;
+	      urls.push(text);
+	    }
+
+	    function scanSection(section) {
+	      Object.keys(section.fields || {}).forEach(function (key) {
+	        var normalizedKey = key.toLowerCase();
+	        if (normalizedKey.indexOf("fontstylesheeturl") >= 0 || normalizedKey.indexOf("googlefonturl") >= 0) {
+	          addValue(section.fields[key]);
+	        }
+	      });
+	      if (!section.repeatable || !section.repeatable.items) return;
+	      section.repeatable.items.forEach(function (item) {
+	        Object.keys(item || {}).forEach(function (key) {
+	          var normalizedKey = key.toLowerCase();
+	          if (normalizedKey.indexOf("fontstylesheeturl") >= 0 || normalizedKey.indexOf("googlefonturl") >= 0) {
+	            addValue(item[key]);
+	          }
+	        });
+	      });
+	    }
+
+	    preview.content.sharedSections.forEach(scanSection);
+	    preview.content.pages.forEach(function (page) {
+	      page.sections.forEach(scanSection);
+	    });
+	    return urls;
+	  }
+
+	  function injectPreviewFontStylesheets() {
+	    collectPreviewFontStylesheetUrls().forEach(function (href) {
+	      if (document.querySelector('link[data-dexta-font-stylesheet][href="' + href.replace(/"/g, '\\"') + '"]')) return;
+	      var link = document.createElement("link");
+	      link.rel = "stylesheet";
+	      link.href = href;
+	      link.setAttribute("data-dexta-font-stylesheet", "true");
+	      document.head.appendChild(link);
+	    });
+	  }
+
+	  function refreshTemplateTwoIcons() {
+	    if (preview.content.templateSlug !== "dexta-academy-2") return;
+	    if (typeof window.icon !== "function") return;
+	    document.querySelectorAll("[data-icon]").forEach(function (element) {
+	      element.innerHTML = window.icon(element.getAttribute("data-icon") || "");
+	    });
+	  }
+
+	  function queryWithin(root, selector) {
+	    var nodes = [];
+	    try {
       if (root.matches && root.matches(selector)) nodes.push(root);
       nodes = nodes.concat(Array.from(root.querySelectorAll(selector)));
     } catch (error) {
@@ -256,12 +445,17 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
     }
   }
 
-  function shouldApplyField(value, field) {
-    if (isFilled(value)) return true;
-    if (field.target === "cssVariable" && (field.type === "image" || field.type === "model3d")) return true;
-    if (field.type === "image" && field.defaultValue !== undefined && (field.target === "attribute" || field.target === "backgroundImage")) return true;
-    return false;
-  }
+	  function shouldApplyField(value, field) {
+	    if (isFilled(value)) return true;
+	    if (
+	      value !== null &&
+	      value !== undefined &&
+	      (field.target === "textContent" || field.target === "innerHTML")
+	    ) return true;
+	    if (field.target === "cssVariable" && (field.type === "image" || field.type === "model3d")) return true;
+	    if (field.type === "image" && field.defaultValue !== undefined && (field.target === "attribute" || field.target === "backgroundImage")) return true;
+	    return false;
+	  }
 
   function ensureImageChild(node) {
     var image = node.querySelector("img");
@@ -384,7 +578,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
     }
 
     if (field.target === "innerHTML") {
-      node.innerHTML = toText(value);
+      setElementHtml(node, value);
       return;
     }
 
@@ -616,13 +810,30 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    return "";
 	  }
 	
-	  function getThemeCss() {
-		    return getThemeScopeSelector() + "{" + getThemeVariableCss() + "}" +
-		      "body{font-family:" + JSON.stringify(preview.content.theme.fontFamily) + ", var(--font-family, inherit);}" +
-	      getGlobalAppearanceCss() +
-	      getTemplateThemeCss() +
-	      getTemplateOverrideCss();
-	  }
+		  function getThemeCss() {
+			    return getThemeScopeSelector() + "{" + getThemeVariableCss() + "}" +
+			      "body{font-family:" + JSON.stringify(preview.content.theme.fontFamily) + ", var(--font-family, inherit);}" +
+			      getNavLinkFontCss() +
+		      getGlobalAppearanceCss() +
+		      getTemplateThemeCss() +
+		      getTemplateOverrideCss();
+		  }
+
+		  function getNavLinkFontCss() {
+		    var navLinkFont = preview.content.theme.navLinkFontFamily || preview.content.theme.fontFamily;
+		    if (!navLinkFont) return "";
+		    return [
+		      ".navbar-nav .nav-link",
+		      ".navbar-nav a",
+		      ".site-nav a",
+		      ".site-nav__link",
+		      ".mobile-nav a",
+		      ".mobile-nav__link",
+		      ".site-header__nav a",
+		      ".site-header__links a",
+		      ".main-nav a"
+		    ].join(",") + "{font-family:" + JSON.stringify(navLinkFont) + ", var(--font-family, inherit)!important;}";
+		  }
 
 		  function getGlobalAppearanceCss() {
 		    var loadingBackground = preview.content.theme.loadingBackgroundColor || "#ffffff";
@@ -715,25 +926,68 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
       'body[data-page="home"] .hero-home__building{background-image:var(--dexta-academy-2-hero-desktop-building-image)!important;background-position:var(--dexta-academy-2-hero-desktop-building-position,center bottom)!important;background-size:var(--dexta-academy-2-hero-desktop-building-size,100% auto)!important;background-repeat:no-repeat!important;}',
       'body[data-page="home"] .hero-home__overlay{background:var(--dexta-academy-2-hero-overlay-color,#04111d)!important;opacity:var(--dexta-academy-2-hero-overlay-opacity,.58)!important;}',
       'body[data-page="home"] .hero-home__students{right:var(--dexta-academy-2-hero-students-desktop-right,max(-3.5vw,-44px))!important;bottom:var(--dexta-academy-2-hero-students-desktop-bottom,-78px)!important;width:var(--dexta-academy-2-hero-students-desktop-width,min(49vw,790px))!important;}',
-      'body:not([data-page="home"]) .page-hero{background-image:var(--dexta-academy-2-page-hero-background-image)!important;background-position:var(--dexta-academy-2-page-hero-background-position,center center)!important;background-size:var(--dexta-academy-2-page-hero-background-size,cover)!important;background-repeat:no-repeat!important;}',
+      '.site-header .button--outline-light,.site-header .mobile-panel .button--outline-light{background:color-mix(in srgb,var(--dexta-academy-2-header-portal-button-bg-color,#ffc433) var(--dexta-academy-2-header-portal-button-bg-opacity,0%),transparent)!important;color:var(--dexta-academy-2-header-portal-button-text-color,#fff)!important;border:var(--dexta-academy-2-header-portal-button-border-width,1px) solid var(--dexta-academy-2-header-portal-button-border-color,#ffc433)!important;}',
+      '.site-header .button--primary,.site-header .mobile-panel .button--primary{background:color-mix(in srgb,var(--dexta-academy-2-header-primary-button-bg-color,#ffc433) var(--dexta-academy-2-header-primary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-2-header-primary-button-text-color,#0c1d2d)!important;border:var(--dexta-academy-2-header-primary-button-border-width,0px) solid var(--dexta-academy-2-header-primary-button-border-color,#ffc433)!important;}',
+      'body[data-page="home"] .hero-home{background-color:color-mix(in srgb,var(--dexta-academy-2-home-hero-section-bg-color,#081827) var(--dexta-academy-2-home-hero-section-bg-opacity,100%),transparent)!important;}',
+      'body[data-page="home"] .hero-home__actions .button{background:color-mix(in srgb,var(--dexta-academy-2-home-hero-button-bg-color,#fff) var(--dexta-academy-2-home-hero-button-bg-opacity,0%),transparent)!important;color:var(--dexta-academy-2-home-hero-button-text-color,#fff)!important;border:var(--dexta-academy-2-home-hero-button-border-width,1px) solid var(--dexta-academy-2-home-hero-button-border-color,#fff)!important;}',
+      'body[data-page="home"] .hero-home__stats{background-color:color-mix(in srgb,var(--dexta-academy-2-home-stats-section-bg-color,#081827) var(--dexta-academy-2-home-stats-section-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-2-home-stats-section-bg-image,none)!important;background-position:var(--dexta-academy-2-home-stats-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-home-stats-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="home"] .hero-home__stat-top [data-icon]{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:28px!important;height:28px!important;border-radius:999px!important;color:var(--dexta-academy-2-home-stats-icon-color,#ffc433)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-home-stats-icon-bg-color,#081827) var(--dexta-academy-2-home-stats-icon-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-2-home-stats-item-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-2-home-stats-icon-border-width,0px) solid var(--dexta-academy-2-home-stats-icon-border-color,#ffc433)!important;}',
+      'body[data-page="home"] .hero-home__stat-top [data-icon] svg{opacity:var(--dexta-academy-2-home-stats-item-icon-opacity,1)!important;}',
+      'body[data-page="home"] .values-strip{background-color:color-mix(in srgb,var(--dexta-academy-2-home-values-section-bg-color,#fff) var(--dexta-academy-2-home-values-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-home-values-section-bg-image,none)!important;background-position:var(--dexta-academy-2-home-values-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-home-values-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="home"] .value-item__icon{color:var(--dexta-academy-2-home-values-icon-color,#f0b31f)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-home-values-icon-bg-color,#fff) var(--dexta-academy-2-home-values-icon-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-2-home-values-item-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-2-home-values-icon-border-width,1.5px) solid var(--dexta-academy-2-home-values-icon-border-color,#ffc433)!important;}',
+      'body[data-page="home"] .value-item__icon svg{opacity:var(--dexta-academy-2-home-values-item-icon-opacity,1)!important;}',
+      'body[data-page="home"] .split-showcase{background-color:color-mix(in srgb,var(--dexta-academy-2-home-about-section-bg-color,#081827) var(--dexta-academy-2-home-about-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-home-about-section-bg-image,none)!important;background-position:var(--dexta-academy-2-home-about-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-home-about-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="home"] .split-showcase .button{background:color-mix(in srgb,var(--dexta-academy-2-home-about-button-bg-color,#ffc433) var(--dexta-academy-2-home-about-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-2-home-about-button-text-color,#0c1d2d)!important;border:var(--dexta-academy-2-home-about-button-border-width,0px) solid var(--dexta-academy-2-home-about-button-border-color,#ffc433)!important;}',
+      'body[data-page="home"] .programs{background-color:color-mix(in srgb,var(--dexta-academy-2-home-programs-section-bg-color,#fff) var(--dexta-academy-2-home-programs-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-home-programs-section-bg-image,none)!important;background-position:var(--dexta-academy-2-home-programs-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-home-programs-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="home"] .programs .button{background:color-mix(in srgb,var(--dexta-academy-2-home-programs-button-bg-color,#ffc433) var(--dexta-academy-2-home-programs-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-2-home-programs-button-text-color,#0c1d2d)!important;border:var(--dexta-academy-2-home-programs-button-border-width,0px) solid var(--dexta-academy-2-home-programs-button-border-color,#ffc433)!important;}',
+      'body[data-page="home"] .programs .card__badge,body[data-page="home"] .programs .cta-banner__icon{color:var(--dexta-academy-2-home-programs-icon-color,#091624)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-home-programs-icon-bg-color,#ffc433) var(--dexta-academy-2-home-programs-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-home-programs-item-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-2-home-programs-icon-border-width,0px) solid var(--dexta-academy-2-home-programs-icon-border-color,#ffc433)!important;}',
+      'body[data-page="home"] .programs .card__badge svg{opacity:var(--dexta-academy-2-home-programs-item-icon-opacity,1)!important;}',
+      'body[data-page="home"] main>section:nth-of-type(5){background-color:color-mix(in srgb,var(--dexta-academy-2-home-student-life-section-bg-color,#fff) var(--dexta-academy-2-home-student-life-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-home-student-life-section-bg-image,none)!important;background-position:var(--dexta-academy-2-home-student-life-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-home-student-life-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="home"] .news-heading .button{background:color-mix(in srgb,var(--dexta-academy-2-home-student-life-button-bg-color,#fff) var(--dexta-academy-2-home-student-life-button-bg-opacity,0%),transparent)!important;color:var(--dexta-academy-2-home-student-life-button-text-color,#12304d)!important;border:var(--dexta-academy-2-home-student-life-button-border-width,1px) solid var(--dexta-academy-2-home-student-life-button-border-color,#d6dde6)!important;}',
+      'body[data-page="home"] .news-grid{background-color:color-mix(in srgb,var(--dexta-academy-2-home-student-life-cards-section-bg-color,#fff) var(--dexta-academy-2-home-student-life-cards-section-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-2-home-student-life-cards-section-bg-image,none)!important;background-position:var(--dexta-academy-2-home-student-life-cards-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-home-student-life-cards-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="home"] .news-card .card__link [data-icon]{display:inline-flex!important;align-items:center!important;justify-content:center!important;color:var(--dexta-academy-2-home-student-life-cards-icon-color,#12304d)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-home-student-life-cards-icon-bg-color,#fff) var(--dexta-academy-2-home-student-life-cards-icon-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-2-home-student-life-cards-item-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-2-home-student-life-cards-icon-border-width,0px) solid var(--dexta-academy-2-home-student-life-cards-icon-border-color,#12304d)!important;}',
+      'body[data-page="home"] .news-card .card__link [data-icon] svg{opacity:var(--dexta-academy-2-home-student-life-cards-item-icon-opacity,1)!important;}',
+      'body:not([data-page="home"]) .page-hero{background-color:color-mix(in srgb,var(--dexta-academy-2-page-hero-section-bg-color,#081827) var(--dexta-academy-2-page-hero-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-page-hero-background-image)!important;background-position:var(--dexta-academy-2-page-hero-background-position,center center)!important;background-size:var(--dexta-academy-2-page-hero-background-size,cover)!important;background-repeat:no-repeat!important;}',
       'body:not([data-page="home"]) .page-hero::before{background-image:var(--dexta-academy-2-page-hero-building-image)!important;background-position:var(--dexta-academy-2-page-hero-building-position,center bottom)!important;background-size:var(--dexta-academy-2-page-hero-building-size,100% auto)!important;background-repeat:no-repeat!important;}',
       'body:not([data-page="home"]) .page-hero::after{background:var(--dexta-academy-2-page-hero-overlay-color,#04111d)!important;opacity:var(--dexta-academy-2-page-hero-overlay-opacity,.62)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(2){background:var(--dexta-academy-2-academics-overview-section-bg,#fff)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(2) .info-card{background:var(--dexta-academy-2-academics-overview-card-bg,#fff)!important;border:var(--dexta-academy-2-academics-overview-border-width,1px) solid var(--dexta-academy-2-academics-overview-border-color,#e7edf3)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(2) .info-card__icon{background:var(--dexta-academy-2-academics-overview-icon-bg,#fff4cc)!important;color:var(--dexta-academy-2-academics-overview-icon-color,#9b7104)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(2) .info-card h3{color:var(--dexta-academy-2-academics-overview-title-color,#102034)!important;font-family:var(--dexta-academy-2-academics-overview-title-font,Manrope),"Segoe UI",sans-serif!important;font-style:var(--dexta-academy-2-academics-overview-title-font-style,normal)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(2) .info-card p{color:var(--dexta-academy-2-academics-overview-description-color,#58708a)!important;font-family:var(--dexta-academy-2-academics-overview-description-font,"Plus Jakarta Sans"),"Segoe UI",sans-serif!important;font-style:var(--dexta-academy-2-academics-overview-description-font-style,normal)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(3){background:var(--dexta-academy-2-academics-subjects-section-bg,#081827)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(3) .card{background:var(--dexta-academy-2-academics-subjects-card-bg,#fff)!important;border:var(--dexta-academy-2-academics-subjects-border-width,1px) solid var(--dexta-academy-2-academics-subjects-border-color,#e7edf3)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(3) .card__badge{background:var(--dexta-academy-2-academics-subjects-icon-bg,#ffc433)!important;color:var(--dexta-academy-2-academics-subjects-icon-color,#091624)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(3) .card__title{color:var(--dexta-academy-2-academics-subjects-title-color,#102034)!important;font-family:var(--dexta-academy-2-academics-subjects-title-font,Manrope),"Segoe UI",sans-serif!important;font-style:var(--dexta-academy-2-academics-subjects-title-font-style,normal)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(3) .card__text{color:var(--dexta-academy-2-academics-subjects-description-color,#58708a)!important;font-family:var(--dexta-academy-2-academics-subjects-description-font,"Plus Jakarta Sans"),"Segoe UI",sans-serif!important;font-style:var(--dexta-academy-2-academics-subjects-description-font-style,normal)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(4){background:var(--dexta-academy-2-academics-learning-section-bg,#fff)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(4) .section-title{color:var(--dexta-academy-2-academics-learning-title-color,#102034)!important;font-family:var(--dexta-academy-2-academics-learning-title-font,Manrope),"Segoe UI",sans-serif!important;font-style:var(--dexta-academy-2-academics-learning-title-font-style,normal)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(4) .section-copy{color:var(--dexta-academy-2-academics-learning-description-color,#58708a)!important;font-family:var(--dexta-academy-2-academics-learning-description-font,"Plus Jakarta Sans"),"Segoe UI",sans-serif!important;font-style:var(--dexta-academy-2-academics-learning-description-font-style,normal)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(4) .steps li{background:var(--dexta-academy-2-academics-learning-step-bg,#fff)!important;border:var(--dexta-academy-2-academics-learning-step-border-width,0px) solid var(--dexta-academy-2-academics-learning-step-border-color,#e7edf3)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(4) .steps__number{background:var(--dexta-academy-2-academics-learning-step-number-bg,#fff4cc)!important;color:var(--dexta-academy-2-academics-learning-step-number-color,#9b7104)!important;}',
-      'body[data-page="academics"] main>section:nth-of-type(4) .steps li span:not(.steps__number){color:var(--dexta-academy-2-academics-learning-step-text-color,#58708a)!important;}',
+      'body[data-page="about"] main>section:nth-of-type(2){background-color:color-mix(in srgb,var(--dexta-academy-2-about-stats-section-bg-color,#fff) var(--dexta-academy-2-about-stats-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-about-stats-section-bg-image,none)!important;background-position:var(--dexta-academy-2-about-stats-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-about-stats-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="about"] main>section:nth-of-type(3){background-color:color-mix(in srgb,var(--dexta-academy-2-about-who-we-are-section-bg-color,#081827) var(--dexta-academy-2-about-who-we-are-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-about-who-we-are-section-bg-image,none)!important;background-position:var(--dexta-academy-2-about-who-we-are-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-about-who-we-are-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="about"] .about-story-section{background-color:color-mix(in srgb,var(--dexta-academy-2-about-story-section-bg-color,#fff) var(--dexta-academy-2-about-story-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-about-story-section-bg-image,none)!important;background-position:var(--dexta-academy-2-about-story-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-about-story-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="about"] .about-story-section .button{background:color-mix(in srgb,var(--dexta-academy-2-about-story-button-bg-color,#ffc433) var(--dexta-academy-2-about-story-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-2-about-story-button-text-color,#0c1d2d)!important;border:var(--dexta-academy-2-about-story-button-border-width,0px) solid var(--dexta-academy-2-about-story-button-border-color,#ffc433)!important;}',
+      '.story-modal__dialog{background-color:color-mix(in srgb,var(--dexta-academy-2-about-story-modal-section-bg-color,#fff) var(--dexta-academy-2-about-story-modal-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-about-story-modal-section-bg-image,none)!important;background-position:var(--dexta-academy-2-about-story-modal-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-about-story-modal-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="about"] main>section:nth-of-type(5){background-color:color-mix(in srgb,var(--dexta-academy-2-about-mission-vision-section-bg-color,#fff4cc) var(--dexta-academy-2-about-mission-vision-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-about-mission-vision-section-bg-image,none)!important;background-position:var(--dexta-academy-2-about-mission-vision-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-about-mission-vision-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="about"] .info-card__icon{color:var(--dexta-academy-2-about-mission-vision-icon-color,#091624)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-about-mission-vision-icon-bg-color,#ffc433) var(--dexta-academy-2-about-mission-vision-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-about-mission-vision-item-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-2-about-mission-vision-icon-border-width,0px) solid var(--dexta-academy-2-about-mission-vision-icon-border-color,#ffc433)!important;}',
+      'body[data-page="about"] .info-card__icon svg{opacity:var(--dexta-academy-2-about-mission-vision-item-icon-opacity,1)!important;}',
+      'body[data-page="about"] main>section:nth-of-type(6){background-color:color-mix(in srgb,var(--dexta-academy-2-about-family-choice-section-bg-color,#fff) var(--dexta-academy-2-about-family-choice-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-about-family-choice-section-bg-image,none)!important;background-position:var(--dexta-academy-2-about-family-choice-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-about-family-choice-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="academics"] main>section:nth-of-type(2){background-color:color-mix(in srgb,var(--dexta-academy-2-academics-overview-section-bg-color,#fff) var(--dexta-academy-2-academics-overview-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-academics-overview-section-bg-image,none)!important;background-position:var(--dexta-academy-2-academics-overview-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-academics-overview-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="academics"] main>section:nth-of-type(2) .info-card__icon{color:var(--dexta-academy-2-academics-overview-icon-color,#9b7104)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-academics-overview-icon-bg-color,#fff4cc) var(--dexta-academy-2-academics-overview-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-academics-overview-item-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-2-academics-overview-icon-border-width,0px) solid var(--dexta-academy-2-academics-overview-icon-border-color,#fff4cc)!important;}',
+      'body[data-page="academics"] main>section:nth-of-type(2) .info-card__icon svg{opacity:var(--dexta-academy-2-academics-overview-item-icon-opacity,1)!important;}',
+      'body[data-page="academics"] main>section:nth-of-type(3){background-color:color-mix(in srgb,var(--dexta-academy-2-academics-subjects-section-bg-color,#081827) var(--dexta-academy-2-academics-subjects-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-academics-subjects-section-bg-image,none)!important;background-position:var(--dexta-academy-2-academics-subjects-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-academics-subjects-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="academics"] main>section:nth-of-type(3) .card__badge{color:var(--dexta-academy-2-academics-subjects-icon-color,#091624)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-academics-subjects-icon-bg-color,#ffc433) var(--dexta-academy-2-academics-subjects-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-academics-subjects-item-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-2-academics-subjects-icon-border-width,0px) solid var(--dexta-academy-2-academics-subjects-icon-border-color,#ffc433)!important;}',
+      'body[data-page="academics"] main>section:nth-of-type(3) .card__badge svg{opacity:var(--dexta-academy-2-academics-subjects-item-icon-opacity,1)!important;}',
+      'body[data-page="academics"] main>section:nth-of-type(4){background-color:color-mix(in srgb,var(--dexta-academy-2-academics-learning-section-bg-color,#fff) var(--dexta-academy-2-academics-learning-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-academics-learning-section-bg-image,none)!important;background-position:var(--dexta-academy-2-academics-learning-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-academics-learning-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="academics"] main>section:nth-of-type(4) .steps__number{color:var(--dexta-academy-2-academics-learning-icon-color,#9b7104)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-academics-learning-icon-bg-color,#fff4cc) var(--dexta-academy-2-academics-learning-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-academics-learning-item-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-2-academics-learning-icon-border-width,0px) solid var(--dexta-academy-2-academics-learning-icon-border-color,#fff4cc)!important;}',
+      'body[data-page="admissions"] main>section:nth-of-type(2){background-color:color-mix(in srgb,var(--dexta-academy-2-admissions-process-section-bg-color,#fff) var(--dexta-academy-2-admissions-process-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-admissions-process-section-bg-image,none)!important;background-position:var(--dexta-academy-2-admissions-process-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-admissions-process-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="admissions"] main>section:nth-of-type(2) .steps__number,body[data-page="admissions"] main>section:nth-of-type(2) .feature-list__bullet{color:var(--dexta-academy-2-admissions-process-icon-color,#9b7104)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-admissions-process-icon-bg-color,#fff4cc) var(--dexta-academy-2-admissions-process-icon-bg-opacity,100%),transparent)!important;border:var(--dexta-academy-2-admissions-process-icon-border-width,0px) solid var(--dexta-academy-2-admissions-process-icon-border-color,#fff4cc)!important;}',
+      'body[data-page="admissions"] #portal{background-color:color-mix(in srgb,var(--dexta-academy-2-admissions-support-section-bg-color,#081827) var(--dexta-academy-2-admissions-support-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-admissions-support-section-bg-image,none)!important;background-position:var(--dexta-academy-2-admissions-support-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-admissions-support-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="admissions"] #portal .info-card__icon{color:var(--dexta-academy-2-admissions-support-icon-color,#091624)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-admissions-support-icon-bg-color,#ffc433) var(--dexta-academy-2-admissions-support-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-admissions-support-item-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-2-admissions-support-icon-border-width,0px) solid var(--dexta-academy-2-admissions-support-icon-border-color,#ffc433)!important;}',
+      'body[data-page="admissions"] #portal .info-card__icon svg{opacity:var(--dexta-academy-2-admissions-support-item-icon-opacity,1)!important;}',
+      'body[data-page="admissions"] main>section:nth-of-type(4){background-color:color-mix(in srgb,var(--dexta-academy-2-admissions-cta-section-bg-color,#fff) var(--dexta-academy-2-admissions-cta-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-admissions-cta-section-bg-image,none)!important;background-position:var(--dexta-academy-2-admissions-cta-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-admissions-cta-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="admissions"] .cta-banner__panel .button{background:color-mix(in srgb,var(--dexta-academy-2-admissions-cta-button-bg-color,#ffc433) var(--dexta-academy-2-admissions-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-2-admissions-cta-button-text-color,#0c1d2d)!important;border:var(--dexta-academy-2-admissions-cta-button-border-width,0px) solid var(--dexta-academy-2-admissions-cta-button-border-color,#ffc433)!important;}',
+      'body[data-page="admissions"] .cta-banner__icon{color:var(--dexta-academy-2-admissions-cta-icon-color,#091624)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-admissions-cta-icon-bg-color,#ffc433) var(--dexta-academy-2-admissions-cta-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-admissions-cta-item-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-2-admissions-cta-icon-border-width,0px) solid var(--dexta-academy-2-admissions-cta-icon-border-color,#ffc433)!important;}',
+      'body[data-page="admissions"] .cta-banner__icon svg{opacity:var(--dexta-academy-2-admissions-cta-item-icon-opacity,1)!important;}',
+      '.admission-modal__dialog{background-color:color-mix(in srgb,var(--dexta-academy-2-admissions-form-section-bg-color,#fff) var(--dexta-academy-2-admissions-form-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-admissions-form-section-bg-image,none)!important;background-position:var(--dexta-academy-2-admissions-form-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-admissions-form-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="student-life"] main>section:nth-of-type(2){background-color:color-mix(in srgb,var(--dexta-academy-2-student-life-highlights-section-bg-color,#fff) var(--dexta-academy-2-student-life-highlights-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-student-life-highlights-section-bg-image,none)!important;background-position:var(--dexta-academy-2-student-life-highlights-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-student-life-highlights-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="student-life"] main>section:nth-of-type(2) .info-card__icon{color:var(--dexta-academy-2-student-life-highlights-icon-color,#091624)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-student-life-highlights-icon-bg-color,#ffc433) var(--dexta-academy-2-student-life-highlights-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-student-life-highlights-item-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-2-student-life-highlights-icon-border-width,0px) solid var(--dexta-academy-2-student-life-highlights-icon-border-color,#ffc433)!important;}',
+      'body[data-page="student-life"] main>section:nth-of-type(2) .info-card__icon svg{opacity:var(--dexta-academy-2-student-life-highlights-item-icon-opacity,1)!important;}',
+      'body[data-page="student-life"] main>section:nth-of-type(3){background-color:color-mix(in srgb,var(--dexta-academy-2-student-life-leadership-section-bg-color,#081827) var(--dexta-academy-2-student-life-leadership-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-student-life-leadership-section-bg-image,none)!important;background-position:var(--dexta-academy-2-student-life-leadership-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-student-life-leadership-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="student-life"] main>section:nth-of-type(3) .feature-list__bullet{color:var(--dexta-academy-2-student-life-leadership-icon-color,#9b7104)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-student-life-leadership-icon-bg-color,#fff4cc) var(--dexta-academy-2-student-life-leadership-icon-bg-opacity,100%),transparent)!important;border:var(--dexta-academy-2-student-life-leadership-icon-border-width,0px) solid var(--dexta-academy-2-student-life-leadership-icon-border-color,#fff4cc)!important;}',
+      'body[data-page="student-life"] main>section:nth-of-type(4){background-color:color-mix(in srgb,var(--dexta-academy-2-student-life-portal-events-section-bg-color,#fff) var(--dexta-academy-2-student-life-portal-events-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-student-life-portal-events-section-bg-image,none)!important;background-position:var(--dexta-academy-2-student-life-portal-events-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-student-life-portal-events-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="student-life"] main>section:nth-of-type(4) .info-card__icon{color:var(--dexta-academy-2-student-life-portal-events-icon-color,#091624)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-student-life-portal-events-icon-bg-color,#ffc433) var(--dexta-academy-2-student-life-portal-events-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-student-life-portal-events-item-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-2-student-life-portal-events-icon-border-width,0px) solid var(--dexta-academy-2-student-life-portal-events-icon-border-color,#ffc433)!important;}',
+      'body[data-page="student-life"] main>section:nth-of-type(4) .info-card__icon svg{opacity:var(--dexta-academy-2-student-life-portal-events-item-icon-opacity,1)!important;}',
+      'body[data-page="contact"] .google-form-card{background-color:color-mix(in srgb,var(--dexta-academy-2-contact-form-section-bg-color,#fff) var(--dexta-academy-2-contact-form-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-contact-form-section-bg-image,none)!important;background-position:var(--dexta-academy-2-contact-form-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-contact-form-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="contact"] .accent-panel{background-color:color-mix(in srgb,var(--dexta-academy-2-contact-details-section-bg-color,#fff4cc) var(--dexta-academy-2-contact-details-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-2-contact-details-section-bg-image,none)!important;background-position:var(--dexta-academy-2-contact-details-section-bg-position,center center)!important;background-size:var(--dexta-academy-2-contact-details-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+      'body[data-page="contact"] .accent-panel .feature-list__bullet{color:var(--dexta-academy-2-contact-details-icon-color,#9b7104)!important;background-color:color-mix(in srgb,var(--dexta-academy-2-contact-details-icon-bg-color,#fff) var(--dexta-academy-2-contact-details-icon-bg-opacity,100%),transparent)!important;border:var(--dexta-academy-2-contact-details-icon-border-width,0px) solid var(--dexta-academy-2-contact-details-icon-border-color,#ffc433)!important;}',
       '@media (max-width: 980px){body[data-page="home"] .hero-home{background:var(--bg)!important;}body[data-page="home"] .hero-home::before{background-image:var(--dexta-academy-2-hero-mobile-image)!important;background-position:var(--dexta-academy-2-hero-mobile-position,center top)!important;background-size:var(--dexta-academy-2-hero-mobile-size,cover)!important;background-repeat:no-repeat!important;}body[data-page="home"] .hero-home__building{display:none!important;}body[data-page="home"] .hero-home__students{right:0!important;bottom:auto!important;width:var(--dexta-academy-2-hero-students-mobile-width,min(100%,760px))!important;transform:scale(var(--dexta-academy-2-hero-students-mobile-scale,1.12))!important;}body:not([data-page="home"]) .page-hero{background-image:var(--dexta-academy-2-page-hero-mobile-background-image,var(--dexta-academy-2-page-hero-background-image))!important;background-position:var(--dexta-academy-2-page-hero-mobile-background-position,center center)!important;background-size:var(--dexta-academy-2-page-hero-mobile-background-size,cover)!important;background-repeat:no-repeat!important;}body:not([data-page="home"]) .page-hero::before{display:none!important;background-image:none!important;}}'
     ].join("");
   }
@@ -753,16 +1007,116 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
     });
   }
 
-  function getSharedSectionField(sectionId, fieldKey) {
-    var section = preview.content.sharedSections.find(function (item) {
-      return item.id === sectionId;
-    });
-    return section && section.fields ? section.fields[fieldKey] : "";
-  }
+	  function getSharedSectionField(sectionId, fieldKey) {
+	    var section = preview.content.sharedSections.find(function (item) {
+	      return item.id === sectionId;
+	    });
+	    return section && section.fields ? section.fields[fieldKey] : "";
+	  }
 
-  function getSharedHeaderLogoUrl() {
-    var value = getSharedSectionField("site-header", "logo");
-    if (!isFilled(value)) return "";
+	  function getPageSectionField(pageSlug, sectionId, fieldKey) {
+	    var page = preview.content.pages.find(function (item) {
+	      return item.slug === pageSlug;
+	    });
+	    var section = page && page.sections ? page.sections.find(function (item) {
+	      return item.id === sectionId;
+	    }) : null;
+	    return section && section.fields ? section.fields[fieldKey] : "";
+	  }
+
+		  function getTemplateTwoAdmissionFormField(fieldKey) {
+		    var pageValue = getPageSectionField("admissions", "admission-form", fieldKey);
+		    if (isFilled(pageValue)) return pageValue;
+		    return getSharedSectionField("admission-modal", fieldKey);
+		  }
+
+		  function setTemplateTwoHtml(selector, value) {
+		    document.querySelectorAll(selector).forEach(function (node) {
+		      setElementHtml(node, value);
+		    });
+		  }
+
+		  function getTemplateTwoValuesIntroBody() {
+		    var introBody = getPageSectionField("home", "values", "introBody");
+		    if (isFilled(introBody)) return introBody;
+		    return getPageSectionField("home", "values", "body");
+		  }
+
+		  function getTemplateTwoValuesIntroTitle() {
+		    var title = getPageSectionField("home", "values", "title");
+		    var introTitle = getPageSectionField("home", "values", "introTitle");
+		    var introBody = getTemplateTwoValuesIntroBody();
+		    if (
+		      isFilled(title) &&
+		      (!isFilled(introTitle) || toComparableText(introTitle) === toComparableText(introBody))
+		    ) {
+		      return title;
+		    }
+
+		    return introTitle;
+		  }
+
+		  function applyTemplateTwoValuesStripIntro() {
+		    if (preview.content.templateSlug !== "dexta-academy-2") return;
+		    if (preview.pageSlug !== "home") return;
+
+		    var title = getTemplateTwoValuesIntroTitle();
+		    var body = getTemplateTwoValuesIntroBody();
+
+		    if (isFilled(title)) {
+		      setTemplateTwoHtml(".values-strip__intro h2", title);
+		    }
+
+		    if (isFilled(body)) {
+		      setTemplateTwoHtml(".values-strip__intro p", body);
+		    }
+		  }
+
+		  function applyTemplateTwoAdmissionForm() {
+		    if (preview.content.templateSlug !== "dexta-academy-2") return;
+
+	    var frame = document.querySelector("[data-admission-modal-root] iframe, .admission-modal iframe");
+	    if (!frame) return;
+
+	    var formIframe = getTemplateTwoAdmissionFormField("formIframe");
+	    var formUrl = getTemplateTwoAdmissionFormField("formUrl");
+	    var formTitle = String(getTemplateTwoAdmissionFormField("formTitle") || "").trim();
+	    var modalTitle = String(getTemplateTwoAdmissionFormField("title") || "").trim();
+	    var embed = parseIframeEmbedValue(formIframe) || parseIframeEmbedValue(formUrl);
+
+	    if (modalTitle) {
+	      setText("#admission-modal-title", modalTitle);
+	    }
+
+	    if (embed && embed.src && isSafeIframeSrc(embed.src)) {
+	      frame.setAttribute("data-src", embed.src);
+	      if (frame.getAttribute("src")) {
+	        frame.setAttribute("src", embed.src);
+	      }
+
+	      [
+	        "width",
+	        "height",
+	        "frameborder",
+	        "marginheight",
+	        "marginwidth",
+	        "loading",
+	        "referrerpolicy",
+	        "allow",
+	        "title"
+	      ].forEach(function (name) {
+	        if (embed.attrs[name]) frame.setAttribute(name, embed.attrs[name]);
+	      });
+	    }
+
+	    if (formTitle) {
+	      frame.setAttribute("title", formTitle);
+	    }
+	  }
+
+	  function getSharedHeaderLogoUrl() {
+	    var value = getSharedSectionField("site-header", "logo");
+	    if (!isFilled(value)) return "";
     var logoField = {
       key: "logo",
       label: "Header logo",
@@ -811,10 +1165,112 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    });
 	  }
 
+		  function setAttribute(selector, name, value) {
+		    document.querySelectorAll(selector).forEach(function (node) {
+		      node.setAttribute(name, value);
+		    });
+		  }
+
 		  function setDisplay(selector, visible) {
 		    document.querySelectorAll(selector).forEach(function (node) {
 		      node.style.display = visible ? "" : "none";
 		    });
+		  }
+
+		  function setLink(selector, text, href) {
+		    setText(selector, text);
+		    setAttribute(selector, "href", href);
+		  }
+
+		  function getSharedFieldText(sectionId, fieldKey) {
+		    return String(getSharedSectionField(sectionId, fieldKey) || "").trim();
+		  }
+
+		  function applyTemplateTwoHeaderButtons() {
+		    if (preview.content.templateSlug !== "dexta-academy-2") return;
+
+		    var portalVisible =
+		      Boolean(getSharedFieldText("site-header", "portalCtaText")) &&
+		      Boolean(getSharedFieldText("site-header", "portalCtaHref"));
+		    var primaryVisible =
+		      Boolean(getSharedFieldText("site-header", "primaryCtaText")) &&
+		      Boolean(getSharedFieldText("site-header", "primaryCtaHref"));
+
+		    setText(
+		      ".site-header__actions .button--outline-light span:nth-of-type(1), .mobile-panel__actions .button--outline-light span:nth-of-type(1)",
+		      getSharedFieldText("site-header", "portalCtaText")
+		    );
+		    setAttribute(
+		      ".site-header__actions .button--outline-light, .mobile-panel__actions .button--outline-light",
+		      "href",
+		      getSharedFieldText("site-header", "portalCtaHref")
+		    );
+		    setText(
+		      ".site-header__actions .button--primary span:nth-of-type(1), .mobile-panel__actions .button--primary span:nth-of-type(1)",
+		      getSharedFieldText("site-header", "primaryCtaText")
+		    );
+		    setAttribute(
+		      ".site-header__actions .button--primary, .mobile-panel__actions .button--primary",
+		      "href",
+		      getSharedFieldText("site-header", "primaryCtaHref")
+		    );
+		    setDisplay(
+		      ".site-header__actions .button--outline-light, .mobile-panel__actions .button--outline-light",
+		      portalVisible
+		    );
+		    setDisplay(
+		      ".site-header__actions .button--primary, .mobile-panel__actions .button--primary",
+		      primaryVisible
+		    );
+		  }
+
+		  function applyTemplateTwoFooterVisibility() {
+		    if (preview.content.templateSlug !== "dexta-academy-2") return;
+
+		    var footerLinks = [
+		      ["homeLinkText", "homeLinkHref", ".footer__links a:nth-of-type(1)"],
+		      ["aboutLinkText", "aboutLinkHref", ".footer__links a:nth-of-type(2)"],
+		      ["academicsLinkText", "academicsLinkHref", ".footer__links a:nth-of-type(3)"],
+		      ["admissionsLinkText", "admissionsLinkHref", ".footer__links a:nth-of-type(4)"],
+		      ["studentLifeLinkText", "studentLifeLinkHref", ".footer__links a:nth-of-type(5)"],
+		      ["galleryLinkText", "galleryLinkHref", ".footer__links a:nth-of-type(6)"],
+		      ["contactLinkText", "contactLinkHref", ".footer__links a:nth-of-type(7)"]
+		    ];
+		    var hasVisibleFooterLink = false;
+
+		    footerLinks.forEach(function (item) {
+		      var text = getSharedFieldText("site-footer", item[0]);
+		      var href = getSharedFieldText("site-footer", item[1]);
+		      var visible =
+		        Boolean(text) &&
+		        Boolean(href);
+		      if (visible) hasVisibleFooterLink = true;
+		      setLink(item[2], text, href);
+		      setDisplay(item[2], visible);
+		    });
+
+		    var hasAddress = Boolean(getSharedFieldText("site-footer", "address"));
+		    var hasPhone =
+		      Boolean(getSharedFieldText("site-footer", "phone")) &&
+		      Boolean(getSharedFieldText("site-footer", "phoneHref"));
+		    var hasEmail =
+		      Boolean(getSharedFieldText("site-footer", "email")) &&
+		      Boolean(getSharedFieldText("site-footer", "emailHref"));
+
+		    setDisplay(".footer__links", hasVisibleFooterLink);
+		    setText(".footer__main > p", getSharedFieldText("site-footer", "description"));
+		    setText(".footer__contact > span", getSharedFieldText("site-footer", "address"));
+		    setText(".footer__contact a:nth-of-type(1)", getSharedFieldText("site-footer", "phone"));
+		    setAttribute(".footer__contact a:nth-of-type(1)", "href", getSharedFieldText("site-footer", "phoneHref"));
+		    setText(".footer__contact a:nth-of-type(2)", getSharedFieldText("site-footer", "email"));
+		    setAttribute(".footer__contact a:nth-of-type(2)", "href", getSharedFieldText("site-footer", "emailHref"));
+		    setText(".footer__bottom > p", getSharedFieldText("site-footer", "copyright"));
+		    setDisplay(".footer__main > p", Boolean(getSharedFieldText("site-footer", "description")));
+		    setDisplay(".footer__contact > span", hasAddress);
+		    setDisplay(".footer__contact a:nth-of-type(1)", hasPhone);
+		    setDisplay(".footer__contact a:nth-of-type(2)", hasEmail);
+		    setDisplay(".footer__contact", hasAddress || hasPhone || hasEmail);
+		    setDisplay(".footer__bottom > p", Boolean(getSharedFieldText("site-footer", "copyright")));
 		  }
 
 		  function ensureChild(parent, selector, tagName, className, beforeSelector) {
@@ -921,26 +1377,45 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
       applySection(sectionContent, sectionSnapshot);
     });
 
-    page.sections.forEach(function (sectionContent) {
-      var sectionSnapshot = pageSnapshot.sections.find(function (item) {
-        return item.id === sectionContent.id;
-      });
-      applySection(sectionContent, sectionSnapshot);
-    });
+	    page.sections.forEach(function (sectionContent) {
+	      var sectionSnapshot = pageSnapshot.sections.find(function (item) {
+	        return item.id === sectionContent.id;
+	      });
+	      applySection(sectionContent, sectionSnapshot);
+	    });
 
-    applyThemeIdentity();
-    document.documentElement.setAttribute("data-dexta-project-preview", "ready");
-  }
+		    applyTemplateTwoValuesStripIntro();
+		    applyThemeIdentity();
+		    applyTemplateTwoHeaderButtons();
+		    applyTemplateTwoFooterVisibility();
+	    applyTemplateTwoAdmissionForm();
+	    rewritePreviewInternalLinks();
+	    injectPreviewFontStylesheets();
+	    refreshTemplateTwoIcons();
+	    document.documentElement.setAttribute("data-dexta-project-preview", "ready");
+	  }
 
   applyPreviewContent();
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", applyPreviewContent, { once: true });
   }
-  window.setTimeout(applyPreviewContent, 80);
-  window.setTimeout(applyThemeIdentity, 350);
-  window.setTimeout(applyThemeIdentity, 1000);
-})();
-</script>`;
+	  window.setTimeout(applyPreviewContent, 80);
+	  window.setTimeout(applyThemeIdentity, 350);
+	  window.setTimeout(applyTemplateTwoHeaderButtons, 350);
+	  window.setTimeout(applyTemplateTwoFooterVisibility, 350);
+	  window.setTimeout(applyTemplateTwoAdmissionForm, 350);
+	  window.setTimeout(rewritePreviewInternalLinks, 350);
+	  window.setTimeout(injectPreviewFontStylesheets, 350);
+	  window.setTimeout(refreshTemplateTwoIcons, 350);
+	  window.setTimeout(applyThemeIdentity, 1000);
+	  window.setTimeout(applyTemplateTwoHeaderButtons, 1000);
+	  window.setTimeout(applyTemplateTwoFooterVisibility, 1000);
+	  window.setTimeout(applyTemplateTwoAdmissionForm, 1000);
+	  window.setTimeout(rewritePreviewInternalLinks, 1000);
+	  window.setTimeout(injectPreviewFontStylesheets, 1000);
+	  window.setTimeout(refreshTemplateTwoIcons, 1000);
+	})();
+	</script>`;
 }
 
 export async function renderSchoolTemplatePreview({

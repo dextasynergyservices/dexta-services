@@ -379,6 +379,45 @@ function setInnerHtml(node: ElementNode, value: string) {
   });
 }
 
+function isInlineRichTextTarget(node: ElementNode) {
+  return /^(h[1-6]|p)$/.test(node.tagName);
+}
+
+function isTextBlockNode(node: HtmlNode): node is ElementNode {
+  return (
+    node.type === "element" && /^(p|div|h[1-6]|blockquote)$/.test(node.tagName)
+  );
+}
+
+function getUnwrappedTextBlockHtml(node: ElementNode) {
+  const html = node.children.map(serializeNode).join("");
+  const style = getAttr(node, "style");
+  if (!style) return html;
+
+  return `<span style="${escapeAttribute(style)}">${html}</span>`;
+}
+
+function toInlineHtml(value: string) {
+  const fragment = parseHtml(value);
+
+  return fragment.children
+    .map((child) =>
+      isTextBlockNode(child)
+        ? getUnwrappedTextBlockHtml(child)
+        : serializeNode(child),
+    )
+    .map((html) => html.trim())
+    .filter(Boolean)
+    .join("<br><br>");
+}
+
+function setRichTextHtml(node: ElementNode, value: string) {
+  setInnerHtml(
+    node,
+    isInlineRichTextTarget(node) ? toInlineHtml(value) : value,
+  );
+}
+
 function createElementNode(
   tagName: string,
   parent: ElementNode,
@@ -412,6 +451,13 @@ function shouldApplyFieldValue(
   field: SchoolTemplateProjectSectionSnapshot["fields"][number],
 ) {
   if (isFilled(value)) return true;
+  if (
+    value !== null &&
+    value !== undefined &&
+    (field.target === "textContent" || field.target === "innerHTML")
+  ) {
+    return true;
+  }
   if (
     field.target === "cssVariable" &&
     (field.type === "image" || field.type === "model3d")
@@ -857,7 +903,7 @@ function applySection(
     for (const sectionRoot of roots) {
       for (const node of queryAll(sectionRoot, field.selector)) {
         if (field.target === "innerHTML") {
-          setInnerHtml(node, toText(value));
+          setRichTextHtml(node, toText(value));
         } else if (field.target === "attribute") {
           const attribute =
             field.attribute ?? (field.type === "link" ? "href" : "src");
@@ -919,7 +965,7 @@ function applySection(
 
         for (const node of queryAll(itemRoot, field.selector)) {
           if (field.target === "innerHTML") {
-            setInnerHtml(node, toText(value));
+            setRichTextHtml(node, toText(value));
           } else if (field.target === "attribute") {
             const attribute =
               field.attribute ?? (field.type === "link" ? "href" : "src");
@@ -1567,7 +1613,143 @@ body[data-page="home"] .hero-home__students {
   bottom: var(--dexta-academy-2-hero-students-desktop-bottom, -78px) !important;
   width: var(--dexta-academy-2-hero-students-desktop-width, min(49vw, 790px)) !important;
 }
+.site-header .button--outline-light,
+.site-header .mobile-panel .button--outline-light {
+  background: color-mix(in srgb, var(--dexta-academy-2-header-portal-button-bg-color, #ffc433) var(--dexta-academy-2-header-portal-button-bg-opacity, 0%), transparent) !important;
+  color: var(--dexta-academy-2-header-portal-button-text-color, #fff) !important;
+  border: var(--dexta-academy-2-header-portal-button-border-width, 1px) solid var(--dexta-academy-2-header-portal-button-border-color, #ffc433) !important;
+}
+.site-header .button--primary,
+.site-header .mobile-panel .button--primary {
+  background: color-mix(in srgb, var(--dexta-academy-2-header-primary-button-bg-color, #ffc433) var(--dexta-academy-2-header-primary-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-2-header-primary-button-text-color, #0c1d2d) !important;
+  border: var(--dexta-academy-2-header-primary-button-border-width, 0px) solid var(--dexta-academy-2-header-primary-button-border-color, #ffc433) !important;
+}
+body[data-page="home"] .hero-home {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-home-hero-section-bg-color, #081827) var(--dexta-academy-2-home-hero-section-bg-opacity, 100%), transparent) !important;
+}
+body[data-page="home"] .hero-home__actions .button {
+  background: color-mix(in srgb, var(--dexta-academy-2-home-hero-button-bg-color, #fff) var(--dexta-academy-2-home-hero-button-bg-opacity, 0%), transparent) !important;
+  color: var(--dexta-academy-2-home-hero-button-text-color, #fff) !important;
+  border: var(--dexta-academy-2-home-hero-button-border-width, 1px) solid var(--dexta-academy-2-home-hero-button-border-color, #fff) !important;
+}
+body[data-page="home"] .hero-home__stats {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-home-stats-section-bg-color, #081827) var(--dexta-academy-2-home-stats-section-bg-opacity, 0%), transparent) !important;
+  background-image: var(--dexta-academy-2-home-stats-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-home-stats-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-home-stats-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="home"] .hero-home__stat-top [data-icon] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 999px !important;
+  color: var(--dexta-academy-2-home-stats-icon-color, #ffc433) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-home-stats-icon-bg-color, #081827) var(--dexta-academy-2-home-stats-icon-bg-opacity, 0%), transparent) !important;
+  background-image: var(--dexta-academy-2-home-stats-item-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-2-home-stats-icon-border-width, 0px) solid var(--dexta-academy-2-home-stats-icon-border-color, #ffc433) !important;
+}
+body[data-page="home"] .hero-home__stat-top [data-icon] svg {
+  opacity: var(--dexta-academy-2-home-stats-item-icon-opacity, 1) !important;
+}
+body[data-page="home"] .values-strip {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-home-values-section-bg-color, #fff) var(--dexta-academy-2-home-values-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-home-values-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-home-values-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-home-values-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="home"] .value-item__icon {
+  color: var(--dexta-academy-2-home-values-icon-color, #f0b31f) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-home-values-icon-bg-color, #fff) var(--dexta-academy-2-home-values-icon-bg-opacity, 0%), transparent) !important;
+  background-image: var(--dexta-academy-2-home-values-item-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-2-home-values-icon-border-width, 1.5px) solid var(--dexta-academy-2-home-values-icon-border-color, #ffc433) !important;
+}
+body[data-page="home"] .value-item__icon svg {
+  opacity: var(--dexta-academy-2-home-values-item-icon-opacity, 1) !important;
+}
+body[data-page="home"] .split-showcase {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-home-about-section-bg-color, #081827) var(--dexta-academy-2-home-about-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-home-about-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-home-about-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-home-about-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="home"] .split-showcase .button {
+  background: color-mix(in srgb, var(--dexta-academy-2-home-about-button-bg-color, #ffc433) var(--dexta-academy-2-home-about-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-2-home-about-button-text-color, #0c1d2d) !important;
+  border: var(--dexta-academy-2-home-about-button-border-width, 0px) solid var(--dexta-academy-2-home-about-button-border-color, #ffc433) !important;
+}
+body[data-page="home"] .programs {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-home-programs-section-bg-color, #fff) var(--dexta-academy-2-home-programs-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-home-programs-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-home-programs-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-home-programs-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="home"] .programs .button {
+  background: color-mix(in srgb, var(--dexta-academy-2-home-programs-button-bg-color, #ffc433) var(--dexta-academy-2-home-programs-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-2-home-programs-button-text-color, #0c1d2d) !important;
+  border: var(--dexta-academy-2-home-programs-button-border-width, 0px) solid var(--dexta-academy-2-home-programs-button-border-color, #ffc433) !important;
+}
+body[data-page="home"] .programs .card__badge,
+body[data-page="home"] .programs .cta-banner__icon {
+  color: var(--dexta-academy-2-home-programs-icon-color, #091624) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-home-programs-icon-bg-color, #ffc433) var(--dexta-academy-2-home-programs-icon-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-home-programs-item-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-2-home-programs-icon-border-width, 0px) solid var(--dexta-academy-2-home-programs-icon-border-color, #ffc433) !important;
+}
+body[data-page="home"] .programs .card__badge svg {
+  opacity: var(--dexta-academy-2-home-programs-item-icon-opacity, 1) !important;
+}
+body[data-page="home"] main > section:nth-of-type(5) {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-home-student-life-section-bg-color, #fff) var(--dexta-academy-2-home-student-life-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-home-student-life-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-home-student-life-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-home-student-life-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="home"] .news-heading .button {
+  background: color-mix(in srgb, var(--dexta-academy-2-home-student-life-button-bg-color, #fff) var(--dexta-academy-2-home-student-life-button-bg-opacity, 0%), transparent) !important;
+  color: var(--dexta-academy-2-home-student-life-button-text-color, #12304d) !important;
+  border: var(--dexta-academy-2-home-student-life-button-border-width, 1px) solid var(--dexta-academy-2-home-student-life-button-border-color, #d6dde6) !important;
+}
+body[data-page="home"] .news-grid {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-home-student-life-cards-section-bg-color, #fff) var(--dexta-academy-2-home-student-life-cards-section-bg-opacity, 0%), transparent) !important;
+  background-image: var(--dexta-academy-2-home-student-life-cards-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-home-student-life-cards-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-home-student-life-cards-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="home"] .news-card .card__link [data-icon] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--dexta-academy-2-home-student-life-cards-icon-color, #12304d) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-home-student-life-cards-icon-bg-color, #fff) var(--dexta-academy-2-home-student-life-cards-icon-bg-opacity, 0%), transparent) !important;
+  background-image: var(--dexta-academy-2-home-student-life-cards-item-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-2-home-student-life-cards-icon-border-width, 0px) solid var(--dexta-academy-2-home-student-life-cards-icon-border-color, #12304d) !important;
+}
+body[data-page="home"] .news-card .card__link [data-icon] svg {
+  opacity: var(--dexta-academy-2-home-student-life-cards-item-icon-opacity, 1) !important;
+}
 body:not([data-page="home"]) .page-hero {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-page-hero-section-bg-color, #081827) var(--dexta-academy-2-page-hero-section-bg-opacity, 100%), transparent) !important;
   background-image: var(--dexta-academy-2-page-hero-background-image) !important;
   background-position: var(--dexta-academy-2-page-hero-background-position, center center) !important;
   background-size: var(--dexta-academy-2-page-hero-background-size, cover) !important;
@@ -1583,71 +1765,250 @@ body:not([data-page="home"]) .page-hero::after {
   background: var(--dexta-academy-2-page-hero-overlay-color, #04111d) !important;
   opacity: var(--dexta-academy-2-page-hero-overlay-opacity, .62) !important;
 }
-body[data-page="academics"] main > section:nth-of-type(2) {
-  background: var(--dexta-academy-2-academics-overview-section-bg, #fff) !important;
+body[data-page="about"] main > section:nth-of-type(2) {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-about-stats-section-bg-color, #fff) var(--dexta-academy-2-about-stats-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-about-stats-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-about-stats-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-about-stats-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
 }
-body[data-page="academics"] main > section:nth-of-type(2) .info-card {
-  background: var(--dexta-academy-2-academics-overview-card-bg, #fff) !important;
-  border: var(--dexta-academy-2-academics-overview-border-width, 1px) solid var(--dexta-academy-2-academics-overview-border-color, #e7edf3) !important;
+body[data-page="about"] main > section:nth-of-type(3) {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-about-who-we-are-section-bg-color, #081827) var(--dexta-academy-2-about-who-we-are-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-about-who-we-are-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-about-who-we-are-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-about-who-we-are-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="about"] .about-story-section {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-about-story-section-bg-color, #fff) var(--dexta-academy-2-about-story-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-about-story-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-about-story-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-about-story-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="about"] .about-story-section .button {
+  background: color-mix(in srgb, var(--dexta-academy-2-about-story-button-bg-color, #ffc433) var(--dexta-academy-2-about-story-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-2-about-story-button-text-color, #0c1d2d) !important;
+  border: var(--dexta-academy-2-about-story-button-border-width, 0px) solid var(--dexta-academy-2-about-story-button-border-color, #ffc433) !important;
+}
+.story-modal__dialog {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-about-story-modal-section-bg-color, #fff) var(--dexta-academy-2-about-story-modal-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-about-story-modal-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-about-story-modal-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-about-story-modal-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="about"] main > section:nth-of-type(5) {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-about-mission-vision-section-bg-color, #fff4cc) var(--dexta-academy-2-about-mission-vision-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-about-mission-vision-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-about-mission-vision-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-about-mission-vision-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="about"] .info-card__icon {
+  color: var(--dexta-academy-2-about-mission-vision-icon-color, #091624) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-about-mission-vision-icon-bg-color, #ffc433) var(--dexta-academy-2-about-mission-vision-icon-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-about-mission-vision-item-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-2-about-mission-vision-icon-border-width, 0px) solid var(--dexta-academy-2-about-mission-vision-icon-border-color, #ffc433) !important;
+}
+body[data-page="about"] .info-card__icon svg {
+  opacity: var(--dexta-academy-2-about-mission-vision-item-icon-opacity, 1) !important;
+}
+body[data-page="about"] main > section:nth-of-type(6) {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-about-family-choice-section-bg-color, #fff) var(--dexta-academy-2-about-family-choice-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-about-family-choice-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-about-family-choice-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-about-family-choice-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="academics"] main > section:nth-of-type(2) {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-academics-overview-section-bg-color, #fff) var(--dexta-academy-2-academics-overview-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-academics-overview-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-academics-overview-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-academics-overview-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
 }
 body[data-page="academics"] main > section:nth-of-type(2) .info-card__icon {
-  background: var(--dexta-academy-2-academics-overview-icon-bg, #fff4cc) !important;
   color: var(--dexta-academy-2-academics-overview-icon-color, #9b7104) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-academics-overview-icon-bg-color, #fff4cc) var(--dexta-academy-2-academics-overview-icon-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-academics-overview-item-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-2-academics-overview-icon-border-width, 0px) solid var(--dexta-academy-2-academics-overview-icon-border-color, #fff4cc) !important;
 }
-body[data-page="academics"] main > section:nth-of-type(2) .info-card h3 {
-  color: var(--dexta-academy-2-academics-overview-title-color, #102034) !important;
-  font-family: var(--dexta-academy-2-academics-overview-title-font, Manrope), "Segoe UI", sans-serif !important;
-  font-style: var(--dexta-academy-2-academics-overview-title-font-style, normal) !important;
-}
-body[data-page="academics"] main > section:nth-of-type(2) .info-card p {
-  color: var(--dexta-academy-2-academics-overview-description-color, #58708a) !important;
-  font-family: var(--dexta-academy-2-academics-overview-description-font, "Plus Jakarta Sans"), "Segoe UI", sans-serif !important;
-  font-style: var(--dexta-academy-2-academics-overview-description-font-style, normal) !important;
+body[data-page="academics"] main > section:nth-of-type(2) .info-card__icon svg {
+  opacity: var(--dexta-academy-2-academics-overview-item-icon-opacity, 1) !important;
 }
 body[data-page="academics"] main > section:nth-of-type(3) {
-  background: var(--dexta-academy-2-academics-subjects-section-bg, #081827) !important;
-}
-body[data-page="academics"] main > section:nth-of-type(3) .card {
-  background: var(--dexta-academy-2-academics-subjects-card-bg, #fff) !important;
-  border: var(--dexta-academy-2-academics-subjects-border-width, 1px) solid var(--dexta-academy-2-academics-subjects-border-color, #e7edf3) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-academics-subjects-section-bg-color, #081827) var(--dexta-academy-2-academics-subjects-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-academics-subjects-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-academics-subjects-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-academics-subjects-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
 }
 body[data-page="academics"] main > section:nth-of-type(3) .card__badge {
-  background: var(--dexta-academy-2-academics-subjects-icon-bg, #ffc433) !important;
   color: var(--dexta-academy-2-academics-subjects-icon-color, #091624) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-academics-subjects-icon-bg-color, #ffc433) var(--dexta-academy-2-academics-subjects-icon-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-academics-subjects-item-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-2-academics-subjects-icon-border-width, 0px) solid var(--dexta-academy-2-academics-subjects-icon-border-color, #ffc433) !important;
 }
-body[data-page="academics"] main > section:nth-of-type(3) .card__title {
-  color: var(--dexta-academy-2-academics-subjects-title-color, #102034) !important;
-  font-family: var(--dexta-academy-2-academics-subjects-title-font, Manrope), "Segoe UI", sans-serif !important;
-  font-style: var(--dexta-academy-2-academics-subjects-title-font-style, normal) !important;
-}
-body[data-page="academics"] main > section:nth-of-type(3) .card__text {
-  color: var(--dexta-academy-2-academics-subjects-description-color, #58708a) !important;
-  font-family: var(--dexta-academy-2-academics-subjects-description-font, "Plus Jakarta Sans"), "Segoe UI", sans-serif !important;
-  font-style: var(--dexta-academy-2-academics-subjects-description-font-style, normal) !important;
+body[data-page="academics"] main > section:nth-of-type(3) .card__badge svg {
+  opacity: var(--dexta-academy-2-academics-subjects-item-icon-opacity, 1) !important;
 }
 body[data-page="academics"] main > section:nth-of-type(4) {
-  background: var(--dexta-academy-2-academics-learning-section-bg, #fff) !important;
-}
-body[data-page="academics"] main > section:nth-of-type(4) .section-title {
-  color: var(--dexta-academy-2-academics-learning-title-color, #102034) !important;
-  font-family: var(--dexta-academy-2-academics-learning-title-font, Manrope), "Segoe UI", sans-serif !important;
-  font-style: var(--dexta-academy-2-academics-learning-title-font-style, normal) !important;
-}
-body[data-page="academics"] main > section:nth-of-type(4) .section-copy {
-  color: var(--dexta-academy-2-academics-learning-description-color, #58708a) !important;
-  font-family: var(--dexta-academy-2-academics-learning-description-font, "Plus Jakarta Sans"), "Segoe UI", sans-serif !important;
-  font-style: var(--dexta-academy-2-academics-learning-description-font-style, normal) !important;
-}
-body[data-page="academics"] main > section:nth-of-type(4) .steps li {
-  background: var(--dexta-academy-2-academics-learning-step-bg, #fff) !important;
-  border: var(--dexta-academy-2-academics-learning-step-border-width, 0px) solid var(--dexta-academy-2-academics-learning-step-border-color, #e7edf3) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-academics-learning-section-bg-color, #fff) var(--dexta-academy-2-academics-learning-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-academics-learning-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-academics-learning-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-academics-learning-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
 }
 body[data-page="academics"] main > section:nth-of-type(4) .steps__number {
-  background: var(--dexta-academy-2-academics-learning-step-number-bg, #fff4cc) !important;
-  color: var(--dexta-academy-2-academics-learning-step-number-color, #9b7104) !important;
+  color: var(--dexta-academy-2-academics-learning-icon-color, #9b7104) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-academics-learning-icon-bg-color, #fff4cc) var(--dexta-academy-2-academics-learning-icon-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-academics-learning-item-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-2-academics-learning-icon-border-width, 0px) solid var(--dexta-academy-2-academics-learning-icon-border-color, #fff4cc) !important;
 }
-body[data-page="academics"] main > section:nth-of-type(4) .steps li span:not(.steps__number) {
-  color: var(--dexta-academy-2-academics-learning-step-text-color, #58708a) !important;
+body[data-page="admissions"] main > section:nth-of-type(2) {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-admissions-process-section-bg-color, #fff) var(--dexta-academy-2-admissions-process-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-admissions-process-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-admissions-process-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-admissions-process-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="admissions"] main > section:nth-of-type(2) .steps__number,
+body[data-page="admissions"] main > section:nth-of-type(2) .feature-list__bullet {
+  color: var(--dexta-academy-2-admissions-process-icon-color, #9b7104) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-admissions-process-icon-bg-color, #fff4cc) var(--dexta-academy-2-admissions-process-icon-bg-opacity, 100%), transparent) !important;
+  border: var(--dexta-academy-2-admissions-process-icon-border-width, 0px) solid var(--dexta-academy-2-admissions-process-icon-border-color, #fff4cc) !important;
+}
+body[data-page="admissions"] #portal {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-admissions-support-section-bg-color, #081827) var(--dexta-academy-2-admissions-support-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-admissions-support-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-admissions-support-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-admissions-support-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="admissions"] #portal .info-card__icon {
+  color: var(--dexta-academy-2-admissions-support-icon-color, #091624) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-admissions-support-icon-bg-color, #ffc433) var(--dexta-academy-2-admissions-support-icon-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-admissions-support-item-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-2-admissions-support-icon-border-width, 0px) solid var(--dexta-academy-2-admissions-support-icon-border-color, #ffc433) !important;
+}
+body[data-page="admissions"] #portal .info-card__icon svg {
+  opacity: var(--dexta-academy-2-admissions-support-item-icon-opacity, 1) !important;
+}
+body[data-page="admissions"] main > section:nth-of-type(4) {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-admissions-cta-section-bg-color, #fff) var(--dexta-academy-2-admissions-cta-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-admissions-cta-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-admissions-cta-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-admissions-cta-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="admissions"] .cta-banner__panel .button {
+  background: color-mix(in srgb, var(--dexta-academy-2-admissions-cta-button-bg-color, #ffc433) var(--dexta-academy-2-admissions-cta-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-2-admissions-cta-button-text-color, #0c1d2d) !important;
+  border: var(--dexta-academy-2-admissions-cta-button-border-width, 0px) solid var(--dexta-academy-2-admissions-cta-button-border-color, #ffc433) !important;
+}
+body[data-page="admissions"] .cta-banner__icon {
+  color: var(--dexta-academy-2-admissions-cta-icon-color, #091624) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-admissions-cta-icon-bg-color, #ffc433) var(--dexta-academy-2-admissions-cta-icon-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-admissions-cta-item-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-2-admissions-cta-icon-border-width, 0px) solid var(--dexta-academy-2-admissions-cta-icon-border-color, #ffc433) !important;
+}
+body[data-page="admissions"] .cta-banner__icon svg {
+  opacity: var(--dexta-academy-2-admissions-cta-item-icon-opacity, 1) !important;
+}
+.admission-modal__dialog {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-admissions-form-section-bg-color, #fff) var(--dexta-academy-2-admissions-form-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-admissions-form-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-admissions-form-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-admissions-form-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="student-life"] main > section:nth-of-type(2) {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-student-life-highlights-section-bg-color, #fff) var(--dexta-academy-2-student-life-highlights-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-student-life-highlights-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-student-life-highlights-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-student-life-highlights-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="student-life"] main > section:nth-of-type(2) .info-card__icon {
+  color: var(--dexta-academy-2-student-life-highlights-icon-color, #091624) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-student-life-highlights-icon-bg-color, #ffc433) var(--dexta-academy-2-student-life-highlights-icon-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-student-life-highlights-item-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-2-student-life-highlights-icon-border-width, 0px) solid var(--dexta-academy-2-student-life-highlights-icon-border-color, #ffc433) !important;
+}
+body[data-page="student-life"] main > section:nth-of-type(2) .info-card__icon svg {
+  opacity: var(--dexta-academy-2-student-life-highlights-item-icon-opacity, 1) !important;
+}
+body[data-page="student-life"] main > section:nth-of-type(3) {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-student-life-leadership-section-bg-color, #081827) var(--dexta-academy-2-student-life-leadership-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-student-life-leadership-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-student-life-leadership-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-student-life-leadership-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="student-life"] main > section:nth-of-type(3) .feature-list__bullet {
+  color: var(--dexta-academy-2-student-life-leadership-icon-color, #9b7104) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-student-life-leadership-icon-bg-color, #fff4cc) var(--dexta-academy-2-student-life-leadership-icon-bg-opacity, 100%), transparent) !important;
+  border: var(--dexta-academy-2-student-life-leadership-icon-border-width, 0px) solid var(--dexta-academy-2-student-life-leadership-icon-border-color, #fff4cc) !important;
+}
+body[data-page="student-life"] main > section:nth-of-type(4) {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-student-life-portal-events-section-bg-color, #fff) var(--dexta-academy-2-student-life-portal-events-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-student-life-portal-events-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-student-life-portal-events-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-student-life-portal-events-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="student-life"] main > section:nth-of-type(4) .info-card__icon {
+  color: var(--dexta-academy-2-student-life-portal-events-icon-color, #091624) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-student-life-portal-events-icon-bg-color, #ffc433) var(--dexta-academy-2-student-life-portal-events-icon-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-student-life-portal-events-item-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-2-student-life-portal-events-icon-border-width, 0px) solid var(--dexta-academy-2-student-life-portal-events-icon-border-color, #ffc433) !important;
+}
+body[data-page="student-life"] main > section:nth-of-type(4) .info-card__icon svg {
+  opacity: var(--dexta-academy-2-student-life-portal-events-item-icon-opacity, 1) !important;
+}
+body[data-page="contact"] .google-form-card {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-contact-form-section-bg-color, #fff) var(--dexta-academy-2-contact-form-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-contact-form-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-contact-form-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-contact-form-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="contact"] .accent-panel {
+  background-color: color-mix(in srgb, var(--dexta-academy-2-contact-details-section-bg-color, #fff4cc) var(--dexta-academy-2-contact-details-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-2-contact-details-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-2-contact-details-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-2-contact-details-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+body[data-page="contact"] .accent-panel .feature-list__bullet {
+  color: var(--dexta-academy-2-contact-details-icon-color, #9b7104) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-2-contact-details-icon-bg-color, #fff) var(--dexta-academy-2-contact-details-icon-bg-opacity, 100%), transparent) !important;
+  border: var(--dexta-academy-2-contact-details-icon-border-width, 0px) solid var(--dexta-academy-2-contact-details-icon-border-color, #ffc433) !important;
 }
 @media (max-width: 980px) {
   body[data-page="home"] .hero-home {
@@ -1684,17 +2045,139 @@ body[data-page="academics"] main > section:nth-of-type(4) .steps li span:not(.st
   return `${themeCss}${templateCss}`;
 }
 
+function isSafeFontStylesheetUrl(value: string) {
+  const text = value.trim();
+  if (!text) return false;
+
+  try {
+    const url = new URL(text);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function collectFontStylesheetUrls(content: SchoolTemplateProjectContent) {
+  const urls = new Set<string>();
+  const scanFields = (fields: Record<string, unknown>) => {
+    for (const [key, value] of Object.entries(fields)) {
+      const normalizedKey = key.toLowerCase();
+      if (
+        !normalizedKey.includes("fontstylesheeturl") &&
+        !normalizedKey.includes("googlefonturl")
+      ) {
+        continue;
+      }
+
+      const text = String(value ?? "").trim();
+      if (isSafeFontStylesheetUrl(text)) {
+        urls.add(text);
+      }
+    }
+  };
+  const scanSection = (section: SchoolTemplateProjectSectionContent) => {
+    scanFields(section.fields);
+    section.repeatable?.items.forEach(scanFields);
+  };
+
+  content.sharedSections.forEach(scanSection);
+  content.pages.forEach((page) => page.sections.forEach(scanSection));
+
+  return Array.from(urls);
+}
+
+function getFontStylesheetMarkup(content: SchoolTemplateProjectContent) {
+  return collectFontStylesheetUrls(content)
+    .map(
+      (href) =>
+        `<link rel="stylesheet" href="${escapeAttribute(href)}" data-dexta-font-stylesheet="true">`,
+    )
+    .join("\n");
+}
+
+function getNavLinkFontCss(content: SchoolTemplateProjectContent) {
+  const navLinkFont =
+    content.theme.navLinkFontFamily || content.theme.fontFamily;
+  if (!navLinkFont) return "";
+
+  return `
+.navbar-nav .nav-link,
+.navbar-nav a,
+.site-nav a,
+.site-nav__link,
+.mobile-nav a,
+.mobile-nav__link,
+.site-header__nav a,
+.site-header__links a,
+.main-nav a {
+  font-family: ${JSON.stringify(navLinkFont)}, var(--font-family, inherit) !important;
+}`;
+}
+
 function getThemeMarkup(content: SchoolTemplateProjectContent) {
-  return `<style data-dexta-export-theme="true">
+  const fontMarkup = getFontStylesheetMarkup(content);
+
+  return `${fontMarkup ? `${fontMarkup}\n` : ""}<style data-dexta-export-theme="true">
 ${THEME_SCOPE_SELECTOR} {
 ${getThemeVariableDeclarations(content)}
 }
 body {
   font-family: ${JSON.stringify(content.theme.fontFamily)}, var(--font-family, inherit);
 }
+${getNavLinkFontCss(content)}
 ${getGlobalAppearanceCss(content)}
 ${getTemplateOverrideCss(content)}
 </style>`;
+}
+
+function getProjectSectionField(
+  content: SchoolTemplateProjectContent,
+  pageSlug: string,
+  sectionId: string,
+  fieldKey: string,
+) {
+  const section = content.pages
+    .find((page) => page.slug === pageSlug)
+    ?.sections.find((item) => item.id === sectionId);
+
+  return section?.fields[fieldKey];
+}
+
+function getSharedSectionField(
+  content: SchoolTemplateProjectContent,
+  sectionId: string,
+  fieldKey: string,
+) {
+  const section = content.sharedSections.find((item) => item.id === sectionId);
+  return section?.fields[fieldKey];
+}
+
+function getTemplateTwoAdmissionFormRuntimeFields(
+  content: SchoolTemplateProjectContent,
+) {
+  const pickField = (fieldKey: string) => {
+    const pageValue = getProjectSectionField(
+      content,
+      "admissions",
+      "admission-form",
+      fieldKey,
+    );
+
+    if (isFilled(pageValue)) {
+      return toText(pageValue).trim();
+    }
+
+    return toText(
+      getSharedSectionField(content, "admission-modal", fieldKey),
+    ).trim();
+  };
+
+  return {
+    formUrl: pickField("formUrl"),
+    formIframe: pickField("formIframe"),
+    formTitle: pickField("formTitle"),
+    modalTitle: pickField("title"),
+  };
 }
 
 function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
@@ -1720,6 +2203,52 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
   const footerPhoneHref = toText(siteFooter?.fields.phoneHref).trim();
   const footerEmail = toText(siteFooter?.fields.email).trim();
   const footerEmailHref = toText(siteFooter?.fields.emailHref).trim();
+  const headerButtons = {
+    portalText: toText(siteHeader?.fields.portalCtaText).trim(),
+    portalHref: toText(siteHeader?.fields.portalCtaHref).trim(),
+    primaryText: toText(siteHeader?.fields.primaryCtaText).trim(),
+    primaryHref: toText(siteHeader?.fields.primaryCtaHref).trim(),
+  };
+  const footerDescription = toText(siteFooter?.fields.description).trim();
+  const footerCopyright = toText(siteFooter?.fields.copyright).trim();
+  const footerLinks = [
+    {
+      text: toText(siteFooter?.fields.homeLinkText).trim(),
+      href: toText(siteFooter?.fields.homeLinkHref).trim(),
+      selector: ".footer__links a:nth-of-type(1)",
+    },
+    {
+      text: toText(siteFooter?.fields.aboutLinkText).trim(),
+      href: toText(siteFooter?.fields.aboutLinkHref).trim(),
+      selector: ".footer__links a:nth-of-type(2)",
+    },
+    {
+      text: toText(siteFooter?.fields.academicsLinkText).trim(),
+      href: toText(siteFooter?.fields.academicsLinkHref).trim(),
+      selector: ".footer__links a:nth-of-type(3)",
+    },
+    {
+      text: toText(siteFooter?.fields.admissionsLinkText).trim(),
+      href: toText(siteFooter?.fields.admissionsLinkHref).trim(),
+      selector: ".footer__links a:nth-of-type(4)",
+    },
+    {
+      text: toText(siteFooter?.fields.studentLifeLinkText).trim(),
+      href: toText(siteFooter?.fields.studentLifeLinkHref).trim(),
+      selector: ".footer__links a:nth-of-type(5)",
+    },
+    {
+      text: toText(siteFooter?.fields.galleryLinkText).trim(),
+      href: toText(siteFooter?.fields.galleryLinkHref).trim(),
+      selector: ".footer__links a:nth-of-type(6)",
+    },
+    {
+      text: toText(siteFooter?.fields.contactLinkText).trim(),
+      href: toText(siteFooter?.fields.contactLinkHref).trim(),
+      selector: ".footer__links a:nth-of-type(7)",
+    },
+  ];
+  const admissionForm = getTemplateTwoAdmissionFormRuntimeFields(content);
 
   if (
     !logoUrl &&
@@ -1730,7 +2259,18 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
     !footerPhone &&
     !footerPhoneHref &&
     !footerEmail &&
-    !footerEmailHref
+    !footerEmailHref &&
+    !headerButtons.portalText &&
+    !headerButtons.portalHref &&
+    !headerButtons.primaryText &&
+    !headerButtons.primaryHref &&
+    !footerDescription &&
+    !footerCopyright &&
+    !footerLinks.some((link) => link.text || link.href) &&
+    !admissionForm.formUrl &&
+    !admissionForm.formIframe &&
+    !admissionForm.formTitle &&
+    !admissionForm.modalTitle
   ) {
     return "";
   }
@@ -1743,9 +2283,17 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
 	  var configuredLoadingText = ${escapeScriptJson(loadingText)};
 	  var footerAddress = ${escapeScriptJson(footerAddress)};
 	  var footerPhone = ${escapeScriptJson(footerPhone)};
-	  var footerPhoneHref = ${escapeScriptJson(footerPhoneHref)};
-	  var footerEmail = ${escapeScriptJson(footerEmail)};
-	  var footerEmailHref = ${escapeScriptJson(footerEmailHref)};
+		  var footerPhoneHref = ${escapeScriptJson(footerPhoneHref)};
+		  var footerEmail = ${escapeScriptJson(footerEmail)};
+		  var footerEmailHref = ${escapeScriptJson(footerEmailHref)};
+		  var headerButtons = ${escapeScriptJson(headerButtons)};
+		  var footerDescription = ${escapeScriptJson(footerDescription)};
+		  var footerCopyright = ${escapeScriptJson(footerCopyright)};
+		  var footerLinks = ${escapeScriptJson(footerLinks)};
+		  var admissionFormUrl = ${escapeScriptJson(admissionForm.formUrl)};
+		  var admissionFormIframe = ${escapeScriptJson(admissionForm.formIframe)};
+		  var admissionFormTitle = ${escapeScriptJson(admissionForm.formTitle)};
+		  var admissionModalTitle = ${escapeScriptJson(admissionForm.modalTitle)};
 
   function setImageLogo(selector) {
     if (!logoUrl) return;
@@ -1793,9 +2341,9 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
 	    });
 	  }
 
-  function ensureChild(parent, selector, tagName, className, beforeSelector) {
-    var node = parent.querySelector(selector);
-    if (node) return node;
+	  function ensureChild(parent, selector, tagName, className, beforeSelector) {
+	    var node = parent.querySelector(selector);
+	    if (node) return node;
 
     node = document.createElement(tagName);
     if (className) node.className = className;
@@ -1806,11 +2354,154 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
     } else {
       parent.appendChild(node);
     }
+	
+	    return node;
+	  }
 
-    return node;
-  }
+		  function applyTemplateTwoFooterContact() {
+		    if (!${escapeScriptJson(content.templateSlug === "dexta-academy-2")}) return;
+		    setText(".footer__contact > span", footerAddress);
+		    setText(".footer__contact a:nth-of-type(1)", footerPhone);
+		    setText(".footer__contact a:nth-of-type(2)", footerEmail);
+		    setAttribute(".footer__contact a:nth-of-type(1)", "href", footerPhoneHref);
+		    setAttribute(".footer__contact a:nth-of-type(2)", "href", footerEmailHref);
+		  }
 
-	  function applyLoadingIdentity(fullLoaderName) {
+		  function setLink(selector, text, href) {
+		    setText(selector, text);
+		    setAttribute(selector, "href", href);
+		  }
+
+		  function applyTemplateTwoHeaderButtons() {
+		    if (!${escapeScriptJson(content.templateSlug === "dexta-academy-2")}) return;
+
+		    setText(
+		      ".site-header__actions .button--outline-light span:nth-of-type(1), .mobile-panel__actions .button--outline-light span:nth-of-type(1)",
+		      headerButtons.portalText
+		    );
+		    setAttribute(
+		      ".site-header__actions .button--outline-light, .mobile-panel__actions .button--outline-light",
+		      "href",
+		      headerButtons.portalHref
+		    );
+		    setText(
+		      ".site-header__actions .button--primary span:nth-of-type(1), .mobile-panel__actions .button--primary span:nth-of-type(1)",
+		      headerButtons.primaryText
+		    );
+		    setAttribute(
+		      ".site-header__actions .button--primary, .mobile-panel__actions .button--primary",
+		      "href",
+		      headerButtons.primaryHref
+		    );
+
+		    setDisplay(
+		      ".site-header__actions .button--outline-light, .mobile-panel__actions .button--outline-light",
+		      Boolean(headerButtons.portalText && headerButtons.portalHref)
+		    );
+		    setDisplay(
+		      ".site-header__actions .button--primary, .mobile-panel__actions .button--primary",
+		      Boolean(headerButtons.primaryText && headerButtons.primaryHref)
+		    );
+		  }
+
+		  function applyTemplateTwoFooterVisibility() {
+		    if (!${escapeScriptJson(content.templateSlug === "dexta-academy-2")}) return;
+
+		    var hasVisibleFooterLink = false;
+		    footerLinks.forEach(function (link) {
+		      var visible = Boolean(link.text && link.href);
+		      setLink(link.selector, link.text, link.href);
+		      if (visible) hasVisibleFooterLink = true;
+		      setDisplay(link.selector, visible);
+		    });
+
+		    var hasAddress = Boolean(footerAddress);
+		    var hasPhone = Boolean(footerPhone && footerPhoneHref);
+		    var hasEmail = Boolean(footerEmail && footerEmailHref);
+
+		    setText(".footer__main > p", footerDescription);
+		    setText(".footer__bottom > p", footerCopyright);
+		    setDisplay(".footer__links", hasVisibleFooterLink);
+		    setDisplay(".footer__main > p", Boolean(footerDescription));
+		    setDisplay(".footer__contact > span", hasAddress);
+		    setDisplay(".footer__contact a:nth-of-type(1)", hasPhone);
+		    setDisplay(".footer__contact a:nth-of-type(2)", hasEmail);
+		    setDisplay(".footer__contact", hasAddress || hasPhone || hasEmail);
+		    setDisplay(".footer__bottom > p", Boolean(footerCopyright));
+		  }
+
+		  function parseAdmissionIframeEmbedValue(value) {
+		    var text = String(value || "").trim();
+		    if (!text) return null;
+		    if (text.toLowerCase().indexOf("<iframe") === -1) {
+		      return { src: text, attrs: {} };
+		    }
+
+		    var template = document.createElement("template");
+		    template.innerHTML = text;
+		    var iframe = template.content.querySelector("iframe");
+		    if (!iframe) return null;
+
+		    var attrs = {};
+		    [
+		      "width",
+		      "height",
+		      "frameborder",
+		      "marginheight",
+		      "marginwidth",
+		      "loading",
+		      "referrerpolicy",
+		      "allow",
+		      "title"
+		    ].forEach(function (name) {
+		      var attrValue = iframe.getAttribute(name);
+		      if (attrValue !== null && attrValue !== "") attrs[name] = attrValue;
+		    });
+
+		    return { src: iframe.getAttribute("src") || "", attrs: attrs };
+		  }
+
+		  function isSafeAdmissionIframeSrc(value) {
+		    return /^https?:\\/\\//i.test(value) || value.indexOf("/") === 0;
+		  }
+
+		  function applyTemplateTwoAdmissionForm() {
+		    if (!${escapeScriptJson(content.templateSlug === "dexta-academy-2")}) return;
+
+		    var frame = document.querySelector("[data-admission-modal-root] iframe, .admission-modal iframe");
+		    if (!frame) return;
+		    if (admissionModalTitle) {
+		      setText("#admission-modal-title", admissionModalTitle);
+		    }
+
+		    var embed = parseAdmissionIframeEmbedValue(admissionFormIframe) || parseAdmissionIframeEmbedValue(admissionFormUrl);
+		    if (embed && embed.src && isSafeAdmissionIframeSrc(embed.src)) {
+		      frame.setAttribute("data-src", embed.src);
+		      if (frame.getAttribute("src")) {
+		        frame.setAttribute("src", embed.src);
+		      }
+
+		      [
+		        "width",
+		        "height",
+		        "frameborder",
+		        "marginheight",
+		        "marginwidth",
+		        "loading",
+		        "referrerpolicy",
+		        "allow",
+		        "title"
+		      ].forEach(function (name) {
+		        if (embed.attrs[name]) frame.setAttribute(name, embed.attrs[name]);
+		      });
+		    }
+
+		    if (admissionFormTitle) {
+		      frame.setAttribute("title", admissionFormTitle);
+		    }
+		  }
+	
+		  function applyLoadingIdentity(fullLoaderName) {
     var loadingText = configuredLoadingText || (fullLoaderName ? "Loading " + fullLoaderName : "");
     var hasLoadingText = Boolean(loadingText);
 
@@ -1828,18 +2519,9 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
         image.src = logoUrl;
 	  }
 
-	  function applyTemplateTwoFooterContact() {
-	    if (!${escapeScriptJson(content.templateSlug === "dexta-academy-2")}) return;
-	    setText(".footer__contact > span", footerAddress);
-	    setText(".footer__contact a[href^='tel:']", footerPhone);
-	    setText(".footer__contact a[href^='mailto:']", footerEmail);
-	    setAttribute(".footer__contact a[href^='tel:']", "href", footerPhoneHref);
-	    setAttribute(".footer__contact a[href^='mailto:']", "href", footerEmailHref);
-	  }
-
-      if (hasLoadingText) {
-        var textNode = ensureChild(spinner, ".dexta-loading-text", "span", "dexta-loading-text");
-        textNode.textContent = loadingText;
+	      if (hasLoadingText) {
+	        var textNode = ensureChild(spinner, ".dexta-loading-text", "span", "dexta-loading-text");
+	        textNode.textContent = loadingText;
       }
     });
 
@@ -1886,17 +2568,20 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
 	      document.querySelectorAll("link[rel~='icon']").forEach(function (link) {
 	        link.setAttribute("href", logoUrl);
 	      });
-	    }
-	    applyTemplateTwoFooterContact();
+		    }
+		    applyTemplateTwoHeaderButtons();
+		    applyTemplateTwoFooterContact();
+		    applyTemplateTwoFooterVisibility();
+		    applyTemplateTwoAdmissionForm();
+		  }
+	
+	  applyThemeIdentity();
+	  if (document.readyState === "loading") {
+	    document.addEventListener("DOMContentLoaded", applyThemeIdentity, { once: true });
 	  }
-
-  applyThemeIdentity();
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", applyThemeIdentity, { once: true });
-  }
-  window.setTimeout(applyThemeIdentity, 80);
-  window.setTimeout(applyThemeIdentity, 350);
-  window.setTimeout(applyThemeIdentity, 1000);
+	  window.setTimeout(applyThemeIdentity, 80);
+	  window.setTimeout(applyThemeIdentity, 350);
+	  window.setTimeout(applyThemeIdentity, 1000);
 })();
 </script>`;
 }
