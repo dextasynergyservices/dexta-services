@@ -6,6 +6,7 @@ import {
   Eye,
   FileText,
   ImageIcon,
+  Link2,
   Loader2,
   Monitor,
   Package,
@@ -38,6 +39,7 @@ import {
 import {
   extractSchoolWebsiteCopySuggestions,
   exportSchoolWebsiteProject,
+  generateSchoolWebsiteProjectPreviewLink,
   saveSchoolWebsiteProjectDraft,
 } from "../../../actions";
 
@@ -116,6 +118,25 @@ type ModelValidationProbeResult = {
 const MODEL_VALIDATION_PREVIEW_KEY = "preview-models";
 const THEME_HISTORY_KEY = "theme";
 const COMPONENT_HISTORY_LIMIT = 50;
+const DEXTA_ACADEMY_2_SLUG = "dexta-academy-2";
+const DEXTA_ACADEMY_2_FOOTER_SHARED_SECTION_IDS = new Set(["site-footer"]);
+const DEXTA_ACADEMY_2_NAVBAR_SHARED_SECTION_ID = "site-header";
+const DEXTA_ACADEMY_2_NAVBAR_FIELD_KEYS = new Set([
+  "portalCtaText",
+  "portalCtaHref",
+  "portalButtonBgColor",
+  "portalButtonBgOpacity",
+  "portalButtonTextColor",
+  "portalButtonBorderColor",
+  "portalButtonBorderWidth",
+  "primaryCtaText",
+  "primaryCtaHref",
+  "primaryButtonBgColor",
+  "primaryButtonBgOpacity",
+  "primaryButtonTextColor",
+  "primaryButtonBorderColor",
+  "primaryButtonBorderWidth",
+]);
 const ORIGINAL_THEME_COLORS: Record<
   string,
   Partial<Record<keyof SchoolTemplateProjectContent["theme"], string>>
@@ -195,6 +216,11 @@ function getProjectPreviewHref(
   return `/admin/we-brand-schools/projects/${projectId}/preview/${pageSlug}?editorPreview=${key}`;
 }
 
+function getAbsoluteHref(href: string) {
+  if (typeof window === "undefined") return href;
+  return new URL(href, window.location.origin).toString();
+}
+
 function getTemplateBaseHref(previewPath: string) {
   const parts = previewPath.split("/");
   parts.pop();
@@ -210,6 +236,14 @@ function formatDate(value: string) {
 
 function getFieldControlKind(field: SchoolTemplateProjectFieldSnapshot | null) {
   return field?.type ?? "text";
+}
+
+function isIframeEmbedEditorField(field: SchoolTemplateProjectFieldSnapshot) {
+  return (
+    field.type === "textarea" &&
+    field.target === "attribute" &&
+    ["formIframe", "formEmbedCode", "iframeEmbedCode"].includes(field.key)
+  );
 }
 
 function isProtectedCopyImportField(field: SchoolTemplateProjectFieldSnapshot) {
@@ -658,10 +692,6 @@ function getRepeatableItemFields(
       [],
   );
 
-  if (itemFieldKeys.size > 0) {
-    return fields.filter((field) => itemFieldKeys.has(field.key));
-  }
-
   const sectionSelector = section.snapshot?.selector.trim();
   const itemSelector = repeatable.itemSelector.trim();
   const sectionTargetsItems =
@@ -671,8 +701,6 @@ function getRepeatableItemFields(
       .map((selector) => selector.trim())
       .includes(itemSelector);
 
-  if (sectionTargetsItems) return fields;
-
   const sectionLevelKeys = new Set([
     "body",
     "ctaHref",
@@ -681,6 +709,16 @@ function getRepeatableItemFields(
     "intro",
     "title",
   ]);
+
+  if (itemFieldKeys.size > 0) {
+    return fields.filter(
+      (field) =>
+        itemFieldKeys.has(field.key) &&
+        (sectionTargetsItems || !sectionLevelKeys.has(field.key)),
+    );
+  }
+
+  if (sectionTargetsItems) return fields;
 
   return fields.filter((field) => !sectionLevelKeys.has(field.key));
 }
@@ -956,10 +994,11 @@ function FieldControl({
         />
       ) : controlKind === "textarea" ? (
         <Textarea
-          rows={4}
+          rows={isIframeEmbedEditorField(field) ? 7 : 4}
           value={getStringValue(displayValue)}
           onChange={(event) => onChange(event.target.value)}
           className={cn("resize-none", commonInputClass)}
+          placeholder={field.placeholder ?? ""}
         />
       ) : controlKind === "image" || controlKind === "model3d" ? (
         <div className="space-y-2">
@@ -1107,6 +1146,8 @@ export function SchoolWebsiteProjectEditor({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isGeneratingPreviewLink, setIsGeneratingPreviewLink] = useState(false);
+  const [generatedPreviewLink, setGeneratedPreviewLink] = useState("");
   const [isDirty, setIsDirty] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("desktop");
@@ -1163,6 +1204,58 @@ export function SchoolWebsiteProjectEditor({
       sourceSnapshot.pages[0],
     [selectedPage?.slug, sourceSnapshot.pages],
   );
+  const isDextaAcademy2Template = draft.templateSlug === DEXTA_ACADEMY_2_SLUG;
+  const visibleSharedSections = useMemo(
+    () =>
+      isDextaAcademy2Template
+        ? draft.sharedSections.filter((section) =>
+            DEXTA_ACADEMY_2_FOOTER_SHARED_SECTION_IDS.has(section.id),
+          )
+        : draft.sharedSections,
+    [draft.sharedSections, isDextaAcademy2Template],
+  );
+  const sharedTabLabel = isDextaAcademy2Template ? "Footer" : "Sitewide";
+  const sharedScopeDescription = isDextaAcademy2Template
+    ? "Footer content and links"
+    : "Shared sections";
+  const navbarHeaderSection = useMemo(
+    () =>
+      draft.sharedSections.find(
+        (section) => section.id === DEXTA_ACADEMY_2_NAVBAR_SHARED_SECTION_ID,
+      ) ?? null,
+    [draft.sharedSections],
+  );
+  const navbarHeaderSnapshot = useMemo(
+    () =>
+      sourceSnapshot.sharedSections.find(
+        (section) => section.id === DEXTA_ACADEMY_2_NAVBAR_SHARED_SECTION_ID,
+      ) ?? null,
+    [sourceSnapshot.sharedSections],
+  );
+  const navbarButtonFieldGroups = useMemo(() => {
+    if (
+      !isDextaAcademy2Template ||
+      !navbarHeaderSection ||
+      !navbarHeaderSnapshot
+    ) {
+      return [];
+    }
+
+    const groups = new Map<string, SchoolTemplateProjectFieldSnapshot[]>();
+    for (const field of navbarHeaderSnapshot.fields) {
+      if (!DEXTA_ACADEMY_2_NAVBAR_FIELD_KEYS.has(field.key)) continue;
+
+      const groupName = field.uiGroup ?? "Navbar buttons";
+      groups.set(groupName, [...(groups.get(groupName) ?? []), field]);
+    }
+
+    return Array.from(groups.entries()).map(([name, fields]) => ({
+      name,
+      fields: fields.sort(
+        (left, right) => (left.uiOrder ?? 0) - (right.uiOrder ?? 0),
+      ),
+    }));
+  }, [isDextaAcademy2Template, navbarHeaderSection, navbarHeaderSnapshot]);
 
   const sectionBindings = useMemo<SectionBinding[]>(() => {
     if (selectedScope === "navbar") {
@@ -1170,7 +1263,7 @@ export function SchoolWebsiteProjectEditor({
     }
 
     if (selectedScope === "shared") {
-      return draft.sharedSections.map((section) => ({
+      return visibleSharedSections.map((section) => ({
         content: section,
         snapshot:
           sourceSnapshot.sharedSections.find(
@@ -1187,11 +1280,11 @@ export function SchoolWebsiteProjectEditor({
         ) ?? null,
     }));
   }, [
-    draft.sharedSections,
     selectedPage?.sections,
     selectedPageSnapshot?.sections,
     selectedScope,
     sourceSnapshot.sharedSections,
+    visibleSharedSections,
   ]);
 
   const activeSection =
@@ -1324,6 +1417,15 @@ export function SchoolWebsiteProjectEditor({
       key,
       originalDraftRef.current.theme[key],
     );
+  const getOriginalSharedSectionFieldValue = (
+    sectionId: string,
+    field: SchoolTemplateProjectFieldSnapshot,
+  ) =>
+    originalDraftRef.current.sharedSections.find(
+      (section) => section.id === sectionId,
+    )?.fields[field.key] ??
+    field.defaultValue ??
+    null;
 
   useEffect(() => {
     setCopySuggestions([]);
@@ -1343,7 +1445,7 @@ export function SchoolWebsiteProjectEditor({
 
   const selectSharedSections = () => {
     setSelectedScope("shared");
-    setSelectedSectionId(draft.sharedSections[0]?.id ?? "");
+    setSelectedSectionId(visibleSharedSections[0]?.id ?? "");
   };
 
   const updateDraft = (updater: DraftUpdater) => {
@@ -1400,6 +1502,23 @@ export function SchoolWebsiteProjectEditor({
       getSectionHistoryKey({
         scope: selectedScope,
         pageSlug,
+        sectionId,
+      }),
+      section,
+    );
+  };
+
+  const recordSharedSectionHistory = (sectionId: string) => {
+    const section = draftRef.current.sharedSections.find(
+      (candidate) => candidate.id === sectionId,
+    );
+
+    if (!section) return;
+
+    recordComponentHistory(
+      getSectionHistoryKey({
+        scope: "shared",
+        pageSlug: selectedPage?.slug ?? selectedPageSlug,
         sectionId,
       }),
       section,
@@ -1706,6 +1825,36 @@ export function SchoolWebsiteProjectEditor({
     }
 
     updateSectionFields(sectionId, { [fieldKey]: value });
+  };
+
+  const updateSharedSectionField = (
+    sectionId: string,
+    fieldKey: string,
+    value: string | number | boolean | null,
+  ) => {
+    const currentSection = draftRef.current.sharedSections.find(
+      (section) => section.id === sectionId,
+    );
+
+    if (!currentSection || currentSection.fields[fieldKey] === value) {
+      return;
+    }
+
+    recordSharedSectionHistory(sectionId);
+    updateDraft((currentDraft) => ({
+      ...currentDraft,
+      sharedSections: currentDraft.sharedSections.map((section) =>
+        section.id === sectionId
+          ? {
+              ...section,
+              fields: {
+                ...section.fields,
+                [fieldKey]: value,
+              },
+            }
+          : section,
+      ),
+    }));
   };
 
   const updateRepeatableItemField = (
@@ -2074,6 +2223,58 @@ export function SchoolWebsiteProjectEditor({
     setIsPreviewOpen(true);
   };
 
+  const generatePreviewLink = async () => {
+    if (isGeneratingPreviewLink) {
+      return;
+    }
+
+    setIsGeneratingPreviewLink(true);
+
+    try {
+      if (isDirtyRef.current) {
+        const saved = await saveDraft({
+          createRevision: false,
+          note: "Saved before generating preview link.",
+          showToast: false,
+        });
+
+        if (!saved) {
+          return;
+        }
+      }
+
+      const pageSlug =
+        selectedPage?.slug ??
+        draftRef.current.pages.find((page) => page.isHome)?.slug ??
+        draftRef.current.pages[0]?.slug ??
+        "home";
+      const result = await generateSchoolWebsiteProjectPreviewLink({
+        projectId,
+        applicationId,
+        pageSlug,
+      });
+
+      if (!result.success || !result.previewHref) {
+        toast.error(result.message);
+        return;
+      }
+
+      const absoluteHref = getAbsoluteHref(result.previewHref);
+      setGeneratedPreviewLink(absoluteHref);
+
+      try {
+        await navigator.clipboard.writeText(absoluteHref);
+        toast.success(
+          "Preview link copied. It will show the latest saved draft.",
+        );
+      } catch {
+        toast.success("Preview link generated.");
+      }
+    } finally {
+      setIsGeneratingPreviewLink(false);
+    }
+  };
+
   const exportZip = async () => {
     if (isExporting) {
       return;
@@ -2345,7 +2546,12 @@ export function SchoolWebsiteProjectEditor({
             type="button"
             variant="outline"
             onClick={() => void refreshPreview()}
-            disabled={isSaving || isExporting || isPreviewValidatingModel}
+            disabled={
+              isSaving ||
+              isExporting ||
+              isGeneratingPreviewLink ||
+              isPreviewValidatingModel
+            }
             className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white"
           >
             {isPreviewValidatingModel ? (
@@ -2354,6 +2560,20 @@ export function SchoolWebsiteProjectEditor({
               <Eye className="mr-1.5 h-4 w-4" />
             )}
             {isPreviewValidatingModel ? "Checking" : "Preview"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void generatePreviewLink()}
+            disabled={isSaving || isExporting || isGeneratingPreviewLink}
+            className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white"
+          >
+            {isGeneratingPreviewLink ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Link2 className="mr-1.5 h-4 w-4" />
+            )}
+            {isGeneratingPreviewLink ? "Generating" : "Generate Preview Link"}
           </Button>
           <Button
             type="button"
@@ -2392,6 +2612,19 @@ export function SchoolWebsiteProjectEditor({
               Download Zip
             </Button>
           )}
+          {generatedPreviewLink ? (
+            <Button
+              asChild
+              type="button"
+              variant="outline"
+              className="border-[#2a2a2a] text-[#888] hover:bg-[#1a1a1a] hover:text-white"
+            >
+              <a href={generatedPreviewLink} target="_blank" rel="noreferrer">
+                <Eye className="mr-1.5 h-4 w-4" />
+                Open Preview Link
+              </a>
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -2436,7 +2669,7 @@ export function SchoolWebsiteProjectEditor({
               </button>
             ))}
 
-            {draft.sharedSections.length ? (
+            {visibleSharedSections.length ? (
               <button
                 type="button"
                 onClick={selectSharedSections}
@@ -2447,9 +2680,9 @@ export function SchoolWebsiteProjectEditor({
                     : "text-[#888] hover:bg-[#171717] hover:text-white",
                 )}
               >
-                <span className="truncate">Sitewide</span>
+                <span className="truncate">{sharedTabLabel}</span>
                 <span className="text-[11px] text-[#555]">
-                  {draft.sharedSections.length}
+                  {visibleSharedSections.length}
                 </span>
               </button>
             ) : null}
@@ -2604,14 +2837,14 @@ export function SchoolWebsiteProjectEditor({
                 {selectedScope === "navbar"
                   ? "Navbar"
                   : selectedScope === "shared"
-                    ? "Sitewide"
+                    ? sharedTabLabel
                     : selectedPage?.title}
               </p>
               <p className="text-xs text-[#666]">
                 {selectedScope === "navbar"
                   ? "Logo, name, and navigation styling"
                   : selectedScope === "shared"
-                    ? "Shared sections"
+                    ? sharedScopeDescription
                     : selectedPage?.fileName}
               </p>
             </div>
@@ -2909,6 +3142,28 @@ export function SchoolWebsiteProjectEditor({
 
                 <div className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4">
                   <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                    Navigation links
+                  </p>
+                  <FieldControl
+                    field={{
+                      key: "navLinkFontFamily",
+                      label: "Link font",
+                      type: "text",
+                      selector: "nav a",
+                      target: "inlineStyle",
+                      placeholder: draft.theme.fontFamily,
+                      helpText:
+                        "Use a font already loaded by the template or added through a font stylesheet field.",
+                    }}
+                    value={draft.theme.navLinkFontFamily}
+                    onChange={(value) =>
+                      updateTheme("navLinkFontFamily", getStringValue(value))
+                    }
+                  />
+                </div>
+
+                <div className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4">
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
                     Navbar background
                   </p>
                   <div className="space-y-4">
@@ -2944,6 +3199,50 @@ export function SchoolWebsiteProjectEditor({
                     </div>
                   </div>
                 </div>
+
+                {navbarButtonFieldGroups.length ? (
+                  <div className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4 xl:col-span-2">
+                    <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                      Navbar buttons
+                    </p>
+                    <div className="grid gap-5 xl:grid-cols-2">
+                      {navbarButtonFieldGroups.map((group) => (
+                        <div
+                          key={group.name}
+                          className="rounded-xl border border-[#1f1f1f] bg-[#0d0d0d] p-4"
+                        >
+                          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                            {group.name}
+                          </p>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            {group.fields.map((field) => (
+                              <FieldControl
+                                key={field.key}
+                                field={field}
+                                value={
+                                  navbarHeaderSection?.fields[field.key] ??
+                                  field.defaultValue ??
+                                  null
+                                }
+                                originalValue={getOriginalSharedSectionFieldValue(
+                                  DEXTA_ACADEMY_2_NAVBAR_SHARED_SECTION_ID,
+                                  field,
+                                )}
+                                onChange={(value) =>
+                                  updateSharedSectionField(
+                                    DEXTA_ACADEMY_2_NAVBAR_SHARED_SECTION_ID,
+                                    field.key,
+                                    value,
+                                  )
+                                }
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : (

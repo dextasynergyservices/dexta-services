@@ -2,7 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { ArrowUpRight, Play } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getCloudinaryUrl } from "@/lib/cloudinary";
 import type { AboutSpaceItemData } from "@/lib/about-defaults";
 
@@ -78,7 +83,7 @@ export function AboutSpaceSection({
 }: AboutSpaceSectionProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const selectedItem =
-    selectedIndex === null ? null : items[selectedIndex] ?? null;
+    selectedIndex === null ? null : (items[selectedIndex] ?? null);
 
   const previewSources = useMemo(
     () => items.map((item) => getPreviewSrc(item)),
@@ -124,7 +129,9 @@ export function AboutSpaceSection({
                   <div className="absolute inset-0 bg-gradient-to-t from-[rgba(7,19,57,0.72)] via-[rgba(7,19,57,0.18)] to-transparent" />
                   <div className="absolute left-4 top-4 flex items-center gap-2">
                     <span className="rounded-full border border-white/25 bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--about-brand-deep)]">
-                      {item.mediaType === "VIDEO" ? "Video Tour" : "Gallery View"}
+                      {item.mediaType === "VIDEO"
+                        ? "Video Tour"
+                        : "Gallery View"}
                     </span>
                     {item.mediaType === "VIDEO" ? (
                       <span className="rounded-full border border-white/25 bg-white/90 p-2 text-[var(--about-brand-deep)]">
@@ -176,7 +183,8 @@ export function AboutSpaceSection({
               </div>
 
               <div className="relative bg-black/70 p-4 sm:p-6">
-                {selectedItem.mediaType === "VIDEO" && selectedItem.mediaPublicId ? (
+                {selectedItem.mediaType === "VIDEO" &&
+                selectedItem.mediaPublicId ? (
                   <video
                     src={getVideoUrl(selectedItem.mediaPublicId)}
                     controls

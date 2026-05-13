@@ -1,157 +1,212 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>School Life - DXT Academy</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <header class="site-header">
-    <div class="container header__inner">
-      <a class="brand" href="index.html#home" aria-label="DXT Academy home">
-        <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 48 56" role="presentation">
-            <path d="M24 2 42 8v18c0 12.6-7.4 22.9-18 28C13.4 48.9 6 38.6 6 26V8L24 2Z" />
-            <path d="M24 12c-2.4 4.5-5.9 7.7-10 9.4 1.5 7.3 4.8 13 10 17.2 5.2-4.2 8.5-9.9 10-17.2-4.1-1.7-7.6-4.9-10-9.4Z" />
-            <path d="M24 18v20M18 25h12M24 18c2 4.4 4.9 7.6 8.5 9.6M24 18c-2 4.4-4.9 7.6-8.5 9.6" />
-          </svg>
-        </span>
-      </a>
-
-      <nav class="site-nav" id="site-nav">
-        <a href="index.html#home">Home</a>
-        <a href="about.html">About</a>
-        <a href="gallery.html">Gallery</a>
-        <a href="index.html#admissions">Admissions</a>
-        <a class="is-active" href="campus-life.html">School Life</a>
-        <a href="contact.html">Contact</a>
-      </nav>
-
-      <a class="header-portal" href="index.html#portal">Portal</a>
-      <a class="header-cta" href="index.html#admissions">Apply Now</a>
-
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-nav-toggle>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span class="sr-only">Toggle navigation</span>
-      </button>
-    </div>
-  </header>
-
-  <main class="page-main">
-    <section class="page-hero page-hero--campus">
-      <div class="container page-hero__inner">
-        <div class="page-hero__content">
-          <p class="page-kicker">School Life</p>
-          <h1>A calm, ambitious place to learn and belong.</h1>
-          <p>School life at DXT Academy is designed around focus, friendship, discovery, leadership, and a healthy rhythm of academic and personal growth.</p>
-          <div class="page-actions">
-            <a class="button button--olive" href="contact.html">Plan a Visit <span aria-hidden="true">-&gt;</span></a>
-          </div>
-        </div>
-
-        <div class="page-hero__media">
-          <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80" alt="Students walking together outdoors">
-        </div>
-      </div>
-    </section>
-
-    <section class="page-section school-life-overview">
-      <div class="container campus-feature-grid">
-        <article>
-          <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80" alt="Students collaborating">
-          <h2>Academic Rhythm</h2>
-          <p>Structured days, attentive teachers, and collaborative learning help students build discipline without losing curiosity.</p>
-        </article>
-        <article>
-          <img src="https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80" alt="Students in a leadership session">
-          <h2>Leadership Culture</h2>
-          <p>Students take part in clubs, projects, presentations, and service opportunities that build confidence over time.</p>
-        </article>
-        <article>
-          <img src="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=900&q=80" alt="Students studying in a library">
-          <h2>Spaces That Support Focus</h2>
-          <p>Classrooms, study corners, and gathering spaces are shaped for concentration, creativity, and healthy connection.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="page-section school-life-day">
-      <div class="container split-feature">
-        <div>
-          <p class="page-kicker">A Day at DXT</p>
-          <h2>Balanced routines that help students show up fully.</h2>
-        </div>
-        <ul class="campus-list">
-          <li>Morning advisory and personal organization</li>
-          <li>Focused academic blocks with active feedback</li>
-          <li>Clubs, mentorship, service, and project work</li>
-          <li>Reflection time that builds ownership and maturity</li>
-        </ul>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer" id="contact">
-    <div class="container site-footer__grid">
-      <div class="site-footer__brand">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>School Life - DXT Academy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header__inner">
         <a class="brand" href="index.html#home" aria-label="DXT Academy home">
           <span class="brand__mark" aria-hidden="true">
             <svg viewBox="0 0 48 56" role="presentation">
-              <path d="M24 2 42 8v18c0 12.6-7.4 22.9-18 28C13.4 48.9 6 38.6 6 26V8L24 2Z" />
-              <path d="M24 12c-2.4 4.5-5.9 7.7-10 9.4 1.5 7.3 4.8 13 10 17.2 5.2-4.2 8.5-9.9 10-17.2-4.1-1.7-7.6-4.9-10-9.4Z" />
-              <path d="M24 18v20M18 25h12M24 18c2 4.4 4.9 7.6 8.5 9.6M24 18c-2 4.4-4.9 7.6-8.5 9.6" />
+              <path
+                d="M24 2 42 8v18c0 12.6-7.4 22.9-18 28C13.4 48.9 6 38.6 6 26V8L24 2Z"
+              />
+              <path
+                d="M24 12c-2.4 4.5-5.9 7.7-10 9.4 1.5 7.3 4.8 13 10 17.2 5.2-4.2 8.5-9.9 10-17.2-4.1-1.7-7.6-4.9-10-9.4Z"
+              />
+              <path
+                d="M24 18v20M18 25h12M24 18c2 4.4 4.9 7.6 8.5 9.6M24 18c-2 4.4-4.9 7.6-8.5 9.6"
+              />
             </svg>
           </span>
-          <span class="brand__text">
-            <strong>DXT ACADEMY</strong>
-            <span>Nurturing. Inspiring. Leading.</span>
-          </span>
         </a>
-        <p>DXT Academy is committed to nurturing minds, building leaders, and creating impact for a better tomorrow.</p>
+
+        <nav class="site-nav" id="site-nav">
+          <a href="index.html#home">Home</a>
+          <a href="about.html">About</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="index.html#admissions">Admissions</a>
+          <a class="is-active" href="campus-life.html">School Life</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+
+        <a class="header-portal" href="index.html#portal">Portal</a>
+        <a class="header-cta" href="index.html#admissions">Apply Now</a>
+
+        <button
+          class="nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="site-nav"
+          data-nav-toggle
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+          <span class="sr-only">Toggle navigation</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="page-main">
+      <section class="page-hero page-hero--campus">
+        <div class="container page-hero__inner">
+          <div class="page-hero__content">
+            <p class="page-kicker">School Life</p>
+            <h1>A calm, ambitious place to learn and belong.</h1>
+            <p>
+              School life at DXT Academy is designed around focus, friendship,
+              discovery, leadership, and a healthy rhythm of academic and
+              personal growth.
+            </p>
+            <div class="page-actions">
+              <a class="button button--olive" href="contact.html"
+                >Plan a Visit <span aria-hidden="true">-&gt;</span></a
+              >
+            </div>
+          </div>
+
+          <div class="page-hero__media">
+            <img
+              src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1200&q=80"
+              alt="Students walking together outdoors"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section school-life-overview">
+        <div class="container campus-feature-grid">
+          <article>
+            <img
+              src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80"
+              alt="Students collaborating"
+            />
+            <h2>Academic Rhythm</h2>
+            <p>
+              Structured days, attentive teachers, and collaborative learning
+              help students build discipline without losing curiosity.
+            </p>
+          </article>
+          <article>
+            <img
+              src="https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80"
+              alt="Students in a leadership session"
+            />
+            <h2>Leadership Culture</h2>
+            <p>
+              Students take part in clubs, projects, presentations, and service
+              opportunities that build confidence over time.
+            </p>
+          </article>
+          <article>
+            <img
+              src="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=900&q=80"
+              alt="Students studying in a library"
+            />
+            <h2>Spaces That Support Focus</h2>
+            <p>
+              Classrooms, study corners, and gathering spaces are shaped for
+              concentration, creativity, and healthy connection.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="page-section school-life-day">
+        <div class="container split-feature">
+          <div>
+            <p class="page-kicker">A Day at DXT</p>
+            <h2>Balanced routines that help students show up fully.</h2>
+          </div>
+          <ul class="campus-list">
+            <li>Morning advisory and personal organization</li>
+            <li>Focused academic blocks with active feedback</li>
+            <li>Clubs, mentorship, service, and project work</li>
+            <li>Reflection time that builds ownership and maturity</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer" id="contact">
+      <div class="container site-footer__grid">
+        <div class="site-footer__brand">
+          <a class="brand" href="index.html#home" aria-label="DXT Academy home">
+            <span class="brand__mark" aria-hidden="true">
+              <svg viewBox="0 0 48 56" role="presentation">
+                <path
+                  d="M24 2 42 8v18c0 12.6-7.4 22.9-18 28C13.4 48.9 6 38.6 6 26V8L24 2Z"
+                />
+                <path
+                  d="M24 12c-2.4 4.5-5.9 7.7-10 9.4 1.5 7.3 4.8 13 10 17.2 5.2-4.2 8.5-9.9 10-17.2-4.1-1.7-7.6-4.9-10-9.4Z"
+                />
+                <path
+                  d="M24 18v20M18 25h12M24 18c2 4.4 4.9 7.6 8.5 9.6M24 18c-2 4.4-4.9 7.6-8.5 9.6"
+                />
+              </svg>
+            </span>
+            <span class="brand__text">
+              <strong>DXT ACADEMY</strong>
+              <span>Nurturing. Inspiring. Leading.</span>
+            </span>
+          </a>
+          <p>
+            DXT Academy is committed to nurturing minds, building leaders, and
+            creating impact for a better tomorrow.
+          </p>
+        </div>
+
+        <div>
+          <h3>Quick Links</h3>
+          <a href="about.html">About Us</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="index.html#admissions">Admissions</a>
+          <a href="campus-life.html">School Life</a>
+          <a href="contact.html">Contact Us</a>
+        </div>
+
+        <div>
+          <h3>Contact Us</h3>
+          <p>123 Excellence Way,<br />Abuja, Nigeria</p>
+          <p>+234 800 123 4567</p>
+          <p>info@dxtacademy.edu.ng</p>
+        </div>
+
+        <div>
+          <h3>Newsletter</h3>
+          <p>Stay updated with news and events.</p>
+          <form class="newsletter-form">
+            <label class="sr-only" for="newsletter-email">Email address</label>
+            <input
+              id="newsletter-email"
+              type="email"
+              placeholder="Enter your email"
+            />
+            <button type="submit" aria-label="Subscribe">-&gt;</button>
+          </form>
+        </div>
       </div>
 
-      <div>
-        <h3>Quick Links</h3>
-        <a href="about.html">About Us</a>
-        <a href="gallery.html">Gallery</a>
-        <a href="index.html#admissions">Admissions</a>
-        <a href="campus-life.html">School Life</a>
-        <a href="contact.html">Contact Us</a>
+      <div class="container site-footer__bottom">
+        <p>&copy; 2024 DXT Academy. All rights reserved.</p>
+        <div>
+          <a href="contact.html">Privacy Policy</a>
+          <a href="contact.html">Terms of Use</a>
+        </div>
       </div>
+    </footer>
 
-      <div>
-        <h3>Contact Us</h3>
-        <p>123 Excellence Way,<br>Abuja, Nigeria</p>
-        <p>+234 800 123 4567</p>
-        <p>info@dxtacademy.edu.ng</p>
-      </div>
-
-      <div>
-        <h3>Newsletter</h3>
-        <p>Stay updated with news and events.</p>
-        <form class="newsletter-form">
-          <label class="sr-only" for="newsletter-email">Email address</label>
-          <input id="newsletter-email" type="email" placeholder="Enter your email">
-          <button type="submit" aria-label="Subscribe">-&gt;</button>
-        </form>
-      </div>
-    </div>
-
-    <div class="container site-footer__bottom">
-      <p>&copy; 2024 DXT Academy. All rights reserved.</p>
-      <div>
-        <a href="contact.html">Privacy Policy</a>
-        <a href="contact.html">Terms of Use</a>
-      </div>
-    </div>
-  </footer>
-
-  <script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>

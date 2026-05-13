@@ -1,340 +1,673 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
-    <meta charset="utf-8">
+  <head>
+    <meta charset="utf-8" />
     <title>DXT GRADE</title>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta content="" name="keywords">
-    <meta content="" name="description">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="" name="keywords" />
+    <meta content="" name="description" />
 
     <!-- Favicon -->
-    <link href="https://res.cloudinary.com/dxoorukfj/image/upload/v1776695413/DXT-Logo_mmyi2e.png" rel="icon" type="image/png">
+    <link
+      href="https://res.cloudinary.com/dxoorukfj/image/upload/v1776695413/DXT-Logo_mmyi2e.png"
+      rel="icon"
+      type="image/png"
+    />
 
     <!-- Google Web Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&family=Inter:wght@600&family=Lobster+Two:wght@700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&family=Inter:wght@600&family=Lobster+Two:wght@700&family=Manrope:wght@500;700;800&display=swap"
+      rel="stylesheet"
+    />
+
     <!-- Icon Font Stylesheet -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
 
     <!-- Libraries Stylesheet -->
-    <link href="lib/animate/animate.min.css" rel="stylesheet">
-    <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+    <link href="lib/animate/animate.min.css" rel="stylesheet" />
+    <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet" />
 
     <!-- Customized Bootstrap Stylesheet -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap.min.css" rel="stylesheet" />
 
     <!-- Template Stylesheet -->
-    <link href="css/style.css" rel="stylesheet">
-    
+    <link href="css/style.css" rel="stylesheet" />
+
     <!-- Enhanced Stylesheet -->
-    <link href="css/enhanced.css" rel="stylesheet">
-</head>
+    <link href="css/enhanced.css" rel="stylesheet" />
+  </head>
 
-<body>
+  <body>
     <div class="container-xxl bg-white p-0">
-        <!-- Spinner Start -->
-        <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
-            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                <span class="sr-only">Loading...</span>
-            </div>
+      <!-- Spinner Start -->
+      <div
+        id="spinner"
+        class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center"
+      >
+        <div
+          class="spinner-border text-primary"
+          style="width: 3rem; height: 3rem"
+          role="status"
+        >
+          <span class="sr-only">Loading...</span>
         </div>
-        <!-- Spinner End -->
+      </div>
+      <!-- Spinner End -->
 
-
-        <!-- Navbar Start -->
-        <nav class="navbar navbar-expand-lg bg-white navbar-light sticky-top px-4 px-lg-5 py-lg-0">
-            <a href="index.html" class="navbar-brand">
-                <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1776695413/DXT-Logo_mmyi2e.png" alt="School logo">
-            </a>
-            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarCollapse">
-                <div class="navbar-nav mx-auto">
-                    <a href="index.html" class="nav-item nav-link">Home</a>
-                    <a href="about.html" class="nav-item nav-link active">About Us</a>
-                    <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Pages</a>
-                        <div class="dropdown-menu rounded-0 rounded-bottom border-0 shadow-sm m-0">
-                            <a href="index.html#admissions" class="dropdown-item">Admission</a>
-                            <a href="team.html" class="dropdown-item">Our Staff</a>
-                            <a href="testimonial.html" class="dropdown-item">Testimonials</a>
-                        </div>
-                    </div>
-                    <a href="index.html#contact" class="nav-item nav-link">Contact Us</a>
-                </div>
-                <a href="index.html#admissions" class="btn btn-primary rounded-pill px-3 d-none d-lg-block">Join Us<i class="fa fa-arrow-right ms-3"></i></a>
+      <!-- Navbar Start -->
+      <nav
+        class="navbar navbar-expand-lg bg-white navbar-light sticky-top px-4 px-lg-5 py-lg-0"
+      >
+        <a href="index.html" class="navbar-brand">
+          <img
+            src="https://res.cloudinary.com/dxoorukfj/image/upload/v1776695413/DXT-Logo_mmyi2e.png"
+            alt="School logo"
+          />
+        </a>
+        <button
+          type="button"
+          class="navbar-toggler"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarCollapse"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+          <div class="navbar-nav mx-auto">
+            <a href="index.html" class="nav-item nav-link">Home</a>
+            <a href="about.html" class="nav-item nav-link active">About Us</a>
+            <div class="nav-item dropdown">
+              <a
+                href="#"
+                class="nav-link dropdown-toggle"
+                data-bs-toggle="dropdown"
+                >Pages</a
+              >
+              <div
+                class="dropdown-menu rounded-0 rounded-bottom border-0 shadow-sm m-0"
+              >
+                <a href="index.html#admissions" class="dropdown-item"
+                  >Admission</a
+                >
+                <a href="team.html" class="dropdown-item">Our Staff</a>
+                <a href="testimonial.html" class="dropdown-item"
+                  >Testimonials</a
+                >
+              </div>
             </div>
-        </nav>
-        <!-- Navbar End -->
-
-
-        <main class="about-page">
-            <section class="about-page__hero">
-                <div class="container">
-                    <div class="about-page__hero-grid">
-                        <div class="about-page__hero-copy" data-reveal="up" data-reveal-delay="0">
-                            <h1 class="about-page__title">Shaping Minds, Character, and Future Leaders.</h1>
-                            <!-- <p class="about-page__lead">More than just a school, we are a community dedicated to the holistic growth of every child in Port Harcourt, combining strong academics with warmth, structure, and a genuine sense of belonging.</p> -->
-                            
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="about-page__section about-page__section--vision">
-                <div class="container">
-                    <div class="about-page__section-intro text-center" data-reveal="up" data-reveal-delay="0">
-                        <span class="about-page__eyebrow ">Vision &amp; Mission</span>
-                        <h2 class="about-page__heading">Purpose that guides every classroom experience.</h2>
-                    </div>
-                    <div class="about-page__split">
-                        <article class="about-page__panel" data-reveal="left" data-reveal-delay="80">
-                            <div class="about-page__panel-icon"><i class="fa fa-eye"></i></div>
-                            <h3>Our Vision</h3>
-                            <p>To be the leading educational institution in Nigeria, empowering the next generation to lead with confidence, curiosity, and integrity in an ever-changing world.</p>
-                        </article>
-                        <article class="about-page__panel about-page__panel--accent" data-reveal="right" data-reveal-delay="140">
-                            <div class="about-page__panel-icon"><i class="fa fa-compass"></i></div>
-                            <h3 class="about-page__mission-title">Our Mission</h3>
-                            <p>To provide a transformative British-Nigerian academic experience that nurtures individual potential, fosters creative thinking through STEAM, and instills a deep sense of cultural pride.</p>
-                        </article>
-                    </div>
-                </div>
-            </section>
-
-            <section class="about-page__section about-page__section--values">
-                <div class="container">
-                    <div class="about-page__section-intro text-center" data-reveal="up" data-reveal-delay="0">
-                        <span class="about-page__eyebrow">Core Values</span>
-                        <h2 class="about-page__heading">The qualities we build into everyday school life.</h2>
-                    </div>
-                    <div class="about-page__values">
-                        <article class="about-page__value" data-reveal="up" data-reveal-delay="40">
-                            <span class="about-page__value-icon"><i class="fa fa-award"></i></span>
-                            <h3>Excellence</h3>
-                            <p>Striving for the highest standards in academics, conduct, and care.</p>
-                        </article>
-                        <article class="about-page__value" data-reveal="up" data-reveal-delay="90">
-                            <span class="about-page__value-icon"><i class="fa fa-shield-alt"></i></span>
-                            <h3>Integrity</h3>
-                            <p>Teaching students to do what is right, even when no one is watching.</p>
-                        </article>
-                        <article class="about-page__value" data-reveal="up" data-reveal-delay="140">
-                            <span class="about-page__value-icon"><i class="fa fa-lightbulb"></i></span>
-                            <h3>Curiosity</h3>
-                            <p>Encouraging a lifelong love for learning, questions, and discovery.</p>
-                        </article>
-                        <article class="about-page__value" data-reveal="up" data-reveal-delay="190">
-                            <span class="about-page__value-icon"><i class="fa fa-hands-helping"></i></span>
-                            <h3>Community</h3>
-                            <p>Fostering empathy, collaboration, and mutual respect across our school family.</p>
-                        </article>
-                    </div>
-                </div>
-            </section>
-
-            <section class="about-page__section about-page__section--story">
-                <div class="container">
-                    <div class="about-page__story">
-                        <div class="about-page__story-copy" data-reveal="left" data-reveal-delay="0">
-                            <span class="about-page__eyebrow">Our Story</span>
-                            <h2 class="about-page__heading">12+ years of building a school where unique potential is taken seriously.</h2>
-                            <p class="about-page__copy">DXT GRADE was founded with a clear purpose: to create a learning environment where children receive strong academic preparation while also being known, guided, and inspired as individuals. From the first classroom to the vibrant school community we continue to build today, our focus has remained the same.</p>
-                            <p class="about-page__copy">We believe every child carries unique potential. That is why our culture blends consistency, creativity, and character formation so learners can grow into capable, grounded young leaders.</p>
-                            <div class="about-page__stats">
-                                <div class="about-page__stat">
-                                    <strong>12+</strong>
-                                    <span>Years of steady growth and trusted service.</span>
-                                </div>
-                                <div class="about-page__stat">
-                                    <strong>British-Nigerian</strong>
-                                    <span>A balanced academic foundation with local relevance.</span>
-                                </div>
-                                <div class="about-page__stat">
-                                    <strong>Whole Child</strong>
-                                    <span>Academic excellence, character, creativity, and confidence.</span>
-                                </div>
-                            </div>
-                            <button class="about-page__button" id="readMoreBtn" data-bs-toggle="modal" data-bs-target="#storyModal">Read More <i class="fa fa-arrow-right ms-2"></i></button>
-                        </div>
-                        <div class="about-page__story-visual" data-reveal="right" data-reveal-delay="120" data-parallax="24">
-                            <div class="about-page__story-image">
-                                <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1776695412/DXT5_hwgi1i.png" alt="Student focused during a creative classroom task">
-                            </div>
-                            <div class="about-page__story-quote">
-                                <small>Our Philosophy</small>
-                                <strong>Every child deserves a school experience that sees their strengths clearly and helps them grow with confidence.</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="about-page__section">
-                <div class="container">
-                    <div class="about-page__message">
-                        <div class="about-page__message-visual" data-reveal="left" data-reveal-delay="0" data-parallax="20">
-                            <div class="about-page__message-image">
-                                <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1776700427/Image_fx_1_fltlkk.jpg" alt="Warm school environment representing leadership and student support">
-                            </div>
-                        </div>
-                        <article class="about-page__message-card" data-reveal="right" data-reveal-delay="120">
-                            <span class="about-page__eyebrow">A Message from the Head of School</span>
-                            <h2 class="about-page__heading">Building a Legacy of Leadership.</h2>
-                            <p class="about-page__copy">Dear Parents, choosing the right school is one of the most important decisions you will make for your child. At DXT GRADE, we see education as a partnership built on trust, communication, and a shared commitment to helping every learner thrive.</p>
-                            <p class="about-page__copy">Our commitment is to create an environment where children are challenged academically, supported emotionally, and encouraged to grow into thoughtful, responsible young leaders. We are proud to walk that journey with our families every day.</p>
-                            <div class="about-page__signature">
-                                <strong>Head of School</strong>
-                                <span>DXT GRADE, Port Harcourt</span>
-                            </div>
-                        </article>
-                    </div>
-                </div>
-            </section>
-
-            <section class="about-page__section about-page__section--reasons">
-                <div class="container">
-                    <div class="about-page__section-intro text-center" data-reveal="up" data-reveal-delay="0">
-                        <span class="about-page__eyebrow">Why Families Choose DXT GRADE</span>
-                        <h2 class="about-page__heading">A school experience designed for both local excellence and future readiness.</h2>
-                    </div>
-                    <div class="about-page__reasons">
-                        <article class="about-page__reason" data-reveal="up" data-reveal-delay="40">
-                            <h3>British-Nigerian Curriculum</h3>
-                            <p>A robust academic foundation that prepares children for local and international success.</p>
-                        </article>
-                        <article class="about-page__reason" data-reveal="up" data-reveal-delay="90">
-                            <h3>STEAM Innovation</h3>
-                            <p>Hands-on learning experiences that turn theory into real-world curiosity and problem solving.</p>
-                        </article>
-                        <article class="about-page__reason" data-reveal="up" data-reveal-delay="140">
-                            <h3>Mother-Tongue Integration</h3>
-                            <p>Students grow globally competitive while remaining deeply connected to identity and culture.</p>
-                        </article>
-                        <article class="about-page__reason" data-reveal="up" data-reveal-delay="190">
-                            <h3>Holistic Growth</h3>
-                            <p>Music, arts, sports, discipline, and emotional development matter alongside academics.</p>
-                        </article>
-                    </div>
-                </div>
-            </section>
-
-            <section class="about-page__section about-page__section--faculty">
-                <div class="container">
-                    <div class="about-page__faculty-head" data-reveal="up" data-reveal-delay="0">
-                        <div>
-                            <span class="about-page__eyebrow">Leadership &amp; Faculty</span>
-                            <h2 class="about-page__heading">Qualified educators who care deeply about the student experience.</h2>
-                        </div>
-                        <a class="about-page__button" href="team.html">Meet Our Staff</a>
-                    </div>
-                    <div class="about-page__faculty-grid">
-                        <article class="about-page__faculty-card" data-reveal="up" data-reveal-delay="40">
-                            <span class="about-page__faculty-mark">01</span>
-                            <h3>Experienced Class Teachers</h3>
-                            <p>Teachers who combine strong classroom structure with warmth, consistency, and close pupil support.</p>
-                            <ul class="about-page__list">
-                                <li>Age-appropriate learning plans</li>
-                                <li>Regular parent communication</li>
-                                <li>Careful progress monitoring</li>
-                            </ul>
-                        </article>
-                        <article class="about-page__faculty-card" data-reveal="up" data-reveal-delay="90">
-                            <span class="about-page__faculty-mark">02</span>
-                            <h3>Specialist Learning Support</h3>
-                            <p>Dedicated guidance across literacy, numeracy, creative learning, and enquiry-based classroom practice.</p>
-                            <ul class="about-page__list">
-                                <li>STEAM-rich experiences</li>
-                                <li>Creative arts integration</li>
-                                <li>Confidence-building routines</li>
-                            </ul>
-                        </article>
-                        <article class="about-page__faculty-card" data-reveal="up" data-reveal-delay="140">
-                            <span class="about-page__faculty-mark">03</span>
-                            <h3>Pastoral &amp; Character Formation</h3>
-                            <p>A team culture focused on respect, responsibility, leadership habits, and the emotional wellbeing of every child.</p>
-                            <ul class="about-page__list">
-                                <li>Strong values formation</li>
-                                <li>Positive behaviour support</li>
-                                <li>Safe and nurturing environment</li>
-                            </ul>
-                        </article>
-                    </div>
-                </div>
-            </section>
-
-            <section class="about-page__cta">
-                <div class="container">
-                    <div class="about-page__cta-card" data-reveal="up" data-reveal-delay="0">
-                        <span class="about-page__eyebrow">Join the DXT GRADE Family</span>
-                        <h2 class="about-page__heading">We are currently accepting applications for the 2026/2027 academic session.</h2>
-                        <p class="about-page__copy">Take the next step by exploring the admissions process online.</p>
-                        <div class="about-page__actions about-page__actions--center">
-                            <a class="about-page__button" href="index.html#admissions">View Admissions Process</a>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Story Modal -->
-        <div class="modal fade" id="storyModal" tabindex="-1" aria-labelledby="storyModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header border-bottom">
-                        <h3 class="modal-title" id="storyModalLabel">Our School Story</h3>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="about-page__story-modal-content">
-                            <h4 class="mb-3">12+ Years of Building Excellence</h4>
-                            <p>DXT GRADE was founded with a clear and unwavering purpose: to create a learning environment where children receive strong academic preparation while also being known, guided, and inspired as individuals. From the first classroom to the vibrant school community we continue to build today, our focus has remained steadfast and true.</p>
-                            
-                            <p>Our journey began with a simple belief that every child deserves a school experience that recognizes their unique strengths and helps them grow with confidence. We started small, but with great intention. What began as a handful of dedicated educators has evolved into a thriving institution, yet we have never lost sight of what made us special from day one: our commitment to knowing each child deeply.</p>
-                            
-                            <h5 class="mt-4 mb-2">Our Foundation</h5>
-                            <p>We believe every child carries unique potential within them. That is why our culture blends consistency, creativity, and character formation so learners can grow into capable, grounded young leaders. We don't just teach subjects; we cultivate curious minds, respectful hearts, and resilient spirits.</p>
-                            
-                            <h5 class="mt-4 mb-2">A British-Nigerian Education</h5>
-                            <p>Our British-Nigerian curriculum provides a robust academic foundation that prepares children for both local and international success. This balanced approach ensures our learners are competitive globally while remaining deeply rooted in their cultural identity and Nigerian heritage.</p>
-                            
-                            <h5 class="mt-4 mb-2">The Whole Child Approach</h5>
-                            <p>Academic excellence matters, but it is only part of the picture. At DXT GRADE, we develop character through discipline and integrity. We foster creativity through arts, music, and hands-on learning. We build confidence through sports, leadership opportunities, and a safe, nurturing environment where every child is valued.</p>
-                            
-                            <p class="mt-4">Today, DXT GRADE stands as a beacon of educational excellence in Port Harcourt. Our alumni are thriving in secondary schools, universities, and beyond. Our current community of parents and learners continues to trust us with one of their most precious responsibilities: their child's growth and development.</p>
-                            
-                            <p>As we look to the future, we remain committed to our founding vision. We will continue to be a school where unique potential is taken seriously, where every voice is heard, and where children discover not just what they can achieve, but who they can become.</p>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-top">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-                </div>
-            </div>
+            <a href="index.html#contact" class="nav-item nav-link"
+              >Contact Us</a
+            >
+          </div>
+          <a
+            href="index.html#admissions"
+            class="btn btn-primary rounded-pill px-3 d-none d-lg-block"
+            >Join Us<i class="fa fa-arrow-right ms-3"></i
+          ></a>
         </div>
+      </nav>
+      <!-- Navbar End -->
 
-        <footer class="landing-footer">
-            <div class="container">
-                <div class="landing-footer__inner">
-                    <p>&copy; DXT GRADE. All rights reserved.</p>
-                    <div class="landing-footer__links">
-                        <a href="index.html">Home</a>
-                        <a href="about.html">About</a>
-                        <a href="index.html#admissions">Admissions</a>
-                        <a href="contact.html">Contact</a>
-                    </div>
-                </div>
+      <main class="about-page">
+        <section class="about-page__hero">
+          <div class="container">
+            <div class="about-page__hero-grid">
+              <div
+                class="about-page__hero-copy"
+                data-reveal="up"
+                data-reveal-delay="0"
+              >
+                <h1 class="about-page__title">
+                  Shaping Minds, Character, and Future Leaders.
+                </h1>
+                <!-- <p class="about-page__lead">More than just a school, we are a community dedicated to the holistic growth of every child in Port Harcourt, combining strong academics with warmth, structure, and a genuine sense of belonging.</p> -->
+              </div>
             </div>
-        </footer>
+          </div>
+        </section>
 
+        <section class="about-page__section about-page__section--vision">
+          <div class="container">
+            <div
+              class="about-page__section-intro text-center"
+              data-reveal="up"
+              data-reveal-delay="0"
+            >
+              <span class="about-page__eyebrow">Vision &amp; Mission</span>
+              <h2 class="about-page__heading">
+                Purpose that guides every classroom experience.
+              </h2>
+            </div>
+            <div class="about-page__split">
+              <article
+                class="about-page__panel"
+                data-reveal="left"
+                data-reveal-delay="80"
+              >
+                <div class="about-page__panel-icon">
+                  <i class="fa fa-eye"></i>
+                </div>
+                <h3>Our Vision</h3>
+                <p>
+                  To be the leading educational institution in Nigeria,
+                  empowering the next generation to lead with confidence,
+                  curiosity, and integrity in an ever-changing world.
+                </p>
+              </article>
+              <article
+                class="about-page__panel about-page__panel--accent"
+                data-reveal="right"
+                data-reveal-delay="140"
+              >
+                <div class="about-page__panel-icon">
+                  <i class="fa fa-compass"></i>
+                </div>
+                <h3 class="about-page__mission-title">Our Mission</h3>
+                <p>
+                  To provide a transformative British-Nigerian academic
+                  experience that nurtures individual potential, fosters
+                  creative thinking through STEAM, and instills a deep sense of
+                  cultural pride.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
 
-        <!-- Back to Top -->
-        <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
+        <section class="about-page__section about-page__section--values">
+          <div class="container">
+            <div
+              class="about-page__section-intro text-center"
+              data-reveal="up"
+              data-reveal-delay="0"
+            >
+              <span class="about-page__eyebrow">Core Values</span>
+              <h2 class="about-page__heading">
+                The qualities we build into everyday school life.
+              </h2>
+            </div>
+            <div class="about-page__values">
+              <article
+                class="about-page__value"
+                data-reveal="up"
+                data-reveal-delay="40"
+              >
+                <span class="about-page__value-icon"
+                  ><i class="fa fa-award"></i
+                ></span>
+                <h3>Excellence</h3>
+                <p>
+                  Striving for the highest standards in academics, conduct, and
+                  care.
+                </p>
+              </article>
+              <article
+                class="about-page__value"
+                data-reveal="up"
+                data-reveal-delay="90"
+              >
+                <span class="about-page__value-icon"
+                  ><i class="fa fa-shield-alt"></i
+                ></span>
+                <h3>Integrity</h3>
+                <p>
+                  Teaching students to do what is right, even when no one is
+                  watching.
+                </p>
+              </article>
+              <article
+                class="about-page__value"
+                data-reveal="up"
+                data-reveal-delay="140"
+              >
+                <span class="about-page__value-icon"
+                  ><i class="fa fa-lightbulb"></i
+                ></span>
+                <h3>Curiosity</h3>
+                <p>
+                  Encouraging a lifelong love for learning, questions, and
+                  discovery.
+                </p>
+              </article>
+              <article
+                class="about-page__value"
+                data-reveal="up"
+                data-reveal-delay="190"
+              >
+                <span class="about-page__value-icon"
+                  ><i class="fa fa-hands-helping"></i
+                ></span>
+                <h3>Community</h3>
+                <p>
+                  Fostering empathy, collaboration, and mutual respect across
+                  our school family.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="about-page__section about-page__section--story">
+          <div class="container">
+            <div class="about-page__story">
+              <div
+                class="about-page__story-copy"
+                data-reveal="left"
+                data-reveal-delay="0"
+              >
+                <span class="about-page__eyebrow">Our Story</span>
+                <h2 class="about-page__heading">
+                  12+ years of building a school where unique potential is taken
+                  seriously.
+                </h2>
+                <p class="about-page__copy">
+                  DXT GRADE was founded with a clear purpose: to create a
+                  learning environment where children receive strong academic
+                  preparation while also being known, guided, and inspired as
+                  individuals. From the first classroom to the vibrant school
+                  community we continue to build today, our focus has remained
+                  the same.
+                </p>
+                <p class="about-page__copy">
+                  We believe every child carries unique potential. That is why
+                  our culture blends consistency, creativity, and character
+                  formation so learners can grow into capable, grounded young
+                  leaders.
+                </p>
+                <div class="about-page__stats">
+                  <div class="about-page__stat">
+                    <strong>12+</strong>
+                    <span>Years of steady growth and trusted service.</span>
+                  </div>
+                  <div class="about-page__stat">
+                    <strong>British-Nigerian</strong>
+                    <span
+                      >A balanced academic foundation with local
+                      relevance.</span
+                    >
+                  </div>
+                  <div class="about-page__stat">
+                    <strong>Whole Child</strong>
+                    <span
+                      >Academic excellence, character, creativity, and
+                      confidence.</span
+                    >
+                  </div>
+                </div>
+                <button
+                  class="about-page__button"
+                  id="readMoreBtn"
+                  data-bs-toggle="modal"
+                  data-bs-target="#storyModal"
+                >
+                  Read More <i class="fa fa-arrow-right ms-2"></i>
+                </button>
+              </div>
+              <div
+                class="about-page__story-visual"
+                data-reveal="right"
+                data-reveal-delay="120"
+                data-parallax="24"
+              >
+                <div class="about-page__story-image">
+                  <img
+                    src="https://res.cloudinary.com/dxoorukfj/image/upload/v1776695412/DXT5_hwgi1i.png"
+                    alt="Student focused during a creative classroom task"
+                  />
+                </div>
+                <div class="about-page__story-quote">
+                  <small>Our Philosophy</small>
+                  <strong
+                    >Every child deserves a school experience that sees their
+                    strengths clearly and helps them grow with
+                    confidence.</strong
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="about-page__section">
+          <div class="container">
+            <div class="about-page__message">
+              <div
+                class="about-page__message-visual"
+                data-reveal="left"
+                data-reveal-delay="0"
+                data-parallax="20"
+              >
+                <div class="about-page__message-image">
+                  <img
+                    src="https://res.cloudinary.com/dxoorukfj/image/upload/v1776700427/Image_fx_1_fltlkk.jpg"
+                    alt="Warm school environment representing leadership and student support"
+                  />
+                </div>
+              </div>
+              <article
+                class="about-page__message-card"
+                data-reveal="right"
+                data-reveal-delay="120"
+              >
+                <span class="about-page__eyebrow"
+                  >A Message from the Head of School</span
+                >
+                <h2 class="about-page__heading">
+                  Building a Legacy of Leadership.
+                </h2>
+                <p class="about-page__copy">
+                  Dear Parents, choosing the right school is one of the most
+                  important decisions you will make for your child. At DXT
+                  GRADE, we see education as a partnership built on trust,
+                  communication, and a shared commitment to helping every
+                  learner thrive.
+                </p>
+                <p class="about-page__copy">
+                  Our commitment is to create an environment where children are
+                  challenged academically, supported emotionally, and encouraged
+                  to grow into thoughtful, responsible young leaders. We are
+                  proud to walk that journey with our families every day.
+                </p>
+                <div class="about-page__signature">
+                  <strong>Head of School</strong>
+                  <span>DXT GRADE, Port Harcourt</span>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="about-page__section about-page__section--reasons">
+          <div class="container">
+            <div
+              class="about-page__section-intro text-center"
+              data-reveal="up"
+              data-reveal-delay="0"
+            >
+              <span class="about-page__eyebrow"
+                >Why Families Choose DXT GRADE</span
+              >
+              <h2 class="about-page__heading">
+                A school experience designed for both local excellence and
+                future readiness.
+              </h2>
+            </div>
+            <div class="about-page__reasons">
+              <article
+                class="about-page__reason"
+                data-reveal="up"
+                data-reveal-delay="40"
+              >
+                <h3>British-Nigerian Curriculum</h3>
+                <p>
+                  A robust academic foundation that prepares children for local
+                  and international success.
+                </p>
+              </article>
+              <article
+                class="about-page__reason"
+                data-reveal="up"
+                data-reveal-delay="90"
+              >
+                <h3>STEAM Innovation</h3>
+                <p>
+                  Hands-on learning experiences that turn theory into real-world
+                  curiosity and problem solving.
+                </p>
+              </article>
+              <article
+                class="about-page__reason"
+                data-reveal="up"
+                data-reveal-delay="140"
+              >
+                <h3>Mother-Tongue Integration</h3>
+                <p>
+                  Students grow globally competitive while remaining deeply
+                  connected to identity and culture.
+                </p>
+              </article>
+              <article
+                class="about-page__reason"
+                data-reveal="up"
+                data-reveal-delay="190"
+              >
+                <h3>Holistic Growth</h3>
+                <p>
+                  Music, arts, sports, discipline, and emotional development
+                  matter alongside academics.
+                </p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="about-page__section about-page__section--faculty">
+          <div class="container">
+            <div
+              class="about-page__faculty-head"
+              data-reveal="up"
+              data-reveal-delay="0"
+            >
+              <div>
+                <span class="about-page__eyebrow"
+                  >Leadership &amp; Faculty</span
+                >
+                <h2 class="about-page__heading">
+                  Qualified educators who care deeply about the student
+                  experience.
+                </h2>
+              </div>
+              <a class="about-page__button" href="team.html">Meet Our Staff</a>
+            </div>
+            <div class="about-page__faculty-grid">
+              <article
+                class="about-page__faculty-card"
+                data-reveal="up"
+                data-reveal-delay="40"
+              >
+                <span class="about-page__faculty-mark">01</span>
+                <h3>Experienced Class Teachers</h3>
+                <p>
+                  Teachers who combine strong classroom structure with warmth,
+                  consistency, and close pupil support.
+                </p>
+                <ul class="about-page__list">
+                  <li>Age-appropriate learning plans</li>
+                  <li>Regular parent communication</li>
+                  <li>Careful progress monitoring</li>
+                </ul>
+              </article>
+              <article
+                class="about-page__faculty-card"
+                data-reveal="up"
+                data-reveal-delay="90"
+              >
+                <span class="about-page__faculty-mark">02</span>
+                <h3>Specialist Learning Support</h3>
+                <p>
+                  Dedicated guidance across literacy, numeracy, creative
+                  learning, and enquiry-based classroom practice.
+                </p>
+                <ul class="about-page__list">
+                  <li>STEAM-rich experiences</li>
+                  <li>Creative arts integration</li>
+                  <li>Confidence-building routines</li>
+                </ul>
+              </article>
+              <article
+                class="about-page__faculty-card"
+                data-reveal="up"
+                data-reveal-delay="140"
+              >
+                <span class="about-page__faculty-mark">03</span>
+                <h3>Pastoral &amp; Character Formation</h3>
+                <p>
+                  A team culture focused on respect, responsibility, leadership
+                  habits, and the emotional wellbeing of every child.
+                </p>
+                <ul class="about-page__list">
+                  <li>Strong values formation</li>
+                  <li>Positive behaviour support</li>
+                  <li>Safe and nurturing environment</li>
+                </ul>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="about-page__cta">
+          <div class="container">
+            <div
+              class="about-page__cta-card"
+              data-reveal="up"
+              data-reveal-delay="0"
+            >
+              <span class="about-page__eyebrow">Join the DXT GRADE Family</span>
+              <h2 class="about-page__heading">
+                We are currently accepting applications for the 2026/2027
+                academic session.
+              </h2>
+              <p class="about-page__copy">
+                Take the next step by exploring the admissions process online.
+              </p>
+              <div class="about-page__actions about-page__actions--center">
+                <a class="about-page__button" href="index.html#admissions"
+                  >View Admissions Process</a
+                >
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Story Modal -->
+      <div
+        class="modal fade"
+        id="storyModal"
+        tabindex="-1"
+        aria-labelledby="storyModalLabel"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content">
+            <div class="modal-header border-bottom">
+              <h3 class="modal-title" id="storyModalLabel">Our School Story</h3>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div class="about-page__story-modal-content">
+                <h4 class="mb-3">12+ Years of Building Excellence</h4>
+                <p>
+                  DXT GRADE was founded with a clear and unwavering purpose: to
+                  create a learning environment where children receive strong
+                  academic preparation while also being known, guided, and
+                  inspired as individuals. From the first classroom to the
+                  vibrant school community we continue to build today, our focus
+                  has remained steadfast and true.
+                </p>
+
+                <p>
+                  Our journey began with a simple belief that every child
+                  deserves a school experience that recognizes their unique
+                  strengths and helps them grow with confidence. We started
+                  small, but with great intention. What began as a handful of
+                  dedicated educators has evolved into a thriving institution,
+                  yet we have never lost sight of what made us special from day
+                  one: our commitment to knowing each child deeply.
+                </p>
+
+                <h5 class="mt-4 mb-2">Our Foundation</h5>
+                <p>
+                  We believe every child carries unique potential within them.
+                  That is why our culture blends consistency, creativity, and
+                  character formation so learners can grow into capable,
+                  grounded young leaders. We don't just teach subjects; we
+                  cultivate curious minds, respectful hearts, and resilient
+                  spirits.
+                </p>
+
+                <h5 class="mt-4 mb-2">A British-Nigerian Education</h5>
+                <p>
+                  Our British-Nigerian curriculum provides a robust academic
+                  foundation that prepares children for both local and
+                  international success. This balanced approach ensures our
+                  learners are competitive globally while remaining deeply
+                  rooted in their cultural identity and Nigerian heritage.
+                </p>
+
+                <h5 class="mt-4 mb-2">The Whole Child Approach</h5>
+                <p>
+                  Academic excellence matters, but it is only part of the
+                  picture. At DXT GRADE, we develop character through discipline
+                  and integrity. We foster creativity through arts, music, and
+                  hands-on learning. We build confidence through sports,
+                  leadership opportunities, and a safe, nurturing environment
+                  where every child is valued.
+                </p>
+
+                <p class="mt-4">
+                  Today, DXT GRADE stands as a beacon of educational excellence
+                  in Port Harcourt. Our alumni are thriving in secondary
+                  schools, universities, and beyond. Our current community of
+                  parents and learners continues to trust us with one of their
+                  most precious responsibilities: their child's growth and
+                  development.
+                </p>
+
+                <p>
+                  As we look to the future, we remain committed to our founding
+                  vision. We will continue to be a school where unique potential
+                  is taken seriously, where every voice is heard, and where
+                  children discover not just what they can achieve, but who they
+                  can become.
+                </p>
+              </div>
+            </div>
+            <div class="modal-footer border-top">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="landing-footer">
+        <div class="container">
+          <div class="landing-footer__inner">
+            <p>&copy; DXT GRADE. All rights reserved.</p>
+            <div class="landing-footer__links">
+              <a href="index.html">Home</a>
+              <a href="about.html">About</a>
+              <a href="index.html#admissions">Admissions</a>
+              <a href="contact.html">Contact</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      <!-- Back to Top -->
+      <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"
+        ><i class="bi bi-arrow-up"></i
+      ></a>
     </div>
 
     <!-- JavaScript Libraries -->
@@ -347,6 +680,5 @@
 
     <!-- Template Javascript -->
     <script src="js/main.js"></script>
-</body>
-
+  </body>
 </html>

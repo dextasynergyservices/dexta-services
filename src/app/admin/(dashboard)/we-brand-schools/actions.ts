@@ -12,6 +12,7 @@ import { getCloudinaryPublicId } from "@/lib/cloudinary";
 import { uploadRawBufferToCloudinary } from "@/lib/cloudinary-server";
 import { buildRegularEmailHtml, sendEmail } from "@/lib/email";
 import { buildSchoolWebsiteProjectExportZip } from "@/lib/school-template-exporter";
+import { getSchoolWebsiteProjectPreviewHref } from "@/lib/school-template-preview-links";
 import {
   buildSchoolTemplateProjectContent,
   buildSchoolTemplateSourceSnapshot,
@@ -84,6 +85,9 @@ type SaveSchoolWebsiteProjectOptions = {
 };
 type SaveSchoolWebsiteProjectDraftResult = ActionResult & {
   updatedAt?: string;
+};
+type GenerateSchoolWebsiteProjectPreviewLinkResult = ActionResult & {
+  previewHref?: string;
 };
 type ExportSchoolWebsiteProjectResult = ActionResult & {
   exportZipUrl?: string;
@@ -3243,6 +3247,73 @@ export async function saveSchoolWebsiteProjectDraft(
   options: SaveSchoolWebsiteProjectOptions = { createRevision: true },
 ): Promise<SaveSchoolWebsiteProjectDraftResult> {
   return saveSchoolWebsiteProject(projectId, contentJson, options);
+}
+
+export async function generateSchoolWebsiteProjectPreviewLink({
+  projectId,
+  applicationId,
+  pageSlug,
+}: {
+  projectId: string;
+  applicationId: string;
+  pageSlug: string;
+}): Promise<GenerateSchoolWebsiteProjectPreviewLinkResult> {
+  try {
+    await requireAuth();
+
+    const project = await weBrandSchoolsPrisma.schoolWebsiteProject.findUnique({
+      where: { id: projectId },
+      select: {
+        applicationId: true,
+        contentJson: true,
+      },
+    });
+
+    if (!project) {
+      return {
+        success: false,
+        message: "School website project was not found.",
+      };
+    }
+
+    if (project.applicationId !== applicationId) {
+      return {
+        success: false,
+        message: "Project does not belong to the selected application.",
+      };
+    }
+
+    const parsedContent = parseSchoolTemplateProjectContent(
+      project.contentJson,
+    );
+    if (
+      !parsedContent.success ||
+      !parsedContent.data.pages.some((page) => page.slug === pageSlug)
+    ) {
+      return {
+        success: false,
+        message: "Preview page was not found for this project.",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Preview link generated.",
+      previewHref: getSchoolWebsiteProjectPreviewHref({
+        projectId,
+        pageSlug,
+      }),
+    };
+  } catch (error) {
+    console.error("[generateSchoolWebsiteProjectPreviewLink]", error);
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to generate preview link.",
+    };
+  }
 }
 
 export async function resetSchoolWebsiteProjectToOriginal(

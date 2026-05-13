@@ -300,8 +300,10 @@ The public experience must follow this flow:
 9. Form step 2 slides in and asks whether the school already has a domain.
 10. If `Yes`, user provides the existing domain name.
 11. If `No`, user provides:
-   - preferred domain name
-   - second preferred domain name
+
+- preferred domain name
+- second preferred domain name
+
 12. User submits the application.
 13. User sees a success state confirming the request was received.
 

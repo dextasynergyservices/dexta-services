@@ -86,12 +86,8 @@ const admissionCloseButtons = document.querySelectorAll(
   "[data-admission-modal-close]",
 );
 const storyModal = document.getElementById("story-modal");
-const storyOpenButtons = document.querySelectorAll(
-  "[data-story-modal-open]",
-);
-const storyCloseButtons = document.querySelectorAll(
-  "[data-story-modal-close]",
-);
+const storyOpenButtons = document.querySelectorAll("[data-story-modal-open]");
+const storyCloseButtons = document.querySelectorAll("[data-story-modal-close]");
 
 const shouldUseLoader = Boolean(body && pageLoader && isHomePage);
 const shouldResetScroll = !window.location.hash;
@@ -249,7 +245,8 @@ function setAdmissionModalState(isOpen) {
       const closeButton = admissionModal.querySelector(
         ".admission-modal__close",
       );
-      const focusTarget = closeButton || getAdmissionModalFocusableElements()[0];
+      const focusTarget =
+        closeButton || getAdmissionModalFocusableElements()[0];
       focusTarget?.focus();
     }, 0);
 
@@ -399,8 +396,7 @@ function getFilteredGalleryItems() {
   return Array.from(galleryItems).filter((item) => {
     const categories = item.dataset.galleryItem.split(" ");
     return (
-      activeGalleryFilter === "all" ||
-      categories.includes(activeGalleryFilter)
+      activeGalleryFilter === "all" || categories.includes(activeGalleryFilter)
     );
   });
 }
@@ -712,7 +708,10 @@ storyCloseButtons.forEach((button) => {
 // Close story modal when clicking on backdrop
 if (storyModal) {
   storyModal.addEventListener("click", (event) => {
-    if (event.target === storyModal || event.target.classList.contains("story-modal__backdrop")) {
+    if (
+      event.target === storyModal ||
+      event.target.classList.contains("story-modal__backdrop")
+    ) {
       setStoryModalState(false);
     }
   });

@@ -312,7 +312,9 @@ button {
   margin: 0.28rem 0;
   border-radius: 999px;
   background: var(--navy);
-  transition: transform 220ms ease, opacity 220ms ease;
+  transition:
+    transform 220ms ease,
+    opacity 220ms ease;
 }
 
 .hero {
@@ -395,7 +397,9 @@ button {
   border: 0;
   border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: transform 180ms ease, background 180ms ease;
+  transition:
+    transform 180ms ease,
+    background 180ms ease;
 }
 
 .button--primary {
@@ -781,7 +785,9 @@ button {
   color: #fcfcfa;
   font-size: 0.9rem;
   font-weight: 800;
-  transition: transform 180ms ease, background 180ms ease;
+  transition:
+    transform 180ms ease,
+    background 180ms ease;
 }
 
 .about-preview__button:hover,
@@ -1088,7 +1094,10 @@ button {
   position: absolute;
   width: 7.5rem;
   height: 7.5rem;
-  background-image: radial-gradient(rgba(110, 127, 63, 0.45) 1.2px, transparent 1.2px);
+  background-image: radial-gradient(
+    rgba(110, 127, 63, 0.45) 1.2px,
+    transparent 1.2px
+  );
   background-size: 0.85rem 0.85rem;
   pointer-events: none;
 }
@@ -1378,7 +1387,9 @@ body.modal-open {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 240ms ease, visibility 240ms ease;
+  transition:
+    opacity 240ms ease,
+    visibility 240ms ease;
 }
 
 .admission-modal.is-open {
@@ -1454,7 +1465,9 @@ body.modal-open {
   background: rgba(212, 164, 55, 0.14);
   color: #fcfcfa;
   cursor: pointer;
-  transition: background 180ms ease, transform 180ms ease;
+  transition:
+    background 180ms ease,
+    transform 180ms ease;
 }
 
 .admission-modal__close:hover,
@@ -1526,7 +1539,9 @@ body.modal-open {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 240ms ease, visibility 240ms ease;
+  transition:
+    opacity 240ms ease,
+    visibility 240ms ease;
 }
 
 .image-modal.is-open {
@@ -1577,7 +1592,10 @@ body.modal-open {
   background: rgba(49, 64, 28, 0.78);
   color: #fcfcfa;
   cursor: pointer;
-  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
 }
 
 .image-modal__close:hover,
@@ -1664,7 +1682,8 @@ body.modal-open {
     opacity: 0;
     animation: none !important;
     transform: translate3d(0, 2.2rem, 0);
-    transition: opacity 760ms cubic-bezier(0.16, 1, 0.3, 1),
+    transition:
+      opacity 760ms cubic-bezier(0.16, 1, 0.3, 1),
       transform 760ms cubic-bezier(0.16, 1, 0.3, 1);
     transition-delay: var(--reveal-delay, 0ms);
     will-change: opacity, transform;
@@ -1704,7 +1723,7 @@ body.modal-open {
   .testimonial-dots,
   .journey-card,
   .site-footer__grid > div,
-    .site-footer__bottom {
+  .site-footer__bottom {
     opacity: 0;
     animation-duration: 1.35s;
     animation-fill-mode: both;
@@ -2141,7 +2160,10 @@ body.modal-open {
     opacity: 0;
     visibility: hidden;
     transform: translateY(-12px);
-    transition: opacity 220ms ease, transform 220ms ease, visibility 220ms ease;
+    transition:
+      opacity 220ms ease,
+      transform 220ms ease,
+      visibility 220ms ease;
   }
 
   body.nav-open .site-nav {
@@ -2857,7 +2879,9 @@ body.modal-open {
   font-size: 0.88rem;
   font-weight: 800;
   cursor: pointer;
-  transition: background 180ms ease, transform 180ms ease;
+  transition:
+    background 180ms ease,
+    transform 180ms ease;
 }
 
 .story-read-more:hover,
@@ -2949,7 +2973,9 @@ body.modal-open {
   height: 100%;
   object-fit: cover;
   opacity: 0.78;
-  transition: transform 420ms ease, opacity 420ms ease;
+  transition:
+    transform 420ms ease,
+    opacity 420ms ease;
 }
 
 .gallery-card::after {

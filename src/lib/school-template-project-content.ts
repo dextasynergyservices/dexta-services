@@ -32,6 +32,7 @@ export type SchoolTemplateProjectTheme = {
   primaryColor: string;
   secondaryColor: string;
   fontFamily: string;
+  navLinkFontFamily: string;
   loadingBackgroundColor: string;
   navBarColor: string;
   navBarTransparent: boolean;
@@ -230,6 +231,7 @@ export const schoolTemplateProjectContentSchema = z.object({
     primaryColor: z.string().min(1),
     secondaryColor: z.string().min(1),
     fontFamily: z.string().min(1),
+    navLinkFontFamily: z.string().default(""),
     loadingBackgroundColor: z.string().default("#ffffff"),
     navBarColor: z.string().default("#ffffff"),
     navBarTransparent: z.boolean().default(false),
@@ -308,6 +310,9 @@ const SAFE_CSS_LENGTH_PATTERN =
 
 const SAFE_FONT_FAMILY_PATTERN = /^[a-zA-Z0-9\s"',()._-]+$/;
 
+const SAFE_FONT_STYLE_PATTERN =
+  /^(?:normal|italic|oblique(?:\s+\d{1,2}deg)?|inherit)$/;
+
 const SAFE_TEXT_ALIGN_PATTERN = /^(?:left|right|center|justify|inherit)$/;
 
 const SAFE_TEXT_DECORATION_PATTERN =
@@ -325,6 +330,10 @@ const IFRAME_EMBED_FIELD_KEYS = new Set([
 const SECTION_FIELD_ALIASES: Record<string, Record<string, string[]>> = {
   "contact-details": {
     address: ["location"],
+  },
+  values: {
+    introTitle: ["title"],
+    introBody: ["body"],
   },
 };
 
@@ -531,6 +540,7 @@ function sanitizeRichText(value: string) {
         "background-color": [SAFE_CSS_COLOR_PATTERN],
         "font-size": [SAFE_CSS_LENGTH_PATTERN],
         "font-family": [SAFE_FONT_FAMILY_PATTERN],
+        "font-style": [SAFE_FONT_STYLE_PATTERN],
         "text-align": [SAFE_TEXT_ALIGN_PATTERN],
         "text-decoration": [SAFE_TEXT_DECORATION_PATTERN],
       },
@@ -1169,10 +1179,20 @@ function sanitizeSectionContent(
       ? {
           items: section.repeatable.items.map((item) =>
             Object.fromEntries(
-              Object.entries(item).map(([key, value]) => [
-                key,
-                typeof value === "string" ? sanitizePlainText(value) : value,
-              ]),
+              Object.entries(item).map(([key, value]) => {
+                if (typeof value !== "string") {
+                  return [key, value];
+                }
+
+                const field = fieldMap.get(`${section.id}:${key}`);
+                const sanitized = isIframeEmbedField(field)
+                  ? sanitizeIframeEmbedValue(value)
+                  : field?.type === "richText" || field?.target === "innerHTML"
+                    ? sanitizeRichText(value)
+                    : sanitizePlainText(value);
+
+                return [key, sanitized];
+              }),
             ),
           ),
         }
@@ -1218,6 +1238,9 @@ export function sanitizeSchoolTemplateProjectContent(
       primaryColor: sanitizePlainText(content.theme.primaryColor),
       secondaryColor: sanitizePlainText(content.theme.secondaryColor),
       fontFamily: sanitizePlainText(content.theme.fontFamily),
+      navLinkFontFamily: sanitizePlainText(
+        content.theme.navLinkFontFamily || content.theme.fontFamily,
+      ),
       loadingBackgroundColor: sanitizePlainText(
         content.theme.loadingBackgroundColor ?? "#ffffff",
       ),
@@ -1362,6 +1385,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         primaryColor: "#31401c",
         secondaryColor: "#d4a437",
         fontFamily: "Manrope",
+        navLinkFontFamily: "Manrope",
         loadingBackgroundColor: "#ffffff",
         navBarColor: "#ffffff",
         navBarTransparent: true,
@@ -1388,6 +1412,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         primaryColor: "#4a8fff",
         secondaryColor: "#6aaeff",
         fontFamily: "Manrope",
+        navLinkFontFamily: "Manrope",
         loadingBackgroundColor: "#ffffff",
         navBarColor: "#ffffff",
         navBarTransparent: true,
@@ -1413,6 +1438,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         primaryColor: "#061a40",
         secondaryColor: "#f5b82e",
         fontFamily: "Sora",
+        navLinkFontFamily: "Sora",
         loadingBackgroundColor: "#fff7df",
         navBarColor: "#ffffff",
         navBarTransparent: false,
@@ -1438,6 +1464,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         primaryColor: "#081827",
         secondaryColor: "#facc15",
         fontFamily: "Plus Jakarta Sans",
+        navLinkFontFamily: "Plus Jakarta Sans",
         loadingBackgroundColor: "#081827",
         navBarColor: "#081827",
         navBarTransparent: true,
@@ -1464,6 +1491,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         primaryColor: "#0f766e",
         secondaryColor: "#f97316",
         fontFamily: "Manrope",
+        navLinkFontFamily: "Manrope",
         loadingBackgroundColor: "#ffffff",
         navBarColor: "#ffffff",
         navBarTransparent: false,
@@ -1489,6 +1517,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         primaryColor: "#0f766e",
         secondaryColor: "#facc15",
         fontFamily: "Inter",
+        navLinkFontFamily: "Inter",
         loadingBackgroundColor: "#ffffff",
         navBarColor: "#ffffff",
         navBarTransparent: false,
@@ -1661,11 +1690,32 @@ function mergeSectionContent(
   freshSection: SchoolTemplateProjectSectionContent,
   existingSection?: SchoolTemplateProjectSectionContent,
 ): SchoolTemplateProjectSectionContent {
+  const valuesIntroBody =
+    existingSection?.fields.introBody ?? existingSection?.fields.body;
+  const valuesLegacyTitle = existingSection?.fields.title;
   const mergeFieldValue = (
     key: string,
     freshValue: SchoolTemplateProjectFieldValue,
     existingValue: SchoolTemplateProjectFieldValue | undefined,
   ) => {
+    if (freshSection.id === "values" && key === "introTitle") {
+      if (
+        hasProjectFieldValue(existingValue) &&
+        !projectFieldTextMatches(existingValue, valuesIntroBody)
+      ) {
+        return existingValue;
+      }
+
+      if (
+        hasProjectFieldValue(valuesLegacyTitle) &&
+        !projectFieldTextMatches(valuesLegacyTitle, valuesIntroBody)
+      ) {
+        return valuesLegacyTitle;
+      }
+
+      return freshValue;
+    }
+
     if (existingValue !== undefined) {
       return existingValue;
     }
@@ -1708,6 +1758,133 @@ function mergeSectionContent(
           })),
         }
       : undefined,
+  };
+}
+
+function hasProjectFieldValue(
+  value: SchoolTemplateProjectFieldValue | undefined,
+): value is SchoolTemplateProjectFieldValue {
+  return value !== null && value !== undefined && value !== "";
+}
+
+function normalizeProjectFieldText(
+  value: SchoolTemplateProjectFieldValue | undefined,
+) {
+  if (!hasProjectFieldValue(value)) {
+    return "";
+  }
+
+  return normalizeExtractedText(sanitizePlainText(String(value)));
+}
+
+function projectFieldTextMatches(
+  left: SchoolTemplateProjectFieldValue | undefined,
+  right: SchoolTemplateProjectFieldValue | undefined,
+) {
+  const normalizedLeft = normalizeProjectFieldText(left);
+  const normalizedRight = normalizeProjectFieldText(right);
+
+  return normalizedLeft !== "" && normalizedLeft === normalizedRight;
+}
+
+function restoreDextaAcademy2HeaderCtaDefaults(
+  content: SchoolTemplateProjectContent,
+  freshContent: SchoolTemplateProjectContent,
+) {
+  if (content.templateSlug !== "dexta-academy-2") {
+    return content;
+  }
+
+  const freshHeader = freshContent.sharedSections.find(
+    (section) => section.id === "site-header",
+  );
+  if (!freshHeader) {
+    return content;
+  }
+
+  const defaultHeaderCtaValues = Object.fromEntries(
+    ["portalCtaText", "portalCtaHref", "primaryCtaText", "primaryCtaHref"].map(
+      (key) => [key, freshHeader.fields[key]],
+    ),
+  );
+
+  return {
+    ...content,
+    sharedSections: content.sharedSections.map((section) => {
+      if (section.id !== "site-header") {
+        return section;
+      }
+
+      return {
+        ...section,
+        fields: {
+          ...section.fields,
+          ...Object.fromEntries(
+            Object.entries(defaultHeaderCtaValues)
+              .filter(([, value]) => value !== undefined)
+              .map(([key, value]) => [
+                key,
+                hasProjectFieldValue(section.fields[key])
+                  ? section.fields[key]
+                  : value,
+              ]),
+          ),
+        },
+      };
+    }),
+  };
+}
+
+function restoreDextaAcademy2AdmissionFormTitle(
+  content: SchoolTemplateProjectContent,
+  freshContent: SchoolTemplateProjectContent,
+): SchoolTemplateProjectContent {
+  if (content.templateSlug !== "dexta-academy-2") {
+    return content;
+  }
+
+  const sharedModalTitle = content.sharedSections.find(
+    (section) => section.id === "admission-modal",
+  )?.fields.title;
+  const freshFormTitle = freshContent.pages
+    .find((page) => page.slug === "admissions")
+    ?.sections.find((section) => section.id === "admission-form")?.fields.title;
+  const fallbackTitle = hasProjectFieldValue(sharedModalTitle)
+    ? sharedModalTitle
+    : hasProjectFieldValue(freshFormTitle)
+      ? freshFormTitle
+      : null;
+
+  if (!hasProjectFieldValue(fallbackTitle)) {
+    return content;
+  }
+
+  return {
+    ...content,
+    pages: content.pages.map((page) => {
+      if (page.slug !== "admissions") {
+        return page;
+      }
+
+      return {
+        ...page,
+        sections: page.sections.map((section) => {
+          if (section.id !== "admission-form") {
+            return section;
+          }
+
+          return {
+            ...section,
+            fields: {
+              ...section.fields,
+              title: hasProjectFieldValue(section.fields.title)
+                ? section.fields.title
+                : fallbackTitle,
+            },
+          };
+        }),
+      };
+    }),
   };
 }
 
@@ -1757,6 +1934,11 @@ export function syncSchoolTemplateProjectContentWithManifest({
     syncedTheme.loadingLogoHeight = freshContent.theme.loadingLogoHeight;
   }
 
+  if (wasThemeFieldMissing("navLinkFontFamily")) {
+    syncedTheme.navLinkFontFamily =
+      content.theme.fontFamily || freshContent.theme.navLinkFontFamily;
+  }
+
   const syncedContent: SchoolTemplateProjectContent = {
     ...freshContent,
     generatedAt: content.generatedAt,
@@ -1777,20 +1959,38 @@ export function syncSchoolTemplateProjectContentWithManifest({
 
       return {
         ...page,
-        sections: page.sections.map((section) =>
-          mergeSectionContent(
-            section,
-            existingPage?.sections.find(
-              (existingSection) => existingSection.id === section.id,
-            ),
-          ),
-        ),
+        sections: page.sections.map((section) => {
+          const existingSection = existingPage?.sections.find(
+            (candidate) => candidate.id === section.id,
+          );
+          if (existingSection) {
+            return mergeSectionContent(section, existingSection);
+          }
+
+          if (
+            content.templateSlug === "dexta-academy-2" &&
+            page.slug === "admissions" &&
+            section.id === "admission-form"
+          ) {
+            return mergeSectionContent(
+              section,
+              content.sharedSections.find(
+                (candidate) => candidate.id === "admission-modal",
+              ),
+            );
+          }
+
+          return mergeSectionContent(section);
+        }),
       };
     }),
   };
 
   return {
-    contentJson: syncedContent,
+    contentJson: restoreDextaAcademy2AdmissionFormTitle(
+      restoreDextaAcademy2HeaderCtaDefaults(syncedContent, freshContent),
+      freshContent,
+    ),
     sourceSnapshot: freshSnapshot,
   };
 }

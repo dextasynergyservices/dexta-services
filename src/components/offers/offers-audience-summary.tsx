@@ -15,7 +15,10 @@ export function OffersAudienceSummary({
 }: OffersAudienceSummaryProps) {
   const meta = OFFERS_AUDIENCE_META[audience.slug];
   const Icon = meta.icon;
-  const audienceLabel = getOffersAudienceLabel(audience.slug, audience.tabLabel);
+  const audienceLabel = getOffersAudienceLabel(
+    audience.slug,
+    audience.tabLabel,
+  );
   const totalPlans = audience.offerGroups.reduce(
     (count, group) => count + group.plans.length,
     0,

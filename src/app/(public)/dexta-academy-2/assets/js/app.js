@@ -288,10 +288,6 @@ function footerMarkup() {
       </div>
       <div class="footer__bottom">
         <p>&copy; <span data-year></span> DXT Academy. All rights reserved.</p>
-        <div class="footer__legal">
-          <a href="privacy.html">Privacy Policy</a>
-          <a href="terms.html">Terms of Use</a>
-        </div>
       </div>
     </div>
   `;
@@ -403,7 +399,9 @@ function bindMobileNavigation() {
     toggle.addEventListener("click", () => {
       const isOpen = panel.classList.toggle("is-open");
       document.body.classList.toggle("nav-open", isOpen);
-      toggles.forEach((button) => button.setAttribute("aria-expanded", String(isOpen)));
+      toggles.forEach((button) =>
+        button.setAttribute("aria-expanded", String(isOpen)),
+      );
     });
   });
 
@@ -411,7 +409,9 @@ function bindMobileNavigation() {
     link.addEventListener("click", () => {
       panel.classList.remove("is-open");
       document.body.classList.remove("nav-open");
-      toggles.forEach((button) => button.setAttribute("aria-expanded", "false"));
+      toggles.forEach((button) =>
+        button.setAttribute("aria-expanded", "false"),
+      );
     });
   });
 }
@@ -422,7 +422,9 @@ function bindAdmissionModal() {
     return;
   }
 
-  const triggers = document.querySelectorAll('[data-admission-modal], a.button[href="admissions.html"]');
+  const triggers = document.querySelectorAll(
+    '[data-admission-modal], a.button[href="admissions.html"]',
+  );
   const closeButtons = modal.querySelectorAll("[data-admission-modal-close]");
   const closeControl = modal.querySelector(".admission-modal__close");
   const admissionFrame = modal.querySelector("iframe");
@@ -674,7 +676,14 @@ function bindGalleryLightbox() {
             <button class="icon-button gallery-lightbox__close" type="button" data-gallery-lightbox-close aria-label="Close image viewer">
               ${icon("close")}
             </button>
-            <img src="" alt="" data-gallery-lightbox-image />
+            <div class="gallery-lightbox__viewport">
+              <img src="" alt="" data-gallery-lightbox-image />
+            </div>
+            <div class="gallery-lightbox__controls" aria-label="Image zoom controls">
+              <button class="gallery-lightbox__control" type="button" data-gallery-zoom-out aria-label="Zoom out">-</button>
+              <button class="gallery-lightbox__control" type="button" data-gallery-zoom-reset aria-label="Reset zoom">100%</button>
+              <button class="gallery-lightbox__control" type="button" data-gallery-zoom-in aria-label="Zoom in">+</button>
+            </div>
             <p data-gallery-lightbox-caption></p>
           </section>
         </div>
@@ -684,14 +693,33 @@ function bindGalleryLightbox() {
 
   const lightbox = document.querySelector("[data-gallery-lightbox]");
   const lightboxImage = lightbox.querySelector("[data-gallery-lightbox-image]");
-  const lightboxCaption = lightbox.querySelector("[data-gallery-lightbox-caption]");
-  const closeButtons = lightbox.querySelectorAll("[data-gallery-lightbox-close]");
+  const lightboxCaption = lightbox.querySelector(
+    "[data-gallery-lightbox-caption]",
+  );
+  const closeButtons = lightbox.querySelectorAll(
+    "[data-gallery-lightbox-close]",
+  );
   const closeControl = lightbox.querySelector(".gallery-lightbox__close");
+  const zoomInControl = lightbox.querySelector("[data-gallery-zoom-in]");
+  const zoomOutControl = lightbox.querySelector("[data-gallery-zoom-out]");
+  const zoomResetControl = lightbox.querySelector("[data-gallery-zoom-reset]");
+  let zoomLevel = 1;
   let previousFocus = null;
+
+  const setZoom = (value) => {
+    zoomLevel = Math.min(Math.max(value, 1), 2.5);
+    lightboxImage.style.transform = `scale(${zoomLevel})`;
+    if (zoomResetControl) {
+      zoomResetControl.textContent = `${Math.round(zoomLevel * 100)}%`;
+    }
+  };
 
   cards.forEach((card) => {
     const image = card.querySelector("img");
-    const caption = card.querySelector("figcaption")?.textContent.trim() || image?.alt || "Gallery image";
+    const caption =
+      card.querySelector("figcaption")?.textContent.trim() ||
+      image?.alt ||
+      "Gallery image";
     card.tabIndex = 0;
     card.setAttribute("role", "button");
     card.setAttribute("aria-label", `View ${caption}`);
@@ -699,13 +727,15 @@ function bindGalleryLightbox() {
 
   const openLightbox = (card) => {
     const image = card.querySelector("img");
-    const caption = card.querySelector("figcaption")?.textContent.trim() || image?.alt || "";
+    const caption =
+      card.querySelector("figcaption")?.textContent.trim() || image?.alt || "";
 
     if (!image) {
       return;
     }
 
     previousFocus = card;
+    setZoom(1);
     lightboxImage.src = image.currentSrc || image.src;
     lightboxImage.alt = image.alt;
     lightboxCaption.textContent = caption;
@@ -719,6 +749,7 @@ function bindGalleryLightbox() {
     lightbox.classList.remove("is-open");
     lightbox.setAttribute("aria-hidden", "true");
     lightboxImage.removeAttribute("src");
+    setZoom(1);
     document.body.classList.remove("modal-open");
 
     if (previousFocus && typeof previousFocus.focus === "function") {
@@ -753,6 +784,19 @@ function bindGalleryLightbox() {
     button.addEventListener("click", closeLightbox);
   });
 
+  zoomInControl?.addEventListener("click", () => setZoom(zoomLevel + 0.25));
+  zoomOutControl?.addEventListener("click", () => setZoom(zoomLevel - 0.25));
+  zoomResetControl?.addEventListener("click", () => setZoom(1));
+
+  lightboxImage.addEventListener("wheel", (event) => {
+    if (!lightbox.classList.contains("is-open")) {
+      return;
+    }
+
+    event.preventDefault();
+    setZoom(zoomLevel + (event.deltaY < 0 ? 0.15 : -0.15));
+  });
+
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && lightbox.classList.contains("is-open")) {
       closeLightbox();
@@ -765,7 +809,10 @@ function imageUrlsFromBackground(backgroundImage) {
     return [];
   }
 
-  return Array.from(backgroundImage.matchAll(/url\(["']?([^"')]+)["']?\)/g), (match) => match[1]);
+  return Array.from(
+    backgroundImage.matchAll(/url\(["']?([^"')]+)["']?\)/g),
+    (match) => match[1],
+  );
 }
 
 function waitForImageUrl(url) {
@@ -784,7 +831,10 @@ function waitForImageUrl(url) {
 
       isDone = true;
       if (image.decode) {
-        image.decode().catch(() => {}).finally(resolve);
+        image
+          .decode()
+          .catch(() => {})
+          .finally(resolve);
       } else {
         resolve();
       }
@@ -809,7 +859,10 @@ function waitForImageElement(image) {
 
     const decode = () => {
       if (image.decode) {
-        image.decode().catch(() => {}).finally(resolve);
+        image
+          .decode()
+          .catch(() => {})
+          .finally(resolve);
       } else {
         resolve();
       }
@@ -827,7 +880,10 @@ function waitForImageElement(image) {
 
 function initHomePreloader() {
   const body = document.body;
-  if (body.dataset.page !== "home" || !body.classList.contains("is-home-loading")) {
+  if (
+    body.dataset.page !== "home" ||
+    !body.classList.contains("is-home-loading")
+  ) {
     return Promise.resolve();
   }
 
@@ -836,9 +892,15 @@ function initHomePreloader() {
   const heroBuilding = document.querySelector(".hero-home__building");
   const heroStudents = document.querySelector(".hero-home__students");
   const backgroundUrls = [
-    ...imageUrlsFromBackground(hero ? getComputedStyle(hero).backgroundImage : ""),
-    ...imageUrlsFromBackground(hero ? getComputedStyle(hero, "::before").backgroundImage : ""),
-    ...imageUrlsFromBackground(heroBuilding ? getComputedStyle(heroBuilding).backgroundImage : ""),
+    ...imageUrlsFromBackground(
+      hero ? getComputedStyle(hero).backgroundImage : "",
+    ),
+    ...imageUrlsFromBackground(
+      hero ? getComputedStyle(hero, "::before").backgroundImage : "",
+    ),
+    ...imageUrlsFromBackground(
+      heroBuilding ? getComputedStyle(heroBuilding).backgroundImage : "",
+    ),
   ];
   const uniqueBackgroundUrls = Array.from(new Set(backgroundUrls));
   const tasks = [

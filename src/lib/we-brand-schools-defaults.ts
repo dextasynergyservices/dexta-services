@@ -195,7 +195,8 @@ export const WE_BRAND_SCHOOLS_PAGE_CONTENT_DEFAULTS: WeBrandSchoolsPageContentDa
 export const SCHOOL_PORTAL_SECTION_CONTENT_DEFAULTS: SchoolPortalSectionContentData =
   {
     eyebrow: "Free School Portal Included",
-    title: "A complete school portal is included with every free school website.",
+    title:
+      "A complete school portal is included with every free school website.",
     description:
       "School owners get real dashboards for administrators, teachers, students, and parents, with records, CBT, quizzes, games, communication, and academic tracking in one connected system.",
     ctaText: "Watch Demo",

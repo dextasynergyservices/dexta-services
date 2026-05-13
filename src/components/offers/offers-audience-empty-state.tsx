@@ -11,7 +11,10 @@ interface OffersAudienceEmptyStateProps {
 export function OffersAudienceEmptyState({
   audience,
 }: OffersAudienceEmptyStateProps) {
-  const audienceLabel = getOffersAudienceLabel(audience.slug, audience.tabLabel);
+  const audienceLabel = getOffersAudienceLabel(
+    audience.slug,
+    audience.tabLabel,
+  );
 
   return (
     <div

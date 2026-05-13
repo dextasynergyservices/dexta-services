@@ -77,14 +77,17 @@ function resolvePreviewSrc(
     return value;
   }
 
-  return getCloudinaryUrl(value, options ?? {
-    c: "fill",
-    f: "auto",
-    g: "auto",
-    h: 700,
-    q: "auto",
-    w: 1000,
-  });
+  return getCloudinaryUrl(
+    value,
+    options ?? {
+      c: "fill",
+      f: "auto",
+      g: "auto",
+      h: 700,
+      q: "auto",
+      w: 1000,
+    },
+  );
 }
 
 function getSpaceCardPreview(item: AboutSpaceItemRow) {
@@ -177,7 +180,8 @@ function SpaceForm({
     mediaPublicId,
     thumbnailPublicId,
   );
-  const editorVideoSrc = mediaType === "VIDEO" ? getVideoSrc(mediaPublicId) : null;
+  const editorVideoSrc =
+    mediaType === "VIDEO" ? getVideoSrc(mediaPublicId) : null;
 
   return (
     <form onSubmit={handleSubmit(async (data) => onSubmit(data))}>
@@ -218,9 +222,12 @@ function SpaceForm({
                 <VisibilityPill visible={watch("isVisible")} />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">{previewTitle}</h3>
+                <h3 className="text-lg font-semibold text-white">
+                  {previewTitle}
+                </h3>
                 <p className="mt-2 text-sm leading-6 text-[#8d8d8d]">
-                  {previewDescription || "Add a short description for this space."}
+                  {previewDescription ||
+                    "Add a short description for this space."}
                 </p>
               </div>
             </div>
@@ -229,7 +236,9 @@ function SpaceForm({
 
         <div className="max-h-[78vh] space-y-4 overflow-y-auto pr-1">
           <div>
-            <Label className="mb-1.5 block text-xs text-[#888]">Space title</Label>
+            <Label className="mb-1.5 block text-xs text-[#888]">
+              Space title
+            </Label>
             <Input
               className="border-[#2a2a2a] bg-[#0d0d0d] text-white"
               {...register("title")}
@@ -311,15 +320,17 @@ function SpaceForm({
                 fallbackSrc={SPACE_PREVIEW_FALLBACK}
               />
               <p className="mt-2 text-xs text-[#555]">
-                Optional for draft items. If left empty, the public page uses the
-                shared About fallback image until you upload one.
+                Optional for draft items. If left empty, the public page uses
+                the shared About fallback image until you upload one.
               </p>
               <FormError message={errors.mediaPublicId?.message} />
             </div>
           ) : (
             <div className="space-y-4">
               <div>
-                <Label className="mb-1.5 block text-xs text-[#888]">Video</Label>
+                <Label className="mb-1.5 block text-xs text-[#888]">
+                  Video
+                </Label>
                 <CldUploadWidget
                   config={{
                     cloud: {
@@ -341,10 +352,14 @@ function SpaceForm({
                       result.info !== null &&
                       "public_id" in result.info
                     ) {
-                      setValue("mediaPublicId", result.info.public_id as string, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      });
+                      setValue(
+                        "mediaPublicId",
+                        result.info.public_id as string,
+                        {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        },
+                      );
                       toast.success("Video uploaded successfully");
                     }
                   }}
@@ -365,7 +380,9 @@ function SpaceForm({
                           <span className="max-w-[90%] truncate text-xs font-mono">
                             {mediaPublicId}
                           </span>
-                          <span className="text-xs text-[#555]">Click to replace</span>
+                          <span className="text-xs text-[#555]">
+                            Click to replace
+                          </span>
                         </>
                       ) : (
                         <span>Click to upload video</span>
@@ -466,7 +483,9 @@ function SpaceForm({
 export function SpaceManager({ items }: { items: AboutSpaceItemRow[] }) {
   const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<AboutSpaceItemRow | null>(null);
+  const [editingItem, setEditingItem] = useState<AboutSpaceItemRow | null>(
+    null,
+  );
   const [deletingItem, setDeletingItem] = useState<AboutSpaceItemRow | null>(
     null,
   );
@@ -550,7 +569,9 @@ export function SpaceManager({ items }: { items: AboutSpaceItemRow[] }) {
       >
         {items.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[#2a2a2a] bg-[#111] p-8 text-center">
-            <p className="text-base font-medium text-white">No space cards yet</p>
+            <p className="text-base font-medium text-white">
+              No space cards yet
+            </p>
             <p className="mt-2 text-sm text-[#666]">
               Add the first office space card to start managing this section.
             </p>
@@ -661,7 +682,9 @@ export function SpaceManager({ items }: { items: AboutSpaceItemRow[] }) {
                     variant="outline"
                     size="sm"
                     disabled={currentPageSafe <= 1}
-                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    onClick={() =>
+                      setCurrentPage((page) => Math.max(1, page - 1))
+                    }
                     className="border-[#2a2a2a] bg-transparent text-white disabled:opacity-50"
                   >
                     <ChevronLeft className="mr-1 h-4 w-4" />

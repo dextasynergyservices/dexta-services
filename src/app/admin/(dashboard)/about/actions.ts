@@ -225,7 +225,9 @@ function getAboutSpaceItemDelegate() {
             position: number;
           }>;
         }) => Promise<unknown>;
-        findMany: (args: { orderBy: { position: "asc" } }) => Promise<AboutSpaceItemRow[]>;
+        findMany: (args: {
+          orderBy: { position: "asc" };
+        }) => Promise<AboutSpaceItemRow[]>;
         create: (args: { data: AboutSpaceItemInput }) => Promise<unknown>;
         findUnique: (args: { where: { id: string } }) => Promise<
           | (AboutSpaceItemRow & {
@@ -555,24 +557,30 @@ export async function getAboutAdminData(): Promise<AboutAdminData> {
   await ensureAboutSeeded();
   const aboutSpaceItem = getAboutSpaceItemDelegate();
 
-  const [content, milestones, expertiseItems, teamMembers, spaceItems, valueItems] =
-    (await Promise.all([
-      aboutPrisma.aboutPageContent.findFirst({ orderBy: { id: "asc" } }),
-      aboutPrisma.aboutMilestone.findMany({ orderBy: { position: "asc" } }),
-      aboutPrisma.aboutExpertiseItem.findMany({ orderBy: { position: "asc" } }),
-      aboutPrisma.aboutTeamMember.findMany({ orderBy: { position: "asc" } }),
-      aboutSpaceItem
-        ? aboutSpaceItem.findMany({ orderBy: { position: "asc" } })
-        : Promise.resolve([] as AboutSpaceItemRow[]),
-      aboutPrisma.aboutValueItem.findMany({ orderBy: { position: "asc" } }),
-    ])) as [
-      AboutPageContentRecord | null,
-      AboutMilestoneRow[],
-      AboutExpertiseItemRow[],
-      AboutTeamMemberRecord[],
-      AboutSpaceItemRow[],
-      AboutValueItemRow[],
-    ];
+  const [
+    content,
+    milestones,
+    expertiseItems,
+    teamMembers,
+    spaceItems,
+    valueItems,
+  ] = (await Promise.all([
+    aboutPrisma.aboutPageContent.findFirst({ orderBy: { id: "asc" } }),
+    aboutPrisma.aboutMilestone.findMany({ orderBy: { position: "asc" } }),
+    aboutPrisma.aboutExpertiseItem.findMany({ orderBy: { position: "asc" } }),
+    aboutPrisma.aboutTeamMember.findMany({ orderBy: { position: "asc" } }),
+    aboutSpaceItem
+      ? aboutSpaceItem.findMany({ orderBy: { position: "asc" } })
+      : Promise.resolve([] as AboutSpaceItemRow[]),
+    aboutPrisma.aboutValueItem.findMany({ orderBy: { position: "asc" } }),
+  ])) as [
+    AboutPageContentRecord | null,
+    AboutMilestoneRow[],
+    AboutExpertiseItemRow[],
+    AboutTeamMemberRecord[],
+    AboutSpaceItemRow[],
+    AboutValueItemRow[],
+  ];
 
   return {
     content: mapAboutPageContentRecord(content),
@@ -1088,7 +1096,8 @@ export async function createAboutSpaceItem(
   if (!aboutSpaceItem) {
     return {
       success: false,
-      message: "Our Space is unavailable until Prisma is regenerated and the dev server is restarted.",
+      message:
+        "Our Space is unavailable until Prisma is regenerated and the dev server is restarted.",
     };
   }
 
@@ -1115,7 +1124,8 @@ export async function updateAboutSpaceItem(
   if (!aboutSpaceItem) {
     return {
       success: false,
-      message: "Our Space is unavailable until Prisma is regenerated and the dev server is restarted.",
+      message:
+        "Our Space is unavailable until Prisma is regenerated and the dev server is restarted.",
     };
   }
 
@@ -1152,7 +1162,8 @@ export async function deleteAboutSpaceItem(id: string): Promise<ActionResult> {
   if (!aboutSpaceItem) {
     return {
       success: false,
-      message: "Our Space is unavailable until Prisma is regenerated and the dev server is restarted.",
+      message:
+        "Our Space is unavailable until Prisma is regenerated and the dev server is restarted.",
     };
   }
 
@@ -1190,7 +1201,8 @@ export async function reorderAboutSpaceItems(
   if (!aboutSpaceItem) {
     return {
       success: false,
-      message: "Our Space is unavailable until Prisma is regenerated and the dev server is restarted.",
+      message:
+        "Our Space is unavailable until Prisma is regenerated and the dev server is restarted.",
     };
   }
 

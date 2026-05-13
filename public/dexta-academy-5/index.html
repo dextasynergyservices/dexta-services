@@ -1,146 +1,166 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DXT Academy</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div class="site-loader" data-site-loader role="status" aria-live="polite">
-    <div class="site-loader__content">
-      <span class="site-loader__mark" aria-hidden="true">DXT</span>
-      <span class="site-loader__text">Loading DXT Academy</span>
-      <span class="site-loader__bar" aria-hidden="true"></span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DXT Academy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="site-loader" data-site-loader role="status" aria-live="polite">
+      <div class="site-loader__content">
+        <span class="site-loader__mark" aria-hidden="true">DXT</span>
+        <span class="site-loader__text">Loading DXT Academy</span>
+        <span class="site-loader__bar" aria-hidden="true"></span>
+      </div>
     </div>
-  </div>
-  <header class="site-header">
-    <div class="container header__inner">
-      <a class="brand" href="index.html#home" aria-label="DXT Academy home">
-        <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 48 56" role="presentation">
-            <path d="M24 2 42 8v18c0 12.6-7.4 22.9-18 28C13.4 48.9 6 38.6 6 26V8L24 2Z" />
-            <path d="M24 12c-2.4 4.5-5.9 7.7-10 9.4 1.5 7.3 4.8 13 10 17.2 5.2-4.2 8.5-9.9 10-17.2-4.1-1.7-7.6-4.9-10-9.4Z" />
-            <path d="M24 18v20M18 25h12M24 18c2 4.4 4.9 7.6 8.5 9.6M24 18c-2 4.4-4.9 7.6-8.5 9.6" />
-          </svg>
-        </span>
-      </a>
+    <header class="site-header">
+      <div class="container header__inner">
+        <a class="brand" href="index.html#home" aria-label="DXT Academy home">
+          <span class="brand__mark" aria-hidden="true">
+            <svg viewBox="0 0 48 56" role="presentation">
+              <path
+                d="M24 2 42 8v18c0 12.6-7.4 22.9-18 28C13.4 48.9 6 38.6 6 26V8L24 2Z"
+              />
+              <path
+                d="M24 12c-2.4 4.5-5.9 7.7-10 9.4 1.5 7.3 4.8 13 10 17.2 5.2-4.2 8.5-9.9 10-17.2-4.1-1.7-7.6-4.9-10-9.4Z"
+              />
+              <path
+                d="M24 18v20M18 25h12M24 18c2 4.4 4.9 7.6 8.5 9.6M24 18c-2 4.4-4.9 7.6-8.5 9.6"
+              />
+            </svg>
+          </span>
+        </a>
 
-      <nav class="site-nav" id="site-nav">
-        <a class="is-active" href="#home">Home</a>
-        <a href="about.html">About</a>
-        <a href="gallery.html">Gallery</a>
-        <a href="#admissions">Admissions</a>
-        <a href="campus-life.html">School Life</a>
-        <a href="contact.html">Contact</a>
-      </nav>
+        <nav class="site-nav" id="site-nav">
+          <a class="is-active" href="#home">Home</a>
+          <a href="about.html">About</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="#admissions">Admissions</a>
+          <a href="campus-life.html">School Life</a>
+          <a href="contact.html">Contact</a>
+        </nav>
 
-      <a class="header-portal" href="#portal">Portal</a>
-      <a class="header-cta" href="#admissions" data-admission-modal-open>Apply Now</a>
+        <a class="header-portal" href="#portal">Portal</a>
+        <a class="header-cta" href="#admissions" data-admission-modal-open
+          >Apply Now</a
+        >
 
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-nav-toggle>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span class="sr-only">Toggle navigation</span>
-      </button>
-    </div>
-  </header>
+        <button
+          class="nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="site-nav"
+          data-nav-toggle
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+          <span class="sr-only">Toggle navigation</span>
+        </button>
+      </div>
+    </header>
 
-  <main>
-    <section class="hero" id="home">
-      <div class="container hero__layout">
-        <div class="hero__content reveal">
-          <p class="hero__eyebrow">Welcome To DXT Academy</p>
-          <h1 class="hero__title">
-            <span>Nurturing Minds.</span>
-            <span>Building <em>Leaders.</em></span>
-          </h1>
-          <div class="hero__actions">
-            <a class="button button--primary" href="#about-preview">
-              <span>Discover Our Story</span>
-              <span class="button__icon" aria-hidden="true">
-                <!-- <svg viewBox="0 0 24 24" role="presentation">
+    <main>
+      <section class="hero" id="home">
+        <div class="container hero__layout">
+          <div class="hero__content reveal">
+            <p class="hero__eyebrow">Welcome To DXT Academy</p>
+            <h1 class="hero__title">
+              <span>Nurturing Minds.</span>
+              <span>Building <em>Leaders.</em></span>
+            </h1>
+            <div class="hero__actions">
+              <a class="button button--primary" href="#about-preview">
+                <span>Discover Our Story</span>
+                <span class="button__icon" aria-hidden="true">
+                  <!-- <svg viewBox="0 0 24 24" role="presentation">
                   <path d="M5 12h14" />
                   <path d="m13 6 6 6-6 6" />
                 </svg> -->
-              </span>
-            </a>
+                </span>
+              </a>
+            </div>
+          </div>
+
+          <div class="hero__visual reveal">
+            <div class="hero__ring hero__ring--small" aria-hidden="true"></div>
+            <div class="hero__dot hero__dot--one" aria-hidden="true"></div>
+            <div class="hero__dot hero__dot--two" aria-hidden="true"></div>
+
+            <article class="stat-card stat-card--top" data-depth="8">
+              <div class="stat-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="presentation">
+                  <path d="M3 10 12 5l9 5-9 5-9-5Z" />
+                  <path d="M7 12.3v3.2c0 1.9 3 3.5 5 3.5s5-1.6 5-3.5v-3.2" />
+                  <path d="M21 10v4" />
+                </svg>
+              </div>
+              <strong>20+</strong>
+              <span>Years of Excellence</span>
+              <i></i>
+            </article>
+
+            <article class="stat-card stat-card--right" data-depth="12">
+              <div class="stat-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="presentation">
+                  <path d="M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+                  <circle cx="9.5" cy="8" r="4" />
+                  <path d="M21 20v-2a4 4 0 0 0-3-3.9" />
+                  <path d="M16.8 4.2a4 4 0 0 1 0 7.6" />
+                </svg>
+              </div>
+              <strong>1,500+</strong>
+              <span>Students Empowered</span>
+              <i></i>
+            </article>
+
+            <article class="stat-card stat-card--left" data-depth="10">
+              <div class="stat-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="presentation">
+                  <path d="M7 4h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4Z" />
+                  <path d="M7 6H5a2 2 0 0 0 0 4h2" />
+                  <path d="M17 6h2a2 2 0 0 1 0 4h-2" />
+                  <path d="M12 12v4" />
+                  <path d="M8 20h8" />
+                </svg>
+              </div>
+              <strong>95%</strong>
+              <span>University Progression</span>
+              <i></i>
+            </article>
+
+            <div class="hero__image-wrap" data-depth="18">
+              <img
+                src="https://res.cloudinary.com/dxoorukfj/image/upload/v1776947741/Untitled_design_5_zguydr.png"
+                alt="DXT Academy student holding books"
+              />
+            </div>
           </div>
         </div>
+      </section>
 
-        <div class="hero__visual reveal">
-          <div class="hero__ring hero__ring--small" aria-hidden="true"></div>
-          <div class="hero__dot hero__dot--one" aria-hidden="true"></div>
-          <div class="hero__dot hero__dot--two" aria-hidden="true"></div>
+      <section class="about-preview" id="about-preview">
+        <div class="container about-preview__inner">
+          <div class="about-preview__content">
+            <p class="about-preview__eyebrow">About DXT Academy</p>
+            <h2>
+              <span>Shaping Character.</span>
+              <span>Inspiring <em>Purpose.</em></span>
+            </h2>
+            <p class="about-preview__lead">
+              At DXT Academy, education goes beyond the classroom. We nurture
+              character, ignite curiosity, and empower students to lead with
+              integrity and impact.
+            </p>
 
-          <article class="stat-card stat-card--top" data-depth="8">
-            <div class="stat-card__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="presentation">
-                <path d="M3 10 12 5l9 5-9 5-9-5Z" />
-                <path d="M7 12.3v3.2c0 1.9 3 3.5 5 3.5s5-1.6 5-3.5v-3.2" />
-                <path d="M21 10v4" />
-              </svg>
-            </div>
-            <strong>20+</strong>
-            <span>Years of Excellence</span>
-            <i></i>
-          </article>
-
-          <article class="stat-card stat-card--right" data-depth="12">
-            <div class="stat-card__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="presentation">
-                <path d="M16 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
-                <circle cx="9.5" cy="8" r="4" />
-                <path d="M21 20v-2a4 4 0 0 0-3-3.9" />
-                <path d="M16.8 4.2a4 4 0 0 1 0 7.6" />
-              </svg>
-            </div>
-            <strong>1,500+</strong>
-            <span>Students Empowered</span>
-            <i></i>
-          </article>
-
-          <article class="stat-card stat-card--left" data-depth="10">
-            <div class="stat-card__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="presentation">
-                <path d="M7 4h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4Z" />
-                <path d="M7 6H5a2 2 0 0 0 0 4h2" />
-                <path d="M17 6h2a2 2 0 0 1 0 4h-2" />
-                <path d="M12 12v4" />
-                <path d="M8 20h8" />
-              </svg>
-            </div>
-            <strong>95%</strong>
-            <span>University Progression</span>
-            <i></i>
-          </article>
-
-          <div class="hero__image-wrap" data-depth="18">
-            <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1776947741/Untitled_design_5_zguydr.png" alt="DXT Academy student holding books">
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="about-preview" id="about-preview">
-      <div class="container about-preview__inner">
-        <div class="about-preview__content">
-          <p class="about-preview__eyebrow">About DXT Academy</p>
-          <h2>
-            <span>Shaping Character.</span>
-            <span>Inspiring <em>Purpose.</em></span>
-          </h2>
-          <p class="about-preview__lead">
-            At DXT Academy, education goes beyond the classroom.
-            We nurture character, ignite curiosity, and empower
-            students to lead with integrity and impact.
-          </p>
-
-          <!-- <div class="about-preview__values">
+            <!-- <div class="about-preview__values">
             <article class="about-preview__value">
               <span class="about-preview__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" role="presentation">
@@ -185,334 +205,471 @@
             </article>
           </div> -->
 
-          <a class="about-preview__button" href="#about-preview">
-            <span>Learn More About Us</span>
-            <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation">
-              <path d="M5 12h14" />
-              <path d="m13 6 6 6-6 6" />
-            </svg>
+            <a class="about-preview__button" href="#about-preview">
+              <span>Learn More About Us</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation">
+                <path d="M5 12h14" />
+                <path d="m13 6 6 6-6 6" />
+              </svg>
+            </a>
+          </div>
+
+          <div class="about-preview__media">
+            <img
+              src="https://res.cloudinary.com/dxoorukfj/image/upload/v1778254209/ChatGPT_Image_May_8_2026_04_29_51_PM_fmdlqg.png"
+              alt="DXT Academy campus building with students walking"
+            />
+            <blockquote class="about-preview__quote">
+              <span class="about-preview__quote-mark" aria-hidden="true"
+                >&ldquo;</span
+              >
+              <div>
+                <p>
+                  Education is not the learning of facts, but the training of
+                  the mind to think.
+                </p>
+                <cite>- Albert Einstein</cite>
+              </div>
+            </blockquote>
+          </div>
+        </div>
+      </section>
+
+      <section class="programmes-section" id="programmes">
+        <div class="container">
+          <div class="section-heading">
+            <p>Our Programmes</p>
+            <h2>Pathways to Excellence</h2>
+          </div>
+
+          <div class="programme-grid">
+            <article class="programme-card">
+              <span class="programme-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="presentation">
+                  <path
+                    d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22V5.5Z"
+                  />
+                  <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20" />
+                </svg>
+              </span>
+              <h3>Academic Excellence</h3>
+              <p>
+                Rigorous curriculum designed to build knowledge, critical
+                thinking, and academic success.
+              </p>
+              <a href="#programmes"
+                >Learn More <span aria-hidden="true">-></span></a
+              >
+            </article>
+
+            <article class="programme-card programme-card--gold">
+              <span class="programme-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="presentation">
+                  <circle cx="12" cy="7" r="4" />
+                  <path d="M4 21a8 8 0 0 1 16 0" />
+                </svg>
+              </span>
+              <h3>Leadership Development</h3>
+              <p>
+                Empowering students to lead with confidence, empathy, and
+                purpose.
+              </p>
+              <a href="#programmes"
+                >Learn More <span aria-hidden="true">-></span></a
+              >
+            </article>
+
+            <article class="programme-card">
+              <span class="programme-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="presentation">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M3 12h18" />
+                  <path d="M12 3a14 14 0 0 1 0 18" />
+                  <path d="M12 3a14 14 0 0 0 0 18" />
+                </svg>
+              </span>
+              <h3>Global Exposure</h3>
+              <p>
+                Broadening perspectives through international programmes,
+                exchanges, and collaborations.
+              </p>
+              <a href="#programmes"
+                >Learn More <span aria-hidden="true">-></span></a
+              >
+            </article>
+
+            <article class="programme-card programme-card--gold">
+              <span class="programme-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="presentation">
+                  <path
+                    d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6Z"
+                  />
+                </svg>
+              </span>
+              <h3>Wellness & Values</h3>
+              <p>
+                Nurturing well-being, resilience, and strong values for a
+                balanced life.
+              </p>
+              <a href="#programmes"
+                >Learn More <span aria-hidden="true">-></span></a
+              >
+            </article>
+          </div>
+
+          <div class="section-action">
+            <a class="button button--olive" href="#programmes"
+              >View All Programmes <span aria-hidden="true">-></span></a
+            >
+          </div>
+        </div>
+      </section>
+
+      <section class="approach-section" id="campus-life">
+        <div class="container approach-section__inner">
+          <div class="approach-section__content">
+            <p class="section-kicker">Our Approach</p>
+            <h2>
+              Learning That Lasts.
+              <span>Impact That <em>Matters.</em></span>
+            </h2>
+            <p>
+              We combine innovative teaching, mentorship, and experiential
+              learning to help students grow into confident leaders and
+              responsible global citizens.
+            </p>
+            <ul>
+              <li>Personalized learning & mentorship</li>
+              <li>Experiential & project-based learning</li>
+              <li>Strong community & global outlook</li>
+              <li>Technology-enabled classrooms</li>
+            </ul>
+            <a class="button button--olive" href="#campus-life"
+              >See School Life <span aria-hidden="true">-></span></a
+            >
+          </div>
+
+          <div class="approach-section__media">
+            <span
+              class="dot-pattern dot-pattern--left"
+              aria-hidden="true"
+            ></span>
+            <img
+              src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80"
+              alt="Students learning together in class"
+            />
+            <div class="approach-badges">
+              <span>
+                <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation">
+                  <path d="M12 3 3 8l9 5 9-5-9-5Z" />
+                  <path d="M5 10.2V16l7 4 7-4v-5.8" />
+                </svg>
+                Innovative Teaching
+              </span>
+              <span>
+                <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation">
+                  <path d="M16 11a4 4 0 1 0-8 0" />
+                  <path d="M4 21a8 8 0 0 1 16 0" />
+                </svg>
+                Mentorship & Guidance
+              </span>
+              <span>
+                <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation">
+                  <path d="M4 7h16v10H4z" />
+                  <path d="M8 21h8" />
+                  <path d="M12 17v4" />
+                </svg>
+                Real-World Experience
+              </span>
+            </div>
+            <span
+              class="dot-pattern dot-pattern--right"
+              aria-hidden="true"
+            ></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="testimonials-section">
+        <div class="container">
+          <div class="section-heading">
+            <p>What Our Community Says</p>
+            <h2>Voices of Impact</h2>
+          </div>
+
+          <div class="testimonial-grid">
+            <article class="testimonial-card">
+              <span aria-hidden="true">&ldquo;</span>
+              <p>
+                DXT Academy helped me discover my potential and the confidence
+                to lead. I'll always be grateful.
+              </p>
+              <div>
+                <img
+                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80"
+                  alt=""
+                />
+                <strong>Aisha K.</strong>
+                <small>Alumna, Class of 2021</small>
+              </div>
+            </article>
+
+            <article class="testimonial-card">
+              <span aria-hidden="true">&ldquo;</span>
+              <p>
+                The teachers truly care about our growth, not just academically,
+                but as individuals.
+              </p>
+              <div>
+                <img
+                  src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80"
+                  alt=""
+                />
+                <strong>Liam O.</strong>
+                <small>Student, Grade 11</small>
+              </div>
+            </article>
+
+            <article class="testimonial-card">
+              <span aria-hidden="true">&ldquo;</span>
+              <p>
+                We've seen our child grow into a confident, compassionate leader
+                at DXT Academy.
+              </p>
+              <div>
+                <img
+                  src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=120&q=80"
+                  alt=""
+                />
+                <strong>Mrs. Okafor</strong>
+                <small>Parent</small>
+              </div>
+            </article>
+          </div>
+
+          <div class="testimonial-dots" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="journey-section" id="admissions">
+        <div class="container journey-card">
+          <div class="journey-card__intro">
+            <h2>Ready to Begin the DXT Journey?</h2>
+            <p>
+              Join a community where minds are nurtured, leaders are built, and
+              futures are shaped.
+            </p>
+          </div>
+
+          <a
+            class="journey-action"
+            href="#admissions"
+            data-admission-modal-open
+          >
+            <span class="journey-action__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" role="presentation">
+                <path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z" />
+                <path d="M9 12h6" />
+                <path d="M12 9v6" />
+              </svg>
+            </span>
+            <strong>Apply Now</strong>
+            <small>Start your application today and take the first step.</small>
+            <span aria-hidden="true">-></span>
+          </a>
+
+          <a class="journey-action" href="#contact" data-contact-modal-open>
+            <span class="journey-action__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" role="presentation">
+                <path d="M7 4h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4Z" />
+                <path d="M7 6H5a2 2 0 0 0 0 4h2" />
+                <path d="M17 6h2a2 2 0 0 1 0 4h-2" />
+                <path d="M12 12v4" />
+                <path d="M8 20h8" />
+              </svg>
+            </span>
+            <strong>Contact Form</strong>
+            <small>Send us a message and our team will get back to you.</small>
+            <span aria-hidden="true">-></span>
           </a>
         </div>
+      </section>
+    </main>
 
-        <div class="about-preview__media">
-          <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1778254209/ChatGPT_Image_May_8_2026_04_29_51_PM_fmdlqg.png" alt="DXT Academy campus building with students walking">
-          <blockquote class="about-preview__quote">
-            <span class="about-preview__quote-mark" aria-hidden="true">&ldquo;</span>
-            <div>
-              <p>Education is not the learning of facts, but the training of the mind to think.</p>
-              <cite>- Albert Einstein</cite>
-            </div>
-          </blockquote>
-        </div>
-      </div>
-    </section>
-
-    <section class="programmes-section" id="programmes">
-      <div class="container">
-        <div class="section-heading">
-          <p>Our Programmes</p>
-          <h2>Pathways to Excellence</h2>
-        </div>
-
-        <div class="programme-grid">
-          <article class="programme-card">
-            <span class="programme-card__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="presentation">
-                <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v17H7.5A3.5 3.5 0 0 0 4 22V5.5Z" />
-                <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20" />
+    <footer class="site-footer" id="contact">
+      <div class="container site-footer__grid">
+        <div class="site-footer__brand">
+          <a class="brand" href="index.html#home" aria-label="DXT Academy home">
+            <span class="brand__mark" aria-hidden="true">
+              <svg viewBox="0 0 48 56" role="presentation">
+                <path
+                  d="M24 2 42 8v18c0 12.6-7.4 22.9-18 28C13.4 48.9 6 38.6 6 26V8L24 2Z"
+                />
+                <path
+                  d="M24 12c-2.4 4.5-5.9 7.7-10 9.4 1.5 7.3 4.8 13 10 17.2 5.2-4.2 8.5-9.9 10-17.2-4.1-1.7-7.6-4.9-10-9.4Z"
+                />
+                <path
+                  d="M24 18v20M18 25h12M24 18c2 4.4 4.9 7.6 8.5 9.6M24 18c-2 4.4-4.9 7.6-8.5 9.6"
+                />
               </svg>
             </span>
-            <h3>Academic Excellence</h3>
-            <p>Rigorous curriculum designed to build knowledge, critical thinking, and academic success.</p>
-            <a href="#programmes">Learn More <span aria-hidden="true">-></span></a>
-          </article>
-
-          <article class="programme-card programme-card--gold">
-            <span class="programme-card__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="presentation">
-                <circle cx="12" cy="7" r="4" />
-                <path d="M4 21a8 8 0 0 1 16 0" />
-              </svg>
+            <span class="brand__text">
+              <strong>DXT ACADEMY</strong>
+              <span>Nurturing. Inspiring. Leading.</span>
             </span>
-            <h3>Leadership Development</h3>
-            <p>Empowering students to lead with confidence, empathy, and purpose.</p>
-            <a href="#programmes">Learn More <span aria-hidden="true">-></span></a>
-          </article>
-
-          <article class="programme-card">
-            <span class="programme-card__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="presentation">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M3 12h18" />
-                <path d="M12 3a14 14 0 0 1 0 18" />
-                <path d="M12 3a14 14 0 0 0 0 18" />
-              </svg>
-            </span>
-            <h3>Global Exposure</h3>
-            <p>Broadening perspectives through international programmes, exchanges, and collaborations.</p>
-            <a href="#programmes">Learn More <span aria-hidden="true">-></span></a>
-          </article>
-
-          <article class="programme-card programme-card--gold">
-            <span class="programme-card__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="presentation">
-                <path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6L12 21l8.8-8.8a5.4 5.4 0 0 0 0-7.6Z" />
-              </svg>
-            </span>
-            <h3>Wellness & Values</h3>
-            <p>Nurturing well-being, resilience, and strong values for a balanced life.</p>
-            <a href="#programmes">Learn More <span aria-hidden="true">-></span></a>
-          </article>
-        </div>
-
-        <div class="section-action">
-          <a class="button button--olive" href="#programmes">View All Programmes <span aria-hidden="true">-></span></a>
-        </div>
-      </div>
-    </section>
-
-    <section class="approach-section" id="campus-life">
-      <div class="container approach-section__inner">
-        <div class="approach-section__content">
-          <p class="section-kicker">Our Approach</p>
-          <h2>
-            Learning That Lasts.
-            <span>Impact That <em>Matters.</em></span>
-          </h2>
+          </a>
           <p>
-            We combine innovative teaching, mentorship, and experiential learning to help students grow into confident leaders and responsible global citizens.
+            DXT Academy is committed to nurturing minds, building leaders, and
+            creating impact for a better tomorrow.
           </p>
-          <ul>
-            <li>Personalized learning & mentorship</li>
-            <li>Experiential & project-based learning</li>
-            <li>Strong community & global outlook</li>
-            <li>Technology-enabled classrooms</li>
-          </ul>
-          <a class="button button--olive" href="#campus-life">See School Life <span aria-hidden="true">-></span></a>
-        </div>
-
-        <div class="approach-section__media">
-          <span class="dot-pattern dot-pattern--left" aria-hidden="true"></span>
-          <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80" alt="Students learning together in class">
-          <div class="approach-badges">
-            <span>
-              <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation">
-                <path d="M12 3 3 8l9 5 9-5-9-5Z" />
-                <path d="M5 10.2V16l7 4 7-4v-5.8" />
-              </svg>
-              Innovative Teaching
-            </span>
-            <span>
-              <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation">
-                <path d="M16 11a4 4 0 1 0-8 0" />
-                <path d="M4 21a8 8 0 0 1 16 0" />
-              </svg>
-              Mentorship & Guidance
-            </span>
-            <span>
-              <svg viewBox="0 0 24 24" aria-hidden="true" role="presentation">
-                <path d="M4 7h16v10H4z" />
-                <path d="M8 21h8" />
-                <path d="M12 17v4" />
-              </svg>
-              Real-World Experience
-            </span>
+          <div class="social-links" aria-label="Social links">
+            <a href="#contact">f</a>
+            <a href="#contact">ig</a>
+            <a href="#contact">in</a>
+            <a href="#contact">yt</a>
           </div>
-          <span class="dot-pattern dot-pattern--right" aria-hidden="true"></span>
-        </div>
-      </div>
-    </section>
-
-    <section class="testimonials-section">
-      <div class="container">
-        <div class="section-heading">
-          <p>What Our Community Says</p>
-          <h2>Voices of Impact</h2>
         </div>
 
-        <div class="testimonial-grid">
-          <article class="testimonial-card">
-            <span aria-hidden="true">&ldquo;</span>
-            <p>DXT Academy helped me discover my potential and the confidence to lead. I'll always be grateful.</p>
-            <div>
-              <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80" alt="">
-              <strong>Aisha K.</strong>
-              <small>Alumna, Class of 2021</small>
-            </div>
-          </article>
-
-          <article class="testimonial-card">
-            <span aria-hidden="true">&ldquo;</span>
-            <p>The teachers truly care about our growth, not just academically, but as individuals.</p>
-            <div>
-              <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80" alt="">
-              <strong>Liam O.</strong>
-              <small>Student, Grade 11</small>
-            </div>
-          </article>
-
-          <article class="testimonial-card">
-            <span aria-hidden="true">&ldquo;</span>
-            <p>We've seen our child grow into a confident, compassionate leader at DXT Academy.</p>
-            <div>
-              <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=120&q=80" alt="">
-              <strong>Mrs. Okafor</strong>
-              <small>Parent</small>
-            </div>
-          </article>
+        <div>
+          <h3>Quick Links</h3>
+          <a href="about.html">About Us</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="#admissions">Admissions</a>
+          <a href="campus-life.html">School Life</a>
+          <a href="contact.html">Contact Us</a>
+          <a href="#portal">Portal</a>
         </div>
 
-        <div class="testimonial-dots" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-      </div>
-    </section>
-
-    <section class="journey-section" id="admissions">
-      <div class="container journey-card">
-        <div class="journey-card__intro">
-          <h2>Ready to Begin the DXT Journey?</h2>
-          <p>Join a community where minds are nurtured, leaders are built, and futures are shaped.</p>
+        <div>
+          <h3>Contact Us</h3>
+          <p>123 Excellence Way,<br />Abuja, Nigeria</p>
+          <p>+234 800 123 4567</p>
+          <p>info@dxtacademy.edu.ng</p>
         </div>
 
-        <a class="journey-action" href="#admissions" data-admission-modal-open>
-          <span class="journey-action__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" role="presentation">
-              <path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z" />
-              <path d="M9 12h6" />
-              <path d="M12 9v6" />
-            </svg>
-          </span>
-          <strong>Apply Now</strong>
-          <small>Start your application today and take the first step.</small>
-          <span aria-hidden="true">-></span>
-        </a>
-
-        <a class="journey-action" href="#contact" data-contact-modal-open>
-          <span class="journey-action__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" role="presentation">
-              <path d="M7 4h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4Z" />
-              <path d="M7 6H5a2 2 0 0 0 0 4h2" />
-              <path d="M17 6h2a2 2 0 0 1 0 4h-2" />
-              <path d="M12 12v4" />
-              <path d="M8 20h8" />
-            </svg>
-          </span>
-          <strong>Contact Form</strong>
-          <small>Send us a message and our team will get back to you.</small>
-          <span aria-hidden="true">-></span>
-        </a>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer" id="contact">
-    <div class="container site-footer__grid">
-      <div class="site-footer__brand">
-        <a class="brand" href="index.html#home" aria-label="DXT Academy home">
-          <span class="brand__mark" aria-hidden="true">
-            <svg viewBox="0 0 48 56" role="presentation">
-              <path d="M24 2 42 8v18c0 12.6-7.4 22.9-18 28C13.4 48.9 6 38.6 6 26V8L24 2Z" />
-              <path d="M24 12c-2.4 4.5-5.9 7.7-10 9.4 1.5 7.3 4.8 13 10 17.2 5.2-4.2 8.5-9.9 10-17.2-4.1-1.7-7.6-4.9-10-9.4Z" />
-              <path d="M24 18v20M18 25h12M24 18c2 4.4 4.9 7.6 8.5 9.6M24 18c-2 4.4-4.9 7.6-8.5 9.6" />
-            </svg>
-          </span>
-          <span class="brand__text">
-            <strong>DXT ACADEMY</strong>
-            <span>Nurturing. Inspiring. Leading.</span>
-          </span>
-        </a>
-        <p>DXT Academy is committed to nurturing minds, building leaders, and creating impact for a better tomorrow.</p>
-        <div class="social-links" aria-label="Social links">
-          <a href="#contact">f</a>
-          <a href="#contact">ig</a>
-          <a href="#contact">in</a>
-          <a href="#contact">yt</a>
+        <div>
+          <h3>Newsletter</h3>
+          <p>Stay updated with news and events.</p>
+          <form class="newsletter-form">
+            <label class="sr-only" for="newsletter-email">Email address</label>
+            <input
+              id="newsletter-email"
+              type="email"
+              placeholder="Enter your email"
+            />
+            <button type="submit" aria-label="Subscribe">-></button>
+          </form>
         </div>
       </div>
 
-      <div>
-        <h3>Quick Links</h3>
-        <a href="about.html">About Us</a>
-        <a href="gallery.html">Gallery</a>
-        <a href="#admissions">Admissions</a>
-        <a href="campus-life.html">School Life</a>
-        <a href="contact.html">Contact Us</a>
-        <a href="#portal">Portal</a>
+      <div class="container site-footer__bottom">
+        <p>&copy; 2024 DXT Academy. All rights reserved.</p>
+        <div>
+          <a href="#contact">Privacy Policy</a>
+          <a href="#contact">Terms of Use</a>
+        </div>
       </div>
+    </footer>
 
-      <div>
-        <h3>Contact Us</h3>
-        <p>123 Excellence Way,<br>Abuja, Nigeria</p>
-        <p>+234 800 123 4567</p>
-        <p>info@dxtacademy.edu.ng</p>
-      </div>
+    <div class="admission-modal" data-admission-modal aria-hidden="true">
+      <button
+        class="admission-modal__backdrop"
+        type="button"
+        aria-label="Close admission form"
+        data-admission-modal-close
+      ></button>
 
-      <div>
-        <h3>Newsletter</h3>
-        <p>Stay updated with news and events.</p>
-        <form class="newsletter-form">
-          <label class="sr-only" for="newsletter-email">Email address</label>
-          <input id="newsletter-email" type="email" placeholder="Enter your email">
-          <button type="submit" aria-label="Subscribe">-></button>
-        </form>
-      </div>
+      <section
+        class="admission-modal__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="admission-modal-title"
+      >
+        <div class="admission-modal__header">
+          <div>
+            <p>Admissions</p>
+            <h2 id="admission-modal-title">Apply to DXT Academy</h2>
+          </div>
+
+          <button
+            class="admission-modal__close"
+            type="button"
+            aria-label="Close admission form"
+            data-admission-modal-close
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="admission-modal__frame">
+          <iframe
+            src="https://docs.google.com/forms/d/e/1FAIpQLSdSXga8Z8UfldowUxZDw8b_fylxfQThhZqiuZUZnWtKWRBeSQ/viewform?embedded=true"
+            width="640"
+            height="1886"
+            frameborder="0"
+            marginheight="0"
+            marginwidth="0"
+            title="DXT Academy admission form"
+            >Loading...</iframe
+          >
+        </div>
+      </section>
     </div>
 
-    <div class="container site-footer__bottom">
-      <p>&copy; 2024 DXT Academy. All rights reserved.</p>
-      <div>
-        <a href="#contact">Privacy Policy</a>
-        <a href="#contact">Terms of Use</a>
-      </div>
+    <div
+      class="admission-modal contact-modal"
+      data-contact-modal
+      aria-hidden="true"
+    >
+      <button
+        class="admission-modal__backdrop"
+        type="button"
+        aria-label="Close contact form"
+        data-contact-modal-close
+      ></button>
+
+      <section
+        class="admission-modal__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contact-modal-title"
+      >
+        <div class="admission-modal__header">
+          <div>
+            <p>Contact</p>
+            <h2 id="contact-modal-title">Send Us a Message</h2>
+          </div>
+
+          <button
+            class="admission-modal__close"
+            type="button"
+            aria-label="Close contact form"
+            data-contact-modal-close
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="admission-modal__frame">
+          <iframe
+            src="https://docs.google.com/forms/d/e/1FAIpQLScHSufroE92p8YNZ2MWkH1lrkH0lWt2aNTmHSM58UwdH7DO2g/viewform?embedded=true"
+            width="640"
+            height="688"
+            frameborder="0"
+            marginheight="0"
+            marginwidth="0"
+            title="DXT Academy contact form"
+            >Loading...</iframe
+          >
+        </div>
+      </section>
     </div>
-  </footer>
 
-  <div class="admission-modal" data-admission-modal aria-hidden="true">
-    <button class="admission-modal__backdrop" type="button" aria-label="Close admission form" data-admission-modal-close></button>
-
-    <section class="admission-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="admission-modal-title">
-      <div class="admission-modal__header">
-        <div>
-          <p>Admissions</p>
-          <h2 id="admission-modal-title">Apply to DXT Academy</h2>
-        </div>
-
-        <button class="admission-modal__close" type="button" aria-label="Close admission form" data-admission-modal-close>
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-
-      <div class="admission-modal__frame">
-        <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdSXga8Z8UfldowUxZDw8b_fylxfQThhZqiuZUZnWtKWRBeSQ/viewform?embedded=true" width="640" height="1886" frameborder="0" marginheight="0" marginwidth="0" title="DXT Academy admission form">Loading...</iframe>
-      </div>
-    </section>
-  </div>
-
-  <div class="admission-modal contact-modal" data-contact-modal aria-hidden="true">
-    <button class="admission-modal__backdrop" type="button" aria-label="Close contact form" data-contact-modal-close></button>
-
-    <section class="admission-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
-      <div class="admission-modal__header">
-        <div>
-          <p>Contact</p>
-          <h2 id="contact-modal-title">Send Us a Message</h2>
-        </div>
-
-        <button class="admission-modal__close" type="button" aria-label="Close contact form" data-contact-modal-close>
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-
-      <div class="admission-modal__frame">
-        <iframe src="https://docs.google.com/forms/d/e/1FAIpQLScHSufroE92p8YNZ2MWkH1lrkH0lWt2aNTmHSM58UwdH7DO2g/viewform?embedded=true" width="640" height="688" frameborder="0" marginheight="0" marginwidth="0" title="DXT Academy contact form">Loading...</iframe>
-      </div>
-    </section>
-  </div>
-
-  <script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>

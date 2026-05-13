@@ -588,23 +588,23 @@ function PortalCardForm({
       </div>
 
       <div className="flex items-center gap-3 rounded-xl border border-[#222] bg-[#0d0d0d] px-4 py-3">
-          <Checkbox
-            checked={values.isVisible}
-            onCheckedChange={(checked) =>
-              setValues((current) => ({
-                ...current,
-                isVisible: checked === true,
-              }))
-            }
-          />
-          <div>
-            <p className="text-sm font-medium text-white">
-              Visible on public page
-            </p>
-            <p className="text-xs text-[#666]">
-              Hidden cards remain editable in admin.
-            </p>
-          </div>
+        <Checkbox
+          checked={values.isVisible}
+          onCheckedChange={(checked) =>
+            setValues((current) => ({
+              ...current,
+              isVisible: checked === true,
+            }))
+          }
+        />
+        <div>
+          <p className="text-sm font-medium text-white">
+            Visible on public page
+          </p>
+          <p className="text-xs text-[#666]">
+            Hidden cards remain editable in admin.
+          </p>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-[#222] bg-[#0d0d0d] p-4">
@@ -1035,17 +1035,17 @@ export function PortalManager({
                   const coverAsset = getCoverAsset(card);
 
                   return (
-	                    <TableRow
-	                      key={card.id}
-	                      tabIndex={0}
-	                      onClick={() => openEditing(card)}
-	                      onKeyDown={(event) => {
-	                        if (event.key === "Enter" || event.key === " ") {
-	                          event.preventDefault();
-	                          openEditing(card);
-	                        }
-	                      }}
-	                      className="cursor-pointer border-[#222] bg-[#111] text-[#d5d5d5] hover:bg-[#171717] focus-visible:bg-[#171717] focus-visible:outline-none"
+                    <TableRow
+                      key={card.id}
+                      tabIndex={0}
+                      onClick={() => openEditing(card)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          openEditing(card);
+                        }
+                      }}
+                      className="cursor-pointer border-[#222] bg-[#111] text-[#d5d5d5] hover:bg-[#171717] focus-visible:bg-[#171717] focus-visible:outline-none"
                     >
                       <TableCell className="px-4 py-3 align-top whitespace-normal">
                         <div className="flex min-w-[240px] items-start gap-3">
@@ -1066,9 +1066,9 @@ export function PortalManager({
                               <p className="text-sm font-semibold text-white">
                                 {card.title}
                               </p>
-	                              <span className="rounded-full border border-[#2a2a2a] bg-[#0d0d0d] px-2 py-0.5 text-[10px] tracking-[0.18em] text-[#777] uppercase">
-	                                Click to edit
-	                              </span>
+                              <span className="rounded-full border border-[#2a2a2a] bg-[#0d0d0d] px-2 py-0.5 text-[10px] tracking-[0.18em] text-[#777] uppercase">
+                                Click to edit
+                              </span>
                             </div>
                             <p className="max-w-md text-xs leading-6 text-[#8d8d8d]">
                               {card.summary}
@@ -1093,11 +1093,11 @@ export function PortalManager({
                       <TableCell className="px-4 py-3 align-top text-sm text-[#b3b3b3]">
                         {card.features.length}
                       </TableCell>
-		                      <TableCell className="px-4 py-3 text-right align-top">
-	                        <div className="flex justify-end gap-2">
-	                          <Button
-	                            type="button"
-	                            variant="outline"
+                      <TableCell className="px-4 py-3 text-right align-top">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
                             size="icon"
                             onClick={(event) => {
                               event.stopPropagation();
@@ -1127,8 +1127,8 @@ export function PortalManager({
               </TableBody>
             </Table>
           </div>
-	        )}
-	      </section>
+        )}
+      </section>
 
       <Dialog open={creating} onOpenChange={setCreating} modal={false}>
         <DialogContent

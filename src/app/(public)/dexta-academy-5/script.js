@@ -4,19 +4,33 @@ const siteNav = document.getElementById("site-nav");
 const scrollTriggers = document.querySelectorAll("[data-scroll-target]");
 const navLinks = document.querySelectorAll('.site-nav a[href^="#"]');
 const admissionModal = document.querySelector("[data-admission-modal]");
-const admissionModalTriggers = document.querySelectorAll("[data-admission-modal-open]");
-const admissionModalCloseButtons = document.querySelectorAll("[data-admission-modal-close]");
+const admissionModalTriggers = document.querySelectorAll(
+  "[data-admission-modal-open]",
+);
+const admissionModalCloseButtons = document.querySelectorAll(
+  "[data-admission-modal-close]",
+);
 const contactModal = document.querySelector("[data-contact-modal]");
-const contactModalTriggers = document.querySelectorAll("[data-contact-modal-open]");
-const contactModalCloseButtons = document.querySelectorAll("[data-contact-modal-close]");
+const contactModalTriggers = document.querySelectorAll(
+  "[data-contact-modal-open]",
+);
+const contactModalCloseButtons = document.querySelectorAll(
+  "[data-contact-modal-close]",
+);
 const imageModal = document.querySelector("[data-image-modal]");
 const imageModalImage = imageModal?.querySelector("[data-image-modal-image]");
-const imageModalCaption = imageModal?.querySelector("[data-image-modal-caption]");
+const imageModalCaption = imageModal?.querySelector(
+  "[data-image-modal-caption]",
+);
 const imageModalTriggers = document.querySelectorAll("[data-image-modal-open]");
-const imageModalCloseButtons = document.querySelectorAll("[data-image-modal-close]");
+const imageModalCloseButtons = document.querySelectorAll(
+  "[data-image-modal-close]",
+);
 const storyModal = document.querySelector("[data-story-modal]");
 const storyModalTriggers = document.querySelectorAll("[data-story-modal-open]");
-const storyModalCloseButtons = document.querySelectorAll("[data-story-modal-close]");
+const storyModalCloseButtons = document.querySelectorAll(
+  "[data-story-modal-close]",
+);
 const scrollRevealTargets = document.querySelectorAll(
   [
     ".about-preview__content",
@@ -42,7 +56,7 @@ const scrollRevealTargets = document.querySelectorAll(
     ".campus-list li",
     ".contact-panel article",
     ".contact-form-panel",
-  ].join(",")
+  ].join(","),
 );
 let lastFocusedElement = null;
 
@@ -96,7 +110,7 @@ const setupScrollReveal = () => {
     {
       rootMargin: "0px 0px -10% 0px",
       threshold: 0.16,
-    }
+    },
   );
 
   scrollRevealTargets.forEach((element) => {
@@ -115,7 +129,9 @@ const openAdmissionModal = () => {
   admissionModal.setAttribute("aria-hidden", "false");
   closeMenu();
 
-  const closeButton = admissionModal.querySelector("[data-admission-modal-close]");
+  const closeButton = admissionModal.querySelector(
+    "[data-admission-modal-close]",
+  );
   closeButton?.focus({ preventScroll: true });
 };
 
@@ -168,8 +184,12 @@ const openImageModal = (trigger) => {
   }
 
   const image = trigger.querySelector("img");
-  const title = trigger.querySelector("h2")?.textContent.trim() || image?.alt || "Gallery image";
-  const imageSource = trigger.getAttribute("href") || image?.currentSrc || image?.src;
+  const title =
+    trigger.querySelector("h2")?.textContent.trim() ||
+    image?.alt ||
+    "Gallery image";
+  const imageSource =
+    trigger.getAttribute("href") || image?.currentSrc || image?.src;
 
   if (!imageSource) {
     return;
@@ -222,7 +242,9 @@ const openStoryModal = () => {
   storyModal.setAttribute("aria-hidden", "false");
   closeMenu();
 
-  const closeButton = storyModal.querySelector(".admission-modal__close[data-story-modal-close]");
+  const closeButton = storyModal.querySelector(
+    ".admission-modal__close[data-story-modal-close]",
+  );
   closeButton?.focus({ preventScroll: true });
 };
 

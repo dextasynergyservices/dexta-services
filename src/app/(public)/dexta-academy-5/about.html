@@ -1,199 +1,295 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About DXT Academy</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <header class="site-header">
-    <div class="container header__inner">
-      <a class="brand" href="index.html#home" aria-label="DXT Academy home">
-        <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 48 56" role="presentation">
-            <path d="M24 2 42 8v18c0 12.6-7.4 22.9-18 28C13.4 48.9 6 38.6 6 26V8L24 2Z" />
-            <path d="M24 12c-2.4 4.5-5.9 7.7-10 9.4 1.5 7.3 4.8 13 10 17.2 5.2-4.2 8.5-9.9 10-17.2-4.1-1.7-7.6-4.9-10-9.4Z" />
-            <path d="M24 18v20M18 25h12M24 18c2 4.4 4.9 7.6 8.5 9.6M24 18c-2 4.4-4.9 7.6-8.5 9.6" />
-          </svg>
-        </span>
-      </a>
-
-      <nav class="site-nav" id="site-nav">
-        <a href="index.html#home">Home</a>
-        <a class="is-active" href="about.html">About</a>
-        <a href="gallery.html">Gallery</a>
-        <a href="index.html#admissions">Admissions</a>
-        <a href="campus-life.html">School Life</a>
-        <a href="contact.html">Contact</a>
-      </nav>
-
-      <a class="header-portal" href="index.html#portal">Portal</a>
-      <a class="header-cta" href="index.html#admissions">Apply Now</a>
-
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-nav-toggle>
-        <span></span>
-        <span></span>
-        <span></span>
-        <span class="sr-only">Toggle navigation</span>
-      </button>
-    </div>
-  </header>
-
-  <main class="page-main">
-    <section class="page-hero page-hero--about">
-      <div class="container page-hero__inner">
-        <div class="page-hero__content">
-          <p class="page-kicker">About DXT Academy</p>
-          <h1>Where Character Meets Academic Ambition.</h1>
-          <p>DXT Academy prepares students to think clearly, lead with integrity, and build the confidence to thrive in a fast-changing world.</p>
-          <div class="page-actions">
-            <a class="button button--olive" href="index.html#admissions">Start Admissions <span aria-hidden="true">-&gt;</span></a>
-            <a class="page-link" href="campus-life.html">Explore School Life</a>
-          </div>
-        </div>
-
-        <div class="page-hero__media">
-          <img src="https://res.cloudinary.com/dxoorukfj/image/upload/v1778254209/ChatGPT_Image_May_8_2026_04_29_51_PM_fmdlqg.png" alt="DXT Academy campus building with students walking">
-        </div>
-      </div>
-    </section>
-
-    <section class="page-section">
-      <div class="container page-stat-grid">
-        <article class="page-stat">
-          <strong>20+</strong>
-          <span>Years of academic excellence</span>
-        </article>
-        <article class="page-stat">
-          <strong>95%</strong>
-          <span>University progression rate</span>
-        </article>
-        <article class="page-stat">
-          <strong>1,500+</strong>
-          <span>Students empowered to lead</span>
-        </article>
-      </div>
-    </section>
-
-    <section class="page-section page-section--olive">
-      <div class="container split-feature">
-        <div>
-          <p class="page-kicker">Our Story</p>
-          <h2>Nurturing minds with structure, warmth, and purpose.</h2>
-        </div>
-        <div>
-          <p>We believe school should do more than deliver lessons. It should shape habits, sharpen curiosity, and help each student discover the kind of leader they can become.</p>
-          <p>Our environment blends rigorous academics with mentoring, values-driven learning, and real-world exposure so students grow with both competence and character.</p>
-          <button class="story-read-more" type="button" data-story-modal-open>
-            Read More <span aria-hidden="true">-&gt;</span>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <section class="page-section">
-      <div class="container value-grid">
-        <article class="value-card">
-          <span>01</span>
-          <h3>Holistic Education</h3>
-          <p>Learning experiences that balance academics, leadership, wellness, and personal growth.</p>
-        </article>
-        <article class="value-card value-card--dark">
-          <span>02</span>
-          <h3>Values-Driven Culture</h3>
-          <p>A school culture built around integrity, empathy, responsibility, and thoughtful action.</p>
-        </article>
-        <article class="value-card">
-          <span>03</span>
-          <h3>Future Readiness</h3>
-          <p>Students build communication, collaboration, creative thinking, and problem-solving skills.</p>
-        </article>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer" id="contact">
-    <div class="container site-footer__grid">
-      <div class="site-footer__brand">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About DXT Academy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header__inner">
         <a class="brand" href="index.html#home" aria-label="DXT Academy home">
           <span class="brand__mark" aria-hidden="true">
             <svg viewBox="0 0 48 56" role="presentation">
-              <path d="M24 2 42 8v18c0 12.6-7.4 22.9-18 28C13.4 48.9 6 38.6 6 26V8L24 2Z" />
-              <path d="M24 12c-2.4 4.5-5.9 7.7-10 9.4 1.5 7.3 4.8 13 10 17.2 5.2-4.2 8.5-9.9 10-17.2-4.1-1.7-7.6-4.9-10-9.4Z" />
-              <path d="M24 18v20M18 25h12M24 18c2 4.4 4.9 7.6 8.5 9.6M24 18c-2 4.4-4.9 7.6-8.5 9.6" />
+              <path
+                d="M24 2 42 8v18c0 12.6-7.4 22.9-18 28C13.4 48.9 6 38.6 6 26V8L24 2Z"
+              />
+              <path
+                d="M24 12c-2.4 4.5-5.9 7.7-10 9.4 1.5 7.3 4.8 13 10 17.2 5.2-4.2 8.5-9.9 10-17.2-4.1-1.7-7.6-4.9-10-9.4Z"
+              />
+              <path
+                d="M24 18v20M18 25h12M24 18c2 4.4 4.9 7.6 8.5 9.6M24 18c-2 4.4-4.9 7.6-8.5 9.6"
+              />
             </svg>
           </span>
-          <span class="brand__text">
-            <strong>DXT ACADEMY</strong>
-            <span>Nurturing. Inspiring. Leading.</span>
-          </span>
         </a>
-        <p>DXT Academy is committed to nurturing minds, building leaders, and creating impact for a better tomorrow.</p>
-      </div>
 
-      <div>
-        <h3>Quick Links</h3>
-        <a href="about.html">About Us</a>
-        <a href="gallery.html">Gallery</a>
-        <a href="index.html#admissions">Admissions</a>
-        <a href="campus-life.html">School Life</a>
-        <a href="contact.html">Contact Us</a>
-      </div>
+        <nav class="site-nav" id="site-nav">
+          <a href="index.html#home">Home</a>
+          <a class="is-active" href="about.html">About</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="index.html#admissions">Admissions</a>
+          <a href="campus-life.html">School Life</a>
+          <a href="contact.html">Contact</a>
+        </nav>
 
-      <div>
-        <h3>Contact Us</h3>
-        <p>123 Excellence Way,<br>Abuja, Nigeria</p>
-        <p>+234 800 123 4567</p>
-        <p>info@dxtacademy.edu.ng</p>
-      </div>
+        <a class="header-portal" href="index.html#portal">Portal</a>
+        <a class="header-cta" href="index.html#admissions">Apply Now</a>
 
-      <div>
-        <h3>Newsletter</h3>
-        <p>Stay updated with news and events.</p>
-        <form class="newsletter-form">
-          <label class="sr-only" for="newsletter-email">Email address</label>
-          <input id="newsletter-email" type="email" placeholder="Enter your email">
-          <button type="submit" aria-label="Subscribe">-&gt;</button>
-        </form>
-      </div>
-    </div>
-
-    <div class="container site-footer__bottom">
-      <p>&copy; 2024 DXT Academy. All rights reserved.</p>
-      <div>
-        <a href="contact.html">Privacy Policy</a>
-        <a href="contact.html">Terms of Use</a>
-      </div>
-    </div>
-  </footer>
-
-  <div class="admission-modal story-modal" data-story-modal aria-hidden="true">
-    <button class="admission-modal__backdrop" type="button" aria-label="Close school story" data-story-modal-close></button>
-
-    <section class="admission-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="story-modal-title">
-      <div class="admission-modal__header">
-        <div>
-          <p>Our Story</p>
-          <h2 id="story-modal-title">The DXT Academy Story</h2>
-        </div>
-        <button class="admission-modal__close" type="button" aria-label="Close school story" data-story-modal-close>
-          <span aria-hidden="true">&times;</span>
+        <button
+          class="nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="site-nav"
+          data-nav-toggle
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+          <span class="sr-only">Toggle navigation</span>
         </button>
       </div>
+    </header>
 
-      <div class="story-modal__body">
-        <p>DXT Academy was founded on a simple conviction: school should prepare children for life, not just examinations. From the beginning, the academy has set out to create a learning environment where discipline, warmth, curiosity, and excellence work together.</p>
-        <p>We believe every child carries potential that needs both structure and encouragement. That is why our classrooms combine strong academics with intentional mentoring, practical exposure, and values-driven guidance. Students are taught to ask thoughtful questions, communicate clearly, solve problems, and take responsibility for their choices.</p>
-        <p>Our story is shaped by the families, teachers, and students who continue to build this community every day. Together, we nurture confident learners who can lead with integrity, serve with empathy, and meet a fast-changing world with courage and purpose.</p>
-        <p>At DXT Academy, education is more than a timetable. It is a daily commitment to shaping character, inspiring purpose, and helping every student discover the kind of impact they can make.</p>
+    <main class="page-main">
+      <section class="page-hero page-hero--about">
+        <div class="container page-hero__inner">
+          <div class="page-hero__content">
+            <p class="page-kicker">About DXT Academy</p>
+            <h1>Where Character Meets Academic Ambition.</h1>
+            <p>
+              DXT Academy prepares students to think clearly, lead with
+              integrity, and build the confidence to thrive in a fast-changing
+              world.
+            </p>
+            <div class="page-actions">
+              <a class="button button--olive" href="index.html#admissions"
+                >Start Admissions <span aria-hidden="true">-&gt;</span></a
+              >
+              <a class="page-link" href="campus-life.html"
+                >Explore School Life</a
+              >
+            </div>
+          </div>
+
+          <div class="page-hero__media">
+            <img
+              src="https://res.cloudinary.com/dxoorukfj/image/upload/v1778254209/ChatGPT_Image_May_8_2026_04_29_51_PM_fmdlqg.png"
+              alt="DXT Academy campus building with students walking"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="container page-stat-grid">
+          <article class="page-stat">
+            <strong>20+</strong>
+            <span>Years of academic excellence</span>
+          </article>
+          <article class="page-stat">
+            <strong>95%</strong>
+            <span>University progression rate</span>
+          </article>
+          <article class="page-stat">
+            <strong>1,500+</strong>
+            <span>Students empowered to lead</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="page-section page-section--olive">
+        <div class="container split-feature">
+          <div>
+            <p class="page-kicker">Our Story</p>
+            <h2>Nurturing minds with structure, warmth, and purpose.</h2>
+          </div>
+          <div>
+            <p>
+              We believe school should do more than deliver lessons. It should
+              shape habits, sharpen curiosity, and help each student discover
+              the kind of leader they can become.
+            </p>
+            <p>
+              Our environment blends rigorous academics with mentoring,
+              values-driven learning, and real-world exposure so students grow
+              with both competence and character.
+            </p>
+            <button class="story-read-more" type="button" data-story-modal-open>
+              Read More <span aria-hidden="true">-&gt;</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="container value-grid">
+          <article class="value-card">
+            <span>01</span>
+            <h3>Holistic Education</h3>
+            <p>
+              Learning experiences that balance academics, leadership, wellness,
+              and personal growth.
+            </p>
+          </article>
+          <article class="value-card value-card--dark">
+            <span>02</span>
+            <h3>Values-Driven Culture</h3>
+            <p>
+              A school culture built around integrity, empathy, responsibility,
+              and thoughtful action.
+            </p>
+          </article>
+          <article class="value-card">
+            <span>03</span>
+            <h3>Future Readiness</h3>
+            <p>
+              Students build communication, collaboration, creative thinking,
+              and problem-solving skills.
+            </p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer" id="contact">
+      <div class="container site-footer__grid">
+        <div class="site-footer__brand">
+          <a class="brand" href="index.html#home" aria-label="DXT Academy home">
+            <span class="brand__mark" aria-hidden="true">
+              <svg viewBox="0 0 48 56" role="presentation">
+                <path
+                  d="M24 2 42 8v18c0 12.6-7.4 22.9-18 28C13.4 48.9 6 38.6 6 26V8L24 2Z"
+                />
+                <path
+                  d="M24 12c-2.4 4.5-5.9 7.7-10 9.4 1.5 7.3 4.8 13 10 17.2 5.2-4.2 8.5-9.9 10-17.2-4.1-1.7-7.6-4.9-10-9.4Z"
+                />
+                <path
+                  d="M24 18v20M18 25h12M24 18c2 4.4 4.9 7.6 8.5 9.6M24 18c-2 4.4-4.9 7.6-8.5 9.6"
+                />
+              </svg>
+            </span>
+            <span class="brand__text">
+              <strong>DXT ACADEMY</strong>
+              <span>Nurturing. Inspiring. Leading.</span>
+            </span>
+          </a>
+          <p>
+            DXT Academy is committed to nurturing minds, building leaders, and
+            creating impact for a better tomorrow.
+          </p>
+        </div>
+
+        <div>
+          <h3>Quick Links</h3>
+          <a href="about.html">About Us</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="index.html#admissions">Admissions</a>
+          <a href="campus-life.html">School Life</a>
+          <a href="contact.html">Contact Us</a>
+        </div>
+
+        <div>
+          <h3>Contact Us</h3>
+          <p>123 Excellence Way,<br />Abuja, Nigeria</p>
+          <p>+234 800 123 4567</p>
+          <p>info@dxtacademy.edu.ng</p>
+        </div>
+
+        <div>
+          <h3>Newsletter</h3>
+          <p>Stay updated with news and events.</p>
+          <form class="newsletter-form">
+            <label class="sr-only" for="newsletter-email">Email address</label>
+            <input
+              id="newsletter-email"
+              type="email"
+              placeholder="Enter your email"
+            />
+            <button type="submit" aria-label="Subscribe">-&gt;</button>
+          </form>
+        </div>
       </div>
-    </section>
-  </div>
 
-  <script src="script.js"></script>
-</body>
+      <div class="container site-footer__bottom">
+        <p>&copy; 2024 DXT Academy. All rights reserved.</p>
+        <div>
+          <a href="contact.html">Privacy Policy</a>
+          <a href="contact.html">Terms of Use</a>
+        </div>
+      </div>
+    </footer>
+
+    <div
+      class="admission-modal story-modal"
+      data-story-modal
+      aria-hidden="true"
+    >
+      <button
+        class="admission-modal__backdrop"
+        type="button"
+        aria-label="Close school story"
+        data-story-modal-close
+      ></button>
+
+      <section
+        class="admission-modal__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="story-modal-title"
+      >
+        <div class="admission-modal__header">
+          <div>
+            <p>Our Story</p>
+            <h2 id="story-modal-title">The DXT Academy Story</h2>
+          </div>
+          <button
+            class="admission-modal__close"
+            type="button"
+            aria-label="Close school story"
+            data-story-modal-close
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="story-modal__body">
+          <p>
+            DXT Academy was founded on a simple conviction: school should
+            prepare children for life, not just examinations. From the
+            beginning, the academy has set out to create a learning environment
+            where discipline, warmth, curiosity, and excellence work together.
+          </p>
+          <p>
+            We believe every child carries potential that needs both structure
+            and encouragement. That is why our classrooms combine strong
+            academics with intentional mentoring, practical exposure, and
+            values-driven guidance. Students are taught to ask thoughtful
+            questions, communicate clearly, solve problems, and take
+            responsibility for their choices.
+          </p>
+          <p>
+            Our story is shaped by the families, teachers, and students who
+            continue to build this community every day. Together, we nurture
+            confident learners who can lead with integrity, serve with empathy,
+            and meet a fast-changing world with courage and purpose.
+          </p>
+          <p>
+            At DXT Academy, education is more than a timetable. It is a daily
+            commitment to shaping character, inspiring purpose, and helping
+            every student discover the kind of impact they can make.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
 </html>

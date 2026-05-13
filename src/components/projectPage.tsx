@@ -478,7 +478,8 @@ export default function ProjectPage({
                 of the studio.
               </h2>
               <p className="mt-3 text-sm text-[#55657f] sm:text-base">
-                Showing {visibleResultsCount} of {filteredProjects.length} result
+                Showing {visibleResultsCount} of {filteredProjects.length}{" "}
+                result
                 {filteredProjects.length === 1 ? "" : "s"} from{" "}
                 {counts[activeTab]} published{" "}
                 {activeTabMeta.label.toLowerCase()} item
