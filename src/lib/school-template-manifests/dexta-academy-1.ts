@@ -1,6 +1,9 @@
 import {
+  backgroundImageField,
+  colorField,
   imageField,
   linkField,
+  numberField,
   textField,
   textareaField,
   type SchoolTemplateManifest,
@@ -22,17 +25,106 @@ const formIframePlaceholder =
 const formIframeHelpText =
   "Paste the full Google Forms iframe embed code. Leave blank to use the Google Form URL field.";
 
+const fontImportHelpText =
+  "Paste a Google Fonts embed URL to change the font for this section. Example: https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap";
+
 const admissionModalSection = {
   id: "admission-modal",
   label: "Admission Modal",
   selector: ".landing-admissions-modal",
   fields: [
+    colorField(
+      "sectionBgColor",
+      "Section background color",
+      ".landing-admissions-modal",
+      {
+        target: "cssVariable",
+        cssVariable: "--dexta-academy-1-admission-section-bg-color",
+        defaultValue: "#ffffff",
+        uiGroup: "Section background",
+        uiOrder: 100,
+      },
+    ),
+    numberField(
+      "sectionBgOpacity",
+      "Section background opacity",
+      ".landing-admissions-modal",
+      {
+        target: "cssVariable",
+        cssVariable: "--dexta-academy-1-admission-section-bg-opacity",
+        defaultValue: 100,
+        min: 0,
+        max: 100,
+        step: 1,
+        unit: "%",
+        uiGroup: "Section background",
+        uiOrder: 101,
+      },
+    ),
+    backgroundImageField(
+      "sectionBgImage",
+      "Section background image",
+      ".landing-admissions-modal",
+      {
+        target: "cssVariable",
+        cssVariable: "--dexta-academy-1-admission-section-bg-image",
+        defaultValue: "",
+        uiGroup: "Section background",
+        uiOrder: 102,
+        helpText:
+          "Use the image control to add, replace, or remove this section background image.",
+      },
+    ),
     textField(
+      "sectionBgPosition",
+      "Background image position",
+      ".landing-admissions-modal",
+      {
+        target: "cssVariable",
+        cssVariable: "--dexta-academy-1-admission-section-bg-position",
+        defaultValue: "center center",
+        uiGroup: "Section background",
+        uiOrder: 103,
+      },
+    ),
+    textField(
+      "sectionBgSize",
+      "Background image size",
+      ".landing-admissions-modal",
+      {
+        target: "cssVariable",
+        cssVariable: "--dexta-academy-1-admission-section-bg-size",
+        defaultValue: "cover",
+        helpText: "Use cover, contain, or a custom CSS size such as 100% auto.",
+        uiGroup: "Section background",
+        uiOrder: 104,
+      },
+    ),
+    textareaField(
       "eyebrow",
       "Eyebrow",
       ".landing-admissions-modal__header .landing-eyebrow",
+      { type: "richText", target: "innerHTML" },
     ),
-    textField("title", "Title", "#admissionsModalLabel"),
+    textareaField("title", "Title", "#admissionsModalLabel", {
+      type: "richText",
+      target: "innerHTML",
+    }),
+    linkField(
+      "fontStylesheetUrl",
+      "Google Fonts stylesheet URL",
+      ".landing-admissions-modal",
+      {
+        target: "attribute",
+        attribute: "data-dexta-font-stylesheet",
+        defaultValue: "",
+        placeholder:
+          "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap",
+        helpText: fontImportHelpText,
+        uiGroup: "Rich text fonts",
+        uiOrder: 200,
+      },
+    ),
     linkField("formUrl", "Google Form URL", "iframe", {
       attribute: "src",
     }),
@@ -227,10 +319,99 @@ export const dextaAcademy1Manifest = {
           label: "Contact",
           selector: "#contact",
           fields: [
-            textField("title", "Title", ".landing-heading, h2"),
+            colorField(
+              "sectionBgColor",
+              "Section background color",
+              "#contact",
+              {
+                target: "cssVariable",
+                cssVariable: "--dexta-academy-1-contact-section-bg-color",
+                defaultValue: "#ffffff",
+                uiGroup: "Section background",
+                uiOrder: 100,
+              },
+            ),
+            numberField(
+              "sectionBgOpacity",
+              "Section background opacity",
+              "#contact",
+              {
+                target: "cssVariable",
+                cssVariable: "--dexta-academy-1-contact-section-bg-opacity",
+                defaultValue: 100,
+                min: 0,
+                max: 100,
+                step: 1,
+                unit: "%",
+                uiGroup: "Section background",
+                uiOrder: 101,
+              },
+            ),
+            backgroundImageField(
+              "sectionBgImage",
+              "Section background image",
+              "#contact",
+              {
+                target: "cssVariable",
+                cssVariable: "--dexta-academy-1-contact-section-bg-image",
+                defaultValue: "",
+                uiGroup: "Section background",
+                uiOrder: 102,
+                helpText:
+                  "Use the image control to add, replace, or remove this section background image.",
+              },
+            ),
+            textField(
+              "sectionBgPosition",
+              "Background image position",
+              "#contact",
+              {
+                target: "cssVariable",
+                cssVariable: "--dexta-academy-1-contact-section-bg-position",
+                defaultValue: "center center",
+                uiGroup: "Section background",
+                uiOrder: 103,
+              },
+            ),
+            textField("sectionBgSize", "Background image size", "#contact", {
+              target: "cssVariable",
+              cssVariable: "--dexta-academy-1-contact-section-bg-size",
+              defaultValue: "cover",
+              helpText:
+                "Use cover, contain, or a custom CSS size such as 100% auto.",
+              uiGroup: "Section background",
+              uiOrder: 104,
+            }),
+            textareaField("eyebrow", "Eyebrow", ".landing-eyebrow", {
+              type: "richText",
+              target: "innerHTML",
+            }),
+            textareaField("title", "Title", ".landing-heading, h2", {
+              type: "richText",
+              target: "innerHTML",
+            }),
+            textareaField("body", "Body", ".landing-copy", {
+              type: "richText",
+              target: "innerHTML",
+            }),
             textField("phone", "Phone", "a[href^='tel:'], p"),
             textField("email", "Email", "a[href^='mailto:'], p"),
             textareaField("address", "Address", "address, p"),
+            linkField(
+              "fontStylesheetUrl",
+              "Google Fonts stylesheet URL",
+              "#contact",
+              {
+                target: "attribute",
+                attribute: "data-dexta-font-stylesheet",
+                defaultValue: "",
+                placeholder:
+                  "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap",
+                helpText: fontImportHelpText,
+                uiGroup: "Rich text fonts",
+                uiOrder: 200,
+              },
+            ),
             linkField("formUrl", "School/contact Google Form URL", "iframe", {
               attribute: "src",
             }),

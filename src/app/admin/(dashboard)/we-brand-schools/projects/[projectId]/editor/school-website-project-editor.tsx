@@ -693,13 +693,66 @@ function getRepeatableItemFields(
   const repeatable = section.snapshot?.repeatable;
   if (!repeatable) return [];
 
-  const itemFieldKeys = new Set(
-    section.content.repeatable?.items.flatMap((item) => Object.keys(item)) ??
-      [],
-  );
+  // Fields that are always section-level (never per-item)
+  const sectionLevelUiGroups = new Set([
+    "Section background",
+    "Button style",
+    "Primary CTA style",
+    "Secondary CTA style",
+    "Icon style",
+    "Rich text fonts",
+    "Portal button",
+    "Apply button",
+  ]);
+
+  function isSectionLevelField(field: SchoolTemplateProjectFieldSnapshot) {
+    if (field.uiGroup && sectionLevelUiGroups.has(field.uiGroup)) return true;
+    return false;
+  }
+
+  // Extract class names from the item selector to determine if a field
+  // targets elements inside repeatable items
+  const itemSelector = repeatable.itemSelector.trim();
+  const itemClasses =
+    itemSelector.match(/\.[a-zA-Z0-9_-]+/g)?.map((c) => c) ?? [];
+  // Extract base prefix from item classes (e.g., ".program-card" → "program-card")
+  const itemPrefixes = itemClasses.map((c) => c.slice(1));
+
+  function isLikelyItemField(field: SchoolTemplateProjectFieldSnapshot) {
+    const sel = field.selector.trim();
+    // If the field selector contains any of the item selector's classes
+    for (const cls of itemClasses) {
+      if (sel.includes(cls)) return true;
+    }
+    // If the selector class name shares a prefix with the item class
+    // e.g., ".gallery-preview-label" shares prefix with ".gallery-preview-card"
+    const fieldClasses = sel.match(/\.[a-zA-Z0-9_-]+/g) ?? [];
+    for (const fc of fieldClasses) {
+      const fcName = fc.slice(1); // strip leading dot
+      for (const prefix of itemPrefixes) {
+        // Check if they share a common root (first 2+ hyphen-segments)
+        const prefixParts = prefix.split("-");
+        const fcParts = fcName.split("-");
+        if (
+          prefixParts.length >= 2 &&
+          fcParts.length >= 2 &&
+          prefixParts.slice(0, 2).join("-") === fcParts.slice(0, 2).join("-")
+        ) {
+          return true;
+        }
+      }
+    }
+    // Bare inline/content elements that typically appear inside repeatable cards
+    if (
+      /^(strong|span|em|small|a|img|figure|figcaption|h3|h4|h5|h6|p)$/i.test(
+        sel,
+      )
+    )
+      return true;
+    return false;
+  }
 
   const sectionSelector = section.snapshot?.selector.trim();
-  const itemSelector = repeatable.itemSelector.trim();
   const sectionTargetsItems =
     sectionSelector === itemSelector ||
     sectionSelector
@@ -716,17 +769,16 @@ function getRepeatableItemFields(
     "title",
   ]);
 
-  if (itemFieldKeys.size > 0) {
-    return fields.filter(
-      (field) =>
-        itemFieldKeys.has(field.key) &&
-        (sectionTargetsItems || !sectionLevelKeys.has(field.key)),
-    );
-  }
+  // When section selector = item selector, all non-styling fields are item-level
+  if (sectionTargetsItems) return fields.filter((f) => !isSectionLevelField(f));
 
-  if (sectionTargetsItems) return fields;
-
-  return fields.filter((field) => !sectionLevelKeys.has(field.key));
+  // Use selector-based heuristic to determine item-level fields
+  return fields.filter(
+    (field) =>
+      !isSectionLevelField(field) &&
+      !sectionLevelKeys.has(field.key) &&
+      isLikelyItemField(field),
+  );
 }
 
 function resolveModelValidationUrl({

@@ -367,8 +367,19 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    var routeBase = getPreviewRouteBase();
 	    if (!routeBase) return;
 
+	    var currentPageUrl = window.location.pathname + window.location.search;
+
 	    document.querySelectorAll("a[href]").forEach(function (link) {
-	      var target = getPreviewNavigationTarget(link.getAttribute("href"));
+	      var rawHref = link.getAttribute("href") || "";
+
+	      // Fix hash-only links so the <base href> tag does not redirect
+	      // them away from the current preview page.
+	      if (rawHref.charAt(0) === "#") {
+	        link.setAttribute("href", currentPageUrl + rawHref);
+	        return;
+	      }
+
+	      var target = getPreviewNavigationTarget(rawHref);
 	      if (!target) return;
 
 	      link.setAttribute(
@@ -473,7 +484,6 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	      value !== undefined &&
 	      (field.target === "textContent" || field.target === "innerHTML")
 	    ) return true;
-	    if (field.target === "cssVariable" && (field.type === "image" || field.type === "model3d")) return true;
 	    if (field.type === "image" && field.defaultValue !== undefined && (field.target === "attribute" || field.target === "backgroundImage")) return true;
 	    return false;
 	  }
@@ -626,6 +636,28 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	  function applySection(sectionContent, sectionSnapshot) {
 	    if (!sectionContent || !sectionSnapshot) return;
 	    var roots = getSectionRoots(sectionSnapshot);
+
+	    // Determine which fields are item-level when section is repeatable
+	    var isRepeatableSection = !!(sectionContent.repeatable && sectionSnapshot.repeatable);
+	    var itemLevelKeys = {};
+	    if (isRepeatableSection) {
+	      var itemSelector = sectionSnapshot.repeatable.itemSelector;
+	      roots.forEach(function (root) {
+	        var sampleItems = queryWithin(root, itemSelector);
+	        if (sampleItems.length > 0) {
+	          var sampleItem = sampleItems[0];
+	          sectionSnapshot.fields.forEach(function (field) {
+	            // A field is item-level if it matches elements INSIDE an item
+	            var matchesInItem = queryWithin(sampleItem, field.selector);
+	            if (matchesInItem.length > 0) {
+	              itemLevelKeys[field.key] = true;
+	            }
+	          });
+	        }
+	      });
+	    }
+
+	    // Apply section-level fields (skip item-level fields for repeatable sections)
 	    sectionSnapshot.fields.forEach(function (field) {
 	      var value = sectionContent.fields ? sectionContent.fields[field.key] : null;
       if (!shouldApplyField(value, field)) return;
@@ -634,6 +666,9 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
         return;
       }
 
+      // Skip item-level fields at section level for repeatable sections
+      if (isRepeatableSection && itemLevelKeys[field.key]) return;
+
       roots.forEach(function (root) {
 	        queryWithin(root, field.selector).forEach(function (node) {
 	          applyField(node, field, value);
@@ -641,19 +676,68 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	      });
 	    });
 
-	    if (!sectionContent.repeatable || !sectionSnapshot.repeatable) return;
+	    if (!isRepeatableSection) return;
 	    var itemContents = sectionContent.repeatable.items || [];
 	    if (!itemContents.length) return;
 
 	    roots.forEach(function (root) {
-	      queryWithin(root, sectionSnapshot.repeatable.itemSelector).forEach(function (itemRoot, itemIndex) {
+	      var existingItems = queryWithin(root, sectionSnapshot.repeatable.itemSelector);
+	      if (!existingItems.length) return;
+
+	      // Only clone additional items if data has more items than the template
+	      if (itemContents.length > existingItems.length) {
+	        var lastItem = existingItems[existingItems.length - 1];
+	        var cloneTarget = lastItem;
+	        var insertParent = lastItem.parentNode;
+	        // If the item is inside a single-child column wrapper, clone the wrapper too
+	        if (lastItem.parentElement && lastItem.parentElement !== root &&
+	            lastItem.parentElement.children.length === 1) {
+	          cloneTarget = lastItem.parentElement;
+	          insertParent = cloneTarget.parentNode;
+	        }
+	        for (var c = existingItems.length; c < itemContents.length; c++) {
+	          var cloned = cloneTarget.cloneNode(true);
+	          cloned.setAttribute("data-dexta-cloned", "true");
+	          insertParent.appendChild(cloned);
+	        }
+	      }
+
+	      // Re-query after cloning
+	      var finalItems = queryWithin(root, sectionSnapshot.repeatable.itemSelector);
+
+	      // Hide items beyond the data count
+	      for (var h = itemContents.length; h < finalItems.length; h++) {
+	        var hideTarget = finalItems[h];
+	        if (hideTarget.parentElement && hideTarget.parentElement !== root &&
+	            hideTarget.parentElement.children.length === 1) {
+	          hideTarget = hideTarget.parentElement;
+	        }
+	        hideTarget.style.setProperty("display", "none", "important");
+	      }
+
+	      finalItems.forEach(function (itemRoot, itemIndex) {
 	        var itemContent = itemContents[itemIndex];
 	        if (!itemContent) return;
 
 	        sectionSnapshot.fields.forEach(function (field) {
-	          var value = itemContent[field.key];
-	          if (!shouldApplyField(value, field)) return;
 	          if (field.target === "threeConfig") return;
+	          if (!itemLevelKeys[field.key]) return;
+
+	          var value = itemContent[field.key];
+
+	          // Clear text/richText fields that are empty in per-item data
+	          if (!isFilled(value)) {
+	            if (field.target === "textContent" || field.target === "innerHTML") {
+	              queryWithin(itemRoot, field.selector).forEach(function (node) {
+	                if (field.target === "innerHTML") {
+	                  setElementHtml(node, "");
+	                } else {
+	                  node.textContent = "";
+	                }
+	              });
+	            }
+	            return;
+	          }
 
 	          queryWithin(itemRoot, field.selector).forEach(function (node) {
 	            applyField(node, field, value);
@@ -794,7 +878,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		        ".button--navy{background:var(--navy)!important;}",
 		        ".button--gold{background:var(--gold)!important;color:var(--navy-deep)!important;}",
 		        ".button--gold,.button--outline-light:hover,.programme-card,.programme-tile,.contact-card,.info-card{border-color:var(--gold)!important;}",
-		        ".button--navy,.site-header,.footer,.admission-modal__panel{border-color:var(--navy)!important;}",
+		        ".button--navy,.footer,.admission-modal__panel{border-color:var(--navy)!important;}",
 		        ".programme-card--featured,.timeline__marker,.contact-hero,.about-cta{background:var(--navy)!important;}",
 		        ".apply-card__badge,.gallery-filter.is-active{background:var(--gold)!important;border-color:var(--gold)!important;}"
 		      ].join("");
@@ -802,17 +886,20 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		
 		    if (preview.content.templateSlug === "dexta-academy-4") {
 		      return [
-		        ".btn-primary,.btn.btn-primary,.hero-apply-btn,.hero-primary-btn,.school-homepage .btn.btn-primary,.school-about-page .btn.btn-primary,.school-academics-page .btn.btn-primary,.school-admissions-page .btn.btn-primary,.school-contact-page .btn.btn-primary,.bg-primary{background:" + primary + "!important;border-color:" + primary + "!important;color:#fff!important;}",
-		        ".btn-primary:hover,.btn.btn-primary:hover,.hero-apply-btn:hover,.hero-primary-btn:hover,.school-homepage .btn.btn-primary:hover,.school-about-page .btn.btn-primary:hover,.school-academics-page .btn.btn-primary:hover,.school-admissions-page .btn.btn-primary:hover,.school-contact-page .btn.btn-primary:hover,.school-about-page .btn.btn-primary:focus,.school-academics-page .btn.btn-primary:focus,.school-admissions-page .btn.btn-primary:focus,.school-contact-page .btn.btn-primary:focus{background:" + secondary + "!important;border-color:" + secondary + "!important;}",
+		        ".btn-primary,.btn.btn-primary,.hero-apply-btn,.hero-primary-btn,.school-homepage .btn.btn-primary,.school-about-page .btn.btn-primary,.school-admissions-page .btn.btn-primary,.school-contact-page .btn.btn-primary,.bg-primary{background:" + primary + "!important;border-color:" + primary + "!important;color:#fff!important;}",
+		        ".btn-primary:hover,.btn.btn-primary:hover,.hero-apply-btn:hover,.hero-primary-btn:hover,.school-homepage .btn.btn-primary:hover,.school-about-page .btn.btn-primary:hover,.school-admissions-page .btn.btn-primary:hover,.school-contact-page .btn.btn-primary:hover,.school-about-page .btn.btn-primary:focus,.school-admissions-page .btn.btn-primary:focus,.school-contact-page .btn.btn-primary:focus{background:" + secondary + "!important;border-color:" + secondary + "!important;}",
+		        ".hero-apply-btn,.hero-apply-btn:hover,.hero-apply-btn:focus,.hero-portal-btn,.hero-portal-btn:hover,.hero-portal-btn:focus,.school-about-page .hero-apply-btn,.school-about-page .hero-apply-btn:hover,.school-about-page .hero-portal-btn,.school-about-page .hero-portal-btn:hover,.school-admissions-page .hero-apply-btn,.school-admissions-page .hero-apply-btn:hover,.school-admissions-page .hero-portal-btn,.school-admissions-page .hero-portal-btn:hover,.school-contact-page .hero-apply-btn,.school-contact-page .hero-apply-btn:hover,.school-contact-page .hero-portal-btn,.school-contact-page .hero-portal-btn:hover,.school-gallery-page .hero-apply-btn,.school-gallery-page .hero-apply-btn:hover,.school-gallery-page .hero-portal-btn,.school-gallery-page .hero-portal-btn:hover{color:#fff!important;}",
 		        ".btn-outline-primary{border-color:" + primary + "!important;color:" + primary + "!important;}",
 		        ".btn-outline-primary:hover{background:" + primary + "!important;color:#fff!important;}",
-		        ".text-primary,.school-homepage .section-label,.school-homepage .feature-icon,.heading-section .subheading,.school-about-page a:hover,.school-academics-page a:hover,.school-contact-page a:hover,.ftco-navbar-light .navbar-nav > .nav-item.active > a{color:" + primary + "!important;}",
+		        ".text-primary,.school-homepage .section-label,.school-homepage .feature-icon,.heading-section .subheading,.school-about-page a:hover,.school-contact-page a:hover,.ftco-navbar-light .navbar-nav > .nav-item.active > a{color:" + primary + "!important;}",
 		        ".bg-secondary{background:" + secondary + "!important;}",
 		        ".text-secondary{color:" + secondaryDark + "!important;}",
 		        "#ftco-loader .path{stroke:" + primary + "!important;}",
-		        ".school-page-hero,.about-page-hero,.academics-page-hero,.admissions-page-hero,.contact-page-hero{background-color:" + primary + "!important;}",
+		        ".school-page-hero,.about-page-hero,.admissions-page-hero,.contact-page-hero{background-color:" + primary + "!important;}",
 		        ".gallery-pagination-btn:hover,.gallery-pagination-btn:focus,.gallery-pagination-number:hover,.gallery-pagination-number:focus,.gallery-pagination-number.is-active{background:" + primary + "!important;border-color:" + primary + "!important;color:#fff!important;}",
-		        ".hero-secondary-btn,.btn-outline-primary,.school-card,.programme-card,.feature-card,.contact-detail-card,.gallery-pagination-btn,.gallery-pagination-number{border-color:" + primary + "!important;}"
+		        ".hero-secondary-btn,.btn-outline-primary,.school-card,.programme-card,.feature-card,.contact-detail-card,.gallery-pagination-btn,.gallery-pagination-number{border-color:" + primary + "!important;}",
+		        "@media(max-width:991.98px){.hero-header .navbar-collapse.show{max-height:calc(100vh - 80px);overflow-y:auto;}}",
+		        "@media(min-width:992px){.navbar-collapse .hero-navbar-actions-mobile{display:none!important;}}"
 		      ].join("");
 		    }
 
@@ -922,6 +1009,15 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		        css.push(".site-header,.site-header.is-scrolled{background:" + navbarBackground + "!important;background-color:" + navbarBackground + "!important;box-shadow:" + navbarShadow + "!important;}");
 		        css.push("body[data-page='home'] .site-header__bar{background:" + navbarBackground + "!important;background-color:" + navbarBackground + "!important;}");
 		      }
+		    } else if (preview.content.templateSlug === "dexta-academy-4") {
+		      // Template 4: only override .hero-header/.hero-navbar if user explicitly set a navBarColor
+		      if (preview.content.theme.navBarColor && preview.content.theme.navBarColor !== "#ffffff" && !preview.content.theme.navBarTransparent) {
+		        css.push(".hero-header,.hero-navbar{background:" + navbarBackground + "!important;background-color:" + navbarBackground + "!important;box-shadow:" + navbarShadow + "!important;}");
+		      }
+		      css.push(".navbar,.navbar.bg-white,.site-header,.site-header__bar,.ftco-navbar-light{background:" + navbarBackground + "!important;background-color:" + navbarBackground + "!important;box-shadow:" + navbarShadow + "!important;}");
+		    } else if (preview.content.templateSlug === "dexta-academy-3") {
+		      // Template 3: .site-header is handled by getTemplateOverrideCss — skip it here
+		      css.push(".navbar,.navbar.bg-white,.ftco-navbar-light{background:" + navbarBackground + "!important;background-color:" + navbarBackground + "!important;box-shadow:" + navbarShadow + "!important;}");
 		    } else {
 		      css.push(".navbar,.navbar.bg-white,.site-header,.site-header__bar,.hero-header,.hero-navbar,.ftco-navbar-light{background:" + navbarBackground + "!important;background-color:" + navbarBackground + "!important;box-shadow:" + navbarShadow + "!important;}");
 		    }
@@ -975,14 +1071,153 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      Number(preview.content.theme.brandTaglineFontSize || 13) === 13;
 
 			    if (!isTemplateTwo || (!templateTwoLegacyBrandDefaults && !templateTwoOriginalBrandDefaults)) {
-			      css.push(".brand__name strong,.brand__copy strong,.brand__text strong,.contact-brand strong,.school-footer-brand h3{color:" + (preview.content.theme.brandNameColor || "#111827") + "!important;font-size:" + (Number(preview.content.theme.brandNameFontSize || 16)) + "px!important;}");
-			      css.push(".brand__name span,.brand__copy span,.brand__text span,.contact-brand small{color:" + (preview.content.theme.brandTaglineColor || "#6b7280") + "!important;font-size:" + (Number(preview.content.theme.brandTaglineFontSize || 12)) + "px!important;}");
-		    }
+	      if (preview.content.templateSlug !== "dexta-academy-3") {
+	        css.push(".brand__name strong,.brand__copy strong,.brand__text strong,.contact-brand strong,.school-footer-brand h3{color:" + (preview.content.theme.brandNameColor || "#111827") + "!important;font-size:" + (Number(preview.content.theme.brandNameFontSize || 16)) + "px!important;}");
+	        css.push(".brand__name span,.brand__copy span,.brand__text span,.contact-brand small{color:" + (preview.content.theme.brandTaglineColor || "#6b7280") + "!important;font-size:" + (Number(preview.content.theme.brandTaglineFontSize || 12)) + "px!important;}");
+	      }
 
 		    return css.join("");
 		  }
 		
 	  function getTemplateOverrideCss() {
+	    if (preview.content.templateSlug === "dexta-academy-1") {
+	      return [
+	        '#contact{background-color:color-mix(in srgb,var(--dexta-academy-1-contact-section-bg-color,#fff) var(--dexta-academy-1-contact-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-contact-section-bg-image,none)!important;background-position:var(--dexta-academy-1-contact-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-contact-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.landing-admissions-modal{background-color:color-mix(in srgb,var(--dexta-academy-1-admission-section-bg-color,#fff) var(--dexta-academy-1-admission-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-admission-section-bg-image,none)!important;background-position:var(--dexta-academy-1-admission-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-admission-section-bg-size,cover)!important;background-repeat:no-repeat!important;}'
+	      ].join("");
+	    }
+	    if (preview.content.templateSlug === "dexta-academy-3") {
+	      return [
+	        // ── Existing: contact-message + admission-modal ──
+	        '.contact-message-card{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-form-section-bg-color,#fff) var(--dexta-academy-3-contact-form-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-contact-form-section-bg-image,none)!important;background-position:var(--dexta-academy-3-contact-form-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-contact-form-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.admission-modal{background-color:color-mix(in srgb,var(--dexta-academy-3-admission-form-section-bg-color,#fff) var(--dexta-academy-3-admission-form-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-admission-form-section-bg-image,none)!important;background-position:var(--dexta-academy-3-admission-form-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-admission-form-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        // ── Page loader (hide in preview so header is instantly visible) ──
+	        '.page-loader{display:none!important;}',
+	        // ── Shared Header ──
+	        'body:not(.home-page) .site-header{background-color:color-mix(in srgb,var(--dexta-academy-3-shared-header-section-bg-color,rgba(255,255,255,0.9)) var(--dexta-academy-3-shared-header-section-bg-opacity,100%),transparent)!important;backdrop-filter:blur(18px)!important;}',
+	        '.home-page .site-header{opacity:1!important;transform:translate(var(--site-header-shift-x,0),0)!important;animation:none!important;}',
+	        '.header-actions .button--gold{background:color-mix(in srgb,var(--dexta-academy-3-shared-header-cta-button-bg-color,#f3bf35) var(--dexta-academy-3-shared-header-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-shared-header-cta-button-text-color,#09142f)!important;border:var(--dexta-academy-3-shared-header-cta-button-border-width,0px) solid var(--dexta-academy-3-shared-header-cta-button-border-color,#f3bf35)!important;}',
+	        // ── Shared Footer ──
+	        '.site-footer{background-color:color-mix(in srgb,var(--dexta-academy-3-shared-footer-section-bg-color,#09142f) var(--dexta-academy-3-shared-footer-section-bg-opacity,100%),transparent)!important;}',
+	        // ── Home Hero ──
+	        '.hero{background-color:color-mix(in srgb,var(--dexta-academy-3-home-hero-section-bg-color,#031225) var(--dexta-academy-3-home-hero-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-home-hero-section-bg-image,none)!important;background-position:var(--dexta-academy-3-home-hero-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-home-hero-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.hero__cta-primary{background:color-mix(in srgb,var(--dexta-academy-3-home-hero-primary-button-bg-color,#f3bf35) var(--dexta-academy-3-home-hero-primary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-hero-primary-button-text-color,#09142f)!important;border:var(--dexta-academy-3-home-hero-primary-button-border-width,0px) solid var(--dexta-academy-3-home-hero-primary-button-border-color,#f3bf35)!important;}',
+	        '.hero__cta-secondary{background:color-mix(in srgb,var(--dexta-academy-3-home-hero-secondary-button-bg-color,rgba(255,255,255,0.78)) var(--dexta-academy-3-home-hero-secondary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-hero-secondary-button-text-color,#112246)!important;border:var(--dexta-academy-3-home-hero-secondary-button-border-width,1px) solid var(--dexta-academy-3-home-hero-secondary-button-border-color,rgba(17,34,70,0.15))!important;}',
+	        // ── Home Welcome ──
+	        '.welcome{background-color:color-mix(in srgb,var(--dexta-academy-3-home-welcome-section-bg-color,#fff8ed) var(--dexta-academy-3-home-welcome-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-home-welcome-section-bg-image,none)!important;background-position:var(--dexta-academy-3-home-welcome-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-home-welcome-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.welcome__cta{background:color-mix(in srgb,var(--dexta-academy-3-home-welcome-cta-button-bg-color,#122a56) var(--dexta-academy-3-home-welcome-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-welcome-cta-button-text-color,#fff)!important;border:var(--dexta-academy-3-home-welcome-cta-button-border-width,0px) solid var(--dexta-academy-3-home-welcome-cta-button-border-color,#122a56)!important;}',
+	        // ── Home Programmes ──
+	        '.programmes-showcase{background-color:color-mix(in srgb,var(--dexta-academy-3-home-programmes-section-bg-color,#081b3a) var(--dexta-academy-3-home-programmes-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-home-programmes-section-bg-image,none)!important;background-position:var(--dexta-academy-3-home-programmes-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-home-programmes-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.programmes-showcase .section-heading .button{background:color-mix(in srgb,var(--dexta-academy-3-home-programmes-cta-button-bg-color,rgba(255,255,255,0.04)) var(--dexta-academy-3-home-programmes-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-programmes-cta-button-text-color,#fff)!important;border:var(--dexta-academy-3-home-programmes-cta-button-border-width,1px) solid var(--dexta-academy-3-home-programmes-cta-button-border-color,rgba(255,255,255,0.22))!important;}',
+	        '.programme-tile__icon{color:var(--dexta-academy-3-home-programmes-icon-icon-color,#f3bf35)!important;background-color:color-mix(in srgb,var(--dexta-academy-3-home-programmes-icon-icon-bg-color,rgba(6,18,42,0.58)) var(--dexta-academy-3-home-programmes-icon-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-home-programmes-icon-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-3-home-programmes-icon-icon-border-width,0px) solid var(--dexta-academy-3-home-programmes-icon-icon-border-color,transparent)!important;}',
+	        // ── Home How To Apply ──
+	        '.home-apply{background-color:color-mix(in srgb,var(--dexta-academy-3-home-how-to-apply-section-bg-color,#fff8ed) var(--dexta-academy-3-home-how-to-apply-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-home-how-to-apply-section-bg-image,none)!important;background-position:var(--dexta-academy-3-home-how-to-apply-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-home-how-to-apply-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.home-apply__actions .button--gold{background:color-mix(in srgb,var(--dexta-academy-3-home-apply-primary-button-bg-color,#f3bf35) var(--dexta-academy-3-home-apply-primary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-apply-primary-button-text-color,#09142f)!important;border:var(--dexta-academy-3-home-apply-primary-button-border-width,0px) solid var(--dexta-academy-3-home-apply-primary-button-border-color,#f3bf35)!important;}',
+	        '.home-apply__actions .button--navy{background:color-mix(in srgb,var(--dexta-academy-3-home-apply-secondary-button-bg-color,#122a56) var(--dexta-academy-3-home-apply-secondary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-apply-secondary-button-text-color,#fff)!important;border:var(--dexta-academy-3-home-apply-secondary-button-border-width,0px) solid var(--dexta-academy-3-home-apply-secondary-button-border-color,#122a56)!important;}',
+	        // ── Home Gallery Preview ──
+	        '.home-gallery{background-color:color-mix(in srgb,var(--dexta-academy-3-home-gallery-preview-section-bg-color,#fff) var(--dexta-academy-3-home-gallery-preview-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-home-gallery-preview-section-bg-image,none)!important;background-position:var(--dexta-academy-3-home-gallery-preview-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-home-gallery-preview-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.home-gallery__actions .button{background:color-mix(in srgb,var(--dexta-academy-3-home-gallery-cta-button-bg-color,#122a56) var(--dexta-academy-3-home-gallery-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-gallery-cta-button-text-color,#fff)!important;border:var(--dexta-academy-3-home-gallery-cta-button-border-width,0px) solid var(--dexta-academy-3-home-gallery-cta-button-border-color,#122a56)!important;}',
+	        // ── About Hero ──
+	        '.about-hero{background-color:color-mix(in srgb,var(--dexta-academy-3-about-hero-section-bg-color,#07162f) var(--dexta-academy-3-about-hero-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-about-hero-section-bg-image,none)!important;background-position:var(--dexta-academy-3-about-hero-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-about-hero-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.about-hero__button{background:color-mix(in srgb,var(--dexta-academy-3-about-hero-cta-button-bg-color,#f3bf35) var(--dexta-academy-3-about-hero-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-about-hero-cta-button-text-color,#09142f)!important;border:var(--dexta-academy-3-about-hero-cta-button-border-width,0px) solid var(--dexta-academy-3-about-hero-cta-button-border-color,#f3bf35)!important;}',
+	        // ── About Story ──
+	        '.about-story{background-color:color-mix(in srgb,var(--dexta-academy-3-about-story-section-bg-color,#fff) var(--dexta-academy-3-about-story-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-about-story-section-bg-image,none)!important;background-position:var(--dexta-academy-3-about-story-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-about-story-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.about-story-card .button{background:color-mix(in srgb,var(--dexta-academy-3-about-story-cta-button-bg-color,#f3bf35) var(--dexta-academy-3-about-story-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-about-story-cta-button-text-color,#09142f)!important;border:var(--dexta-academy-3-about-story-cta-button-border-width,0px) solid var(--dexta-academy-3-about-story-cta-button-border-color,#f3bf35)!important;}',
+	        // ── About Story Modal ──
+	        '.story-modal__panel{background-color:color-mix(in srgb,var(--dexta-academy-3-about-story-modal-section-bg-color,#fff) var(--dexta-academy-3-about-story-modal-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-about-story-modal-section-bg-image,none)!important;background-position:var(--dexta-academy-3-about-story-modal-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-about-story-modal-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        // ── About Values ──
+	        '.about-values{background-color:color-mix(in srgb,var(--dexta-academy-3-about-values-section-bg-color,#f3bf35) var(--dexta-academy-3-about-values-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-about-values-section-bg-image,none)!important;background-position:var(--dexta-academy-3-about-values-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-about-values-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.about-icon{color:var(--dexta-academy-3-about-values-icon-icon-color,#101f4a)!important;background-color:color-mix(in srgb,var(--dexta-academy-3-about-values-icon-icon-bg-color,transparent) var(--dexta-academy-3-about-values-icon-icon-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-3-about-values-icon-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-3-about-values-icon-icon-border-width,0px) solid var(--dexta-academy-3-about-values-icon-icon-border-color,transparent)!important;}',
+	        // ── About Approach ──
+	        '.about-approach{background-color:color-mix(in srgb,var(--dexta-academy-3-about-approach-section-bg-color,#fff) var(--dexta-academy-3-about-approach-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-about-approach-section-bg-image,none)!important;background-position:var(--dexta-academy-3-about-approach-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-about-approach-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.about-approach__copy .button{background:color-mix(in srgb,var(--dexta-academy-3-about-approach-cta-button-bg-color,#122a56) var(--dexta-academy-3-about-approach-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-about-approach-cta-button-text-color,#fff)!important;border:var(--dexta-academy-3-about-approach-cta-button-border-width,0px) solid var(--dexta-academy-3-about-approach-cta-button-border-color,#122a56)!important;}',
+	        // ── About Impact ──
+	        '.about-impact-band{background-color:color-mix(in srgb,var(--dexta-academy-3-about-impact-section-bg-color,#07162f) var(--dexta-academy-3-about-impact-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-about-impact-section-bg-image,none)!important;background-position:var(--dexta-academy-3-about-impact-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-about-impact-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.about-impact-stat__icon{color:var(--dexta-academy-3-about-impact-icon-icon-color,#f3bf35)!important;background-color:color-mix(in srgb,var(--dexta-academy-3-about-impact-icon-icon-bg-color,transparent) var(--dexta-academy-3-about-impact-icon-icon-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-3-about-impact-icon-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-3-about-impact-icon-icon-border-width,0px) solid var(--dexta-academy-3-about-impact-icon-icon-border-color,transparent)!important;}',
+	        // ── About Tour CTA ──
+	        '.about-tour-band{background-color:color-mix(in srgb,var(--dexta-academy-3-about-tour-cta-section-bg-color,#ffd154) var(--dexta-academy-3-about-tour-cta-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-about-tour-cta-section-bg-image,none)!important;background-position:var(--dexta-academy-3-about-tour-cta-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-about-tour-cta-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.about-tour-band .button{background:color-mix(in srgb,var(--dexta-academy-3-about-tour-cta-btn-button-bg-color,#122a56) var(--dexta-academy-3-about-tour-cta-btn-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-about-tour-cta-btn-button-text-color,#fff)!important;border:var(--dexta-academy-3-about-tour-cta-btn-button-border-width,0px) solid var(--dexta-academy-3-about-tour-cta-btn-button-border-color,#122a56)!important;}',
+	        '.about-tour-band__icon{color:var(--dexta-academy-3-about-tour-cta-icon-icon-color,#101f4a)!important;background-color:color-mix(in srgb,var(--dexta-academy-3-about-tour-cta-icon-icon-bg-color,transparent) var(--dexta-academy-3-about-tour-cta-icon-icon-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-3-about-tour-cta-icon-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-3-about-tour-cta-icon-icon-border-width,0px) solid var(--dexta-academy-3-about-tour-cta-icon-icon-border-color,transparent)!important;}',
+	        // ── Gallery Hero ──
+	        '.gallery-hero-ref{background-color:color-mix(in srgb,var(--dexta-academy-3-gallery-hero-section-bg-color,#081a38) var(--dexta-academy-3-gallery-hero-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-gallery-hero-section-bg-image,none)!important;background-position:var(--dexta-academy-3-gallery-hero-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-gallery-hero-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        // ── Gallery Filters ──
+	        '.gallery-filter-bar{background-color:color-mix(in srgb,var(--dexta-academy-3-gallery-filters-section-bg-color,#fff) var(--dexta-academy-3-gallery-filters-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-gallery-filters-section-bg-image,none)!important;background-position:var(--dexta-academy-3-gallery-filters-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-gallery-filters-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        // ── Gallery Grid ──
+	        '.gallery-gallery-ref{background-color:color-mix(in srgb,var(--dexta-academy-3-gallery-grid-section-bg-color,#fff) var(--dexta-academy-3-gallery-grid-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-gallery-grid-section-bg-image,none)!important;background-position:var(--dexta-academy-3-gallery-grid-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-gallery-grid-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        // ── Contact Hero ──
+	        '.contact-hero{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-hero-section-bg-color,#061f44) var(--dexta-academy-3-contact-hero-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-contact-hero-section-bg-image,none)!important;background-position:var(--dexta-academy-3-contact-hero-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-contact-hero-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.contact-hero .contact-button--dark{background:color-mix(in srgb,var(--dexta-academy-3-contact-hero-primary-button-bg-color,#ffc43d) var(--dexta-academy-3-contact-hero-primary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-contact-hero-primary-button-text-color,#061a3a)!important;border:var(--dexta-academy-3-contact-hero-primary-button-border-width,0px) solid var(--dexta-academy-3-contact-hero-primary-button-border-color,#ffc43d)!important;}',
+	        '.contact-hero .contact-button--light{background:color-mix(in srgb,var(--dexta-academy-3-contact-hero-secondary-button-bg-color,rgba(255,255,255,0.1)) var(--dexta-academy-3-contact-hero-secondary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-contact-hero-secondary-button-text-color,#fff)!important;border:var(--dexta-academy-3-contact-hero-secondary-button-border-width,1px) solid var(--dexta-academy-3-contact-hero-secondary-button-border-color,rgba(255,255,255,0.2))!important;}',
+	        // ── Contact Intro ──
+	        '.contact-intro{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-intro-section-bg-color,#fff) var(--dexta-academy-3-contact-intro-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-contact-intro-section-bg-image,none)!important;background-position:var(--dexta-academy-3-contact-intro-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-contact-intro-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        // ── Contact Info Card ──
+	        '.contact-info-card{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-info-card-section-bg-color,#061f44) var(--dexta-academy-3-contact-info-card-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-contact-info-card-section-bg-image,none)!important;background-position:var(--dexta-academy-3-contact-info-card-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-contact-info-card-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.contact-icon{color:var(--dexta-academy-3-contact-info-icon-icon-color,#f1ad16)!important;background-color:color-mix(in srgb,var(--dexta-academy-3-contact-info-icon-icon-bg-color,#fffaf1) var(--dexta-academy-3-contact-info-icon-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-contact-info-icon-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-3-contact-info-icon-icon-border-width,0px) solid var(--dexta-academy-3-contact-info-icon-icon-border-color,transparent)!important;}',
+	        // ── Contact Benefits ──
+	        '.contact-benefits{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-benefits-section-bg-color,#fffdfb) var(--dexta-academy-3-contact-benefits-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-contact-benefits-section-bg-image,none)!important;background-position:var(--dexta-academy-3-contact-benefits-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-contact-benefits-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.contact-benefits article > span{color:var(--dexta-academy-3-contact-benefits-icon-icon-color,#f1ad16)!important;background-color:color-mix(in srgb,var(--dexta-academy-3-contact-benefits-icon-icon-bg-color,transparent) var(--dexta-academy-3-contact-benefits-icon-icon-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-3-contact-benefits-icon-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-3-contact-benefits-icon-icon-border-width,0px) solid var(--dexta-academy-3-contact-benefits-icon-icon-border-color,transparent)!important;}',
+	        // ── Contact Footer ──
+	        '.contact-footer{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-footer-section-bg-color,#09142f) var(--dexta-academy-3-contact-footer-section-bg-opacity,100%),transparent)!important;}'
+	      ].join("");
+	    }
+	    if (preview.content.templateSlug === "dexta-academy-4") {
+	      return [
+	        // ── Shared Header ──
+	        '.hero-header{background-color:color-mix(in srgb,var(--dexta-academy-4-shared-header-section-bg-color,rgba(2,8,20,0.82)) var(--dexta-academy-4-shared-header-section-bg-opacity,100%),transparent)!important;}',
+	        '.hero-header .hero-portal-btn{background:color-mix(in srgb,var(--dexta-academy-4-shared-header-portal-button-bg-color,transparent) var(--dexta-academy-4-shared-header-portal-button-bg-opacity,0%),transparent)!important;color:var(--dexta-academy-4-shared-header-portal-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-shared-header-portal-button-border-width,2px) solid var(--dexta-academy-4-shared-header-portal-button-border-color,#4a8fff)!important;}',
+	        '.hero-header .hero-apply-btn{background:color-mix(in srgb,var(--dexta-academy-4-shared-header-apply-button-bg-color,#4a8fff) var(--dexta-academy-4-shared-header-apply-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-4-shared-header-apply-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-shared-header-apply-button-border-width,0px) solid var(--dexta-academy-4-shared-header-apply-button-border-color,#4a8fff)!important;}',
+	        // ── Shared Footer ──
+	        '.school-footer{background-color:color-mix(in srgb,var(--dexta-academy-4-shared-footer-section-bg-color,#0b1220) var(--dexta-academy-4-shared-footer-section-bg-opacity,100%),transparent)!important;}',
+	        // ── Home Hero ──
+	        '.school-hero{background-color:color-mix(in srgb,var(--dexta-academy-4-home-hero-section-bg-color,#020810) var(--dexta-academy-4-home-hero-section-bg-opacity,100%),transparent)!important;}',
+	        '.school-hero .hero{background-image:linear-gradient(90deg,rgba(9,20,36,0.88) 0%,rgba(9,20,36,0.74) 40%,rgba(9,20,36,0.3) 100%),var(--dexta-academy-4-home-hero-bg-image,url("https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1600&q=80"))!important;background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important;}',
+	        '.school-hero .hero-primary-btn{background:color-mix(in srgb,var(--dexta-academy-4-home-hero-primary-button-bg-color,#4a8fff) var(--dexta-academy-4-home-hero-primary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-4-home-hero-primary-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-home-hero-primary-button-border-width,0px) solid var(--dexta-academy-4-home-hero-primary-button-border-color,#4a8fff)!important;}',
+	        '.school-hero .hero-secondary-btn{background:color-mix(in srgb,var(--dexta-academy-4-home-hero-secondary-button-bg-color,transparent) var(--dexta-academy-4-home-hero-secondary-button-bg-opacity,0%),transparent)!important;color:var(--dexta-academy-4-home-hero-secondary-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-home-hero-secondary-button-border-width,2px) solid var(--dexta-academy-4-home-hero-secondary-button-border-color,#4a8fff)!important;}',
+	        // ── Home About Preview ──
+	        '.school-about-preview{background-color:color-mix(in srgb,var(--dexta-academy-4-home-about-preview-section-bg-color,#ffffff) var(--dexta-academy-4-home-about-preview-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-4-home-about-preview-section-bg-image,none)!important;background-position:var(--dexta-academy-4-home-about-preview-section-bg-position,center center)!important;background-size:var(--dexta-academy-4-home-about-preview-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.school-about-preview .btn{background:color-mix(in srgb,var(--dexta-academy-4-home-about-preview-button-bg-color,#4a8fff) var(--dexta-academy-4-home-about-preview-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-4-home-about-preview-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-home-about-preview-button-border-width,0px) solid var(--dexta-academy-4-home-about-preview-button-border-color,#4a8fff)!important;}',
+	        // ── Home Programs ──
+	        '.school-programs{background-color:color-mix(in srgb,var(--dexta-academy-4-home-programs-section-bg-color,#e8f4f1) var(--dexta-academy-4-home-programs-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-4-home-programs-section-bg-image,none)!important;background-position:var(--dexta-academy-4-home-programs-section-bg-position,center center)!important;background-size:var(--dexta-academy-4-home-programs-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.school-programs .btn{background:color-mix(in srgb,var(--dexta-academy-4-home-programs-button-bg-color,#4a8fff) var(--dexta-academy-4-home-programs-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-4-home-programs-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-home-programs-button-border-width,0px) solid var(--dexta-academy-4-home-programs-button-border-color,#4a8fff)!important;}',
+	        // ── Home Gallery Preview ──
+	        '.homepage-gallery-preview{background-color:color-mix(in srgb,var(--dexta-academy-4-home-gallery-preview-section-bg-color,#f7fafc) var(--dexta-academy-4-home-gallery-preview-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-4-home-gallery-preview-section-bg-image,none)!important;background-position:var(--dexta-academy-4-home-gallery-preview-section-bg-position,center center)!important;background-size:var(--dexta-academy-4-home-gallery-preview-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.homepage-gallery-preview .btn{background:color-mix(in srgb,var(--dexta-academy-4-home-gallery-preview-button-bg-color,#4a8fff) var(--dexta-academy-4-home-gallery-preview-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-4-home-gallery-preview-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-home-gallery-preview-button-border-width,0px) solid var(--dexta-academy-4-home-gallery-preview-button-border-color,#4a8fff)!important;}',
+	        // ── Page Hero (shared across inner pages – each page sets its own CSS vars) ──
+	        '.school-page-hero{background-color:color-mix(in srgb,var(--dexta-academy-4-about-page-hero-section-bg-color,var(--dexta-academy-4-admissions-page-hero-section-bg-color,var(--dexta-academy-4-gallery-page-hero-section-bg-color,var(--dexta-academy-4-contact-page-hero-section-bg-color,#102542)))) var(--dexta-academy-4-about-page-hero-section-bg-opacity,var(--dexta-academy-4-admissions-page-hero-section-bg-opacity,var(--dexta-academy-4-gallery-page-hero-section-bg-opacity,var(--dexta-academy-4-contact-page-hero-section-bg-opacity,100%)))),transparent)!important;}',
+	        // ── Page Hero background images (per-page gradient + image variable) ──
+	        '.about-page-hero{background-image:linear-gradient(90deg,rgba(16,37,66,0.88) 0%,rgba(16,37,66,0.74) 42%,rgba(15,118,110,0.46) 100%),var(--dexta-academy-4-about-page-hero-bg-image,url("https://res.cloudinary.com/dxoorukfj/image/upload/v1777039633/dxt2-about_ubzert.png"))!important;background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important;}',
+	        '.admissions-page-hero{background-image:var(--dexta-academy-4-admissions-page-hero-bg-image,url("https://images.unsplash.com/photo-1529390079861-591de354faf5?auto=format&fit=crop&w=1600&q=80"))!important;background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important;}',
+	        '.gallery-page-hero{background-image:linear-gradient(90deg,rgba(16,37,66,0.88) 0%,rgba(16,37,66,0.72) 42%,rgba(15,118,110,0.42) 100%),var(--dexta-academy-4-gallery-page-hero-bg-image,url("https://res.cloudinary.com/dxoorukfj/image/upload/v1777041124/ChatGPT_Image_Apr_24_2026_03_31_43_PM_ssnnin.png"))!important;background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important;}',
+	        '.contact-page-hero{background-image:var(--dexta-academy-4-contact-page-hero-bg-image,url("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1600&q=80"))!important;background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important;}',
+	        // ── Principal note signoff alignment ──
+	        '.principal-note-signoff{align-self:start!important;}',
+	        // ── Existing admissions + contact form sections ──
+	        '.admissions-process-section{background-color:color-mix(in srgb,var(--dexta-academy-4-admissions-process-section-bg-color,#ffffff) var(--dexta-academy-4-admissions-process-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-4-admissions-process-section-bg-image,none)!important;background-position:var(--dexta-academy-4-admissions-process-section-bg-position,center center)!important;background-size:var(--dexta-academy-4-admissions-process-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.admissions-form-section{background-color:color-mix(in srgb,var(--dexta-academy-4-admissions-form-section-bg-color,#fff) var(--dexta-academy-4-admissions-form-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-4-admissions-form-section-bg-image,none)!important;background-position:var(--dexta-academy-4-admissions-form-section-bg-position,center center)!important;background-size:var(--dexta-academy-4-admissions-form-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.admissions-page-cta{background-color:color-mix(in srgb,var(--dexta-academy-4-admissions-admissions-cta-section-bg-color,#f0f4f8) var(--dexta-academy-4-admissions-admissions-cta-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-4-admissions-admissions-cta-section-bg-image,none)!important;background-position:var(--dexta-academy-4-admissions-admissions-cta-section-bg-position,center center)!important;background-size:var(--dexta-academy-4-admissions-admissions-cta-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.admissions-page-cta .btn{background:color-mix(in srgb,var(--dexta-academy-4-admissions-admissions-cta-button-bg-color,#4a8fff) var(--dexta-academy-4-admissions-admissions-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-4-admissions-admissions-cta-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-admissions-admissions-cta-button-border-width,0px) solid var(--dexta-academy-4-admissions-admissions-cta-button-border-color,#4a8fff)!important;}',
+	        // ── Gallery sections ──
+	        '.gallery-showcase-section{background-color:color-mix(in srgb,var(--dexta-academy-4-gallery-gallery-showcase-section-bg-color,#ffffff) var(--dexta-academy-4-gallery-gallery-showcase-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-4-gallery-gallery-showcase-section-bg-image,none)!important;background-position:var(--dexta-academy-4-gallery-gallery-showcase-section-bg-position,center center)!important;background-size:var(--dexta-academy-4-gallery-gallery-showcase-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.gallery-page-cta{background-color:color-mix(in srgb,var(--dexta-academy-4-gallery-gallery-cta-section-bg-color,#f0f4f8) var(--dexta-academy-4-gallery-gallery-cta-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-4-gallery-gallery-cta-section-bg-image,none)!important;background-position:var(--dexta-academy-4-gallery-gallery-cta-section-bg-position,center center)!important;background-size:var(--dexta-academy-4-gallery-gallery-cta-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.gallery-page-cta .cta-panel{background:var(--dexta-academy-4-gallery-gallery-cta-panel-bg-color,linear-gradient(135deg,#102542 0%,#0f766e 100%))!important;}',
+	        '.gallery-page-cta .btn-primary{background:color-mix(in srgb,var(--dexta-academy-4-gallery-gallery-cta-primary-button-bg-color,#4a8fff) var(--dexta-academy-4-gallery-gallery-cta-primary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-4-gallery-gallery-cta-primary-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-gallery-gallery-cta-primary-button-border-width,0px) solid var(--dexta-academy-4-gallery-gallery-cta-primary-button-border-color,#4a8fff)!important;}',
+	        '.gallery-page-cta .btn-outline-primary{background:color-mix(in srgb,var(--dexta-academy-4-gallery-gallery-cta-secondary-button-bg-color,transparent) var(--dexta-academy-4-gallery-gallery-cta-secondary-button-bg-opacity,0%),transparent)!important;color:var(--dexta-academy-4-gallery-gallery-cta-secondary-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-gallery-gallery-cta-secondary-button-border-width,2px) solid var(--dexta-academy-4-gallery-gallery-cta-secondary-button-border-color,#ffffff)!important;}',
+	        // ── Contact sections ──
+	        '.contact-details-section{background-color:color-mix(in srgb,var(--dexta-academy-4-contact-contact-details-section-bg-color,#ffffff) var(--dexta-academy-4-contact-contact-details-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-4-contact-contact-details-section-bg-image,none)!important;background-position:var(--dexta-academy-4-contact-contact-details-section-bg-position,center center)!important;background-size:var(--dexta-academy-4-contact-contact-details-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.contact-page-cta{background-color:color-mix(in srgb,var(--dexta-academy-4-contact-contact-cta-section-bg-color,#f0f4f8) var(--dexta-academy-4-contact-contact-cta-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-4-contact-contact-cta-section-bg-image,none)!important;background-position:var(--dexta-academy-4-contact-contact-cta-section-bg-position,center center)!important;background-size:var(--dexta-academy-4-contact-contact-cta-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.contact-page-cta .cta-panel{background:var(--dexta-academy-4-contact-contact-cta-panel-bg-color,#102542)!important;}',
+	        '.contact-page-cta .btn-primary{background:color-mix(in srgb,var(--dexta-academy-4-contact-contact-cta-primary-button-bg-color,#4a8fff) var(--dexta-academy-4-contact-contact-cta-primary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-4-contact-contact-cta-primary-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-contact-contact-cta-primary-button-border-width,0px) solid var(--dexta-academy-4-contact-contact-cta-primary-button-border-color,#4a8fff)!important;}',
+	        '.contact-page-cta .btn-outline-primary{background:color-mix(in srgb,var(--dexta-academy-4-contact-contact-cta-secondary-button-bg-color,transparent) var(--dexta-academy-4-contact-contact-cta-secondary-button-bg-opacity,0%),transparent)!important;color:var(--dexta-academy-4-contact-contact-cta-secondary-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-contact-contact-cta-secondary-button-border-width,2px) solid var(--dexta-academy-4-contact-contact-cta-secondary-button-border-color,#ffffff)!important;}',
+	        '.contact-form-section{background-color:color-mix(in srgb,var(--dexta-academy-4-contact-form-section-bg-color,#fff) var(--dexta-academy-4-contact-form-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-4-contact-form-section-bg-image,none)!important;background-position:var(--dexta-academy-4-contact-form-section-bg-position,center center)!important;background-size:var(--dexta-academy-4-contact-form-section-bg-size,cover)!important;background-repeat:no-repeat!important;}'
+	      ].join("");
+	    }
+	    if (preview.content.templateSlug === "dexta-academy-5") {
+	      return [
+	        '.admission-modal:not(.contact-modal) .admission-modal__dialog{background-color:color-mix(in srgb,var(--dexta-academy-5-admission-form-section-bg-color,#fff) var(--dexta-academy-5-admission-form-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-5-admission-form-section-bg-image,none)!important;background-position:var(--dexta-academy-5-admission-form-section-bg-position,center center)!important;background-size:var(--dexta-academy-5-admission-form-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.contact-modal .admission-modal__dialog{background-color:color-mix(in srgb,var(--dexta-academy-5-contact-modal-section-bg-color,#fff) var(--dexta-academy-5-contact-modal-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-5-contact-modal-section-bg-image,none)!important;background-position:var(--dexta-academy-5-contact-modal-section-bg-position,center center)!important;background-size:var(--dexta-academy-5-contact-modal-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.contact-form-panel{background-color:color-mix(in srgb,var(--dexta-academy-5-contact-form-section-bg-color,#fff) var(--dexta-academy-5-contact-form-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-5-contact-form-section-bg-image,none)!important;background-position:var(--dexta-academy-5-contact-form-section-bg-position,center center)!important;background-size:var(--dexta-academy-5-contact-form-section-bg-size,cover)!important;background-repeat:no-repeat!important;}'
+	      ].join("");
+	    }
 	    if (preview.content.templateSlug !== "dexta-academy-2") return "";
     return [
       'body[data-page="home"] .hero-home{background-image:var(--dexta-academy-2-hero-desktop-tree-image)!important;background-position:var(--dexta-academy-2-hero-desktop-tree-position,center center)!important;background-size:var(--dexta-academy-2-hero-desktop-tree-size,cover)!important;background-repeat:no-repeat!important;}',
@@ -1177,6 +1412,40 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    }
 	  }
 
+	  function applyAdmissionForm() {
+	    var configs = {
+	      "dexta-academy-1": { pageSlug: "home", sectionId: "admission-modal", selector: ".landing-admissions-modal__body iframe" },
+	      "dexta-academy-3": { pageSlug: "contact", sectionId: "admission-modal", selector: ".admission-modal__form iframe" },
+	      "dexta-academy-4": { pageSlug: "admissions", sectionId: "application-form-intro", selector: ".admissions-form-frame iframe" },
+	      "dexta-academy-5": { pageSlug: "home", sectionId: "admission-modal", selector: ".admission-modal[data-admission-modal] .admission-modal__frame iframe" }
+	    };
+	    var config = configs[preview.content.templateSlug];
+	    if (!config) return;
+
+	    var frame = document.querySelector(config.selector);
+	    if (!frame) return;
+
+	    var formIframe = getPageSectionField(config.pageSlug, config.sectionId, "formIframe");
+	    var formUrl = getPageSectionField(config.pageSlug, config.sectionId, "formUrl");
+	    var formTitle = String(getPageSectionField(config.pageSlug, config.sectionId, "formTitle") || "").trim();
+	    var embed = parseIframeEmbedValue(formIframe) || parseIframeEmbedValue(formUrl);
+
+	    if (embed && embed.src && isSafeIframeSrc(embed.src)) {
+	      frame.setAttribute("data-src", embed.src);
+	      if (frame.getAttribute("src")) {
+	        frame.setAttribute("src", embed.src);
+	      }
+
+	      ["width", "height", "frameborder", "marginheight", "marginwidth", "loading", "referrerpolicy", "allow", "title"].forEach(function (name) {
+	        if (embed.attrs[name]) frame.setAttribute(name, embed.attrs[name]);
+	      });
+	    }
+
+	    if (formTitle) {
+	      frame.setAttribute("title", formTitle);
+	    }
+	  }
+
 	  function getSharedHeaderLogoUrl() {
 	    var value = getSharedSectionField("site-header", "logo");
 	    if (!isFilled(value)) return "";
@@ -1285,6 +1554,189 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      ".site-header__actions .button--primary, .mobile-panel__actions .button--primary",
 		      primaryVisible
 		    );
+		  }
+
+		  function applyTemplateFourPortalButton() {
+		    if (preview.content.templateSlug !== "dexta-academy-4") return;
+
+		    var portalText = getSharedFieldText("header", "portalText") || "Portal";
+		    var portalHref = getSharedFieldText("header", "portalHref") || "#";
+		    var portalVisible = Boolean(getSharedFieldText("header", "portalText")) && Boolean(getSharedFieldText("header", "portalHref"));
+		    var applyText = getSharedFieldText("header", "applyText") || "Apply Now";
+		    var applyHref = getSharedFieldText("header", "applyHref") || "admissions.html";
+		    var applyVisible = Boolean(applyText);
+
+		    // Ensure mobile wrapper exists INSIDE .navbar-collapse (shows in hamburger menu on mobile)
+		    var navCollapses = document.querySelectorAll(".hero-header .navbar-collapse");
+		    navCollapses.forEach(function (collapse) {
+		      var mobileWrapper = collapse.querySelector(".hero-navbar-actions-mobile");
+		      if (!mobileWrapper) {
+		        mobileWrapper = document.createElement("div");
+		        mobileWrapper.className = "hero-navbar-actions-mobile d-lg-none";
+		        collapse.appendChild(mobileWrapper);
+		      }
+		      ensureNavbarButton(mobileWrapper, "hero-portal-btn", portalText, portalHref, portalVisible);
+		      ensureNavbarApplyButton(mobileWrapper, applyText, applyHref, applyVisible);
+		    });
+
+		    var navs = document.querySelectorAll(".hero-header nav.hero-navbar");
+		    navs.forEach(function (nav) {
+		      var desktopWrapper = nav.querySelector(".hero-navbar-actions");
+		      if (!desktopWrapper) {
+		        desktopWrapper = document.createElement("div");
+		        desktopWrapper.className = "hero-navbar-actions d-none d-lg-flex";
+		        nav.appendChild(desktopWrapper);
+		      }
+		      ensureNavbarButton(desktopWrapper, "hero-portal-btn", portalText, portalHref, portalVisible);
+		      ensureNavbarApplyButton(desktopWrapper, applyText, applyHref, applyVisible);
+		    });
+
+		    // Also handle any standalone legacy apply buttons outside wrappers
+		    document.querySelectorAll(".hero-header .hero-apply-btn").forEach(function (el) {
+		      if (!el.closest(".hero-navbar-actions") && !el.closest(".hero-navbar-actions-mobile")) {
+		        el.style.display = "none";
+		      }
+		    });
+		  }
+
+		  function ensureNavbarButton(wrapper, className, text, href, visible) {
+		    var btn = wrapper.querySelector("." + className);
+		    if (!btn) {
+		      btn = document.createElement("a");
+		      btn.className = className;
+		      var applyBtn = wrapper.querySelector(".hero-apply-btn");
+		      if (applyBtn) {
+		        wrapper.insertBefore(btn, applyBtn);
+		      } else {
+		        wrapper.appendChild(btn);
+		      }
+		    }
+		    btn.textContent = text;
+		    btn.setAttribute("href", href);
+		    btn.style.display = visible ? "" : "none";
+		  }
+
+		  function ensureNavbarApplyButton(wrapper, text, href, visible) {
+		    var btn = wrapper.querySelector(".hero-apply-btn");
+		    if (!btn) {
+		      btn = document.createElement("a");
+		      btn.className = "hero-apply-btn";
+		      wrapper.appendChild(btn);
+		    }
+		    btn.setAttribute("href", href);
+		    btn.style.display = visible ? "" : "none";
+		    var textSpan = btn.querySelector(".hero-btn-text");
+		    if (!textSpan) {
+		      btn.textContent = "";
+		      textSpan = document.createElement("span");
+		      textSpan.className = "hero-btn-text";
+		      btn.appendChild(textSpan);
+		      var arrowSpan = document.createElement("span");
+		      arrowSpan.className = "icon-long-arrow-right";
+		      arrowSpan.setAttribute("aria-hidden", "true");
+		      btn.appendChild(arrowSpan);
+		    }
+		    textSpan.textContent = text;
+		  }
+
+		  function initGalleryLightbox() {
+		    if (preview.content.templateSlug !== "dexta-academy-4") return;
+		    if (document.getElementById("dexta-lightbox-overlay")) return;
+
+		    var style = document.createElement("style");
+		    style.textContent = [
+		      "#dexta-lightbox-overlay{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);display:none;align-items:center;justify-content:center;cursor:zoom-out;}",
+		      "#dexta-lightbox-overlay.active{display:flex;}",
+		      "#dexta-lightbox-img{display:block!important;visibility:visible!important;opacity:1!important;max-width:90vw;max-height:90vh;width:auto;height:auto;object-fit:contain;border-radius:8px;transition:transform 0.2s ease;transform-origin:center center;cursor:grab;}",
+		      "#dexta-lightbox-img.zoomed{max-width:none;max-height:none;cursor:move;}",
+		      "#dexta-lightbox-close{position:absolute;top:20px;right:20px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}",
+		      "#dexta-lightbox-close:hover{background:rgba(255,255,255,0.3);}",
+		    ].join("");
+		    document.head.appendChild(style);
+
+		    var overlay = document.createElement("div");
+		    overlay.id = "dexta-lightbox-overlay";
+		    overlay.innerHTML = '<button id="dexta-lightbox-close" aria-label="Close">&times;</button><img id="dexta-lightbox-img" alt="Gallery image" />';
+		    document.body.appendChild(overlay);
+
+		    var img = document.getElementById("dexta-lightbox-img");
+		    var zoomed = false;
+		    var panX = 0, panY = 0, startX = 0, startY = 0, dragging = false;
+
+		    function openLightbox(src) {
+		      img.src = src;
+		      img.style.transform = "";
+		      img.classList.remove("zoomed");
+		      zoomed = false;
+		      panX = 0; panY = 0;
+		      overlay.classList.add("active");
+		    }
+
+		    function closeLightbox() {
+		      overlay.classList.remove("active");
+		      img.src = "";
+		    }
+
+		    overlay.addEventListener("click", function (e) {
+		      if (e.target === overlay) closeLightbox();
+		    });
+		    document.getElementById("dexta-lightbox-close").addEventListener("click", closeLightbox);
+
+		    img.addEventListener("click", function (e) {
+		      e.stopPropagation();
+		      zoomed = !zoomed;
+		      if (zoomed) {
+		        img.classList.add("zoomed");
+		        img.style.transform = "scale(2)";
+		        panX = 0; panY = 0;
+		      } else {
+		        img.classList.remove("zoomed");
+		        img.style.transform = "";
+		        panX = 0; panY = 0;
+		      }
+		    });
+
+		    img.addEventListener("mousedown", function (e) {
+		      if (!zoomed) return;
+		      dragging = true;
+		      startX = e.clientX - panX;
+		      startY = e.clientY - panY;
+		      img.style.cursor = "grabbing";
+		      e.preventDefault();
+		    });
+
+		    document.addEventListener("mousemove", function (e) {
+		      if (!dragging) return;
+		      panX = e.clientX - startX;
+		      panY = e.clientY - startY;
+		      img.style.transform = "scale(2) translate(" + (panX / 2) + "px," + (panY / 2) + "px)";
+		    });
+
+		    document.addEventListener("mouseup", function () {
+		      if (dragging) {
+		        dragging = false;
+		        img.style.cursor = "grab";
+		      }
+		    });
+
+		    document.addEventListener("keydown", function (e) {
+		      if (e.key === "Escape") closeLightbox();
+		    });
+
+		    // Attach click handlers to gallery cards
+		    document.querySelectorAll(".gallery-preview-card, .gallery-page-card").forEach(function (card) {
+		      card.style.cursor = "pointer";
+		      card.addEventListener("click", function (e) {
+		        e.preventDefault();
+		        var bgImage = window.getComputedStyle(card).backgroundImage || card.style.backgroundImage || "";
+		        var match = bgImage.match(/url\\(["']?(.*?)["']?\\)/);
+		        if (match && match[1]) {
+		          openLightbox(match[1]);
+		        } else if (card.getAttribute("href") && /^https?:\\/\\//.test(card.getAttribute("href"))) {
+		          openLightbox(card.getAttribute("href"));
+		        }
+		      });
+		    });
 		  }
 
 		  function applyTemplateTwoFooterVisibility() {
@@ -1413,7 +1865,10 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 				    }
 
 				    if (!templateTwoDefaultText) {
-				      setText(".brand__name strong, .brand__copy strong, .brand__text strong, .contact-brand strong, .school-footer-brand h3", brandName);
+				      var footerSchoolName = getSharedSectionField("footer", "schoolName");
+				      var brandNameSelector = ".brand__name strong, .brand__copy strong, .brand__text strong, .contact-brand strong";
+				      if (!isFilled(footerSchoolName)) brandNameSelector += ", .school-footer-brand h3";
+				      setText(brandNameSelector, brandName);
 				      setText(".brand__name span, .brand__copy span, .brand__text span, .contact-brand small", brandTagline);
 				    }
 				    if (isTemplateTwo && brandName) {
@@ -1438,7 +1893,17 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
     var pageSnapshot = preview.sourceSnapshot.pages.find(function (item) { return item.slug === preview.pageSlug; });
     if (!page || !pageSnapshot) return;
 
+    // Remove is-preloading so homepage navbar is visible (template 4)
+    document.body.className = document.body.className.replace(/\bis-preloading\b/g, "").trim();
+
+    // Template 3: add is-ready + is-animated so sections render correctly
+    if (document.body.classList.contains("home-page") || document.body.classList.contains("about-page") || document.body.classList.contains("gallery-page") || document.body.classList.contains("contact-page")) {
+      document.body.classList.add("is-ready");
+      document.body.classList.add("is-animated");
+    }
+
     injectTheme();
+    applyThemeIdentity();
     preview.content.sharedSections.forEach(function (sectionContent) {
       var sectionSnapshot = preview.sourceSnapshot.sharedSections.find(function (item) {
         return item.id === sectionContent.id;
@@ -1454,13 +1919,30 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    });
 
 		    applyTemplateTwoValuesStripIntro();
-		    applyThemeIdentity();
 		    applyTemplateTwoHeaderButtons();
+		    applyTemplateFourPortalButton();
 		    applyTemplateTwoFooterVisibility();
 	    applyTemplateTwoAdmissionForm();
+	    applyAdmissionForm();
 	    rewritePreviewInternalLinks();
 	    injectPreviewFontStylesheets();
 	    refreshTemplateTwoIcons();
+	    initGalleryLightbox();
+
+	    // Template 3 home page: only override header bg if school customized it
+	    if (preview.content.templateSlug === "dexta-academy-3" && document.body.classList.contains("home-page")) {
+	      var headerBgColor = getSharedSectionField("site-header", "sectionBgColor");
+	      if (headerBgColor && headerBgColor !== "rgba(255,255,255,0.9)") {
+	        var headerEl = document.querySelector(".site-header");
+	        if (headerEl) headerEl.style.setProperty("background", headerBgColor, "important");
+	      } else {
+	        // Reset inline --dexta-academy-3-shared-header-section-bg-color on .site-header so
+	        // the original dark gradient from the template CSS is preserved
+	        var headerEl = document.querySelector(".site-header");
+	        if (headerEl) headerEl.style.removeProperty("--dexta-academy-3-shared-header-section-bg-color");
+	      }
+	    }
+
 	    document.documentElement.setAttribute("data-dexta-project-preview", "ready");
 	  }
 
@@ -1468,18 +1950,41 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", applyPreviewContent, { once: true });
   }
+
+	  // Ensure hamburger toggle works without Bootstrap jQuery plugin
+	  document.querySelectorAll(".hero-menu-toggle, .navbar-toggler").forEach(function (btn) {
+	    btn.removeAttribute("data-toggle");
+	    btn.removeAttribute("data-bs-toggle");
+	    var targetSel = btn.getAttribute("data-target") || btn.getAttribute("data-bs-target") || "#hero-nav-links";
+	    btn.removeAttribute("data-target");
+	    btn.removeAttribute("data-bs-target");
+	    btn.addEventListener("click", function (e) {
+	      e.preventDefault();
+	      e.stopImmediatePropagation();
+	      var target = document.querySelector(targetSel);
+	      if (target) {
+	        target.classList.toggle("show");
+	        btn.setAttribute("aria-expanded", target.classList.contains("show") ? "true" : "false");
+	      }
+	    });
+	  });
 	  window.setTimeout(applyPreviewContent, 80);
 	  window.setTimeout(applyThemeIdentity, 350);
 	  window.setTimeout(applyTemplateTwoHeaderButtons, 350);
+	  window.setTimeout(applyTemplateFourPortalButton, 350);
 	  window.setTimeout(applyTemplateTwoFooterVisibility, 350);
 	  window.setTimeout(applyTemplateTwoAdmissionForm, 350);
+	  window.setTimeout(applyAdmissionForm, 350);
 	  window.setTimeout(rewritePreviewInternalLinks, 350);
 	  window.setTimeout(injectPreviewFontStylesheets, 350);
 	  window.setTimeout(refreshTemplateTwoIcons, 350);
+	  window.setTimeout(initGalleryLightbox, 350);
 	  window.setTimeout(applyThemeIdentity, 1000);
 	  window.setTimeout(applyTemplateTwoHeaderButtons, 1000);
+	  window.setTimeout(applyTemplateFourPortalButton, 1000);
 	  window.setTimeout(applyTemplateTwoFooterVisibility, 1000);
 	  window.setTimeout(applyTemplateTwoAdmissionForm, 1000);
+	  window.setTimeout(applyAdmissionForm, 1000);
 	  window.setTimeout(rewritePreviewInternalLinks, 1000);
 	  window.setTimeout(injectPreviewFontStylesheets, 1000);
 	  window.setTimeout(refreshTemplateTwoIcons, 1000);
