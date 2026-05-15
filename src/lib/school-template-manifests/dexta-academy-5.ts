@@ -1,11 +1,16 @@
 import {
   backgroundImageField,
+  colorField,
   imageField,
   linkField,
+  numberField,
   textField,
   textareaField,
   type SchoolTemplateManifest,
 } from "./types";
+
+const fontImportHelpText =
+  "Paste a Google Fonts embed URL to change the font for this section. Example: https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap";
 
 const heroLeafBackgroundImage =
   "https://res.cloudinary.com/dxoorukfj/image/upload/v1778264512/leave2_oyfyvg.png";
@@ -552,8 +557,101 @@ export const dextaAcademy5Manifest = {
           selector:
             ".admission-modal:not(.contact-modal) .admission-modal__dialog",
           fields: [
-            textField("eyebrow", "Eyebrow", ".admission-modal__header p"),
-            textField("title", "Title", ".admission-modal__header h2"),
+            colorField(
+              "sectionBgColor",
+              "Section background color",
+              ".admission-modal:not(.contact-modal) .admission-modal__dialog",
+              {
+                target: "cssVariable",
+                cssVariable:
+                  "--dexta-academy-5-admission-form-section-bg-color",
+                defaultValue: "#ffffff",
+                uiGroup: "Section background",
+                uiOrder: 100,
+              },
+            ),
+            numberField(
+              "sectionBgOpacity",
+              "Section background opacity",
+              ".admission-modal:not(.contact-modal) .admission-modal__dialog",
+              {
+                target: "cssVariable",
+                cssVariable:
+                  "--dexta-academy-5-admission-form-section-bg-opacity",
+                defaultValue: 100,
+                min: 0,
+                max: 100,
+                step: 1,
+                unit: "%",
+                uiGroup: "Section background",
+                uiOrder: 101,
+              },
+            ),
+            backgroundImageField(
+              "sectionBgImage",
+              "Section background image",
+              ".admission-modal:not(.contact-modal) .admission-modal__dialog",
+              {
+                target: "cssVariable",
+                cssVariable:
+                  "--dexta-academy-5-admission-form-section-bg-image",
+                defaultValue: "",
+                uiGroup: "Section background",
+                uiOrder: 102,
+                helpText:
+                  "Use the image control to add, replace, or remove this section background image.",
+              },
+            ),
+            textField(
+              "sectionBgPosition",
+              "Background image position",
+              ".admission-modal:not(.contact-modal) .admission-modal__dialog",
+              {
+                target: "cssVariable",
+                cssVariable:
+                  "--dexta-academy-5-admission-form-section-bg-position",
+                defaultValue: "center center",
+                uiGroup: "Section background",
+                uiOrder: 103,
+              },
+            ),
+            textField(
+              "sectionBgSize",
+              "Background image size",
+              ".admission-modal:not(.contact-modal) .admission-modal__dialog",
+              {
+                target: "cssVariable",
+                cssVariable: "--dexta-academy-5-admission-form-section-bg-size",
+                defaultValue: "cover",
+                helpText:
+                  "Use cover, contain, or a custom CSS size such as 100% auto.",
+                uiGroup: "Section background",
+                uiOrder: 104,
+              },
+            ),
+            textareaField("eyebrow", "Eyebrow", ".admission-modal__header p", {
+              type: "richText",
+              target: "innerHTML",
+            }),
+            textareaField("title", "Title", ".admission-modal__header h2", {
+              type: "richText",
+              target: "innerHTML",
+            }),
+            linkField(
+              "fontStylesheetUrl",
+              "Google Fonts stylesheet URL",
+              ".admission-modal:not(.contact-modal) .admission-modal__dialog",
+              {
+                target: "attribute",
+                attribute: "data-dexta-font-stylesheet",
+                defaultValue: "",
+                placeholder:
+                  "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap",
+                helpText: fontImportHelpText,
+                uiGroup: "Rich text fonts",
+                uiOrder: 200,
+              },
+            ),
             linkField("formUrl", "Google Form URL", "iframe", {
               attribute: "src",
             }),
@@ -582,8 +680,99 @@ export const dextaAcademy5Manifest = {
           label: "Contact Modal",
           selector: ".contact-modal .admission-modal__dialog",
           fields: [
-            textField("eyebrow", "Eyebrow", ".admission-modal__header p"),
-            textField("title", "Title", ".admission-modal__header h2"),
+            colorField(
+              "sectionBgColor",
+              "Section background color",
+              ".contact-modal .admission-modal__dialog",
+              {
+                target: "cssVariable",
+                cssVariable: "--dexta-academy-5-contact-modal-section-bg-color",
+                defaultValue: "#ffffff",
+                uiGroup: "Section background",
+                uiOrder: 100,
+              },
+            ),
+            numberField(
+              "sectionBgOpacity",
+              "Section background opacity",
+              ".contact-modal .admission-modal__dialog",
+              {
+                target: "cssVariable",
+                cssVariable:
+                  "--dexta-academy-5-contact-modal-section-bg-opacity",
+                defaultValue: 100,
+                min: 0,
+                max: 100,
+                step: 1,
+                unit: "%",
+                uiGroup: "Section background",
+                uiOrder: 101,
+              },
+            ),
+            backgroundImageField(
+              "sectionBgImage",
+              "Section background image",
+              ".contact-modal .admission-modal__dialog",
+              {
+                target: "cssVariable",
+                cssVariable: "--dexta-academy-5-contact-modal-section-bg-image",
+                defaultValue: "",
+                uiGroup: "Section background",
+                uiOrder: 102,
+                helpText:
+                  "Use the image control to add, replace, or remove this section background image.",
+              },
+            ),
+            textField(
+              "sectionBgPosition",
+              "Background image position",
+              ".contact-modal .admission-modal__dialog",
+              {
+                target: "cssVariable",
+                cssVariable:
+                  "--dexta-academy-5-contact-modal-section-bg-position",
+                defaultValue: "center center",
+                uiGroup: "Section background",
+                uiOrder: 103,
+              },
+            ),
+            textField(
+              "sectionBgSize",
+              "Background image size",
+              ".contact-modal .admission-modal__dialog",
+              {
+                target: "cssVariable",
+                cssVariable: "--dexta-academy-5-contact-modal-section-bg-size",
+                defaultValue: "cover",
+                helpText:
+                  "Use cover, contain, or a custom CSS size such as 100% auto.",
+                uiGroup: "Section background",
+                uiOrder: 104,
+              },
+            ),
+            textareaField("eyebrow", "Eyebrow", ".admission-modal__header p", {
+              type: "richText",
+              target: "innerHTML",
+            }),
+            textareaField("title", "Title", ".admission-modal__header h2", {
+              type: "richText",
+              target: "innerHTML",
+            }),
+            linkField(
+              "fontStylesheetUrl",
+              "Google Fonts stylesheet URL",
+              ".contact-modal .admission-modal__dialog",
+              {
+                target: "attribute",
+                attribute: "data-dexta-font-stylesheet",
+                defaultValue: "",
+                placeholder:
+                  "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap",
+                helpText: fontImportHelpText,
+                uiGroup: "Rich text fonts",
+                uiOrder: 200,
+              },
+            ),
             linkField("formUrl", "Google Form URL", "iframe", {
               attribute: "src",
             }),
@@ -790,8 +979,99 @@ export const dextaAcademy5Manifest = {
           label: "Contact Form",
           selector: ".contact-form-panel",
           fields: [
-            textField("eyebrow", "Eyebrow", ".page-kicker"),
-            textField("title", "Title", ".contact-form-panel__header h2"),
+            colorField(
+              "sectionBgColor",
+              "Section background color",
+              ".contact-form-panel",
+              {
+                target: "cssVariable",
+                cssVariable: "--dexta-academy-5-contact-form-section-bg-color",
+                defaultValue: "#ffffff",
+                uiGroup: "Section background",
+                uiOrder: 100,
+              },
+            ),
+            numberField(
+              "sectionBgOpacity",
+              "Section background opacity",
+              ".contact-form-panel",
+              {
+                target: "cssVariable",
+                cssVariable:
+                  "--dexta-academy-5-contact-form-section-bg-opacity",
+                defaultValue: 100,
+                min: 0,
+                max: 100,
+                step: 1,
+                unit: "%",
+                uiGroup: "Section background",
+                uiOrder: 101,
+              },
+            ),
+            backgroundImageField(
+              "sectionBgImage",
+              "Section background image",
+              ".contact-form-panel",
+              {
+                target: "cssVariable",
+                cssVariable: "--dexta-academy-5-contact-form-section-bg-image",
+                defaultValue: "",
+                uiGroup: "Section background",
+                uiOrder: 102,
+                helpText:
+                  "Use the image control to add, replace, or remove this section background image.",
+              },
+            ),
+            textField(
+              "sectionBgPosition",
+              "Background image position",
+              ".contact-form-panel",
+              {
+                target: "cssVariable",
+                cssVariable:
+                  "--dexta-academy-5-contact-form-section-bg-position",
+                defaultValue: "center center",
+                uiGroup: "Section background",
+                uiOrder: 103,
+              },
+            ),
+            textField(
+              "sectionBgSize",
+              "Background image size",
+              ".contact-form-panel",
+              {
+                target: "cssVariable",
+                cssVariable: "--dexta-academy-5-contact-form-section-bg-size",
+                defaultValue: "cover",
+                helpText:
+                  "Use cover, contain, or a custom CSS size such as 100% auto.",
+                uiGroup: "Section background",
+                uiOrder: 104,
+              },
+            ),
+            textareaField("eyebrow", "Eyebrow", ".page-kicker", {
+              type: "richText",
+              target: "innerHTML",
+            }),
+            textareaField("title", "Title", ".contact-form-panel__header h2", {
+              type: "richText",
+              target: "innerHTML",
+            }),
+            linkField(
+              "fontStylesheetUrl",
+              "Google Fonts stylesheet URL",
+              ".contact-form-panel",
+              {
+                target: "attribute",
+                attribute: "data-dexta-font-stylesheet",
+                defaultValue: "",
+                placeholder:
+                  "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap",
+                helpText: fontImportHelpText,
+                uiGroup: "Rich text fonts",
+                uiOrder: 200,
+              },
+            ),
             linkField("formUrl", "Google Form URL", "iframe", {
               attribute: "src",
             }),
