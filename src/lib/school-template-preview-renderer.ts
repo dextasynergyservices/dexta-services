@@ -1075,6 +1075,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	        css.push(".brand__name strong,.brand__copy strong,.brand__text strong,.contact-brand strong,.school-footer-brand h3{color:" + (preview.content.theme.brandNameColor || "#111827") + "!important;font-size:" + (Number(preview.content.theme.brandNameFontSize || 16)) + "px!important;}");
 	        css.push(".brand__name span,.brand__copy span,.brand__text span,.contact-brand small{color:" + (preview.content.theme.brandTaglineColor || "#6b7280") + "!important;font-size:" + (Number(preview.content.theme.brandTaglineFontSize || 12)) + "px!important;}");
 	      }
+	    }
 
 		    return css.join("");
 		  }
