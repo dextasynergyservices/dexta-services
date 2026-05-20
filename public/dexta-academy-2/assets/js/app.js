@@ -12,6 +12,8 @@ const navigationItems = [
 const admissionFormUrl =
   "https://docs.google.com/forms/d/e/1FAIpQLSdSXga8Z8UfldowUxZDw8b_fylxfQThhZqiuZUZnWtKWRBeSQ/viewform?embedded=true";
 
+const admissionModalTitle = "Apply to DXT Academy";
+
 function icon(name) {
   const icons = {
     menu: `
@@ -301,7 +303,7 @@ function admissionModalMarkup() {
         <div class="admission-modal__header">
           <div>
             <p class="eyebrow">Admissions Form</p>
-            <h2 id="admission-modal-title">Apply to DXT Academy</h2>
+            <h2 id="admission-modal-title">${admissionModalTitle}</h2>
           </div>
           <button class="icon-button admission-modal__close" type="button" data-admission-modal-close aria-label="Close admission form">
             ${icon("close")}

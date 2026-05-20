@@ -4828,3 +4828,19 @@ p:last-child {
     text-decoration: underline;
   }
 }
+
+/* Portal button */
+.btn-portal {
+  background: #f8f9fa;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  font-weight: 500;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.btn-portal:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}

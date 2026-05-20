@@ -1070,12 +1070,17 @@ function readTemplatePageRoot(
 ) {
   try {
     const publicRoot = path.resolve(process.cwd(), "public");
+    const appPublicRoot = path.resolve(process.cwd(), "src", "app", "(public)");
     const sourcePath = path.resolve(
       process.cwd(),
       manifest.sourceDir,
       page.fileName,
     );
-    if (!sourcePath.startsWith(`${publicRoot}${path.sep}`)) return null;
+    if (
+      !sourcePath.startsWith(`${publicRoot}${path.sep}`) &&
+      !sourcePath.startsWith(`${appPublicRoot}${path.sep}`)
+    )
+      return null;
     return parseTemplateHtml(readFileSync(sourcePath, "utf8"));
   } catch {
     return null;
@@ -1083,15 +1088,18 @@ function readTemplatePageRoot(
 }
 
 function isRelativeOrAllowedUrl(value: string) {
+  const base = value.split("#")[0];
+  const fragment = value.includes("#");
   return (
-    value.startsWith("/") ||
-    value.startsWith("./") ||
-    value.startsWith("../") ||
+    base.startsWith("/") ||
+    base.startsWith("./") ||
+    base.startsWith("../") ||
     value.startsWith("#") ||
-    /^[a-z0-9][a-z0-9/_-]*(\.[a-z0-9]+)?$/i.test(value) ||
-    /^https?:\/\//i.test(value) ||
+    /^[a-z0-9][a-z0-9/_-]*(\.[a-z0-9]+)?$/i.test(base) ||
+    /^https?:\/\//i.test(base) ||
     /^mailto:/i.test(value) ||
-    /^tel:/i.test(value)
+    /^tel:/i.test(value) ||
+    (fragment && !base && value.startsWith("#"))
   );
 }
 
