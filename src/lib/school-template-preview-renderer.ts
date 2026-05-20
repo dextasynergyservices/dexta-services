@@ -4,18 +4,29 @@ import {
   getSchoolTemplateAssetResolverBrowserScript,
   resolveSchoolTemplateAsset,
 } from "@/lib/school-template-assets";
+import { prepareDextaAcademyThreeContactRenderingContent } from "@/lib/dexta-academy-3-contact-rendering";
 import {
+  buildSchoolTemplateSourceSnapshot,
   type SchoolTemplateProjectContent,
   type SchoolTemplateProjectPageContent,
   type SchoolTemplateProjectSectionContent,
   type SchoolTemplateProjectSectionSnapshot,
   type SchoolTemplateSourceSnapshot,
 } from "@/lib/school-template-project-content";
+import { getSchoolTemplateManifest } from "@/lib/school-template-manifests";
 
 type RenderSchoolTemplatePreviewInput = {
   content: SchoolTemplateProjectContent;
   sourceSnapshot: SchoolTemplateSourceSnapshot;
   pageSlug: string;
+  previewRouteBase?: string;
+  previewSearch?: string;
+};
+
+type PreviewNavigationContext = {
+  routeBase: string;
+  search?: string;
+  currentPageSlug: string;
 };
 
 function escapeScriptJson(value: unknown) {
@@ -44,6 +55,33 @@ function injectBeforeBodyClose(html: string, markup: string) {
   return `${html}\n${markup}`;
 }
 
+function injectAfterBodyOpen(html: string, markup: string) {
+  if (/<body[^>]*>/i.test(html)) {
+    return html.replace(/<body[^>]*>/i, (match) => `${match}\n${markup}`);
+  }
+
+  return `${markup}\n${html}`;
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>]/g, (character) => {
+    switch (character) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      default:
+        return character;
+    }
+  });
+}
+
+function escapeHtmlAttribute(value: string) {
+  return escapeHtml(value).replace(/"/g, "&quot;");
+}
+
 function injectBeforeHeadClose(html: string, markup: string) {
   if (/<\/head>/i.test(html)) {
     return html.replace(/<\/head>/i, `${markup}\n</head>`);
@@ -51,7 +89,11 @@ function injectBeforeHeadClose(html: string, markup: string) {
   return `${markup}\n${html}`;
 }
 
-function getPreviewBootMarkup() {
+function getPreviewBootMarkup(templateSlug: string) {
+  if (templateSlug === "dexta-academy-3") {
+    return "";
+  }
+
   return `<script>document.documentElement.setAttribute("data-dexta-project-preview","loading");window.setTimeout(function(){if(document.documentElement.getAttribute("data-dexta-project-preview")==="loading"){document.documentElement.setAttribute("data-dexta-project-preview","ready");}},2500);</script><style>html[data-dexta-project-preview="loading"] body{opacity:0!important;}html[data-dexta-project-preview="ready"] body{opacity:1!important;transition:opacity .16s ease;}</style>`;
 }
 
@@ -59,6 +101,944 @@ function removeHero3dModuleScript(html: string) {
   return html.replace(
     /<script\b(?=[^>]*\btype=["']module["'])(?=[^>]*\bsrc=["']js\/hero-3d\.js["'])[^>]*>\s*<\/script>/i,
     "",
+  );
+}
+
+function createDextaAcademyThreeHomeHref(anchorId: string, pageSlug: string) {
+  return pageSlug === "home" ? `#${anchorId}` : `index.html#${anchorId}`;
+}
+
+function createDextaAcademyThreeNavLink({
+  href,
+  label,
+  page,
+  currentPage,
+  style,
+  currentStyle,
+}: {
+  href: string;
+  label: string;
+  page?: string;
+  currentPage: string;
+  style?: string;
+  currentStyle?: string;
+}) {
+  if (!href || !label) {
+    return "";
+  }
+
+  const currentAttribute = page === currentPage ? ' aria-current="page"' : "";
+  const styleAttribute = style || (page === currentPage ? currentStyle : "")
+    ? ` style="${escapeHtmlAttribute(
+        page === currentPage && currentStyle ? currentStyle : (style ?? ""),
+      )}"`
+    : "";
+
+  return `<a href="${escapeHtmlAttribute(
+    href,
+  )}"${currentAttribute}${styleAttribute}>${escapeHtml(label)}</a>`;
+}
+
+function getDextaAcademyThreeHeaderFields(
+  content: SchoolTemplateProjectContent | undefined,
+) {
+  return content?.sharedSections.find((section) => section.id === "site-header")
+    ?.fields;
+}
+
+function getDextaAcademyThreeHeaderFieldValue(
+  content: SchoolTemplateProjectContent | undefined,
+  key: string,
+) {
+  const fields = getDextaAcademyThreeHeaderFields(content);
+  if (!fields || !Object.prototype.hasOwnProperty.call(fields, key)) {
+    return undefined;
+  }
+
+  return fields[key];
+}
+
+function getDextaAcademyThreeHeaderText(
+  content: SchoolTemplateProjectContent | undefined,
+  key: string,
+  fallback: string,
+) {
+  const value = getDextaAcademyThreeHeaderFieldValue(content, key);
+  if (value === undefined) {
+    return fallback;
+  }
+
+  return value === null ? "" : String(value).trim();
+}
+
+function getDextaAcademyThreeSectionFieldValue(
+  content: SchoolTemplateProjectContent | undefined,
+  pageSlug: string,
+  sectionId: string,
+  key: string,
+) {
+  const fields = content?.pages
+    .find((page) => page.slug === pageSlug)
+    ?.sections.find((section) => section.id === sectionId)?.fields;
+
+  if (!fields || !Object.prototype.hasOwnProperty.call(fields, key)) {
+    return undefined;
+  }
+
+  return fields[key];
+}
+
+function getDextaAcademyThreeSectionText(
+  content: SchoolTemplateProjectContent | undefined,
+  pageSlug: string,
+  sectionId: string,
+  key: string,
+  fallback: string,
+) {
+  const value = getDextaAcademyThreeSectionFieldValue(
+    content,
+    pageSlug,
+    sectionId,
+    key,
+  );
+  if (value === undefined) {
+    return fallback;
+  }
+
+  return value === null ? "" : String(value).trim();
+}
+
+function getDextaAcademyThreeNumber(
+  content: SchoolTemplateProjectContent | undefined,
+  key: string,
+  fallback: number,
+) {
+  const value = getDextaAcademyThreeHeaderFieldValue(content, key);
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function escapeCssValue(value: unknown, fallback = "") {
+  const text = String(value ?? "").trim();
+  if (!text) return fallback;
+  return text.replace(/[<>{};]/g, "");
+}
+
+function getGoogleFontFamilyName(value: unknown) {
+  const text = String(value ?? "")
+    .trim()
+    .replace(/^["']|["']$/g, "");
+  if (!text) return "";
+  const family = text.split(",")[0]?.trim().replace(/^["']|["']$/g, "") ?? "";
+  if (!family || /^(inherit|initial|unset|serif|sans-serif|monospace|cursive|fantasy|system-ui)$/i.test(family)) {
+    return "";
+  }
+
+  return family;
+}
+
+function getGoogleFontStylesheetUrl(value: unknown) {
+  const family = getGoogleFontFamilyName(value);
+  if (!family) return "";
+  const encodedFamily = encodeURIComponent(family).replace(/%20/g, "+");
+  return `https://fonts.googleapis.com/css2?family=${encodedFamily}:ital,wght@0,100..900;1,100..900&display=swap`;
+}
+
+function getGoogleFontPreloadMarkup(content: SchoolTemplateProjectContent) {
+  if (content.templateSlug !== "dexta-academy-3") return "";
+  const urls = Array.from(
+    new Set(
+      [content.theme.fontFamily, content.theme.navLinkFontFamily]
+        .map(getGoogleFontStylesheetUrl)
+        .filter(Boolean),
+    ),
+  );
+
+  if (!urls.length) return "";
+
+  return urls
+    .map(
+      (url) =>
+        `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${escapeHtmlAttribute(
+          url,
+        )}" data-dexta-font-stylesheet="true">`,
+    )
+    .join("");
+}
+
+function getCssLength(value: unknown, fallback: number) {
+  const parsed = Number(value);
+  return `${Number.isFinite(parsed) ? parsed : fallback}px`;
+}
+
+function getCssColorWithOpacity(color: string, opacity: number) {
+  const normalizedOpacity = clamp(opacity, 0, 100);
+  if (normalizedOpacity >= 100) return color;
+  const hexMatch = color.match(/^#([a-f\d]{3}|[a-f\d]{6})$/i);
+  if (!hexMatch) {
+    return `color-mix(in srgb, ${color} ${normalizedOpacity}%, transparent)`;
+  }
+
+  const hex =
+    hexMatch[1].length === 3
+      ? hexMatch[1]
+          .split("")
+          .map((character) => `${character}${character}`)
+          .join("")
+      : hexMatch[1];
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+  const alpha = Number((normalizedOpacity / 100).toFixed(3));
+
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
+function getDextaAcademyThreeBrandText(
+  content: SchoolTemplateProjectContent | undefined,
+  key: "brandName" | "brandTagline",
+  headerKey: "brandPrimary" | "brandSecondary",
+  fallback: string,
+) {
+  if (content?.theme && Object.prototype.hasOwnProperty.call(content.theme, key)) {
+    const themeValue = content.theme[key];
+    return themeValue === null || themeValue === undefined
+      ? ""
+      : String(themeValue).trim();
+  }
+
+  return getDextaAcademyThreeHeaderText(content, headerKey, fallback);
+}
+
+function getDextaAcademyThreeAnchorHref(
+  content: SchoolTemplateProjectContent | undefined,
+  key: string,
+  anchorId: string,
+  pageSlug: string,
+) {
+  const fallback = createDextaAcademyThreeHomeHref(anchorId, pageSlug);
+  const value = getDextaAcademyThreeHeaderText(
+    content,
+    key,
+    `index.html#${anchorId}`,
+  );
+
+  return value === `#${anchorId}` || value === `index.html#${anchorId}`
+    ? fallback
+    : value;
+}
+
+function getDextaAcademyThreePreviewHref(
+  content: SchoolTemplateProjectContent | undefined,
+  href: string,
+  navigation?: PreviewNavigationContext,
+) {
+  if (!navigation) return href;
+
+  const rawHref = href.trim();
+  if (!rawHref || /^(mailto|tel|sms|javascript|data):/i.test(rawHref)) {
+    return href;
+  }
+
+  const search = navigation.search ?? "";
+  if (rawHref.startsWith("#")) {
+    return `${navigation.routeBase}/${encodeURIComponent(
+      navigation.currentPageSlug,
+    )}${search}${rawHref}`;
+  }
+
+  let path = rawHref;
+  let hash = "";
+  const hashIndex = path.indexOf("#");
+  if (hashIndex >= 0) {
+    hash = path.slice(hashIndex);
+    path = path.slice(0, hashIndex);
+  }
+
+  const queryIndex = path.indexOf("?");
+  if (queryIndex >= 0) {
+    path = path.slice(0, queryIndex);
+  }
+
+  if (!path) {
+    return `${navigation.routeBase}/${encodeURIComponent(
+      navigation.currentPageSlug,
+    )}${search}${hash}`;
+  }
+
+  let pathname = path;
+  if (/^https?:\/\//i.test(path)) {
+    try {
+      pathname = new URL(path).pathname;
+    } catch {
+      return href;
+    }
+  }
+
+  pathname = pathname.replace(/\\/g, "/").replace(/^\.\//, "");
+  const pathParts = pathname.split("/").filter(Boolean);
+  const fileName = pathParts.length ? pathParts[pathParts.length - 1] : "index.html";
+  const decodedFileName = (() => {
+    try {
+      return decodeURIComponent(fileName);
+    } catch {
+      return fileName;
+    }
+  })();
+
+  const page = content?.pages.find((item) => item.fileName === decodedFileName);
+  if (!page) return href;
+
+  return `${navigation.routeBase}/${encodeURIComponent(page.slug)}${search}${hash}`;
+}
+
+function getResolvedPreviewThemeLogoUrl(content: SchoolTemplateProjectContent) {
+  if (!content.theme.logoUrl) return "";
+  const logoField = {
+    key: "logoUrl",
+    label: "Site logo",
+    type: "image" as const,
+    selector: "img",
+    target: "attribute" as const,
+    attribute: "src",
+  };
+
+  return resolveSchoolTemplateAsset(content.theme.logoUrl, logoField, {
+    cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "",
+    proxyCloudinaryRawModels: true,
+  });
+}
+
+function getDextaAcademyThreeLogoMarkup(
+  content?: SchoolTemplateProjectContent,
+  className = "brand__crest",
+) {
+  const logoUrl = content ? getResolvedPreviewThemeLogoUrl(content) : "";
+  const logoBackgroundColor =
+    content?.theme.logoBackgroundColor?.trim() || "transparent";
+  const isLoaderLogo = className.includes("page-loader");
+  const logoWidth = getCssLength(
+    isLoaderLogo
+      ? content?.theme.loadingLogoWidth || content?.theme.logoWidth
+      : content?.theme.logoWidth,
+    46,
+  );
+  const logoHeight = getCssLength(
+    isLoaderLogo
+      ? content?.theme.loadingLogoHeight || content?.theme.logoHeight
+      : content?.theme.logoHeight,
+    46,
+  );
+  const logoBorder = content?.theme.logoBorderEnabled
+    ? `1px solid ${escapeCssValue(content.theme.logoBorderColor, "#ffc43d")}`
+    : "0";
+  const logoBorderRadius = getCssLength(content?.theme.logoBorderRadius, 16);
+  const logoStyle = logoUrl
+    ? ` style="${escapeHtmlAttribute(
+        `background:${escapeCssValue(logoBackgroundColor, "transparent")}!important;border:${logoBorder}!important;border-radius:${logoBorderRadius}!important;width:${logoWidth}!important;height:${logoHeight}!important;max-width:${logoWidth}!important;display:grid!important;place-items:center!important;overflow:hidden;`,
+      )}"`
+    : "";
+  const logoClass = logoUrl
+    ? ` class="${escapeHtmlAttribute(className)} dexta-theme-logo-mark"`
+    : ` class="${escapeHtmlAttribute(className)} dexta-empty-logo-mark" hidden`;
+  const logoImage = logoUrl
+    ? `<img src="${escapeHtmlAttribute(logoUrl)}" alt="School logo">`
+    : "";
+
+  return `<span${logoClass}${logoStyle} aria-hidden="true">
+          ${logoImage}
+        </span>`;
+}
+
+function getDextaAcademyThreePageLoaderMarkup(
+  content: SchoolTemplateProjectContent,
+) {
+  const loadingText = content.theme.loadingText?.trim();
+
+  return `<div id="page-loader" class="page-loader" role="status" aria-live="polite">
+      <div class="page-loader__inner">
+        <div class="page-loader__halo" aria-hidden="true"></div>
+        ${getDextaAcademyThreeLogoMarkup(
+          content,
+          "page-loader__crest brand__crest",
+        )}
+        ${loadingText ? `<p class="page-loader__copy">${escapeHtml(loadingText)}</p>` : ""}
+        <div class="page-loader__track" aria-hidden="true">
+          <span class="page-loader__bar"></span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function getDextaAcademyThreeStaticPreviewCss(
+  content: SchoolTemplateProjectContent,
+) {
+  const primary = escapeCssValue(content.theme.primaryColor, "#061a40");
+  const secondary = escapeCssValue(content.theme.secondaryColor, "#f5b82e");
+  const tertiary = escapeCssValue(content.theme.tertiaryColor, "#dc422e");
+  const navbarColor = escapeCssValue(content.theme.navBarColor, "#020c20");
+  const navbarOpacity = clamp(Number(content.theme.navBarOpacity ?? 100), 0, 100);
+  const navbarBackground = content.theme.navBarTransparent
+    ? getCssColorWithOpacity(navbarColor, navbarOpacity)
+    : navbarColor;
+  const navbarBackdrop = content.theme.navBarTransparent ? "blur(18px)" : "none";
+  const brandNameColor = escapeCssValue(
+    content.theme.brandNameColor,
+    "#061a40",
+  );
+  const brandTaglineColor = escapeCssValue(
+    content.theme.brandTaglineColor,
+    "#061a40",
+  );
+  const navHoverColor = escapeCssValue(
+    content.theme.navHoverColor,
+    secondary,
+  );
+  const navLinkColor = escapeCssValue(
+    content.theme.navLinkColor || content.theme.brandTaglineColor,
+    "#ffffff",
+  );
+  const navActiveColor =
+    content.theme.navHoverEnabled === false ? navLinkColor : navHoverColor;
+  const logoBorder = content.theme.logoBorderEnabled
+    ? `1px solid ${escapeCssValue(content.theme.logoBorderColor, "#ffc43d")}`
+    : "0";
+  const logoBackground = escapeCssValue(
+    content.theme.logoBackgroundColor,
+    "transparent",
+  );
+  const logoRadius = getCssLength(content.theme.logoBorderRadius, 16);
+  const logoWidth = getCssLength(content.theme.logoWidth, 46);
+  const logoHeight = getCssLength(content.theme.logoHeight, 46);
+  const loadingLogoWidth = getCssLength(
+    content.theme.loadingLogoWidth || content.theme.logoWidth,
+    46,
+  );
+  const loadingLogoHeight = getCssLength(
+    content.theme.loadingLogoHeight || content.theme.logoHeight,
+    46,
+  );
+  const loadingBackground = escapeCssValue(
+    content.theme.loadingBackgroundColor,
+    "#fff7df",
+  );
+  const loadingTextColor = escapeCssValue(
+    content.theme.loadingTextColor,
+    "#061a40",
+  );
+  const loadingBarColor = escapeCssValue(content.theme.loadingBarColor);
+  const navFont = String(
+    content.theme.navLinkFontFamily || content.theme.fontFamily || "",
+  ).trim();
+  const bodyFont = String(content.theme.fontFamily || "").trim();
+  const headerButtonBg = escapeCssValue(
+    getDextaAcademyThreeHeaderText(content, "buttonBgColor", "#f3bf35"),
+    "#f3bf35",
+  );
+  const headerButtonBgOpacity = clamp(
+    getDextaAcademyThreeNumber(content, "buttonBgOpacity", 100),
+    0,
+    100,
+  );
+  const headerButtonText = escapeCssValue(
+    getDextaAcademyThreeHeaderText(content, "buttonTextColor", "#09142f"),
+    "#09142f",
+  );
+  const headerButtonBorderColor = escapeCssValue(
+    getDextaAcademyThreeHeaderText(content, "buttonBorderColor", "#f3bf35"),
+    "#f3bf35",
+  );
+  const headerButtonBorderWidth = clamp(
+    getDextaAcademyThreeNumber(content, "buttonBorderWidth", 0),
+    0,
+    12,
+  );
+  const portalButtonBg = escapeCssValue(
+    getDextaAcademyThreeHeaderText(content, "portalButtonBgColor", "#ffffff"),
+    "#ffffff",
+  );
+  const portalButtonBgOpacity = clamp(
+    getDextaAcademyThreeNumber(content, "portalButtonBgOpacity", 0),
+    0,
+    100,
+  );
+  const portalButtonText = escapeCssValue(
+    getDextaAcademyThreeHeaderText(content, "portalButtonTextColor", "#ffffff"),
+    "#ffffff",
+  );
+  const portalButtonBorderColor = escapeCssValue(
+    getDextaAcademyThreeHeaderText(
+      content,
+      "portalButtonBorderColor",
+      "#ffffff",
+    ),
+    "#ffffff",
+  );
+  const portalButtonBorderWidth = clamp(
+    getDextaAcademyThreeNumber(content, "portalButtonBorderWidth", 0),
+    0,
+    12,
+  );
+  const heroSectionBgColor = escapeCssValue(
+    getDextaAcademyThreeSectionText(
+      content,
+      "home",
+      "hero",
+      "sectionBgColor",
+      "#031225",
+    ),
+    "#031225",
+  );
+  const heroSectionBgOpacity = clamp(
+    Number(
+      getDextaAcademyThreeSectionFieldValue(
+        content,
+        "home",
+        "hero",
+        "sectionBgOpacity",
+      ) ?? 100,
+    ),
+    0,
+    100,
+  );
+  const heroSectionBackground = getCssColorWithOpacity(
+    heroSectionBgColor,
+    heroSectionBgOpacity,
+  );
+  const heroHeadlineTextColor = escapeCssValue(
+    getDextaAcademyThreeSectionText(
+      content,
+      "home",
+      "hero",
+      "headlineTextColor",
+      "#ffffff",
+    ),
+    "#ffffff",
+  );
+  const heroJoyfulAccentColor = escapeCssValue(
+    getDextaAcademyThreeSectionText(
+      content,
+      "home",
+      "hero",
+      "joyfulAccentColor",
+      "#ffc94c",
+    ),
+    "#ffc94c",
+  );
+  const heroBoldAccentColor = escapeCssValue(
+    getDextaAcademyThreeSectionText(
+      content,
+      "home",
+      "hero",
+      "boldAccentColor",
+      "#ffc94c",
+    ),
+    "#ffc94c",
+  );
+  const heroPrimaryButtonShadowColor = escapeCssValue(
+    getDextaAcademyThreeSectionText(
+      content,
+      "home",
+      "hero",
+      "primaryButtonShadowColor",
+      "#fac343",
+    ),
+    "#fac343",
+  );
+  const heroPrimaryButtonShadowOpacity = clamp(
+    Number(
+      getDextaAcademyThreeSectionText(
+        content,
+        "home",
+        "hero",
+        "primaryButtonShadowOpacity",
+        "24",
+      ),
+    ),
+    0,
+    100,
+  );
+  const heroSecondaryButtonShadowColor = escapeCssValue(
+    getDextaAcademyThreeSectionText(
+      content,
+      "home",
+      "hero",
+      "secondaryButtonShadowColor",
+      "#ffffff",
+    ),
+    "#ffffff",
+  );
+  const heroSecondaryButtonShadowOpacity = clamp(
+    Number(
+      getDextaAcademyThreeSectionText(
+        content,
+        "home",
+        "hero",
+        "secondaryButtonShadowOpacity",
+        "4",
+      ),
+    ),
+    0,
+    100,
+  );
+  const portalButtonShapeStyle =
+    "display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;padding:12px 18px!important;border-radius:999px!important;font-weight:700!important;text-decoration:none!important;";
+  const heroHeadlineLayoutStyle =
+    "max-width:min(14.5ch,100%)!important;line-height:1.04!important;letter-spacing:0!important;overflow-wrap:break-word!important;text-wrap:balance;";
+  const heroLineLayoutStyle =
+    "display:flex!important;align-items:baseline!important;justify-content:center!important;flex-wrap:wrap!important;gap:0 .18em!important;min-height:1.04em!important;";
+  const css = [
+    `:root,body,.home-page,.about-page,.gallery-page,.contact-page{--dexta-school-primary:${primary};--dexta-school-secondary:${secondary};--dexta-school-tertiary:${tertiary};--navy:${primary};--navy-deep:${primary};--gold:${secondary};--gold-deep:${secondary};--red:${tertiary};--red-deep:${tertiary};}`,
+    bodyFont
+      ? `body,.page-shell,.hero,.welcome,.programmes-showcase,.home-apply,.home-gallery,.site-footer,.about-page,.gallery-page,.contact-page,h1,h2,h3,h4,h5,h6,p,li,a,span,label,input,textarea,button{font-family:${JSON.stringify(bodyFont)},"Segoe UI",sans-serif!important;}`
+      : "",
+    navFont
+      ? `.site-header .site-nav a,.site-header .portal-link,.site-header .button,.site-footer,.site-footer a{font-family:${JSON.stringify(navFont)},"Segoe UI",sans-serif!important;}`
+      : "",
+    `.site-header,.home-page .site-header,.home-page.is-animated .site-header,.about-page .site-header,.gallery-page .site-header,.contact-page .site-header,.about-page .site-header.is-open,.gallery-page .site-header.is-open,.contact-page .site-header.is-open{background:${navbarBackground}!important;background-color:${navbarBackground}!important;background-image:none!important;box-shadow:0 16px 40px rgba(0,0,0,.08)!important;backdrop-filter:${navbarBackdrop}!important;}`,
+    `.site-header .brand__name strong{color:${brandNameColor}!important;font-size:${Number(content.theme.brandNameFontSize || 16)}px!important;}.site-header .brand__name span{color:${brandTaglineColor}!important;font-size:${Number(content.theme.brandTaglineFontSize || 16)}px!important;}.site-header .brand{color:${brandNameColor}!important;}.site-header .site-nav a{color:${navLinkColor}!important;}.site-header .site-nav a[aria-current="page"],.site-header .site-nav a:hover,.site-header .site-nav a:focus-visible{color:${navActiveColor}!important;}.site-header .site-nav a::after{background:${navHoverColor}!important;}`,
+    `.site-header .portal-link{${portalButtonShapeStyle}background:${getCssColorWithOpacity(portalButtonBg, portalButtonBgOpacity)}!important;background-color:${getCssColorWithOpacity(portalButtonBg, portalButtonBgOpacity)}!important;background-image:none!important;color:${portalButtonText}!important;border:${portalButtonBorderWidth}px solid ${portalButtonBorderColor}!important;}`,
+	    `.hero{background:#031225!important;background-color:#031225!important;}.hero__sky-layer,.hero::before,.hero::after{top:0!important;right:0!important;bottom:0!important;left:0!important;height:auto!important;max-height:none!important;}.hero__sky-layer{background:${heroSectionBackground}!important;overflow:hidden!important;}.hero::before{background:radial-gradient(circle at 50% 74%,color-mix(in srgb,${heroSectionBackground} 58%,transparent),transparent 24%),radial-gradient(circle at 50% 55%,color-mix(in srgb,${heroSectionBackground} 24%,transparent),transparent 18%),linear-gradient(180deg,color-mix(in srgb,${heroSectionBackground} 12%,transparent) 0%,color-mix(in srgb,${heroSectionBackground} 42%,transparent) 100%)!important;}.hero::after{background:linear-gradient(180deg,color-mix(in srgb,${heroSectionBackground} 16%,transparent) 0%,color-mix(in srgb,${heroSectionBackground} 42%,transparent) 63%,color-mix(in srgb,${heroSectionBackground} 72%,transparent) 100%)!important;}`,
+	    `@media (max-width:560px){.hero__sky-layer,.hero::before,.hero::after{top:0!important;right:0!important;bottom:0!important;left:0!important;height:auto!important;max-height:none!important;}.hero__sky-layer{background:${heroSectionBackground}!important;overflow:hidden!important;}.hero h1,.hero__title,.hero__title .hero__line,.hero__title .hero__segment{color:${heroHeadlineTextColor}!important;}.hero__title .hero__accent--joyful{color:${heroJoyfulAccentColor}!important;}.hero__title .hero__accent--bold{color:${heroBoldAccentColor}!important;}}`,
+	    `.hero__sky-layer{top:0!important;right:0!important;bottom:0!important;left:0!important;height:auto!important;max-height:none!important;background:${heroSectionBackground}!important;background-image:none!important;overflow:hidden!important;}.hero__sky-image{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center top!important;opacity:.94!important;transform:scale(1.12);transform-origin:center top!important;}@media (max-width:1080px){.hero__sky-image{object-position:center 18%!important;}}@media (max-width:840px){.hero__sky-image{object-position:center 16%!important;}}@media (max-width:560px){.hero__sky-layer{top:0!important;right:0!important;bottom:0!important;left:0!important;height:auto!important;max-height:none!important;background:${heroSectionBackground}!important;background-image:none!important;}.hero__sky-image{object-position:center 14%!important;}}`,
+	    `.hero h1,.hero__title{${heroHeadlineLayoutStyle}color:${heroHeadlineTextColor}!important;}.hero__line{${heroLineLayoutStyle}color:${heroHeadlineTextColor}!important;}.hero__segment,.hero__accent{line-height:1.04!important;white-space:normal!important;}.hero__segment{color:${heroHeadlineTextColor}!important;}.hero__accent--joyful{color:${heroJoyfulAccentColor}!important;}.hero__accent--bold{color:${heroBoldAccentColor}!important;}`,
+    `.hero__cta-primary{box-shadow:0 18px 34px ${getCssColorWithOpacity(heroPrimaryButtonShadowColor, heroPrimaryButtonShadowOpacity)}!important;}.hero__cta-secondary{box-shadow:inset 0 0 0 1px ${getCssColorWithOpacity(heroSecondaryButtonShadowColor, heroSecondaryButtonShadowOpacity)}!important;}`,
+    `.brand__crest,.page-loader__crest{border:${logoBorder}!important;border-radius:${logoRadius}!important;width:${logoWidth}!important;height:${logoHeight}!important;max-width:${logoWidth}!important;background:${logoBackground}!important;}.page-loader__crest{width:${loadingLogoWidth}!important;height:${loadingLogoHeight}!important;max-width:${loadingLogoWidth}!important;}`,
+    `.brand__crest.dexta-empty-logo-mark,.page-loader__crest.dexta-empty-logo-mark{display:none!important;}.brand__crest.dexta-theme-logo-mark,.page-loader__crest.dexta-theme-logo-mark{display:grid!important;place-items:center!important;overflow:hidden;}.brand__crest.dexta-theme-logo-mark::before,.page-loader__crest.dexta-theme-logo-mark::before{content:none!important;}.brand__crest img,.page-loader__crest img{display:block;width:100%;height:100%;object-fit:contain;}`,
+    `.header-actions .button--gold{background:${getCssColorWithOpacity(headerButtonBg, headerButtonBgOpacity)}!important;background-color:${getCssColorWithOpacity(headerButtonBg, headerButtonBgOpacity)}!important;background-image:none!important;color:${headerButtonText}!important;border:${headerButtonBorderWidth}px solid ${headerButtonBorderColor}!important;}`,
+    `.page-loader,.js body .page-loader{background:${loadingBackground}!important;background-color:${loadingBackground}!important;color:${loadingTextColor}!important;}.page-loader__inner{background:${loadingBackground}!important;background-color:${loadingBackground}!important;}.page-loader__copy{color:${loadingTextColor}!important;}`,
+    loadingBarColor
+      ? `.page-loader__bar{background:${loadingBarColor}!important;}`
+      : "",
+  ].filter(Boolean);
+
+  return `<style data-dexta-template3-preview-theme="true">${css.join("")}</style>`;
+}
+
+function getDextaAcademyThreeNavbarMarkup(
+  pageSlug: string,
+  content?: SchoolTemplateProjectContent,
+  navigation?: PreviewNavigationContext,
+) {
+  const programmesHref = getDextaAcademyThreeAnchorHref(
+    content,
+    "navProgrammesHref",
+    "programmes",
+    pageSlug,
+  );
+  const applyHref = getDextaAcademyThreeAnchorHref(
+    content,
+    "navApplyHref",
+    "how-to-apply",
+    pageSlug,
+  );
+  const headerCtaHref = getDextaAcademyThreeAnchorHref(
+    content,
+    "headerCtaHref",
+    "how-to-apply",
+    pageSlug,
+  );
+  const headerCtaText = getDextaAcademyThreeHeaderText(
+    content,
+    "headerCtaText",
+    "Apply Now",
+  );
+  const shouldOpenAdmissionModal =
+    pageSlug === "contact" &&
+    (headerCtaHref === "#how-to-apply" ||
+      headerCtaHref === "index.html#how-to-apply");
+  const hasHeaderCta = Boolean(headerCtaText && headerCtaHref);
+  const applyAttributes = shouldOpenAdmissionModal
+    ? 'href="#admission" data-admission-modal-open aria-controls="admission-modal"'
+    : `href="${escapeHtmlAttribute(
+        getDextaAcademyThreePreviewHref(content, headerCtaHref, navigation),
+      )}"`;
+  const brandPrimary = getDextaAcademyThreeBrandText(
+    content,
+    "brandName",
+    "brandPrimary",
+    "DXT",
+  );
+  const brandSecondary = getDextaAcademyThreeBrandText(
+    content,
+    "brandTagline",
+    "brandSecondary",
+    "Academy",
+  );
+  const brandLabel = [brandPrimary, brandSecondary].filter(Boolean).join(" ");
+  const navbarColor = escapeCssValue(content?.theme.navBarColor, "#020c20");
+  const navbarOpacity = clamp(Number(content?.theme.navBarOpacity ?? 100), 0, 100);
+  const navbarBackground = content?.theme.navBarTransparent
+    ? getCssColorWithOpacity(navbarColor, navbarOpacity)
+    : navbarColor;
+  const navbarBackdrop = content?.theme.navBarTransparent ? "blur(18px)" : "none";
+  const brandNameColor = escapeCssValue(
+    content?.theme.brandNameColor,
+    "#061a40",
+  );
+  const brandTaglineColor = escapeCssValue(
+    content?.theme.brandTaglineColor,
+    "#061a40",
+  );
+  const navActiveColor =
+    content?.theme.navHoverEnabled === false
+      ? escapeCssValue(
+          content?.theme.navLinkColor || content?.theme.brandTaglineColor,
+          "#ffffff",
+        )
+      : escapeCssValue(content?.theme.navHoverColor, "#f5b82e");
+  const navLinkColor = escapeCssValue(
+    content?.theme.navLinkColor || content?.theme.brandTaglineColor,
+    "#ffffff",
+  );
+  const navFont = getGoogleFontFamilyName(
+    content?.theme.navLinkFontFamily || content?.theme.fontFamily,
+  );
+  const navFontStyle = navFont
+    ? `font-family:${JSON.stringify(navFont)},"Segoe UI",sans-serif!important;`
+    : "";
+  const headerStyle = `background:${navbarBackground}!important;background-color:${navbarBackground}!important;background-image:none!important;backdrop-filter:${navbarBackdrop}!important;`;
+  const brandStrongStyle = `color:${brandNameColor}!important;font-size:${Number(
+    content?.theme.brandNameFontSize || 16,
+  )}px!important;`;
+  const brandSpanStyle = `color:${brandTaglineColor}!important;font-size:${Number(
+    content?.theme.brandTaglineFontSize || 16,
+  )}px!important;`;
+  const navLinkStyle = `color:${navLinkColor}!important;${navFontStyle}`;
+  const currentNavLinkStyle = `color:${navActiveColor}!important;${navFontStyle}`;
+  const portalText = getDextaAcademyThreeHeaderText(
+    content,
+    "portalText",
+    "Portal",
+  );
+  const portalHref = getDextaAcademyThreeHeaderText(content, "portalHref", "#");
+  const hasPortalLink = Boolean(portalText && portalHref);
+  const portalButtonBg = escapeCssValue(
+    getDextaAcademyThreeHeaderText(content, "portalButtonBgColor", "#ffffff"),
+    "#ffffff",
+  );
+  const portalButtonBgOpacity = clamp(
+    getDextaAcademyThreeNumber(content, "portalButtonBgOpacity", 0),
+    0,
+    100,
+  );
+  const portalButtonBackground = getCssColorWithOpacity(
+    portalButtonBg,
+    portalButtonBgOpacity,
+  );
+  const portalButtonText = escapeCssValue(
+    getDextaAcademyThreeHeaderText(content, "portalButtonTextColor", "#ffffff"),
+    "#ffffff",
+  );
+  const portalButtonBorderColor = escapeCssValue(
+    getDextaAcademyThreeHeaderText(
+      content,
+      "portalButtonBorderColor",
+      "#ffffff",
+    ),
+    "#ffffff",
+  );
+  const portalButtonBorderWidth = clamp(
+    getDextaAcademyThreeNumber(content, "portalButtonBorderWidth", 0),
+    0,
+    12,
+  );
+  const portalButtonShapeStyle =
+    "display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;padding:12px 18px!important;border-radius:999px!important;font-weight:700!important;text-decoration:none!important;";
+  const portalButtonStyle = `${portalButtonShapeStyle}background:${portalButtonBackground}!important;background-color:${portalButtonBackground}!important;background-image:none!important;color:${portalButtonText}!important;border:${portalButtonBorderWidth}px solid ${portalButtonBorderColor}!important;${navFontStyle}`;
+  const headerButtonBg = escapeCssValue(
+    getDextaAcademyThreeHeaderText(content, "buttonBgColor", "#f3bf35"),
+    "#f3bf35",
+  );
+  const headerButtonBgOpacity = clamp(
+    getDextaAcademyThreeNumber(content, "buttonBgOpacity", 100),
+    0,
+    100,
+  );
+  const headerButtonBackground = getCssColorWithOpacity(
+    headerButtonBg,
+    headerButtonBgOpacity,
+  );
+  const headerButtonText = escapeCssValue(
+    getDextaAcademyThreeHeaderText(content, "buttonTextColor", "#09142f"),
+    "#09142f",
+  );
+  const headerButtonBorderColor = escapeCssValue(
+    getDextaAcademyThreeHeaderText(content, "buttonBorderColor", "#f3bf35"),
+    "#f3bf35",
+  );
+  const headerButtonBorderWidth = clamp(
+    getDextaAcademyThreeNumber(content, "buttonBorderWidth", 0),
+    0,
+    12,
+  );
+  const headerButtonStyle = `background:${headerButtonBackground}!important;background-color:${headerButtonBackground}!important;background-image:none!important;color:${headerButtonText}!important;border:${headerButtonBorderWidth}px solid ${headerButtonBorderColor}!important;${navFontStyle}`;
+  const links = [
+    {
+      href: getDextaAcademyThreePreviewHref(
+        content,
+        getDextaAcademyThreeHeaderText(content, "navHomeHref", "index.html"),
+        navigation,
+      ),
+      label: getDextaAcademyThreeHeaderText(content, "navHomeText", "Home"),
+      page: "home",
+    },
+    {
+      href: getDextaAcademyThreePreviewHref(
+        content,
+        getDextaAcademyThreeHeaderText(content, "navAboutHref", "about.html"),
+        navigation,
+      ),
+      label: getDextaAcademyThreeHeaderText(content, "navAboutText", "About"),
+      page: "about",
+    },
+    {
+      href: getDextaAcademyThreePreviewHref(
+        content,
+        programmesHref,
+        navigation,
+      ),
+      label: getDextaAcademyThreeHeaderText(
+        content,
+        "navProgrammesText",
+        "Programmes",
+      ),
+    },
+    {
+      href: getDextaAcademyThreePreviewHref(
+        content,
+        getDextaAcademyThreeHeaderText(content, "navGalleryHref", "gallery.html"),
+        navigation,
+      ),
+      label: getDextaAcademyThreeHeaderText(
+        content,
+        "navGalleryText",
+        "Gallery",
+      ),
+      page: "gallery",
+    },
+    {
+      href: getDextaAcademyThreePreviewHref(content, applyHref, navigation),
+      label: getDextaAcademyThreeHeaderText(
+        content,
+        "navApplyText",
+        "How To Apply",
+      ),
+    },
+    {
+      href: getDextaAcademyThreePreviewHref(
+        content,
+        getDextaAcademyThreeHeaderText(content, "navContactHref", "contact.html"),
+        navigation,
+      ),
+      label: getDextaAcademyThreeHeaderText(
+        content,
+        "navContactText",
+        "Contact",
+      ),
+      page: "contact",
+    },
+  ];
+
+  return `<header class="site-header" style="${escapeHtmlAttribute(headerStyle)}">
+      <a class="brand" href="index.html" aria-label="${escapeHtmlAttribute(
+        brandLabel || "School",
+      )} home">
+        ${getDextaAcademyThreeLogoMarkup(content)}
+        <span class="brand__name">
+          <strong style="${escapeHtmlAttribute(brandStrongStyle)}">${escapeHtml(
+            brandPrimary,
+          )}</strong>
+          <span style="${escapeHtmlAttribute(brandSpanStyle)}">${escapeHtml(
+            brandSecondary,
+          )}</span>
+        </span>
+      </a>
+
+      <button
+        class="nav-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="site-nav"
+      >
+        Menu
+      </button>
+
+      <nav class="site-nav" id="site-nav" aria-label="Primary navigation">
+        ${links
+          .map((link) =>
+            createDextaAcademyThreeNavLink({
+              ...link,
+              currentPage: pageSlug,
+              style: navLinkStyle,
+              currentStyle: currentNavLinkStyle,
+            }),
+          )
+          .join("")}
+      </nav>
+
+      <div class="header-actions">
+        ${
+          hasPortalLink
+            ? `<a class="portal-link button" href="${escapeHtmlAttribute(
+		                getDextaAcademyThreePreviewHref(content, portalHref, navigation),
+		              )}" style="${escapeHtmlAttribute(
+		                portalButtonStyle,
+	              )}">${escapeHtml(portalText)}</a>`
+            : ""
+        }
+        ${
+          hasHeaderCta
+            ? `<a class="button button--gold" ${applyAttributes} style="${escapeHtmlAttribute(
+                headerButtonStyle,
+              )}">${escapeHtml(headerCtaText)}</a>`
+            : ""
+        }
+      </div>
+    </header>`;
+}
+
+function renderDextaAcademyThreeNavbarFallback(
+  html: string,
+  pageSlug: string,
+  content: SchoolTemplateProjectContent,
+  navigation?: PreviewNavigationContext,
+) {
+  if (!/<[^>]+\sdata-site-navbar(?:\s|>|=)/i.test(html)) {
+    return html;
+  }
+
+  const withoutMount = html.replace(
+    /\s*<div\b[^>]*\sdata-site-navbar(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?[^>]*>\s*<\/div>\s*/gi,
+    "\n",
+  );
+
+  if (/<header\b[^>]*\bclass=["'][^"']*\bsite-header\b/i.test(withoutMount)) {
+    return withoutMount;
+  }
+
+  return injectAfterBodyOpen(
+    withoutMount,
+    getDextaAcademyThreeNavbarMarkup(pageSlug, content, navigation),
+  );
+}
+
+function renderDextaAcademyThreeLoaderFallback(
+  html: string,
+  pageSlug: string,
+  content: SchoolTemplateProjectContent,
+) {
+  if (pageSlug !== "home" || /<[^>]+\sid=["']page-loader["']/i.test(html)) {
+    return html;
+  }
+
+  return injectAfterBodyOpen(
+    html,
+    getDextaAcademyThreePageLoaderMarkup(content),
   );
 }
 
@@ -214,10 +1194,18 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 	    return value === null || value === undefined ? "" : String(value);
 	  }
 
-	  function toComparableText(value) {
+		  function toComparableText(value) {
 	    var node = document.createElement("div");
 	    node.innerHTML = toText(value);
 	    return (node.textContent || node.innerText || "").replace(/\\s+/g, " ").trim();
+	  }
+
+	  function hasRichTextColorStyle(value) {
+	    var node = document.createElement("div");
+	    node.innerHTML = toText(value);
+	    return Array.from(node.querySelectorAll("[style]")).some(function (item) {
+	      return Boolean(item.style && (item.style.color || item.style.backgroundColor));
+	    });
 	  }
 
 	  function serializeHtmlNode(node) {
@@ -241,7 +1229,7 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 	    return serializeHtmlNode(wrapper);
 	  }
 
-	  function toInlineHtml(value) {
+	  function toInlineHtml(value, separator) {
 	    var container = document.createElement("div");
 	    container.innerHTML = toText(value);
 	    var parts = [];
@@ -254,39 +1242,167 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 	      if (html) parts.push(html);
 	    });
 
-	    return parts.join("<br><br>");
+	    return parts.join(separator || "<br><br>");
 	  }
 
 	  function setElementHtml(node, value) {
 	    var tagName = String(node.tagName || "").toLowerCase();
-	    node.innerHTML = /^(h[1-6]|p)$/.test(tagName) ? toInlineHtml(value) : toText(value);
+	    node.innerHTML = /^h[1-6]$/.test(tagName)
+	      ? toInlineHtml(value, "<br>")
+	      : tagName === "p"
+	        ? toInlineHtml(value)
+	        : toText(value);
+	    promoteInlineRichTextColorStyles(node);
 	  }
 
-  function withUnit(value, unit) {
-    if (value === null || value === undefined || value === "") return "";
-    var text = String(value);
-    if (!unit || /[a-z%]+$/i.test(text)) return text;
-    return text + unit;
-  }
+	  function promoteInlineRichTextColorStyles(root) {
+	    if (!root || !root.querySelectorAll) return;
+	    var styledNodes = [];
+	    if (root.getAttribute && root.getAttribute("style")) {
+	      styledNodes.push(root);
+	    }
+	    styledNodes = styledNodes.concat(Array.from(root.querySelectorAll("[style]")));
+	    styledNodes.forEach(function (node) {
+	      var color = node.style && node.style.color;
+	      if (color) {
+	        node.style.setProperty("color", color, "important");
+	      }
+	      var backgroundColor = node.style && node.style.backgroundColor;
+	      if (backgroundColor) {
+	        node.style.setProperty("background-color", backgroundColor, "important");
+	      }
+	    });
+	  }
+
+	  function withUnit(value, unit) {
+	    if (value === null || value === undefined || value === "") return "";
+	    var text = String(value);
+	    if (!unit || /[a-z%]+$/i.test(text)) return text;
+	    return text + unit;
+	  }
+
+	  function getGoogleFontFamilyName(value) {
+	    var text = String(value || "").trim().replace(/^["']|["']$/g, "");
+	    if (!text) return "";
+	    var family = String(text.split(",")[0] || "").trim().replace(/^["']|["']$/g, "");
+	    if (!family || /^(inherit|initial|unset|serif|sans-serif|monospace|cursive|fantasy|system-ui)$/i.test(family)) return "";
+	    return family;
+	  }
+
+	  function getGoogleFontStylesheetUrl(value) {
+	    var family = getGoogleFontFamilyName(value);
+	    if (!family) return "";
+	    return "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(family).replace(/%20/g, "+") + ":ital,wght@0,100..900;1,100..900&display=swap";
+	  }
+
+	  function applyFontFamily(node, value) {
+	    var family = getGoogleFontFamilyName(value);
+	    if (!family) return;
+	    var fallback = preview.content.templateSlug === "dexta-academy-3"
+	      ? ', "Segoe UI", sans-serif'
+	      : ", var(--font-family, inherit)";
+	    var stack = JSON.stringify(family) + fallback;
+	    node.style.setProperty("font-family", stack, "important");
+	    node.querySelectorAll("*").forEach(function (child) {
+	      child.style.setProperty("font-family", stack, "important");
+	    });
+	  }
+
+	  function applyNavFontFamily(node, value) {
+	    var family = getGoogleFontFamilyName(value);
+	    if (!family) return;
+	    var stack = JSON.stringify(family) + ', "Segoe UI", sans-serif';
+	    node.style.setProperty("font-family", stack, "important");
+	    node.querySelectorAll("*").forEach(function (child) {
+	      child.style.setProperty("font-family", stack, "important");
+	    });
+	  }
 
 ${getSchoolTemplateAssetResolverBrowserScript()}
 
-  function resolveAsset(value, field) {
-    return resolveSchoolTemplateAsset(value, field, {
-      cloudName: preview.cloudName,
-      proxyCloudinaryRawModels: true
-    });
-  }
-	
-	  function getCssVariableValue(value, field) {
-	    if (field.type === "image" || field.type === "model3d") {
-	      var asset = resolveAsset(value, field).replace(/"/g, "&quot;");
-	      return asset ? 'url("' + asset + '")' : "none";
-	    }
-	    return withUnit(value, field.unit);
+	  function resolveAsset(value, field) {
+	    return resolveSchoolTemplateAsset(value, field, {
+	      cloudName: preview.cloudName,
+	      proxyCloudinaryRawModels: true
+	    });
 	  }
-	
-		  function setDeep(target, path, value) {
+
+	  function normalizeColorToken(value) {
+	    return String(value || "").trim().toLowerCase();
+	  }
+
+	  function getTemplateThreeThemeColorForDefault(value, field) {
+	    if (preview.content.templateSlug !== "dexta-academy-3") return "";
+	    if (!field || field.type !== "color") return "";
+	    var valueToken = normalizeColorToken(value);
+	    var defaultToken = normalizeColorToken(field.defaultValue);
+	    if (!valueToken || !defaultToken || valueToken !== defaultToken) return "";
+
+	    var primaryDefaults = [
+	      "#020c20",
+	      "#031225",
+	      "#061a40",
+	      "#061f44",
+	      "#07162f",
+	      "#081427",
+	      "#081730",
+	      "#081b3a",
+	      "#09142f",
+	      "#10244b",
+	      "#122a56"
+	    ];
+	    var secondaryDefaults = [
+	      "#d69f11",
+	      "#e6ae1d",
+	      "#f1ad16",
+	      "#f2b236",
+	      "#f3bf35",
+	      "#f5b82e",
+	      "#f7c84d",
+	      "#ffc43d",
+	      "#ffd154",
+	      "#ffd966"
+	    ];
+	    var tertiaryDefaults = [
+	      "#b72d1f",
+	      "#c12f1d",
+	      "#dc422e",
+	      "#ef523c",
+	      "#ef613f"
+	    ];
+
+	    if (primaryDefaults.indexOf(defaultToken) >= 0) return "var(--navy)";
+	    if (secondaryDefaults.indexOf(defaultToken) >= 0) return "var(--gold)";
+	    if (tertiaryDefaults.indexOf(defaultToken) >= 0) return "var(--red)";
+	    return "";
+	  }
+		
+		  function getCssVariableValue(value, field) {
+		    if (field.type === "image" || field.type === "model3d") {
+		      var asset = resolveAsset(value, field).replace(/"/g, "&quot;");
+		      return asset ? 'url("' + asset + '")' : "none";
+		    }
+		    var themeColor = getTemplateThreeThemeColorForDefault(value, field);
+		    if (themeColor) return themeColor;
+		    return withUnit(value, field.unit);
+		  }
+
+		  function shouldCoverBackgroundImage(field) {
+		    var key = String(field.key || "").toLowerCase();
+		    var selector = String(field.selector || "").toLowerCase();
+
+		    if (key.indexOf("icon") >= 0 || selector.indexOf("icon") >= 0) {
+		      return false;
+		    }
+
+		    return (
+		      key === "backgroundimage" ||
+		      key.indexOf("hero") >= 0 ||
+		      selector.indexOf("hero") >= 0
+		    );
+		  }
+		
+			  function setDeep(target, path, value) {
 	    if (!path) return;
 	    var parts = path.split(".");
 	    var cursor = target;
@@ -411,21 +1527,31 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    if (preview.content.templateSlug === "dexta-academy-2") {
 	      addValue("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
 	    }
+	    if (preview.content.templateSlug === "dexta-academy-3") {
+	      addValue(getGoogleFontStylesheetUrl(preview.content.theme.fontFamily));
+	      addValue(getGoogleFontStylesheetUrl(preview.content.theme.navLinkFontFamily));
+	    }
 
 	    function scanSection(section) {
 	      Object.keys(section.fields || {}).forEach(function (key) {
 	        var normalizedKey = key.toLowerCase();
-	        if (normalizedKey.indexOf("fontstylesheeturl") >= 0 || normalizedKey.indexOf("googlefonturl") >= 0) {
-	          addValue(section.fields[key]);
-	        }
+		        if (normalizedKey.indexOf("fontstylesheeturl") >= 0 || normalizedKey.indexOf("googlefonturl") >= 0) {
+		          addValue(section.fields[key]);
+		        }
+		        if (normalizedKey === "fontfamily" || normalizedKey.indexOf("fontfamily") >= 0) {
+		          addValue(getGoogleFontStylesheetUrl(section.fields[key]));
+		        }
 	      });
 	      if (!section.repeatable || !section.repeatable.items) return;
 	      section.repeatable.items.forEach(function (item) {
 	        Object.keys(item || {}).forEach(function (key) {
 	          var normalizedKey = key.toLowerCase();
-	          if (normalizedKey.indexOf("fontstylesheeturl") >= 0 || normalizedKey.indexOf("googlefonturl") >= 0) {
-	            addValue(item[key]);
-	          }
+		          if (normalizedKey.indexOf("fontstylesheeturl") >= 0 || normalizedKey.indexOf("googlefonturl") >= 0) {
+		            addValue(item[key]);
+		          }
+		          if (normalizedKey === "fontfamily" || normalizedKey.indexOf("fontfamily") >= 0) {
+		            addValue(getGoogleFontStylesheetUrl(item[key]));
+		          }
 	        });
 	      });
 	    }
@@ -477,9 +1603,9 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
     }
   }
 
-	  function shouldApplyField(value, field) {
-	    if (isFilled(value)) return true;
-	    if (
+		  function shouldApplyField(value, field) {
+		    if (isFilled(value)) return true;
+		    if (
 	      value !== null &&
 	      value !== undefined &&
 	      (field.target === "textContent" || field.target === "innerHTML")
@@ -595,20 +1721,275 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    return true;
 	  }
 
-		  function applyField(node, field, value) {
-		    if (field.target === "threeConfig") {
-		      return;
+	  function normalizeAcademyThreeHeroLine(value) {
+	    return String(value || "").replace(/\\s+/g, " ").trim();
+	  }
+
+	  function splitAcademyThreeHeroText(value) {
+	    var words = normalizeAcademyThreeHeroLine(value).split(/\\s+/).filter(Boolean);
+	    if (!words.length) return [];
+	    if (words.length <= 4) return words;
+
+	    var lines = [];
+	    var remaining = words.slice();
+	    for (var index = 0; index < 4; index += 1) {
+	      var remainingSlots = 4 - index;
+	      var take = Math.max(1, Math.ceil(remaining.length / remainingSlots));
+	      lines.push(remaining.splice(0, take).join(" "));
+	    }
+	    return lines;
+	  }
+
+	  function getAcademyThreeHeroLines(value) {
+	    var container = document.createElement("div");
+	    container.innerHTML = toText(value);
+	    container.querySelectorAll("br").forEach(function (breakNode) {
+	      breakNode.replaceWith(document.createTextNode("\\n"));
+	    });
+
+	    var blockNodes = Array.from(container.children).filter(function (node) {
+	      return isTextBlockElement(node);
+	    });
+	    var lines = blockNodes.length
+	      ? blockNodes.map(function (node) {
+	          return normalizeAcademyThreeHeroLine(node.textContent || "");
+	        })
+	      : String(container.textContent || "")
+	          .split(/\\n+/)
+	          .map(normalizeAcademyThreeHeroLine);
+
+	    lines = lines.filter(Boolean);
+	    if (lines.length > 1) return lines;
+	    return splitAcademyThreeHeroText(lines[0] || "");
+	  }
+
+	  function escapeHtmlText(value) {
+	    var span = document.createElement("span");
+	    span.textContent = value || "";
+	    return span.innerHTML;
+	  }
+
+	  function splitAtLastWord(value) {
+	    var parts = normalizeAcademyThreeHeroLine(value).split(/\\s+/).filter(Boolean);
+	    if (!parts.length) return { before: "", last: "" };
+	    if (parts.length === 1) return { before: "", last: parts[0] };
+	    return {
+	      before: parts.slice(0, -1).join(" ") + " ",
+	      last: parts[parts.length - 1]
+	    };
+	  }
+
+	  function splitAtFirstWord(value) {
+	    var parts = normalizeAcademyThreeHeroLine(value).split(/\\s+/).filter(Boolean);
+	    if (!parts.length) return { first: "", after: "" };
+	    if (parts.length === 1) return { first: parts[0], after: "" };
+	    return {
+	      first: parts[0],
+	      after: " " + parts.slice(1).join(" ")
+	    };
+	  }
+
+		  function sanitizeAcademyThreeHeroFontSize(value) {
+		    var text = String(value || "").trim();
+		    return /^\\d+(?:\\.\\d+)?(?:px|rem|em|%)$/i.test(text) ? text : "";
+		  }
+
+		  function getAcademyThreeHeroFontSize(value) {
+		    var container = document.createElement("div");
+		    container.innerHTML = toText(value);
+		    var styledNodes = Array.from(container.querySelectorAll("[style]"));
+		    for (var index = 0; index < styledNodes.length; index += 1) {
+		      var node = styledNodes[index];
+		      var parsedSize = sanitizeAcademyThreeHeroFontSize(node.style && node.style.fontSize);
+		      if (parsedSize) return parsedSize;
+		      var style = node.getAttribute("style") || "";
+		      var match = style.match(/font-size\\s*:\\s*([^;]+)/i);
+		      var matchedSize = sanitizeAcademyThreeHeroFontSize(match && match[1]);
+		      if (matchedSize) return matchedSize;
+		    }
+		    return "";
+		  }
+
+		  function getResponsiveAcademyThreeHeroFontSize(value) {
+		    var size = getAcademyThreeHeroFontSize(value);
+		    var pxMatch = size.match(/^(\\d+(?:\\.\\d+)?)px$/i);
+		    if (!pxMatch) return size;
+
+		    var pixels = Number(pxMatch[1]);
+		    if (!Number.isFinite(pixels) || pixels <= 52) return size;
+		    return "clamp(2.85rem, 10vw, " + size + ")";
+		  }
+
+		  function applyAcademyThreeHeroTitle(node, value) {
+		    if (
+	      preview.content.templateSlug !== "dexta-academy-3" ||
+	      !node.classList ||
+	      !node.classList.contains("hero__title")
+	    ) {
+	      return false;
 	    }
 
-	    if (field.target === "cssVariable" && field.cssVariable) {
-	      var cssValue = getCssVariableValue(value, field);
-	      node.style.setProperty(field.cssVariable, cssValue);
-      if (field.cssVariable === "--cap-center-x") node.style.left = cssValue;
-      if (field.cssVariable === "--cap-center-y") node.style.top = cssValue;
-      return;
-    }
+	    var lines = getAcademyThreeHeroLines(value);
+	    if (!lines.length) return false;
+
+	    var lineOne = lines[0] || "";
+	    var lineTwo = splitAtLastWord(lines[1] || "");
+	    var lineThree = splitAtFirstWord(lines[2] || "");
+	    var lineFour = lines.slice(3).join(" ");
+
+	    node.innerHTML = [
+	      '<span class="hero__line"><span class="hero__segment hero__segment--drop-top hero__step-3">' + escapeHtmlText(lineOne) + '</span></span>',
+	      '<span class="hero__line"><span class="hero__segment hero__segment--drop-top hero__step-3">' + escapeHtmlText(lineTwo.before) + '</span><span class="hero__accent hero__accent--fade hero__accent--joyful hero__step-1">' + escapeHtmlText(lineTwo.last) + '</span></span>',
+	      '<span class="hero__line"><span class="hero__accent hero__accent--fade hero__accent--bold hero__step-2">' + escapeHtmlText(lineThree.first) + '</span><span class="hero__segment hero__segment--drop-bottom hero__step-4">' + escapeHtmlText(lineThree.after) + '</span></span>',
+	      '<span class="hero__line"><span class="hero__segment hero__segment--drop-bottom hero__step-4">' + escapeHtmlText(lineFour) + '</span></span>'
+	    ].join("");
+	    var heroFontSize = getResponsiveAcademyThreeHeroFontSize(value);
+	    if (heroFontSize) {
+	      node.style.setProperty("font-size", heroFontSize, "important");
+	    } else {
+	      node.style.removeProperty("font-size");
+	    }
+	    applyAcademyThreeHeroCurrentColors(node);
+
+		    return true;
+		  }
+
+		  function getAcademyThreeHeroFieldText(fieldKey, fallback) {
+		    var value = getPageSectionField("home", "hero", fieldKey);
+		    return value === null || value === undefined || value === "" ? fallback : String(value).trim();
+		  }
+
+		  function applyAcademyThreeHeroCurrentColors(root) {
+		    if (preview.content.templateSlug !== "dexta-academy-3") return;
+		    var scope = root && root.matches && root.matches(".hero")
+		      ? root
+		      : root && root.closest
+		        ? root.closest(".hero")
+		        : document.querySelector(".hero");
+		    if (!scope) return;
+
+		    var headlineColor = getAcademyThreeHeroFieldText("headlineTextColor", "#fff");
+		    var joyfulColor = getAcademyThreeHeroFieldText("joyfulAccentColor", "#ffc94c");
+		    var boldColor = getAcademyThreeHeroFieldText("boldAccentColor", "#ffc94c");
+		    queryWithin(scope, ".hero__title, .hero__line, .hero__segment").forEach(function (node) {
+		      node.style.setProperty("color", headlineColor, "important");
+		    });
+		    queryWithin(scope, ".hero__accent--joyful").forEach(function (node) {
+		      node.style.setProperty("color", joyfulColor, "important");
+		    });
+		    queryWithin(scope, ".hero__accent--bold").forEach(function (node) {
+		      node.style.setProperty("color", boldColor, "important");
+		    });
+		  }
+
+			  function applyAcademyThreeHeroColorField(root, field, cssValue) {
+			    if (preview.content.templateSlug !== "dexta-academy-3" || !field || !field.key) return;
+		    var selectors = [];
+		    if (field.key === "headlineTextColor") {
+		      selectors = [".hero__title", ".hero__line", ".hero__segment"];
+		    }
+		    if (field.key === "joyfulAccentColor") {
+		      selectors = [".hero__accent--joyful"];
+		    }
+		    if (field.key === "boldAccentColor") {
+		      selectors = [".hero__accent--bold"];
+		    }
+		    if (!selectors.length) return;
+
+		    var scope = root && root.matches && root.matches(".hero")
+		      ? root
+		      : root && root.closest
+		        ? root.closest(".hero")
+		        : document.querySelector(".hero");
+		    if (!scope) return;
+
+		    selectors.forEach(function (selector) {
+		      queryWithin(scope, selector).forEach(function (node) {
+		        node.style.setProperty("color", cssValue, "important");
+		      });
+		    });
+			    applyAcademyThreeHeroCurrentColors(scope);
+			  }
+
+			  function getCssUrl(value) {
+			    var text = String(value || "").trim();
+			    if (!text || text === "none") return "";
+			    var start = text.toLowerCase().indexOf("url(");
+			    if (start < 0) return "";
+			    var raw = text.slice(start + 4);
+			    var end = raw.lastIndexOf(")");
+			    if (end >= 0) raw = raw.slice(0, end);
+			    raw = raw.trim();
+			    var quote = raw.charAt(0);
+			    if ((quote === '"' || quote === "'") && raw.charAt(raw.length - 1) === quote) {
+			      raw = raw.slice(1, -1);
+			    }
+			    return raw;
+			  }
+
+			  function applyAcademyThreeHeroBackgroundImage() {
+			    if (preview.content.templateSlug !== "dexta-academy-3") return;
+			    var hero = document.querySelector(".hero");
+			    var skyImage = document.querySelector(".hero__sky-image");
+			    if (!hero || !skyImage) return;
+
+			    var bgImage = getComputedStyle(hero)
+			      .getPropertyValue("--dexta-academy-3-home-hero-section-bg-image");
+			    var asset = getCssUrl(bgImage);
+			    if (!asset) return;
+
+			    skyImage.setAttribute("src", asset);
+			    hero.style.setProperty(
+			      "--dexta-academy-3-home-hero-section-bg-image",
+			      "none",
+			    );
+			    var skyLayer = document.querySelector(".hero__sky-layer");
+			    if (skyLayer) {
+			      skyLayer.style.setProperty("background-image", "none", "important");
+			    }
+			  }
+		
+				  function applyField(node, field, value) {
+			    if (field.target === "threeConfig") {
+			      return;
+		    }
+
+		    if (preview.content.templateSlug === "dexta-academy-3") {
+		      var isAcademyThreeHeroHeadline =
+		        field.key === "headline" &&
+		        node.classList &&
+		        node.classList.contains("hero__title");
+		      if (
+		        !isAcademyThreeHeroHeadline &&
+		        field.target === "textContent" &&
+		        toComparableText(value) === toComparableText(node.innerHTML)
+		      ) {
+		        return;
+		      }
+
+		      if (
+		        !isAcademyThreeHeroHeadline &&
+		        field.target === "innerHTML" &&
+		        !hasRichTextColorStyle(value) &&
+		        toComparableText(value) === toComparableText(node.innerHTML)
+		      ) {
+	        return;
+	      }
+	    }
+
+		    if (field.target === "cssVariable" && field.cssVariable) {
+		      var cssValue = getCssVariableValue(value, field);
+		      node.style.setProperty(field.cssVariable, cssValue);
+		      applyAcademyThreeHeroColorField(node, field, cssValue);
+	      if (field.cssVariable === "--cap-center-x") node.style.left = cssValue;
+	      if (field.cssVariable === "--cap-center-y") node.style.top = cssValue;
+	      return;
+		    }
 
     if (field.target === "innerHTML") {
+      if (field.key === "headline" && applyAcademyThreeHeroTitle(node, value)) {
+        return;
+      }
       setElementHtml(node, value);
       return;
     }
@@ -616,7 +1997,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    if (field.target === "attribute") {
 	      var attribute = field.attribute || (field.type === "link" ? "href" : "src");
 	      if (applyIframeEmbedAttribute(node, field, value, attribute)) return;
-	      if (field.type === "image") {
+		      if (field.type === "image") {
 	        applyImageAttribute(node, field, value, attribute);
 	      } else {
         node.setAttribute(attribute, resolveAsset(value, field));
@@ -624,14 +2005,26 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
       return;
     }
 
-    if (field.target === "backgroundImage") {
-      var backgroundAsset = resolveAsset(value, field).replace(/"/g, "&quot;");
-      node.style.backgroundImage = backgroundAsset ? 'url("' + backgroundAsset + '")' : "none";
-      return;
-    }
+		    if (field.target === "backgroundImage") {
+		      var backgroundAsset = resolveAsset(value, field).replace(/"/g, "&quot;");
+		      node.style.backgroundImage = backgroundAsset ? 'url("' + backgroundAsset + '")' : "none";
+		      if (shouldCoverBackgroundImage(field)) {
+		        node.style.backgroundSize = "cover";
+		        node.style.backgroundPosition = "center center";
+		        node.style.backgroundRepeat = "no-repeat";
+		      }
+		      return;
+		    }
 
-    node.textContent = toText(value);
-  }
+	    if (field.target === "inlineStyle") {
+	      if (String(field.key || "").toLowerCase().indexOf("fontfamily") >= 0) {
+	        applyFontFamily(node, value);
+	      }
+	      return;
+	    }
+
+	    node.textContent = toText(value);
+	  }
 
 	  function applySection(sectionContent, sectionSnapshot) {
 	    if (!sectionContent || !sectionSnapshot) return;
@@ -725,9 +2118,9 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 
 	          var value = itemContent[field.key];
 
-	          // Clear text/richText fields that are empty in per-item data
-	          if (!isFilled(value)) {
-	            if (field.target === "textContent" || field.target === "innerHTML") {
+		          // Clear text/richText fields that are empty in per-item data
+		          if (!isFilled(value)) {
+		            if (field.target === "textContent" || field.target === "innerHTML") {
 	              queryWithin(itemRoot, field.selector).forEach(function (node) {
 	                if (field.target === "innerHTML") {
 	                  setElementHtml(node, "");
@@ -780,13 +2173,16 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	  function getThemeVariableCss() {
 	    var primary = preview.content.theme.primaryColor;
 	    var secondary = preview.content.theme.secondaryColor;
+	    var tertiary = preview.content.theme.tertiaryColor || "#dc422e";
 	    var primaryDark = mix(primary, 78, "#000");
 	    var primarySoft = mix(primary, 16, "#fff");
 	    var secondaryDark = mix(secondary, 82, "#000");
 	    var secondarySoft = mix(secondary, 80, "#fff");
+	    var tertiaryDark = mix(tertiary, 82, "#000");
 	    var common =
 	      "--dexta-school-primary:" + primary + ";" +
 	      "--dexta-school-secondary:" + secondary + ";" +
+	      "--dexta-school-tertiary:" + tertiary + ";" +
 	      "--bs-primary:" + primary + ";" +
 	      "--bs-secondary:" + secondary + ";";
 	
@@ -821,7 +2217,9 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	        "--navy:" + primary + ";" +
 	        "--navy-deep:" + primaryDark + ";" +
 	        "--gold:" + secondary + ";" +
-	        "--gold-deep:" + secondaryDark + ";";
+	        "--gold-deep:" + secondaryDark + ";" +
+	        "--red:" + tertiary + ";" +
+	        "--red-deep:" + tertiaryDark + ";";
 	    }
 	
 	    if (preview.content.templateSlug === "dexta-academy-4") {
@@ -874,15 +2272,49 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 			    }
 		
 		    if (preview.content.templateSlug === "dexta-academy-3") {
+		      var navHoverEnabled = preview.content.theme.navHoverEnabled !== false;
+		      var navHoverColor = preview.content.theme.navHoverColor || secondary;
+		      var buttonOverlayEnabled = preview.content.theme.buttonOverlayEnabled !== false;
+		      var buttonOverlayColor = preview.content.theme.buttonOverlayColor || "#ffffff";
+			      var buttonOverlaySelectorList = [
+			        "button",
+			        ".button",
+			        ".contact-button",
+			        ".filter-chip",
+			        ".gallery-filter",
+			        ".gallery-page .gallery-pagination__button",
+			        ".gallery-lightbox__close",
+			        ".circle-button",
+			        ".nav-toggle",
+			        ".admission-modal__close",
+			        ".story-modal__close",
+			        ".testimonial-thumb"
+			      ];
+			      var buttonOverlaySelectors = buttonOverlaySelectorList.join(",");
+			      var buttonOverlayPseudoSelectors = buttonOverlaySelectorList.map(function(selector) {
+			        return selector + "::before";
+			      }).join(",");
+			      var buttonOverlayHoverSelectors = buttonOverlaySelectorList.map(function(selector) {
+			        return selector + ":hover::before," + selector + ":focus-visible::before";
+			      }).join(",");
+			      var buttonOverlayChildSelectors = buttonOverlaySelectorList.map(function(selector) {
+			        return selector + ">*";
+			      }).join(",");
 		      return [
 		        ".button--navy{background:var(--navy)!important;}",
 		        ".button--gold{background:var(--gold)!important;color:var(--navy-deep)!important;}",
 		        ".button--gold,.button--outline-light:hover,.programme-card,.programme-tile,.contact-card,.info-card{border-color:var(--gold)!important;}",
 		        ".button--navy,.footer,.admission-modal__panel{border-color:var(--navy)!important;}",
 		        ".programme-card--featured,.timeline__marker,.contact-hero,.about-cta{background:var(--navy)!important;}",
-		        ".apply-card__badge,.gallery-filter.is-active{background:var(--gold)!important;border-color:var(--gold)!important;}"
-		      ].join("");
-		    }
+		        ".apply-card__badge,.gallery-filter.is-active{background:var(--gold)!important;border-color:var(--gold)!important;}",
+			        navHoverEnabled
+			          ? ".site-nav a:hover,.site-nav a:focus-visible{color:" + navHoverColor + "!important;}.site-nav a::after{display:block!important;background:" + navHoverColor + "!important;}"
+			          : ".site-nav a::after{display:none!important;}.site-nav a:hover,.site-nav a:focus-visible{color:inherit!important;}",
+			        buttonOverlayEnabled
+			          ? buttonOverlaySelectors + "{position:relative!important;overflow:hidden!important;isolation:isolate;}" + buttonOverlayPseudoSelectors + "{content:\\\"\\\"!important;position:absolute!important;inset:0!important;border-radius:inherit!important;background:" + buttonOverlayColor + "!important;opacity:0!important;pointer-events:none!important;transition:opacity 180ms ease!important;z-index:0!important;}" + buttonOverlayHoverSelectors + "{opacity:.24!important;}" + buttonOverlayChildSelectors + "{position:relative;z-index:1;}"
+			          : buttonOverlayPseudoSelectors + "{display:none!important;content:none!important;}"
+			      ].join("");
+			    }
 		
 		    if (preview.content.templateSlug === "dexta-academy-4") {
 		      return [
@@ -928,11 +2360,20 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 
 		  function getThemeCss() {
 			    return getThemeScopeSelector() + "{" + getThemeVariableCss() + "}" +
-			      "body{font-family:" + JSON.stringify(getTemplateBodyFont()) + ", var(--font-family, inherit);}" +
+			      getTemplateBodyFontCss() +
 			      getNavLinkFontCss() +
 		      getGlobalAppearanceCss() +
 		      getTemplateThemeCss() +
 		      getTemplateOverrideCss();
+		  }
+
+		  function getTemplateBodyFontCss() {
+		    var bodyFont = getTemplateBodyFont();
+			    if (!bodyFont) return "";
+			    if (preview.content.templateSlug === "dexta-academy-3") {
+			      return "body,.page-shell,.hero,.welcome,.programmes-showcase,.home-apply,.home-gallery,.site-footer,.about-page,.gallery-page,.contact-page,h1,h2,h3,h4,h5,h6,p,li,a,span,label,input,textarea,button{font-family:" + JSON.stringify(bodyFont) + ', "Segoe UI", sans-serif!important;}';
+			    }
+		    return "body{font-family:" + JSON.stringify(bodyFont) + ", var(--font-family, inherit);}";
 		  }
 
 		  function getTemplateChromeFont() {
@@ -977,22 +2418,29 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      ]);
 		    }
 
-		    return selectors.join(",") + "{font-family:" + JSON.stringify(navLinkFont) + ", var(--font-family, inherit)!important;}";
-		  }
+	    var fallback = preview.content.templateSlug === "dexta-academy-3"
+	      ? ', "Segoe UI", sans-serif'
+	      : ", var(--font-family, inherit)";
+	    return selectors.join(",") + "{font-family:" + JSON.stringify(navLinkFont) + fallback + "!important;}";
+	  }
 
-		  function getGlobalAppearanceCss() {
+	  function getGlobalAppearanceCss() {
 		    var loadingBackground = preview.content.theme.loadingBackgroundColor || "#ffffff";
 		    var loadingTextColor = preview.content.theme.loadingTextColor || "currentColor";
 		    var isTemplateTwo = preview.content.templateSlug === "dexta-academy-2";
+		    var isTemplateThree = preview.content.templateSlug === "dexta-academy-3";
+		    var navbarOpacity = Math.max(0, Math.min(100, Number(preview.content.theme.navBarOpacity == null ? 100 : preview.content.theme.navBarOpacity)));
+		    var navbarColor = preview.content.theme.navBarColor || "#ffffff";
 		    var navbarBackground = preview.content.theme.navBarTransparent
-		      ? "transparent"
-		      : (preview.content.theme.navBarColor || "#ffffff");
-		    var navbarShadow = preview.content.theme.navBarTransparent
+		      ? (isTemplateThree ? "color-mix(in srgb, " + navbarColor + " " + navbarOpacity + "%, transparent)" : "transparent")
+		      : (isTemplateThree ? navbarColor : "color-mix(in srgb, " + navbarColor + " " + navbarOpacity + "%, transparent)");
+		    var navbarShadow = preview.content.theme.navBarTransparent && !isTemplateThree
 		      ? "none"
 	      : "0 16px 40px rgba(0,0,0,.08)";
 	    var logoBorder = preview.content.theme.logoBorderEnabled
 	      ? "1px solid " + (preview.content.theme.logoBorderColor || "rgba(255,255,255,.35)")
 	      : "0";
+	    var logoBackground = preview.content.theme.logoBackgroundColor || "transparent";
 		    var logoRadius = (Number(preview.content.theme.logoBorderRadius || 0)) + "px";
 	    var logoWidth = (Number(preview.content.theme.logoWidth || 56)) + "px";
 	    var logoHeight = (Number(preview.content.theme.logoHeight || 56)) + "px";
@@ -1016,7 +2464,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      }
 		      css.push(".navbar,.navbar.bg-white,.site-header,.site-header__bar,.ftco-navbar-light{background:" + navbarBackground + "!important;background-color:" + navbarBackground + "!important;box-shadow:" + navbarShadow + "!important;}");
 		    } else if (preview.content.templateSlug === "dexta-academy-3") {
-		      // Template 3: .site-header is handled by getTemplateOverrideCss — skip it here
+		      css.push(".site-header{background:" + navbarBackground + "!important;background-color:" + navbarBackground + "!important;background-image:none!important;box-shadow:" + navbarShadow + "!important;backdrop-filter:" + (preview.content.theme.navBarTransparent ? "blur(18px)" : "none") + "!important;}");
 		      css.push(".navbar,.navbar.bg-white,.ftco-navbar-light{background:" + navbarBackground + "!important;background-color:" + navbarBackground + "!important;box-shadow:" + navbarShadow + "!important;}");
 		    } else {
 		      css.push(".navbar,.navbar.bg-white,.site-header,.site-header__bar,.hero-header,.hero-navbar,.ftco-navbar-light{background:" + navbarBackground + "!important;background-color:" + navbarBackground + "!important;box-shadow:" + navbarShadow + "!important;}");
@@ -1036,24 +2484,41 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      Number(preview.content.theme.logoBorderRadius || 0) === 12 &&
 		      String(preview.content.theme.logoBorderColor || "").toLowerCase() === "#ffc433" &&
 		      Boolean(preview.content.theme.logoBorderEnabled);
-		    var shouldApplyLogoFrame =
-		      !isTemplateTwo || getThemeLogoUrl() || (!templateTwoLegacyLogoDefaults && !templateTwoOriginalLogoDefaults);
+			    var shouldApplyLogoFrame =
+			      !isTemplateThree &&
+			      (!isTemplateTwo || getThemeLogoUrl() || (!templateTwoLegacyLogoDefaults && !templateTwoOriginalLogoDefaults));
 
 			    if (shouldApplyLogoFrame) {
 		      css.push(".brand__mark,.brand__crest,.page-loader__crest,.contact-brand>img,.navbar-brand img,.hero-brand img,.school-footer-brand-logo,.site-preloader-logo{border:" + logoBorder + "!important;border-radius:" + logoRadius + "!important;width:" + logoWidth + "!important;height:" + logoHeight + "!important;max-width:" + logoWidth + "!important;}");
-		      css.push(".dexta-theme-logo-mark{background:transparent!important;overflow:hidden;}.dexta-theme-logo-mark::before{content:none!important;}.dexta-theme-logo-mark svg,.dexta-theme-logo-mark .brand__crest-inner{display:none!important;}.site-loader__mark.dexta-theme-logo-mark{overflow:visible!important;}");
+		      css.push(".dexta-theme-logo-mark{background:" + logoBackground + "!important;overflow:hidden;}.dexta-theme-logo-mark::before{content:none!important;}.dexta-theme-logo-mark svg,.dexta-theme-logo-mark .brand__crest-inner{display:none!important;}.site-loader__mark.dexta-theme-logo-mark{overflow:visible!important;}");
 		      css.push(".brand__mark img,.brand__crest img,.site-loader__mark img,.page-loader__crest img{display:block;width:100%;height:100%;object-fit:contain;}");
 			      css.push(".navbar-brand img,.hero-brand img,.school-footer-brand-logo,.site-preloader-logo,.contact-footer__brand img{object-fit:contain;}");
 			    }
 
-			    css.push("#spinner{flex-direction:column!important;gap:14px!important;}");
-			    css.push("#spinner .dexta-loading-logo,#spinner .spinner-border,.site-loader__mark,.page-loader__crest,.dexta-generated-loader__logo{display:grid!important;place-items:center!important;width:" + loadingLogoWidth + "!important;height:" + loadingLogoHeight + "!important;max-width:" + loadingLogoWidth + "!important;object-fit:contain!important;}");
-			    css.push(".site-preloader-logo{display:block!important;width:" + loadingLogoWidth + "!important;height:" + loadingLogoHeight + "!important;max-width:" + loadingLogoWidth + "!important;object-fit:contain!important;}");
-			    css.push("#spinner .dexta-loading-logo img,.site-loader__mark img,.page-loader__crest img,.site-preloader-logo,.dexta-generated-loader__logo img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;}");
-			    css.push("#spinner .dexta-loading-text,.site-loader__text,.page-loader__copy,.site-preloader-content [data-dexta-loading-text],.dexta-generated-loader__text{color:" + loadingTextColor + "!important;font-size:.95rem;font-weight:700;line-height:1.4;}");
+			    if (isTemplateThree) {
+			      css.push(".brand__crest,.page-loader__crest{border:" + logoBorder + "!important;border-radius:" + logoRadius + "!important;width:" + logoWidth + "!important;height:" + logoHeight + "!important;max-width:" + logoWidth + "!important;background:" + logoBackground + "!important;}");
+			      css.push(".brand__crest.dexta-empty-logo-mark,.page-loader__crest.dexta-empty-logo-mark{display:none!important;}");
+			      css.push(".brand__crest.dexta-theme-logo-mark,.page-loader__crest.dexta-theme-logo-mark{display:grid!important;place-items:center!important;overflow:hidden;}");
+			      css.push(".brand__crest.dexta-theme-logo-mark::before,.page-loader__crest.dexta-theme-logo-mark::before{content:none!important;}");
+			      css.push(".brand__crest img,.page-loader__crest img{display:block;width:100%;height:100%;object-fit:contain;}");
+			    }
+
+				    if (!isTemplateThree) {
+				      css.push("#spinner{flex-direction:column!important;gap:14px!important;}");
+				      css.push("#spinner .dexta-loading-logo,#spinner .spinner-border,.site-loader__mark,.page-loader__crest,.dexta-generated-loader__logo{display:grid!important;place-items:center!important;width:" + loadingLogoWidth + "!important;height:" + loadingLogoHeight + "!important;max-width:" + loadingLogoWidth + "!important;object-fit:contain!important;}");
+				      css.push(".site-preloader-logo{display:block!important;width:" + loadingLogoWidth + "!important;height:" + loadingLogoHeight + "!important;max-width:" + loadingLogoWidth + "!important;object-fit:contain!important;}");
+				      css.push("#spinner .dexta-loading-logo img,.site-loader__mark img,.page-loader__crest img,.site-preloader-logo,.dexta-generated-loader__logo img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;}");
+				      css.push("#spinner .dexta-loading-text,.site-loader__text,.page-loader__copy,.site-preloader-content [data-dexta-loading-text],.dexta-generated-loader__text{color:" + loadingTextColor + "!important;font-size:.95rem;font-weight:700;line-height:1.4;}");
+				    }
 			    var loadingBarColor = preview.content.theme.loadingBarColor || "";
 			    if (loadingBarColor) {
-			      css.push(".site-loader__bar::after{background:" + loadingBarColor + "!important;}");
+			      css.push(".site-loader__bar::after,.page-loader__bar{background:" + loadingBarColor + "!important;}");
+			    }
+
+			    if (isTemplateThree) {
+			      css.push(".page-loader,.js body .page-loader{background:" + loadingBackground + "!important;background-color:" + loadingBackground + "!important;color:" + loadingTextColor + "!important;}");
+			      css.push(".page-loader__inner{background:" + loadingBackground + "!important;background-color:" + loadingBackground + "!important;}");
+			      css.push(".page-loader__copy{color:" + loadingTextColor + "!important;}");
 			    }
 
 					    css.push(".brand__name,.brand__copy,.brand__text,.contact-brand>span{display:" + brandTextDisplay + "!important;}");
@@ -1070,11 +2535,9 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      Number(preview.content.theme.brandNameFontSize || 26) === 26 &&
 		      Number(preview.content.theme.brandTaglineFontSize || 13) === 13;
 
-			    if (!isTemplateTwo || (!templateTwoLegacyBrandDefaults && !templateTwoOriginalBrandDefaults)) {
-	      if (preview.content.templateSlug !== "dexta-academy-3") {
-	        css.push(".brand__name strong,.brand__copy strong,.brand__text strong,.contact-brand strong,.school-footer-brand h3{color:" + (preview.content.theme.brandNameColor || "#111827") + "!important;font-size:" + (Number(preview.content.theme.brandNameFontSize || 16)) + "px!important;}");
-	        css.push(".brand__name span,.brand__copy span,.brand__text span,.contact-brand small{color:" + (preview.content.theme.brandTaglineColor || "#6b7280") + "!important;font-size:" + (Number(preview.content.theme.brandTaglineFontSize || 12)) + "px!important;}");
-	      }
+	    if (!isTemplateTwo || (!templateTwoLegacyBrandDefaults && !templateTwoOriginalBrandDefaults)) {
+	      css.push(".brand__name strong,.brand__copy strong,.brand__text strong,.contact-brand strong,.school-footer-brand h3{color:" + (preview.content.theme.brandNameColor || "#111827") + "!important;font-size:" + (Number(preview.content.theme.brandNameFontSize || 16)) + "px!important;}");
+	      css.push(".brand__name span,.brand__copy span,.brand__text span,.contact-brand small{color:" + (preview.content.theme.brandTaglineColor || "#6b7280") + "!important;font-size:" + (Number(preview.content.theme.brandTaglineFontSize || 12)) + "px!important;}");
 	    }
 
 		    return css.join("");
@@ -1087,34 +2550,61 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	        '.landing-admissions-modal{background-color:color-mix(in srgb,var(--dexta-academy-1-admission-section-bg-color,#fff) var(--dexta-academy-1-admission-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-admission-section-bg-image,none)!important;background-position:var(--dexta-academy-1-admission-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-admission-section-bg-size,cover)!important;background-repeat:no-repeat!important;}'
 	      ].join("");
 	    }
-	    if (preview.content.templateSlug === "dexta-academy-3") {
-	      return [
+		    if (preview.content.templateSlug === "dexta-academy-3") {
+		      var academyThreeNavOpacity = Math.max(0, Math.min(100, Number(preview.content.theme.navBarOpacity == null ? 100 : preview.content.theme.navBarOpacity)));
+		      var academyThreeNavbarBg = preview.content.theme.navBarTransparent
+		        ? "color-mix(in srgb," + (preview.content.theme.navBarColor || "#ffffff") + " " + academyThreeNavOpacity + "%,transparent)"
+		        : (preview.content.theme.navBarColor || "#ffffff");
+		      var academyThreeNavbarBackdrop = preview.content.theme.navBarTransparent ? "blur(18px)" : "none";
+		      var academyThreeBrandNameColor = preview.content.theme.brandNameColor || "#061a40";
+		      var academyThreeBrandTaglineColor = preview.content.theme.brandTaglineColor || "#061a40";
+		      var academyThreeBrandNameSize = Number(preview.content.theme.brandNameFontSize || 16);
+		      var academyThreeBrandTaglineSize = Number(preview.content.theme.brandTaglineFontSize || 16);
+		      var academyThreeNavColor = preview.content.theme.navLinkColor || preview.content.theme.brandTaglineColor || "#ffffff";
+		      var academyThreeNavActiveColor = preview.content.theme.navHoverEnabled === false
+		        ? academyThreeNavColor
+		        : (preview.content.theme.navHoverColor || preview.content.theme.secondaryColor || "#f5b82e");
+		      var academyThreeNavUnderlineColor = preview.content.theme.navHoverColor || preview.content.theme.secondaryColor || "#f5b82e";
+		      return [
 	        // ── Existing: contact-message + admission-modal ──
 	        '.contact-message-card{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-form-section-bg-color,#fff) var(--dexta-academy-3-contact-form-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-contact-form-section-bg-image,none)!important;background-position:var(--dexta-academy-3-contact-form-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-contact-form-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
 	        '.admission-modal{background-color:color-mix(in srgb,var(--dexta-academy-3-admission-form-section-bg-color,#fff) var(--dexta-academy-3-admission-form-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-admission-form-section-bg-image,none)!important;background-position:var(--dexta-academy-3-admission-form-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-admission-form-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        // ── Page loader (hide in preview so header is instantly visible) ──
-	        '.page-loader{display:none!important;}',
+	        '.contact-message-card{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-message-card-bg-color,#fff) var(--dexta-academy-3-contact-message-card-bg-opacity,100%),transparent)!important;border:var(--dexta-academy-3-contact-message-card-border-width,1px) solid var(--dexta-academy-3-contact-message-card-border-color,rgba(6,26,58,.12))!important;border-radius:var(--dexta-academy-3-contact-message-card-border-radius,9px)!important;box-shadow:0 8px 22px color-mix(in srgb,var(--dexta-academy-3-contact-message-card-shadow-color,#061a3a) var(--dexta-academy-3-contact-message-card-shadow-opacity,3%),transparent)!important;}.contact-form-card__header{border-bottom-color:var(--dexta-academy-3-contact-message-divider-color,rgba(6,26,58,.1))!important;}.contact-form-card__header h2{color:var(--dexta-academy-3-contact-message-title-text-color,#061a3a)!important;}.contact-form-card__header p{color:var(--dexta-academy-3-contact-message-body-text-color,#4b5873)!important;}.contact-form-embed{background:linear-gradient(var(--dexta-academy-3-contact-message-form-frame-bg-color,#fff),var(--dexta-academy-3-contact-message-form-frame-bg-color,#fff)) padding-box,linear-gradient(135deg,rgba(255,196,61,.45),rgba(6,31,68,.16)) border-box!important;border-color:var(--dexta-academy-3-contact-message-form-frame-border-color,rgba(6,26,58,.12))!important;border-radius:var(--dexta-academy-3-contact-message-form-frame-border-radius,12px)!important;}',
+	        '.admission-modal__panel{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-admission-panel-card-bg-color,#fff) var(--dexta-academy-3-contact-admission-panel-card-bg-opacity,100%),transparent)!important;border:var(--dexta-academy-3-contact-admission-panel-card-border-width,1px) solid var(--dexta-academy-3-contact-admission-panel-card-border-color,rgba(255,255,255,.16))!important;border-radius:var(--dexta-academy-3-contact-admission-panel-card-border-radius,18px)!important;box-shadow:0 30px 90px color-mix(in srgb,var(--dexta-academy-3-contact-admission-panel-card-shadow-color,#010918) var(--dexta-academy-3-contact-admission-panel-card-shadow-opacity,38%),transparent)!important;}.admission-modal__header{background:var(--dexta-academy-3-contact-admission-header-bg-color,#061f44)!important;color:var(--dexta-academy-3-contact-admission-title-text-color,#fff)!important;}.admission-modal__eyebrow,.admission-modal__guide-kicker{color:var(--dexta-academy-3-contact-admission-eyebrow-text-color,#ffc43d)!important;}.admission-modal__header h2{color:var(--dexta-academy-3-contact-admission-title-text-color,#fff)!important;}.admission-modal__body{overflow-x:hidden!important;overflow-y:auto!important;background:var(--dexta-academy-3-contact-admission-body-bg-color,#fff8ed)!important;}.admission-modal__form{overflow:visible!important;}@media(max-width:720px){.admission-modal__form{height:auto!important;}}',
+	        '.admission-modal__guide{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-admission-guide-card-bg-color,#fff) var(--dexta-academy-3-contact-admission-guide-card-bg-opacity,100%),transparent)!important;border:var(--dexta-academy-3-contact-admission-guide-card-border-width,1px) solid var(--dexta-academy-3-contact-admission-guide-card-border-color,rgba(6,31,68,.1))!important;border-radius:var(--dexta-academy-3-contact-admission-guide-card-border-radius,14px)!important;box-shadow:0 12px 30px color-mix(in srgb,var(--dexta-academy-3-contact-admission-guide-card-shadow-color,#061a3a) var(--dexta-academy-3-contact-admission-guide-card-shadow-opacity,0%),transparent)!important;}.admission-modal__guide h3{color:var(--dexta-academy-3-contact-admission-guide-title-color,#061a3a)!important;}.admission-modal__guide li{color:var(--dexta-academy-3-contact-admission-guide-text-color,#33425f)!important;}.admission-modal__guide li::before{background:var(--dexta-academy-3-contact-admission-guide-bullet-color,#ffc43d)!important;}.admission-modal__page-link{background:color-mix(in srgb,var(--dexta-academy-3-contact-admission-guide-link-button-bg-color,#061f44) var(--dexta-academy-3-contact-admission-guide-link-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-contact-admission-guide-link-button-text-color,#fff)!important;border:var(--dexta-academy-3-contact-admission-guide-link-button-border-width,0px) solid var(--dexta-academy-3-contact-admission-guide-link-button-border-color,#061f44)!important;}',
 	        // ── Shared Header ──
-	        'body:not(.home-page) .site-header{background-color:color-mix(in srgb,var(--dexta-academy-3-shared-header-section-bg-color,rgba(255,255,255,0.9)) var(--dexta-academy-3-shared-header-section-bg-opacity,100%),transparent)!important;backdrop-filter:blur(18px)!important;}',
-	        '.home-page .site-header{opacity:1!important;transform:translate(var(--site-header-shift-x,0),0)!important;animation:none!important;}',
-	        '.header-actions .button--gold{background:color-mix(in srgb,var(--dexta-academy-3-shared-header-cta-button-bg-color,#f3bf35) var(--dexta-academy-3-shared-header-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-shared-header-cta-button-text-color,#09142f)!important;border:var(--dexta-academy-3-shared-header-cta-button-border-width,0px) solid var(--dexta-academy-3-shared-header-cta-button-border-color,#f3bf35)!important;}',
+	        '.site-header,.home-page .site-header,.home-page.is-animated .site-header,.about-page .site-header,.gallery-page .site-header,.contact-page .site-header,.about-page .site-header.is-open,.gallery-page .site-header.is-open,.contact-page .site-header.is-open{position:fixed!important;top:0!important;left:0!important;right:0!important;width:100%!important;max-width:none!important;margin:0!important;margin-inline:0!important;padding:18px clamp(20px,5vw,84px)!important;transform:none!important;border-radius:0!important;z-index:1200!important;opacity:1!important;animation:none!important;will-change:auto!important;}',
+			        '.site-header .brand__name strong{color:' + academyThreeBrandNameColor + '!important;font-size:' + academyThreeBrandNameSize + 'px!important;}.site-header .brand__name span{color:' + academyThreeBrandTaglineColor + '!important;font-size:' + academyThreeBrandTaglineSize + 'px!important;}.site-header .brand{color:' + academyThreeBrandNameColor + '!important;}.site-header .site-nav a{color:' + academyThreeNavColor + '!important;}.site-header .site-nav a[aria-current="page"],.site-header .site-nav a:hover,.site-header .site-nav a:focus-visible{color:' + academyThreeNavActiveColor + '!important;}.site-header .site-nav a::after{bottom:-14px!important;background:' + academyThreeNavUnderlineColor + '!important;}',
+	        '.about-page #top,.gallery-page #top,.contact-page #top{padding-top:96px!important;}',
+	        '@media (min-width:841px){.site-header .site-nav{display:inline-flex!important;}.site-header .header-actions{display:inline-flex!important;}.site-header .nav-toggle{display:none!important;}}',
+	        '@media (max-width:840px){.site-header,.home-page .site-header,.about-page .site-header,.contact-page .site-header,.gallery-page .site-header,.site-header.is-open,.home-page .site-header.is-open,.about-page .site-header.is-open,.gallery-page .site-header.is-open,.contact-page .site-header.is-open{position:fixed!important;top:0!important;left:0!important;right:0!important;transform:none!important;width:100%!important;max-width:none!important;margin:0!important;margin-inline:0!important;padding:12px 14px!important;border-radius:0!important;}.about-page #top,.gallery-page #top,.contact-page #top{padding-top:82px!important;}.site-header.is-open .site-nav,.site-header.is-open .header-actions{width:100%!important;}}',
+		        '.site-header{background:' + academyThreeNavbarBg + '!important;background-color:' + academyThreeNavbarBg + '!important;background-image:none!important;backdrop-filter:' + academyThreeNavbarBackdrop + '!important;}',
+		        '.site-header .portal-link{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;padding:12px 18px!important;border-radius:999px!important;font-weight:700!important;text-decoration:none!important;background:color-mix(in srgb,var(--dexta-academy-3-shared-header-portal-button-bg-color,#fff) var(--dexta-academy-3-shared-header-portal-button-bg-opacity,0%),transparent)!important;color:var(--dexta-academy-3-shared-header-portal-button-text-color,#fff)!important;border:var(--dexta-academy-3-shared-header-portal-button-border-width,0px) solid var(--dexta-academy-3-shared-header-portal-button-border-color,#fff)!important;}',
+		        '.header-actions .button--gold{background:color-mix(in srgb,var(--dexta-academy-3-shared-header-cta-button-bg-color,#f3bf35) var(--dexta-academy-3-shared-header-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-shared-header-cta-button-text-color,#09142f)!important;border:var(--dexta-academy-3-shared-header-cta-button-border-width,0px) solid var(--dexta-academy-3-shared-header-cta-button-border-color,#f3bf35)!important;}',
 	        // ── Shared Footer ──
-	        '.site-footer{background-color:color-mix(in srgb,var(--dexta-academy-3-shared-footer-section-bg-color,#09142f) var(--dexta-academy-3-shared-footer-section-bg-opacity,100%),transparent)!important;}',
-	        // ── Home Hero ──
-	        '.hero{background-color:color-mix(in srgb,var(--dexta-academy-3-home-hero-section-bg-color,#031225) var(--dexta-academy-3-home-hero-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-home-hero-section-bg-image,none)!important;background-position:var(--dexta-academy-3-home-hero-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-home-hero-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        '.hero__cta-primary{background:color-mix(in srgb,var(--dexta-academy-3-home-hero-primary-button-bg-color,#f3bf35) var(--dexta-academy-3-home-hero-primary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-hero-primary-button-text-color,#09142f)!important;border:var(--dexta-academy-3-home-hero-primary-button-border-width,0px) solid var(--dexta-academy-3-home-hero-primary-button-border-color,#f3bf35)!important;}',
-	        '.hero__cta-secondary{background:color-mix(in srgb,var(--dexta-academy-3-home-hero-secondary-button-bg-color,rgba(255,255,255,0.78)) var(--dexta-academy-3-home-hero-secondary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-hero-secondary-button-text-color,#112246)!important;border:var(--dexta-academy-3-home-hero-secondary-button-border-width,1px) solid var(--dexta-academy-3-home-hero-secondary-button-border-color,rgba(17,34,70,0.15))!important;}',
+		        '.site-footer{background-color:color-mix(in srgb,var(--dexta-academy-3-shared-footer-section-bg-color,#09142f) var(--dexta-academy-3-shared-footer-section-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-shared-footer-text-color,rgba(255,255,255,.8))!important;}.site-footer .footer-brand p,.site-footer .footer-bottom p{color:var(--dexta-academy-3-shared-footer-text-color,rgba(255,255,255,.8))!important;}.site-footer .footer-column a,.site-footer .footer-column p,.site-footer .footer-legal a{color:var(--dexta-academy-3-shared-footer-link-color,rgba(255,255,255,.72))!important;}.site-footer .footer-column a:hover,.site-footer .footer-column a:focus-visible,.site-footer .footer-legal a:hover,.site-footer .footer-legal a:focus-visible{color:var(--dexta-academy-3-shared-footer-link-hover-color,#fff)!important;}.site-footer .footer-column a:empty,.site-footer .footer-legal a:empty,.site-footer .footer-explore-links a[data-footer-link-visible=\"0\"]{display:none!important;}',
+		        // ── Home Hero ──
+		        '.hero{--dexta-academy-3-home-hero-overlay-color:color-mix(in srgb,var(--dexta-academy-3-home-hero-section-bg-color,#031225) var(--dexta-academy-3-home-hero-section-bg-opacity,100%),transparent);background-color:#031225!important;background-image:none!important;}.hero__sky-layer,.hero::before,.hero::after{top:0!important;right:0!important;bottom:0!important;left:0!important;height:auto!important;max-height:none!important;}.hero__sky-layer{background-color:var(--dexta-academy-3-home-hero-overlay-color)!important;background-image:var(--dexta-academy-3-home-hero-section-bg-image,none)!important;background-position:var(--dexta-academy-3-home-hero-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-home-hero-section-bg-size,cover)!important;background-repeat:no-repeat!important;overflow:hidden!important;}.hero::before{background:radial-gradient(circle at 50% 74%,color-mix(in srgb,var(--dexta-academy-3-home-hero-overlay-color) 58%,transparent),transparent 24%),radial-gradient(circle at 50% 55%,color-mix(in srgb,var(--dexta-academy-3-home-hero-overlay-color) 24%,transparent),transparent 18%),linear-gradient(180deg,color-mix(in srgb,var(--dexta-academy-3-home-hero-overlay-color) 12%,transparent) 0%,color-mix(in srgb,var(--dexta-academy-3-home-hero-overlay-color) 42%,transparent) 100%)!important;}.hero::after{background:linear-gradient(180deg,color-mix(in srgb,var(--dexta-academy-3-home-hero-overlay-color) 16%,transparent) 0%,color-mix(in srgb,var(--dexta-academy-3-home-hero-overlay-color) 42%,transparent) 63%,color-mix(in srgb,var(--dexta-academy-3-home-hero-overlay-color) 72%,transparent) 100%)!important;}@media (max-width:560px){.hero__sky-layer,.hero::before,.hero::after{top:0!important;right:0!important;bottom:0!important;left:0!important;height:auto!important;max-height:none!important;}.hero__sky-layer{background-color:var(--dexta-academy-3-home-hero-overlay-color)!important;overflow:hidden!important;}.hero h1,.hero__title,.hero__title .hero__line,.hero__title .hero__segment{color:var(--dexta-academy-3-home-hero-headline-text-color,#fff)!important;}.hero__title .hero__accent--joyful{color:var(--dexta-academy-3-home-hero-joyful-accent-color,#ffc94c)!important;}.hero__title .hero__accent--bold{color:var(--dexta-academy-3-home-hero-bold-accent-color,#ffc94c)!important;}}',
+			        '.hero__sky-layer{top:0!important;right:0!important;bottom:0!important;left:0!important;height:auto!important;max-height:none!important;background-color:var(--dexta-academy-3-home-hero-overlay-color)!important;background-image:none!important;overflow:hidden!important;}.hero__sky-image{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center top!important;opacity:.94!important;transform:scale(1.12);transform-origin:center top!important;}@media (max-width:1080px){.hero__sky-image{object-position:center 18%!important;}}@media (max-width:840px){.hero__sky-image{object-position:center 16%!important;}}@media (max-width:560px){.hero__sky-layer{top:0!important;right:0!important;bottom:0!important;left:0!important;height:auto!important;max-height:none!important;background-color:var(--dexta-academy-3-home-hero-overlay-color)!important;background-image:none!important;}.hero__sky-image{object-position:center 14%!important;}}',
+		        '.hero h1,.hero__title{max-width:min(14.5ch,100%)!important;line-height:1.04!important;letter-spacing:0!important;color:var(--dexta-academy-3-home-hero-headline-text-color,#fff)!important;overflow-wrap:break-word!important;text-wrap:balance;}.hero__line{display:flex!important;align-items:baseline!important;justify-content:center!important;flex-wrap:wrap!important;gap:0 .18em!important;min-height:1.04em!important;color:var(--dexta-academy-3-home-hero-headline-text-color,#fff)!important;}.hero__segment,.hero__accent{line-height:1.04!important;white-space:normal!important;}.hero__segment{color:var(--dexta-academy-3-home-hero-headline-text-color,#fff)!important;}.hero__accent--joyful{color:var(--dexta-academy-3-home-hero-joyful-accent-color,#ffc94c)!important;}.hero__accent--bold{color:var(--dexta-academy-3-home-hero-bold-accent-color,#ffc94c)!important;}',
+		        '.hero__cta-primary{background:color-mix(in srgb,var(--dexta-academy-3-home-hero-primary-button-bg-color,#f3bf35) var(--dexta-academy-3-home-hero-primary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-hero-primary-button-text-color,#09142f)!important;border:var(--dexta-academy-3-home-hero-primary-button-border-width,0px) solid var(--dexta-academy-3-home-hero-primary-button-border-color,#f3bf35)!important;box-shadow:0 18px 34px color-mix(in srgb,var(--dexta-academy-3-home-hero-primary-button-shadow-color,#fac343) var(--dexta-academy-3-home-hero-primary-button-shadow-opacity,24%),transparent)!important;}',
+	        '.hero__cta-secondary{background:color-mix(in srgb,var(--dexta-academy-3-home-hero-secondary-button-bg-color,rgba(255,255,255,0.78)) var(--dexta-academy-3-home-hero-secondary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-hero-secondary-button-text-color,#112246)!important;border:var(--dexta-academy-3-home-hero-secondary-button-border-width,1px) solid var(--dexta-academy-3-home-hero-secondary-button-border-color,rgba(17,34,70,0.15))!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--dexta-academy-3-home-hero-secondary-button-shadow-color,#fff) var(--dexta-academy-3-home-hero-secondary-button-shadow-opacity,4%),transparent)!important;}',
 	        // ── Home Welcome ──
 	        '.welcome{background-color:color-mix(in srgb,var(--dexta-academy-3-home-welcome-section-bg-color,#fff8ed) var(--dexta-academy-3-home-welcome-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-home-welcome-section-bg-image,none)!important;background-position:var(--dexta-academy-3-home-welcome-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-home-welcome-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
 	        '.welcome__cta{background:color-mix(in srgb,var(--dexta-academy-3-home-welcome-cta-button-bg-color,#122a56) var(--dexta-academy-3-home-welcome-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-welcome-cta-button-text-color,#fff)!important;border:var(--dexta-academy-3-home-welcome-cta-button-border-width,0px) solid var(--dexta-academy-3-home-welcome-cta-button-border-color,#122a56)!important;}',
 	        // ── Home Programmes ──
 	        '.programmes-showcase{background-color:color-mix(in srgb,var(--dexta-academy-3-home-programmes-section-bg-color,#081b3a) var(--dexta-academy-3-home-programmes-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-home-programmes-section-bg-image,none)!important;background-position:var(--dexta-academy-3-home-programmes-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-home-programmes-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
 	        '.programmes-showcase .section-heading .button{background:color-mix(in srgb,var(--dexta-academy-3-home-programmes-cta-button-bg-color,rgba(255,255,255,0.04)) var(--dexta-academy-3-home-programmes-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-programmes-cta-button-text-color,#fff)!important;border:var(--dexta-academy-3-home-programmes-cta-button-border-width,1px) solid var(--dexta-academy-3-home-programmes-cta-button-border-color,rgba(255,255,255,0.22))!important;}',
+	        '.programme-tile::before{height:var(--dexta-academy-3-home-programmes-card-overlay-height,76%)!important;background:linear-gradient(180deg,color-mix(in srgb,var(--dexta-academy-3-home-programmes-card-overlay-color,#050e21) 0%,transparent) 0%,color-mix(in srgb,var(--dexta-academy-3-home-programmes-card-overlay-color,#050e21) var(--dexta-academy-3-home-programmes-card-overlay-opacity,96%),transparent) 42%,color-mix(in srgb,var(--dexta-academy-3-home-programmes-card-overlay-color,#050e21) var(--dexta-academy-3-home-programmes-card-overlay-opacity,96%),transparent) 100%)!important;}',
 	        '.programme-tile__icon{color:var(--dexta-academy-3-home-programmes-icon-icon-color,#f3bf35)!important;background-color:color-mix(in srgb,var(--dexta-academy-3-home-programmes-icon-icon-bg-color,rgba(6,18,42,0.58)) var(--dexta-academy-3-home-programmes-icon-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-home-programmes-icon-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-3-home-programmes-icon-icon-border-width,0px) solid var(--dexta-academy-3-home-programmes-icon-icon-border-color,transparent)!important;}',
-	        // ── Home How To Apply ──
+		        // ── Home How To Apply ──
 	        '.home-apply{background-color:color-mix(in srgb,var(--dexta-academy-3-home-how-to-apply-section-bg-color,#fff8ed) var(--dexta-academy-3-home-how-to-apply-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-home-how-to-apply-section-bg-image,none)!important;background-position:var(--dexta-academy-3-home-how-to-apply-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-home-how-to-apply-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
 	        '.home-apply__actions .button--gold{background:color-mix(in srgb,var(--dexta-academy-3-home-apply-primary-button-bg-color,#f3bf35) var(--dexta-academy-3-home-apply-primary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-apply-primary-button-text-color,#09142f)!important;border:var(--dexta-academy-3-home-apply-primary-button-border-width,0px) solid var(--dexta-academy-3-home-apply-primary-button-border-color,#f3bf35)!important;}',
 	        '.home-apply__actions .button--navy{background:color-mix(in srgb,var(--dexta-academy-3-home-apply-secondary-button-bg-color,#122a56) var(--dexta-academy-3-home-apply-secondary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-apply-secondary-button-text-color,#fff)!important;border:var(--dexta-academy-3-home-apply-secondary-button-border-width,0px) solid var(--dexta-academy-3-home-apply-secondary-button-border-color,#122a56)!important;}',
+	        '.home-apply__copy .eyebrow{color:var(--dexta-academy-3-home-how-to-apply-eyebrow-text-color,#c8971b)!important;}.home-apply__copy h2{color:var(--dexta-academy-3-home-how-to-apply-title-text-color,#122a56)!important;}.home-apply__copy p{color:var(--dexta-academy-3-home-how-to-apply-body-text-color,#536079)!important;}',
+	        '.home-apply-step{background-color:color-mix(in srgb,var(--dexta-academy-3-home-how-to-apply-step-card-bg-color,#fff) var(--dexta-academy-3-home-how-to-apply-step-card-bg-opacity,100%),transparent)!important;border:var(--dexta-academy-3-home-how-to-apply-step-card-border-width,1px) solid var(--dexta-academy-3-home-how-to-apply-step-card-border-color,rgba(17,34,70,.09))!important;border-radius:var(--dexta-academy-3-home-how-to-apply-step-card-border-radius,18px)!important;box-shadow:0 16px 38px color-mix(in srgb,var(--dexta-academy-3-home-how-to-apply-step-card-shadow-color,#0d1c40) var(--dexta-academy-3-home-how-to-apply-step-card-shadow-opacity,6%),transparent)!important;}.home-apply-step h3{color:var(--dexta-academy-3-home-how-to-apply-step-card-title-color,#122a56)!important;}.home-apply-step p{color:var(--dexta-academy-3-home-how-to-apply-step-card-body-color,#536079)!important;}',
+	        '.home-apply-step__number{color:var(--dexta-academy-3-home-how-to-apply-icon-color,#122a56)!important;background-color:color-mix(in srgb,var(--dexta-academy-3-home-how-to-apply-icon-bg-color,#fff2c9) var(--dexta-academy-3-home-how-to-apply-icon-bg-opacity,100%),transparent)!important;border:var(--dexta-academy-3-home-how-to-apply-icon-border-width,0px) solid var(--dexta-academy-3-home-how-to-apply-icon-border-color,transparent)!important;}',
+	        '.home-apply__note{background-color:color-mix(in srgb,var(--dexta-academy-3-home-how-to-apply-note-bg-color,#061f44) var(--dexta-academy-3-home-how-to-apply-note-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-how-to-apply-note-text-color,#fff)!important;border:var(--dexta-academy-3-home-how-to-apply-note-border-width,0px) solid var(--dexta-academy-3-home-how-to-apply-note-border-color,transparent)!important;border-radius:var(--dexta-academy-3-home-how-to-apply-note-border-radius,20px)!important;}.home-apply__note h3{color:var(--dexta-academy-3-home-how-to-apply-note-title-color,#fff)!important;}.home-apply__note li{color:var(--dexta-academy-3-home-how-to-apply-note-text-color,rgba(255,255,255,.82))!important;}.home-apply__note li::before{background:var(--dexta-academy-3-home-how-to-apply-note-bullet-color,#ffc43d)!important;}',
 	        // ── Home Gallery Preview ──
 	        '.home-gallery{background-color:color-mix(in srgb,var(--dexta-academy-3-home-gallery-preview-section-bg-color,#fff) var(--dexta-academy-3-home-gallery-preview-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-home-gallery-preview-section-bg-image,none)!important;background-position:var(--dexta-academy-3-home-gallery-preview-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-home-gallery-preview-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
 	        '.home-gallery__actions .button{background:color-mix(in srgb,var(--dexta-academy-3-home-gallery-cta-button-bg-color,#122a56) var(--dexta-academy-3-home-gallery-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-home-gallery-cta-button-text-color,#fff)!important;border:var(--dexta-academy-3-home-gallery-cta-button-border-width,0px) solid var(--dexta-academy-3-home-gallery-cta-button-border-color,#122a56)!important;}',
@@ -1147,18 +2637,22 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	        '.gallery-gallery-ref{background-color:color-mix(in srgb,var(--dexta-academy-3-gallery-grid-section-bg-color,#fff) var(--dexta-academy-3-gallery-grid-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-gallery-grid-section-bg-image,none)!important;background-position:var(--dexta-academy-3-gallery-grid-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-gallery-grid-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
 	        // ── Contact Hero ──
 	        '.contact-hero{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-hero-section-bg-color,#061f44) var(--dexta-academy-3-contact-hero-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-contact-hero-section-bg-image,none)!important;background-position:var(--dexta-academy-3-contact-hero-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-contact-hero-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        '.contact-hero .contact-button--dark{background:color-mix(in srgb,var(--dexta-academy-3-contact-hero-primary-button-bg-color,#ffc43d) var(--dexta-academy-3-contact-hero-primary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-contact-hero-primary-button-text-color,#061a3a)!important;border:var(--dexta-academy-3-contact-hero-primary-button-border-width,0px) solid var(--dexta-academy-3-contact-hero-primary-button-border-color,#ffc43d)!important;}',
+	        '.contact-hero .contact-eyebrow{color:var(--dexta-academy-3-contact-hero-eyebrow-text-color,#ffc43d)!important;}.contact-hero h1{color:var(--dexta-academy-3-contact-hero-title-text-color,#fff)!important;}.contact-hero h1 span{color:var(--dexta-academy-3-contact-hero-accent-text-color,#ffc43d)!important;}.contact-hero__copy>p:not(.contact-eyebrow){color:var(--dexta-academy-3-contact-hero-body-text-color,rgba(255,255,255,.82))!important;}',
+	        '.contact-hero .contact-button--dark{background:color-mix(in srgb,var(--dexta-academy-3-contact-hero-primary-button-bg-color,#ffc43d) var(--dexta-academy-3-contact-hero-primary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-contact-hero-primary-button-text-color,#061a3a)!important;border:var(--dexta-academy-3-contact-hero-primary-button-border-width,1px) solid var(--dexta-academy-3-contact-hero-primary-button-border-color,rgba(6,31,68,.12))!important;}',
 	        '.contact-hero .contact-button--light{background:color-mix(in srgb,var(--dexta-academy-3-contact-hero-secondary-button-bg-color,rgba(255,255,255,0.1)) var(--dexta-academy-3-contact-hero-secondary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-3-contact-hero-secondary-button-text-color,#fff)!important;border:var(--dexta-academy-3-contact-hero-secondary-button-border-width,1px) solid var(--dexta-academy-3-contact-hero-secondary-button-border-color,rgba(255,255,255,0.2))!important;}',
 	        // ── Contact Intro ──
 	        '.contact-intro{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-intro-section-bg-color,#fff) var(--dexta-academy-3-contact-intro-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-contact-intro-section-bg-image,none)!important;background-position:var(--dexta-academy-3-contact-intro-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-contact-intro-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.contact-intro>p:first-child{color:var(--dexta-academy-3-contact-intro-eyebrow-text-color,#f5ae00)!important;}.contact-intro h2{color:var(--dexta-academy-3-contact-intro-title-text-color,#061a3a)!important;}.contact-intro p:last-child{color:var(--dexta-academy-3-contact-intro-body-text-color,#1b2c4b)!important;}.contact-intro>span{background:var(--dexta-academy-3-contact-intro-divider-color,#f4b31d)!important;}',
 	        // ── Contact Info Card ──
 	        '.contact-info-card{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-info-card-section-bg-color,#061f44) var(--dexta-academy-3-contact-info-card-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-contact-info-card-section-bg-image,none)!important;background-position:var(--dexta-academy-3-contact-info-card-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-contact-info-card-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        '.contact-icon{color:var(--dexta-academy-3-contact-info-icon-icon-color,#f1ad16)!important;background-color:color-mix(in srgb,var(--dexta-academy-3-contact-info-icon-icon-bg-color,#fffaf1) var(--dexta-academy-3-contact-info-icon-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-contact-info-icon-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-3-contact-info-icon-icon-border-width,0px) solid var(--dexta-academy-3-contact-info-icon-icon-border-color,transparent)!important;}',
+	        '.contact-info-card{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-info-card-card-bg-color,#fff) var(--dexta-academy-3-contact-info-card-card-bg-opacity,100%),transparent)!important;border:var(--dexta-academy-3-contact-info-card-card-border-width,1px) solid var(--dexta-academy-3-contact-info-card-card-border-color,rgba(6,26,58,.12))!important;border-radius:var(--dexta-academy-3-contact-info-card-card-border-radius,9px)!important;box-shadow:0 8px 22px color-mix(in srgb,var(--dexta-academy-3-contact-info-card-card-shadow-color,#061a3a) var(--dexta-academy-3-contact-info-card-card-shadow-opacity,3%),transparent)!important;}.contact-info-card h2{color:var(--dexta-academy-3-contact-info-card-title-text-color,#061a3a)!important;}.contact-info-list strong{color:var(--dexta-academy-3-contact-info-card-item-title-color,#061a3a)!important;}.contact-info-list p{color:var(--dexta-academy-3-contact-info-card-item-text-color,#142340)!important;}.contact-socials a{color:var(--dexta-academy-3-contact-info-card-social-icon-color,#061a3a)!important;border-color:var(--dexta-academy-3-contact-info-card-social-icon-border-color,rgba(6,26,58,.18))!important;}',
+	        '.contact-icon{color:var(--dexta-academy-3-contact-info-icon-icon-color,#f1ad16)!important;background-color:color-mix(in srgb,var(--dexta-academy-3-contact-info-icon-icon-bg-color,#fffaf1) var(--dexta-academy-3-contact-info-icon-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-contact-info-icon-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-3-contact-info-icon-icon-border-width,1px) solid var(--dexta-academy-3-contact-info-icon-icon-border-color,rgba(6,26,58,.1))!important;}',
 	        // ── Contact Benefits ──
 	        '.contact-benefits{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-benefits-section-bg-color,#fffdfb) var(--dexta-academy-3-contact-benefits-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-3-contact-benefits-section-bg-image,none)!important;background-position:var(--dexta-academy-3-contact-benefits-section-bg-position,center center)!important;background-size:var(--dexta-academy-3-contact-benefits-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        '.contact-benefits article > span{color:var(--dexta-academy-3-contact-benefits-icon-icon-color,#f1ad16)!important;background-color:color-mix(in srgb,var(--dexta-academy-3-contact-benefits-icon-icon-bg-color,transparent) var(--dexta-academy-3-contact-benefits-icon-icon-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-3-contact-benefits-icon-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-3-contact-benefits-icon-icon-border-width,0px) solid var(--dexta-academy-3-contact-benefits-icon-icon-border-color,transparent)!important;}',
+	        '.contact-benefits{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-benefits-wrap-card-bg-color,#fffdfb) var(--dexta-academy-3-contact-benefits-wrap-card-bg-opacity,100%),transparent)!important;border:var(--dexta-academy-3-contact-benefits-wrap-card-border-width,0px) solid var(--dexta-academy-3-contact-benefits-wrap-card-border-color,transparent)!important;border-radius:var(--dexta-academy-3-contact-benefits-wrap-card-border-radius,12px)!important;box-shadow:0 14px 35px color-mix(in srgb,var(--dexta-academy-3-contact-benefits-wrap-card-shadow-color,#061a3a) var(--dexta-academy-3-contact-benefits-wrap-card-shadow-opacity,4%),transparent)!important;}.contact-benefits article{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-benefits-card-bg-color,transparent) var(--dexta-academy-3-contact-benefits-card-bg-opacity,0%),transparent)!important;border-right:var(--dexta-academy-3-contact-benefits-card-border-width,1px) solid var(--dexta-academy-3-contact-benefits-card-border-color,rgba(6,26,58,.08))!important;}.contact-benefits strong{color:var(--dexta-academy-3-contact-benefits-title-text-color,#061a3a)!important;}.contact-benefits p{color:var(--dexta-academy-3-contact-benefits-body-text-color,#1d2d49)!important;}',
+	        '.contact-benefit-icon{color:var(--dexta-academy-3-contact-benefits-icon-icon-color,#061a3a)!important;background-color:color-mix(in srgb,var(--dexta-academy-3-contact-benefits-icon-icon-bg-color,transparent) var(--dexta-academy-3-contact-benefits-icon-icon-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-3-contact-benefits-icon-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-3-contact-benefits-icon-icon-border-width,0px) solid var(--dexta-academy-3-contact-benefits-icon-icon-border-color,transparent)!important;}',
 	        // ── Contact Footer ──
-	        '.contact-footer{background-color:color-mix(in srgb,var(--dexta-academy-3-contact-footer-section-bg-color,#09142f) var(--dexta-academy-3-contact-footer-section-bg-opacity,100%),transparent)!important;}'
+		        '.contact-footer{background-color:color-mix(in srgb,var(--dexta-academy-3-shared-footer-section-bg-color,var(--dexta-academy-3-contact-footer-section-bg-color,#061f3f)) var(--dexta-academy-3-shared-footer-section-bg-opacity,var(--dexta-academy-3-contact-footer-section-bg-opacity,100%)),transparent)!important;color:var(--dexta-academy-3-shared-footer-text-color,var(--dexta-academy-3-contact-footer-body-text-color,#fff))!important;}.contact-brand--footer,.contact-brand--footer strong{color:var(--dexta-academy-3-contact-footer-brand-text-color,#fff)!important;}.contact-brand--footer small{color:var(--dexta-academy-3-contact-footer-tagline-text-color,#fff)!important;}.contact-footer h3{color:var(--dexta-academy-3-contact-footer-heading-color,#ffc43d)!important;}.contact-footer p,.contact-footer a{color:var(--dexta-academy-3-shared-footer-link-color,var(--dexta-academy-3-contact-footer-link-color,#fff))!important;}.contact-footer a:hover,.contact-footer a:focus-visible{color:var(--dexta-academy-3-shared-footer-link-hover-color,#fff)!important;}.contact-footer a:empty{display:none!important;}.contact-footer__bottom{border-top-color:var(--dexta-academy-3-contact-footer-divider-color,rgba(255,255,255,.2))!important;}.contact-footer__bottom p{color:var(--dexta-academy-3-shared-footer-text-color,var(--dexta-academy-3-contact-footer-bottom-text-color,#fff))!important;}'
 	      ].join("");
 	    }
 	    if (preview.content.templateSlug === "dexta-academy-4") {
@@ -1311,6 +2805,17 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	      return item.id === sectionId;
 	    });
 	    return section && section.fields ? section.fields[fieldKey] : "";
+	  }
+
+	  function hasSharedSectionField(sectionId, fieldKey) {
+	    var section = preview.content.sharedSections.find(function (item) {
+	      return item.id === sectionId;
+	    });
+	    return Boolean(
+	      section &&
+	        section.fields &&
+	        Object.prototype.hasOwnProperty.call(section.fields, fieldKey)
+	    );
 	  }
 
 	  function getPageSectionField(pageSlug, sectionId, fieldKey) {
@@ -1474,16 +2979,25 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
     });
   }
 
-  function replaceMarkLogo(selector, logoUrl) {
-    document.querySelectorAll(selector).forEach(function (mark) {
-      if (!logoUrl) {
-        mark.classList.remove("dexta-theme-logo-mark");
-        return;
-      }
-      mark.classList.add("dexta-theme-logo-mark");
-      var image = mark.querySelector("img");
-      if (!image) {
-        mark.textContent = "";
+	  function replaceMarkLogo(selector, logoUrl) {
+	    document.querySelectorAll(selector).forEach(function (mark) {
+	      if (!logoUrl) {
+	        mark.classList.remove("dexta-theme-logo-mark");
+	        if (preview.content.templateSlug === "dexta-academy-3") {
+	          mark.classList.add("dexta-empty-logo-mark");
+	          mark.querySelectorAll("img").forEach(function (image) { image.remove(); });
+	          mark.setAttribute("hidden", "");
+	          mark.style.display = "none";
+	        }
+	        return;
+	      }
+	      mark.classList.remove("dexta-empty-logo-mark");
+	      mark.removeAttribute("hidden");
+	      mark.style.display = "";
+	      mark.classList.add("dexta-theme-logo-mark");
+	      var image = mark.querySelector("img");
+	      if (!image) {
+	        mark.textContent = "";
         image = document.createElement("img");
         image.alt = "School logo";
         mark.appendChild(image);
@@ -1515,12 +3029,143 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		    setAttribute(selector, "href", href);
 		  }
 
-		  function getSharedFieldText(sectionId, fieldKey) {
-		    return String(getSharedSectionField(sectionId, fieldKey) || "").trim();
-		  }
+			  function getSharedFieldText(sectionId, fieldKey) {
+			    return String(getSharedSectionField(sectionId, fieldKey) || "").trim();
+			  }
 
-		  function applyTemplateTwoHeaderButtons() {
-		    if (preview.content.templateSlug !== "dexta-academy-2") return;
+			  function getSharedFieldTextWithFallback(sectionId, fieldKey, fallback) {
+			    if (!hasSharedSectionField(sectionId, fieldKey)) return fallback;
+			    var value = getSharedSectionField(sectionId, fieldKey);
+			    return value === null || value === undefined ? "" : String(value).trim();
+			  }
+
+	      function getThemeFieldText(fieldKey) {
+				    return String(preview.content.theme[fieldKey] || "").trim();
+				  }
+
+				  function hasThemeField(fieldKey) {
+				    return Object.prototype.hasOwnProperty.call(preview.content.theme, fieldKey);
+				  }
+
+				  function getTemplateThreeHeaderText(fieldKey, fallback) {
+				    return getSharedFieldTextWithFallback("site-header", fieldKey, fallback);
+				  }
+
+				  function getTemplateThreeBrandText(themeKey, headerKey, fallback) {
+				    if (hasThemeField(themeKey)) {
+				      var value = preview.content.theme[themeKey];
+				      return value === null || value === undefined ? "" : String(value).trim();
+				    }
+				    return getTemplateThreeHeaderText(headerKey, fallback);
+				  }
+
+			  function getTemplateThreeAnchorHref(fieldKey, anchorId) {
+			    var href = getTemplateThreeHeaderText(fieldKey, "index.html#" + anchorId);
+			    if (href === "#" + anchorId || href === "index.html#" + anchorId) {
+			      return preview.pageSlug === "home" ? "#" + anchorId : "index.html#" + anchorId;
+			    }
+			    return href;
+			  }
+
+				  function setTemplateThreeNavLink(index, text, href, pageKey) {
+				    var link = document.querySelectorAll(".site-header .site-nav a")[index];
+				    if (!link) return;
+				    link.textContent = text;
+				    link.setAttribute("href", href);
+				    link.style.display = text && href ? "" : "none";
+				    applyNavFontFamily(link, preview.content.theme.navLinkFontFamily || preview.content.theme.fontFamily);
+				    if (pageKey && pageKey === preview.pageSlug) {
+				      link.setAttribute("aria-current", "page");
+				    } else {
+			      link.removeAttribute("aria-current");
+			    }
+			  }
+
+			  function applyTemplateThreeHeaderFields() {
+			    if (preview.content.templateSlug !== "dexta-academy-3") return;
+
+			    var brandPrimary = getTemplateThreeBrandText("brandName", "brandPrimary", "DXT");
+			    var brandSecondary = getTemplateThreeBrandText("brandTagline", "brandSecondary", "Academy");
+				    var brandLabel = [brandPrimary, brandSecondary].filter(Boolean).join(" ") || "School";
+
+			    setText(".site-header .brand__name strong", brandPrimary);
+			    setText(".site-header .brand__name span", brandSecondary);
+			    document.querySelectorAll(".site-header .brand").forEach(function (brand) {
+			      brand.setAttribute("aria-label", brandLabel + " home");
+			    });
+
+			    setTemplateThreeNavLink(
+			      0,
+			      getTemplateThreeHeaderText("navHomeText", "Home"),
+			      getTemplateThreeHeaderText("navHomeHref", "index.html"),
+			      "home"
+			    );
+			    setTemplateThreeNavLink(
+			      1,
+			      getTemplateThreeHeaderText("navAboutText", "About"),
+			      getTemplateThreeHeaderText("navAboutHref", "about.html"),
+			      "about"
+			    );
+			    setTemplateThreeNavLink(
+			      2,
+			      getTemplateThreeHeaderText("navProgrammesText", "Programmes"),
+			      getTemplateThreeAnchorHref("navProgrammesHref", "programmes")
+			    );
+			    setTemplateThreeNavLink(
+			      3,
+			      getTemplateThreeHeaderText("navGalleryText", "Gallery"),
+			      getTemplateThreeHeaderText("navGalleryHref", "gallery.html"),
+			      "gallery"
+			    );
+			    setTemplateThreeNavLink(
+			      4,
+			      getTemplateThreeHeaderText("navApplyText", "How To Apply"),
+			      getTemplateThreeAnchorHref("navApplyHref", "how-to-apply")
+			    );
+			    setTemplateThreeNavLink(
+			      5,
+			      getTemplateThreeHeaderText("navContactText", "Contact"),
+			      getTemplateThreeHeaderText("navContactHref", "contact.html"),
+			      "contact"
+			    );
+
+				    var portalText = getTemplateThreeHeaderText("portalText", "Portal");
+				    var portalHref = getTemplateThreeHeaderText("portalHref", "#");
+				    setLink(".site-header .portal-link", portalText, portalHref);
+				    setDisplay(".site-header .portal-link", Boolean(portalText && portalHref));
+				    document.querySelectorAll(".site-header .portal-link").forEach(function (link) {
+				      applyNavFontFamily(link, preview.content.theme.navLinkFontFamily || preview.content.theme.fontFamily);
+				    });
+
+				    var rawHeaderCtaHref = hasSharedSectionField("site-header", "headerCtaHref")
+				      ? getSharedFieldText("site-header", "headerCtaHref")
+				      : "index.html#how-to-apply";
+				    var headerCtaHref = getTemplateThreeAnchorHref("headerCtaHref", "how-to-apply");
+				    var headerCtaText = getTemplateThreeHeaderText("headerCtaText", "Apply Now");
+				    var useAdmissionModal =
+				      preview.pageSlug === "contact" &&
+				      document.getElementById("admission-modal") &&
+				      (rawHeaderCtaHref === "#how-to-apply" ||
+				        rawHeaderCtaHref === "index.html#how-to-apply");
+	
+				    document.querySelectorAll(".site-header .header-actions .button").forEach(function (button) {
+				      button.textContent = headerCtaText;
+				      button.style.display = headerCtaText && headerCtaHref ? "" : "none";
+				      applyNavFontFamily(button, preview.content.theme.navLinkFontFamily || preview.content.theme.fontFamily);
+				      if (useAdmissionModal) {
+				        button.setAttribute("href", "#admission");
+				        button.setAttribute("data-admission-modal-open", "");
+			        button.setAttribute("aria-controls", "admission-modal");
+			      } else {
+			        button.setAttribute("href", headerCtaHref);
+			        button.removeAttribute("data-admission-modal-open");
+			        button.removeAttribute("aria-controls");
+			      }
+			    });
+			  }
+
+			  function applyTemplateTwoHeaderButtons() {
+			    if (preview.content.templateSlug !== "dexta-academy-2") return;
 
 		    var portalVisible =
 		      Boolean(getSharedFieldText("site-header", "portalCtaText")) &&
@@ -1828,11 +3473,11 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      }
 		    });
 
-		    document.querySelectorAll(".page-loader__inner").forEach(function (inner) {
-		      if (!hasLoadingText) return;
-		      var copy = ensureChild(inner, ".page-loader__copy", "p", "page-loader__copy", ".page-loader__track");
-		      copy.textContent = loadingText;
-		    });
+			    document.querySelectorAll(".page-loader__inner").forEach(function (inner) {
+			      if (!hasLoadingText) return;
+			      var copy = ensureChild(inner, ".page-loader__copy", "p", "page-loader__copy", ".page-loader__track");
+			      copy.textContent = loadingText;
+			    });
 
 		    document.querySelectorAll(".site-preloader-content").forEach(function (content) {
 		      if (!hasLoadingText) return;
@@ -1857,7 +3502,10 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      brandTagline === "Nurturing. Inspiring. Leading.";
 
 		    setImageLogo(".navbar-brand img, .hero-brand img, .school-footer-brand-logo, .site-preloader-logo, .contact-footer__brand img", logoUrl);
-			    replaceMarkLogo(".brand__mark, .brand__crest, .site-loader__mark, .page-loader__crest", logoUrl);
+			    replaceMarkLogo(
+			      ".brand__mark, .brand__crest, .site-loader__mark, .page-loader__crest",
+			      logoUrl
+			    );
 
 				    setDisplay(".brand__name, .brand__copy, .brand__text, .contact-brand > span", showText);
 				    setDisplay(".brand__name span, .brand__copy span, .brand__text span, .contact-brand small", showText && Boolean(brandTagline));
@@ -1895,13 +3543,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
     if (!page || !pageSnapshot) return;
 
     // Remove is-preloading so homepage navbar is visible (template 4)
-    document.body.className = document.body.className.replace(/\bis-preloading\b/g, "").trim();
-
-    // Template 3: add is-ready + is-animated so sections render correctly
-    if (document.body.classList.contains("home-page") || document.body.classList.contains("about-page") || document.body.classList.contains("gallery-page") || document.body.classList.contains("contact-page")) {
-      document.body.classList.add("is-ready");
-      document.body.classList.add("is-animated");
-    }
+    document.body.className = document.body.className.replace(/\\bis-preloading\\b/g, "").trim();
 
     injectTheme();
     applyThemeIdentity();
@@ -1912,37 +3554,25 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
       applySection(sectionContent, sectionSnapshot);
     });
 
-	    page.sections.forEach(function (sectionContent) {
-	      var sectionSnapshot = pageSnapshot.sections.find(function (item) {
-	        return item.id === sectionContent.id;
-	      });
-	      applySection(sectionContent, sectionSnapshot);
-	    });
+		    page.sections.forEach(function (sectionContent) {
+		      var sectionSnapshot = pageSnapshot.sections.find(function (item) {
+		        return item.id === sectionContent.id;
+		      });
+		      applySection(sectionContent, sectionSnapshot);
+		    });
 
-		    applyTemplateTwoValuesStripIntro();
-		    applyTemplateTwoHeaderButtons();
-		    applyTemplateFourPortalButton();
+			    applyTemplateThreeHeaderFields();
+			    applyTemplateTwoValuesStripIntro();
+			    applyTemplateTwoHeaderButtons();
+			    applyTemplateFourPortalButton();
 		    applyTemplateTwoFooterVisibility();
 	    applyTemplateTwoAdmissionForm();
 	    applyAdmissionForm();
 	    rewritePreviewInternalLinks();
 	    injectPreviewFontStylesheets();
-	    refreshTemplateTwoIcons();
-	    initGalleryLightbox();
-
-	    // Template 3 home page: only override header bg if school customized it
-	    if (preview.content.templateSlug === "dexta-academy-3" && document.body.classList.contains("home-page")) {
-	      var headerBgColor = getSharedSectionField("site-header", "sectionBgColor");
-	      if (headerBgColor && headerBgColor !== "rgba(255,255,255,0.9)") {
-	        var headerEl = document.querySelector(".site-header");
-	        if (headerEl) headerEl.style.setProperty("background", headerBgColor, "important");
-	      } else {
-	        // Reset inline --dexta-academy-3-shared-header-section-bg-color on .site-header so
-	        // the original dark gradient from the template CSS is preserved
-	        var headerEl = document.querySelector(".site-header");
-	        if (headerEl) headerEl.style.removeProperty("--dexta-academy-3-shared-header-section-bg-color");
-	      }
-	    }
+		    refreshTemplateTwoIcons();
+		    applyAcademyThreeHeroBackgroundImage();
+		    initGalleryLightbox();
 
 	    document.documentElement.setAttribute("data-dexta-project-preview", "ready");
 	  }
@@ -1969,19 +3599,21 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	      }
 	    });
 	  });
-	  window.setTimeout(applyPreviewContent, 80);
-	  window.setTimeout(applyThemeIdentity, 350);
-	  window.setTimeout(applyTemplateTwoHeaderButtons, 350);
-	  window.setTimeout(applyTemplateFourPortalButton, 350);
+		  window.setTimeout(applyPreviewContent, 80);
+		  window.setTimeout(applyThemeIdentity, 350);
+		  window.setTimeout(applyTemplateThreeHeaderFields, 350);
+		  window.setTimeout(applyTemplateTwoHeaderButtons, 350);
+		  window.setTimeout(applyTemplateFourPortalButton, 350);
 	  window.setTimeout(applyTemplateTwoFooterVisibility, 350);
 	  window.setTimeout(applyTemplateTwoAdmissionForm, 350);
 	  window.setTimeout(applyAdmissionForm, 350);
 	  window.setTimeout(rewritePreviewInternalLinks, 350);
 	  window.setTimeout(injectPreviewFontStylesheets, 350);
 	  window.setTimeout(refreshTemplateTwoIcons, 350);
-	  window.setTimeout(initGalleryLightbox, 350);
-	  window.setTimeout(applyThemeIdentity, 1000);
-	  window.setTimeout(applyTemplateTwoHeaderButtons, 1000);
+		  window.setTimeout(initGalleryLightbox, 350);
+		  window.setTimeout(applyThemeIdentity, 1000);
+		  window.setTimeout(applyTemplateThreeHeaderFields, 1000);
+		  window.setTimeout(applyTemplateTwoHeaderButtons, 1000);
 	  window.setTimeout(applyTemplateFourPortalButton, 1000);
 	  window.setTimeout(applyTemplateTwoFooterVisibility, 1000);
 	  window.setTimeout(applyTemplateTwoAdmissionForm, 1000);
@@ -2056,9 +3688,17 @@ export async function renderSchoolTemplatePreview({
   content,
   sourceSnapshot,
   pageSlug,
+  previewRouteBase,
+  previewSearch,
 }: RenderSchoolTemplatePreviewInput) {
-  const page = content.pages.find((item) => item.slug === pageSlug);
-  const pageSnapshot = sourceSnapshot.pages.find(
+  const manifest = getSchoolTemplateManifest(content.templateSlug);
+  const renderSourceSnapshot = manifest
+    ? buildSchoolTemplateSourceSnapshot(manifest)
+    : sourceSnapshot;
+  const renderContent =
+    prepareDextaAcademyThreeContactRenderingContent(content);
+  const page = renderContent.pages.find((item) => item.slug === pageSlug);
+  const pageSnapshot = renderSourceSnapshot.pages.find(
     (item) => item.slug === pageSlug,
   );
 
@@ -2067,24 +3707,48 @@ export async function renderSchoolTemplatePreview({
   }
 
   const sourcePath = assertSafeTemplatePath(
-    sourceSnapshot.sourceDir,
-    page.fileName,
+    renderSourceSnapshot.sourceDir,
+    pageSnapshot.fileName,
   );
   let sourceHtml = await readFile(sourcePath, "utf8");
+  const previewNavigation =
+    previewRouteBase && renderSourceSnapshot.templateSlug === "dexta-academy-3"
+      ? {
+          routeBase: previewRouteBase,
+          search: previewSearch,
+          currentPageSlug: pageSlug,
+        }
+      : undefined;
+
+  if (renderSourceSnapshot.templateSlug === "dexta-academy-3") {
+    sourceHtml = renderDextaAcademyThreeNavbarFallback(
+      sourceHtml,
+      page.slug,
+      renderContent,
+      previewNavigation,
+    );
+    sourceHtml = renderDextaAcademyThreeLoaderFallback(
+      sourceHtml,
+      page.slug,
+      renderContent,
+    );
+  }
 
   // Blank template img src values to prevent the browser from pre-fetching
   // default images before the runtime JS applies admin-configured images.
-  sourceHtml = sourceHtml.replace(
-    /(<img\b[^>]*?\s)src\s*=\s*"(https?:\/\/[^"]*)"/gi,
-    '$1src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-original-src="$2"',
-  );
+  if (renderSourceSnapshot.templateSlug !== "dexta-academy-3") {
+    sourceHtml = sourceHtml.replace(
+      /(<img\b[^>]*?\s)src\s*=\s*"(https?:\/\/[^"]*)"/gi,
+      '$1src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-original-src="$2"',
+    );
+  }
 
   const usesHero3d =
-    sourceSnapshot.templateSlug === "dexta-academy-4" &&
-    page.fileName === "index.html";
+    renderSourceSnapshot.templateSlug === "dexta-academy-4" &&
+    pageSnapshot.fileName === "index.html";
   const threeConfig = buildPreviewThreeConfig({
-    content,
-    sourceSnapshot,
+    content: renderContent,
+    sourceSnapshot: renderSourceSnapshot,
     page,
   });
   const threeConfigMarkup = hasThreeConfig(threeConfig)
@@ -2096,26 +3760,30 @@ export async function renderSchoolTemplatePreview({
     sourceHtml = removeHero3dModuleScript(sourceHtml);
   }
 
-  const baseHref = getTemplateBaseHref(sourceSnapshot.previewPath);
+  const baseHref = getTemplateBaseHref(renderSourceSnapshot.previewPath);
   const baseMarkup = `<base href="${baseHref}">`;
   const noIndexMarkup =
     '<meta name="robots" content="noindex,nofollow"><meta name="dexta-preview" content="true">';
 
   const withHeadMarkup = injectIntoHead(
     sourceHtml,
-    `${baseMarkup}\n${noIndexMarkup}\n${getPreviewBootMarkup()}`,
+    `${baseMarkup}\n${noIndexMarkup}\n${getPreviewBootMarkup(renderSourceSnapshot.templateSlug)}`,
   );
 
   const withFontOverride = injectBeforeHeadClose(
     withHeadMarkup,
-    `${getServerSideFontOverrideStyle(content)}${getLogoPreloadMarkup(content)}`,
+    `${getGoogleFontPreloadMarkup(content)}${getServerSideFontOverrideStyle(content)}${getLogoPreloadMarkup(content)}${
+      renderSourceSnapshot.templateSlug === "dexta-academy-3"
+        ? getDextaAcademyThreeStaticPreviewCss(renderContent)
+        : ""
+    }`,
   );
 
   return injectBeforeBodyClose(
     withFontOverride,
     `${threeConfigMarkup}${getPreviewRuntimeScript({
-      content,
-      sourceSnapshot,
+      content: renderContent,
+      sourceSnapshot: renderSourceSnapshot,
       page,
     })}${hero3dModuleMarkup}`,
   );

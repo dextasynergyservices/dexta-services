@@ -121,9 +121,18 @@ function t3TypographyFields({
 }: {
   selector: string;
 }): SchoolTemplateField[] {
-  return [
-    linkField("fontStylesheetUrl", "Google Fonts stylesheet URL", selector, {
-      target: "attribute",
+	  return [
+    textField("fontFamily", "Font family", selector, {
+      target: "inlineStyle",
+      defaultValue: "",
+      placeholder: "Poppins",
+      helpText:
+        "Leave blank to use the theme font. Enter a Google Font family name such as Poppins to override this section.",
+      uiGroup: "Rich text fonts",
+      uiOrder: 199,
+    }),
+	    linkField("fontStylesheetUrl", "Google Fonts stylesheet URL", selector, {
+	      target: "attribute",
       attribute: "data-dexta-font-stylesheet",
       defaultValue: "",
       placeholder:
@@ -203,6 +212,93 @@ function t3ButtonStyleFields({
   ];
 }
 
+function t3ButtonShadowStyleFields({
+  pageKey,
+  sectionKey,
+  selector,
+  defaultShadowColor,
+  defaultShadowOpacity,
+}: {
+  pageKey: string;
+  sectionKey: string;
+  selector: string;
+  defaultShadowColor: string;
+  defaultShadowOpacity: number;
+}): SchoolTemplateField[] {
+  return [
+    colorField("buttonShadowColor", "Button shadow color", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "button-shadow-color"),
+      defaultValue: defaultShadowColor,
+      uiGroup: "Button shadow",
+      uiOrder: 305,
+    }),
+    numberField("buttonShadowOpacity", "Button shadow opacity", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "button-shadow-opacity"),
+      defaultValue: defaultShadowOpacity,
+      min: 0,
+      max: 100,
+      step: 1,
+      unit: "%",
+      helpText: "Set to 0 to hide the button shadow.",
+      uiGroup: "Button shadow",
+      uiOrder: 306,
+    }),
+  ];
+}
+
+function t3CardOverlayStyleFields({
+  pageKey,
+  sectionKey,
+  selector,
+  defaultOverlayColor = "#050e21",
+  defaultOverlayOpacity = 96,
+  defaultOverlayHeight = 76,
+}: {
+  pageKey: string;
+  sectionKey: string;
+  selector: string;
+  defaultOverlayColor?: string;
+  defaultOverlayOpacity?: number;
+  defaultOverlayHeight?: number;
+}): SchoolTemplateField[] {
+  return [
+    colorField("cardOverlayColor", "Card overlay color", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "card-overlay-color"),
+      defaultValue: defaultOverlayColor,
+      uiGroup: "Programme card overlay",
+      uiOrder: 360,
+    }),
+    numberField("cardOverlayOpacity", "Card overlay opacity", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "card-overlay-opacity"),
+      defaultValue: defaultOverlayOpacity,
+      min: 0,
+      max: 100,
+      step: 1,
+      unit: "%",
+      helpText: "Set to 0 to remove the card overlay.",
+      uiGroup: "Programme card overlay",
+      uiOrder: 361,
+    }),
+    numberField("cardOverlayHeight", "Card overlay height", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "card-overlay-height"),
+      defaultValue: defaultOverlayHeight,
+      min: 0,
+      max: 100,
+      step: 1,
+      unit: "%",
+      helpText:
+        "Controls how far the overlay rises from the bottom of each card.",
+      uiGroup: "Programme card overlay",
+      uiOrder: 362,
+    }),
+  ];
+}
+
 // ── Icon style fields ─────────────────────────────────────────
 function t3IconStyleFields({
   pageKey,
@@ -277,6 +373,298 @@ function t3IconStyleFields({
       uiGroup: "Icon style",
       uiOrder: 405,
     }),
+  ];
+}
+
+function t3ApplyStepCardStyleFields(): SchoolTemplateField[] {
+  const pageKey = "home";
+  const sectionKey = "how-to-apply";
+  const selector = ".home-apply-step";
+
+  return [
+    colorField("stepCardBgColor", "Step card background color", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "step-card-bg-color"),
+      defaultValue: "#ffffff",
+      uiGroup: "Step card style",
+      uiOrder: 500,
+    }),
+    numberField("stepCardBgOpacity", "Step card background opacity", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "step-card-bg-opacity"),
+      defaultValue: 100,
+      min: 0,
+      max: 100,
+      step: 1,
+      unit: "%",
+      uiGroup: "Step card style",
+      uiOrder: 501,
+    }),
+    colorField("stepCardTitleColor", "Step card title color", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "step-card-title-color"),
+      defaultValue: "#122a56",
+      uiGroup: "Step card style",
+      uiOrder: 502,
+    }),
+    colorField("stepCardBodyColor", "Step card body text color", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "step-card-body-color"),
+      defaultValue: "#536079",
+      uiGroup: "Step card style",
+      uiOrder: 503,
+    }),
+    colorField("stepCardBorderColor", "Step card border color", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "step-card-border-color"),
+      defaultValue: "rgba(17,34,70,0.09)",
+      uiGroup: "Step card border",
+      uiOrder: 504,
+    }),
+    numberField("stepCardBorderWidth", "Step card border width", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "step-card-border-width"),
+      defaultValue: 1,
+      min: 0,
+      max: 12,
+      step: 1,
+      unit: "px",
+      helpText: "Set to 0 to remove the step card border.",
+      uiGroup: "Step card border",
+      uiOrder: 505,
+    }),
+    numberField("stepCardBorderRadius", "Step card border radius", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "step-card-border-radius"),
+      defaultValue: 18,
+      min: 0,
+      max: 48,
+      step: 1,
+      unit: "px",
+      uiGroup: "Step card border",
+      uiOrder: 506,
+    }),
+    colorField("stepCardShadowColor", "Step card shadow color", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "step-card-shadow-color"),
+      defaultValue: "#0d1c40",
+      uiGroup: "Step card shadow",
+      uiOrder: 507,
+    }),
+    numberField("stepCardShadowOpacity", "Step card shadow opacity", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "step-card-shadow-opacity"),
+      defaultValue: 6,
+      min: 0,
+      max: 100,
+      step: 1,
+      unit: "%",
+      helpText: "Set to 0 to hide the step card shadow.",
+      uiGroup: "Step card shadow",
+      uiOrder: 508,
+    }),
+  ];
+}
+
+function t3ApplyNoteStyleFields(): SchoolTemplateField[] {
+  const pageKey = "home";
+  const sectionKey = "how-to-apply";
+  const selector = ".home-apply__note";
+
+  return [
+    colorField("noteBgColor", "Ready list background color", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "note-bg-color"),
+      defaultValue: "#061f44",
+      uiGroup: "Ready list style",
+      uiOrder: 540,
+    }),
+    numberField("noteBgOpacity", "Ready list background opacity", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "note-bg-opacity"),
+      defaultValue: 100,
+      min: 0,
+      max: 100,
+      step: 1,
+      unit: "%",
+      uiGroup: "Ready list style",
+      uiOrder: 541,
+    }),
+    colorField("noteTitleColor", "Ready list title color", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "note-title-color"),
+      defaultValue: "#ffffff",
+      uiGroup: "Ready list style",
+      uiOrder: 542,
+    }),
+    colorField("noteTextColor", "Ready list text color", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "note-text-color"),
+      defaultValue: "rgba(255,255,255,0.82)",
+      uiGroup: "Ready list style",
+      uiOrder: 543,
+    }),
+    colorField("noteBulletColor", "Ready list bullet color", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "note-bullet-color"),
+      defaultValue: "#ffc43d",
+      uiGroup: "Ready list style",
+      uiOrder: 544,
+    }),
+    colorField("noteBorderColor", "Ready list border color", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "note-border-color"),
+      defaultValue: "transparent",
+      uiGroup: "Ready list border",
+      uiOrder: 545,
+    }),
+    numberField("noteBorderWidth", "Ready list border width", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "note-border-width"),
+      defaultValue: 0,
+      min: 0,
+      max: 12,
+      step: 1,
+      unit: "px",
+      helpText: "Set to 0 to remove the ready list border.",
+      uiGroup: "Ready list border",
+      uiOrder: 546,
+    }),
+    numberField("noteBorderRadius", "Ready list border radius", selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "note-border-radius"),
+      defaultValue: 20,
+      min: 0,
+      max: 48,
+      step: 1,
+      unit: "px",
+      uiGroup: "Ready list border",
+      uiOrder: 547,
+    }),
+  ];
+}
+
+function t3ContactCardStyleFields({
+  sectionKey,
+  selector,
+  labelPrefix,
+  defaultBackgroundColor = "#ffffff",
+  defaultBorderColor = "rgba(6,26,58,0.12)",
+  defaultBorderWidth = 1,
+  defaultBorderRadius = 9,
+  defaultShadowColor = "#061a3a",
+  defaultShadowOpacity = 3,
+  uiOrder = 620,
+}: {
+  sectionKey: string;
+  selector: string;
+  labelPrefix: string;
+  defaultBackgroundColor?: string;
+  defaultBorderColor?: string;
+  defaultBorderWidth?: number;
+  defaultBorderRadius?: number;
+  defaultShadowColor?: string;
+  defaultShadowOpacity?: number;
+  uiOrder?: number;
+}): SchoolTemplateField[] {
+  return [
+    colorField(`${sectionKey}CardBgColor`, `${labelPrefix} background color`, selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar("contact", sectionKey, "card-bg-color"),
+      defaultValue: defaultBackgroundColor,
+      uiGroup: `${labelPrefix} card style`,
+      uiOrder,
+    }),
+    numberField(
+      `${sectionKey}CardBgOpacity`,
+      `${labelPrefix} background opacity`,
+      selector,
+      {
+        target: "cssVariable",
+        cssVariable: t3CssVar("contact", sectionKey, "card-bg-opacity"),
+        defaultValue: 100,
+        min: 0,
+        max: 100,
+        step: 1,
+        unit: "%",
+        uiGroup: `${labelPrefix} card style`,
+        uiOrder: uiOrder + 1,
+      },
+    ),
+    colorField(
+      `${sectionKey}CardBorderColor`,
+      `${labelPrefix} border color`,
+      selector,
+      {
+        target: "cssVariable",
+        cssVariable: t3CssVar("contact", sectionKey, "card-border-color"),
+        defaultValue: defaultBorderColor,
+        uiGroup: `${labelPrefix} card border`,
+        uiOrder: uiOrder + 2,
+      },
+    ),
+    numberField(
+      `${sectionKey}CardBorderWidth`,
+      `${labelPrefix} border width`,
+      selector,
+      {
+        target: "cssVariable",
+        cssVariable: t3CssVar("contact", sectionKey, "card-border-width"),
+        defaultValue: defaultBorderWidth,
+        min: 0,
+        max: 12,
+        step: 1,
+        unit: "px",
+        helpText: "Set to 0 to remove the border.",
+        uiGroup: `${labelPrefix} card border`,
+        uiOrder: uiOrder + 3,
+      },
+    ),
+    numberField(
+      `${sectionKey}CardBorderRadius`,
+      `${labelPrefix} border radius`,
+      selector,
+      {
+        target: "cssVariable",
+        cssVariable: t3CssVar("contact", sectionKey, "card-border-radius"),
+        defaultValue: defaultBorderRadius,
+        min: 0,
+        max: 48,
+        step: 1,
+        unit: "px",
+        uiGroup: `${labelPrefix} card border`,
+        uiOrder: uiOrder + 4,
+      },
+    ),
+    colorField(
+      `${sectionKey}CardShadowColor`,
+      `${labelPrefix} shadow color`,
+      selector,
+      {
+        target: "cssVariable",
+        cssVariable: t3CssVar("contact", sectionKey, "card-shadow-color"),
+        defaultValue: defaultShadowColor,
+        uiGroup: `${labelPrefix} card shadow`,
+        uiOrder: uiOrder + 5,
+      },
+    ),
+    numberField(
+      `${sectionKey}CardShadowOpacity`,
+      `${labelPrefix} shadow opacity`,
+      selector,
+      {
+        target: "cssVariable",
+        cssVariable: t3CssVar("contact", sectionKey, "card-shadow-opacity"),
+        defaultValue: defaultShadowOpacity,
+        min: 0,
+        max: 100,
+        step: 1,
+        unit: "%",
+        helpText: "Set to 0 to hide the shadow.",
+        uiGroup: `${labelPrefix} card shadow`,
+        uiOrder: uiOrder + 6,
+      },
+    ),
   ];
 }
 
@@ -365,24 +753,105 @@ export const dextaAcademy3Manifest = {
       selector: ".site-header",
       description: "Shared brand, navigation, portal link, and apply button.",
       fields: [
-        textField("brandPrimary", "Brand primary text", ".brand__name strong"),
-        textField(
-          "brandSecondary",
-          "Brand secondary text",
-          ".brand__name span",
-        ),
-        textField("portalText", "Portal label", ".portal-link"),
-        linkField("portalHref", "Portal link", ".portal-link"),
-        textField(
-          "headerCtaText",
-          "Header CTA text",
-          ".header-actions .button",
-        ),
-        linkField(
-          "headerCtaHref",
-          "Header CTA link",
-          ".header-actions .button",
-        ),
+	        textField(
+	          "navHomeText",
+	          "Home nav label",
+	          ".site-nav a[href='index.html']",
+	          { defaultValue: "Home" },
+	        ),
+	        linkField(
+	          "navHomeHref",
+	          "Home nav link",
+	          ".site-nav a[href='index.html']",
+	          { defaultValue: "index.html" },
+	        ),
+	        textField(
+	          "navAboutText",
+	          "About nav label",
+	          ".site-nav a[href='about.html']",
+	          { defaultValue: "About" },
+	        ),
+	        linkField(
+	          "navAboutHref",
+	          "About nav link",
+	          ".site-nav a[href='about.html']",
+	          { defaultValue: "about.html" },
+	        ),
+	        textField(
+	          "navProgrammesText",
+	          "Programmes nav label",
+	          ".site-nav a[href='#programmes'], .site-nav a[href='index.html#programmes']",
+	          { defaultValue: "Programmes" },
+	        ),
+	        linkField(
+	          "navProgrammesHref",
+	          "Programmes nav link",
+	          ".site-nav a[href='#programmes'], .site-nav a[href='index.html#programmes']",
+	          { defaultValue: "index.html#programmes" },
+	        ),
+	        textField(
+	          "navGalleryText",
+	          "Gallery nav label",
+	          ".site-nav a[href='gallery.html']",
+	          { defaultValue: "Gallery" },
+	        ),
+	        linkField(
+	          "navGalleryHref",
+	          "Gallery nav link",
+	          ".site-nav a[href='gallery.html']",
+	          { defaultValue: "gallery.html" },
+	        ),
+	        textField(
+	          "navApplyText",
+	          "How to apply nav label",
+	          ".site-nav a[href='#how-to-apply'], .site-nav a[href='index.html#how-to-apply']",
+	          { defaultValue: "How To Apply" },
+	        ),
+	        linkField(
+	          "navApplyHref",
+	          "How to apply nav link",
+	          ".site-nav a[href='#how-to-apply'], .site-nav a[href='index.html#how-to-apply']",
+	          { defaultValue: "index.html#how-to-apply" },
+	        ),
+	        textField(
+	          "navContactText",
+	          "Contact nav label",
+	          ".site-nav a[href='contact.html']",
+	          { defaultValue: "Contact" },
+	        ),
+	        linkField(
+	          "navContactHref",
+	          "Contact nav link",
+	          ".site-nav a[href='contact.html']",
+	          { defaultValue: "contact.html" },
+	        ),
+	        textField("brandPrimary", "Brand primary text", ".brand__name strong", {
+	          defaultValue: "DXT",
+	        }),
+	        textField(
+	          "brandSecondary",
+	          "Brand secondary text",
+	          ".brand__name span",
+	          { defaultValue: "Academy" },
+	        ),
+	        textField("portalText", "Portal label", ".portal-link", {
+	          defaultValue: "Portal",
+	        }),
+	        linkField("portalHref", "Portal link", ".portal-link", {
+	          defaultValue: "#",
+	        }),
+	        textField(
+	          "headerCtaText",
+	          "Header CTA text",
+	          ".header-actions .button",
+	          { defaultValue: "Apply Now" },
+	        ),
+	        linkField(
+	          "headerCtaHref",
+	          "Header CTA link",
+	          ".header-actions .button",
+	          { defaultValue: "index.html#how-to-apply" },
+	        ),
         ...t3SectionStyleFields({
           pageKey: "shared",
           sectionKey: "header",
@@ -390,17 +859,32 @@ export const dextaAcademy3Manifest = {
           defaultBackgroundColor: "rgba(255,255,255,0.9)",
           includeBackgroundImage: false,
         }),
-        ...t3ButtonStyleFields({
-          pageKey: "shared",
-          sectionKey: "header-cta",
-          selector: ".header-actions .button--gold",
-          defaultBackgroundColor: "#f3bf35",
-          defaultTextColor: "#09142f",
-          defaultBorderColor: "#f3bf35",
-          defaultBorderWidth: 0,
-        }),
-      ],
-    },
+	        ...t3ButtonStyleFields({
+	          pageKey: "shared",
+	          sectionKey: "header-cta",
+	          selector: ".header-actions .button--gold",
+	          defaultBackgroundColor: "#f3bf35",
+	          defaultTextColor: "#09142f",
+	          defaultBorderColor: "#f3bf35",
+	          defaultBorderWidth: 0,
+	        }),
+	        ...t3ButtonStyleFields({
+	          pageKey: "shared",
+	          sectionKey: "header-portal",
+	          selector: ".portal-link",
+	          defaultBackgroundColor: "#ffffff",
+	          defaultBackgroundOpacity: 0,
+	          defaultTextColor: "#ffffff",
+	          defaultBorderColor: "#ffffff",
+	          defaultBorderWidth: 0,
+	        }).map((field) => ({
+	          ...field,
+	          key: `portal${field.key.charAt(0).toUpperCase()}${field.key.slice(1)}`,
+	          label: `Portal ${field.label.toLowerCase()}`,
+	          uiGroup: "Portal button style",
+	        })),
+	      ],
+	    },
     {
       id: "site-footer",
       label: "Footer",
@@ -418,9 +902,19 @@ export const dextaAcademy3Manifest = {
           ".brand--footer .brand__name span",
         ),
         richTextField("footerBody", "Footer body", ".footer-brand p"),
+        richTextField(
+          "footerAddress",
+          "Footer address",
+          ".footer-column:nth-of-type(2) p",
+        ),
         textField(
           "footerPhone",
           "Footer phone",
+          ".footer-column:nth-of-type(2) a:nth-of-type(1)",
+        ),
+        linkField(
+          "footerPhoneHref",
+          "Footer phone link",
           ".footer-column:nth-of-type(2) a:nth-of-type(1)",
         ),
         textField(
@@ -428,15 +922,66 @@ export const dextaAcademy3Manifest = {
           "Footer email",
           ".footer-column:nth-of-type(2) a:nth-of-type(2)",
         ),
+        linkField(
+          "footerEmailHref",
+          "Footer email link",
+          ".footer-column:nth-of-type(2) a:nth-of-type(2)",
+        ),
         richTextField("copyright", "Copyright text", ".footer-bottom p"),
+        textField("footerLinkLabel", "Footer link text", ".footer-explore-links a", {
+          uiGroup: "Footer links",
+          uiOrder: 430,
+        }),
+        linkField("footerLinkHref", "Footer link URL", ".footer-explore-links a", {
+          uiGroup: "Footer links",
+          uiOrder: 431,
+        }),
+        numberField("footerLinkVisible", "Show footer link", ".footer-explore-links a", {
+          target: "attribute",
+          attribute: "data-footer-link-visible",
+          defaultValue: 1,
+          min: 0,
+          max: 1,
+          step: 1,
+          unit: "0/1",
+          helpText: "Use 1 to show this footer link or 0 to hide it.",
+          uiGroup: "Footer links",
+          uiOrder: 432,
+        }),
+        colorField("footerTextColor", "Footer text color", ".site-footer, .contact-footer", {
+          target: "cssVariable",
+          cssVariable: t3CssVar("shared", "footer", "text-color"),
+          defaultValue: "rgba(255,255,255,0.8)",
+          uiGroup: "Footer text style",
+          uiOrder: 480,
+        }),
+        colorField("footerLinkColor", "Footer link color", ".site-footer, .contact-footer", {
+          target: "cssVariable",
+          cssVariable: t3CssVar("shared", "footer", "link-color"),
+          defaultValue: "rgba(255,255,255,0.72)",
+          uiGroup: "Footer text style",
+          uiOrder: 481,
+        }),
+        colorField("footerLinkHoverColor", "Footer link hover color", ".site-footer, .contact-footer", {
+          target: "cssVariable",
+          cssVariable: t3CssVar("shared", "footer", "link-hover-color"),
+          defaultValue: "#ffffff",
+          uiGroup: "Footer text style",
+          uiOrder: 482,
+        }),
         ...t3SectionStyleFields({
           pageKey: "shared",
           sectionKey: "footer",
-          selector: ".site-footer",
+          selector: ".site-footer, .contact-footer",
           defaultBackgroundColor: "#09142f",
           includeBackgroundImage: false,
         }),
       ],
+      repeatable: {
+        itemSelector: ".footer-explore-links a",
+        labelSingular: "Footer link",
+        labelPlural: "Footer links",
+      },
     },
   ],
   pages: [
@@ -478,11 +1023,33 @@ export const dextaAcademy3Manifest = {
               "Secondary CTA link",
               ".hero__cta-secondary",
             ),
-            ...homeSectionStyle({
-              sectionKey: "hero",
-              selector: ".hero",
-              defaultBackgroundColor: "#031225",
-            }),
+		            ...homeSectionStyle({
+		              sectionKey: "hero",
+		              selector: ".hero",
+		              defaultBackgroundColor: "#031225",
+		              includeBackgroundImage: false,
+		            }),
+	            colorField("headlineTextColor", "Headline text color", ".hero", {
+	              target: "cssVariable",
+	              cssVariable: t3CssVar("home", "hero", "headline-text-color"),
+	              defaultValue: "#ffffff",
+	              uiGroup: "Hero headline style",
+	              uiOrder: 220,
+	            }),
+	            colorField("joyfulAccentColor", "Joyful accent color", ".hero", {
+	              target: "cssVariable",
+	              cssVariable: t3CssVar("home", "hero", "joyful-accent-color"),
+	              defaultValue: "#ffc94c",
+	              uiGroup: "Hero headline style",
+	              uiOrder: 221,
+	            }),
+	            colorField("boldAccentColor", "Bold accent color", ".hero", {
+	              target: "cssVariable",
+	              cssVariable: t3CssVar("home", "hero", "bold-accent-color"),
+	              defaultValue: "#ffc94c",
+	              uiGroup: "Hero headline style",
+	              uiOrder: 222,
+	            }),
             ...t3ButtonStyleFields({
               pageKey: "home",
               sectionKey: "hero-primary",
@@ -495,6 +1062,18 @@ export const dextaAcademy3Manifest = {
               label: `Primary ${f.label}`,
               key: `primary${f.key.charAt(0).toUpperCase()}${f.key.slice(1)}`,
               uiGroup: "Primary CTA style",
+            })),
+            ...t3ButtonShadowStyleFields({
+              pageKey: "home",
+              sectionKey: "hero-primary",
+              selector: ".hero__cta-primary",
+              defaultShadowColor: "#fac343",
+              defaultShadowOpacity: 24,
+            }).map((f) => ({
+              ...f,
+              label: `Primary ${f.label}`,
+              key: `primary${f.key.charAt(0).toUpperCase()}${f.key.slice(1)}`,
+              uiGroup: "Primary CTA shadow",
             })),
             ...t3ButtonStyleFields({
               pageKey: "home",
@@ -509,6 +1088,18 @@ export const dextaAcademy3Manifest = {
               label: `Secondary ${f.label}`,
               key: `secondary${f.key.charAt(0).toUpperCase()}${f.key.slice(1)}`,
               uiGroup: "Secondary CTA style",
+            })),
+            ...t3ButtonShadowStyleFields({
+              pageKey: "home",
+              sectionKey: "hero-secondary",
+              selector: ".hero__cta-secondary",
+              defaultShadowColor: "#ffffff",
+              defaultShadowOpacity: 4,
+            }).map((f) => ({
+              ...f,
+              label: `Secondary ${f.label}`,
+              key: `secondary${f.key.charAt(0).toUpperCase()}${f.key.slice(1)}`,
+              uiGroup: "Secondary CTA shadow",
             })),
             ...homeTypography({ selector: ".hero" }),
           ],
@@ -549,9 +1140,12 @@ export const dextaAcademy3Manifest = {
             richTextField("body", "Body", ".section-heading > p"),
             textField("ctaText", "CTA text", ".section-heading .button"),
             linkField("ctaHref", "CTA link", ".section-heading .button"),
+            textField("programmeIcon", "Programme icon text", ".programme-tile__icon", {
+              helpText: "Use short text such as EY, ST, AR, or LW.",
+            }),
             richTextField("programmeTitle", "Programme title", "h3"),
             richTextField("programmeBody", "Programme body", "article p"),
-            imageField("programmeImage", "Programme image", "article img"),
+            imageField("programmeImage", "Programme image", "img"),
             textField(
               "programmeLink",
               "Programme link text",
@@ -576,6 +1170,16 @@ export const dextaAcademy3Manifest = {
               defaultIconColor: "#f3bf35",
               defaultIconBgColor: "rgba(6,18,42,0.58)",
               defaultIconBgOpacity: 100,
+            })
+              .filter((field) => field.key !== "iconImage")
+              .map((field) => ({
+                ...field,
+                uiGroup: "Programme card icon",
+              })),
+            ...t3CardOverlayStyleFields({
+              pageKey: "home",
+              sectionKey: "programmes",
+              selector: ".programme-tile",
             }),
             ...homeTypography({ selector: ".programmes-showcase" }),
           ],
@@ -597,6 +1201,26 @@ export const dextaAcademy3Manifest = {
               "Body",
               ".home-apply__copy > p:not(.eyebrow)",
             ),
+            textField(
+              "primaryCtaText",
+              "Primary CTA text",
+              ".home-apply__actions .button--gold",
+            ),
+            linkField(
+              "primaryCtaHref",
+              "Primary CTA link",
+              ".home-apply__actions .button--gold",
+            ),
+            textField(
+              "secondaryCtaText",
+              "Secondary CTA text",
+              ".home-apply__actions .button--navy",
+            ),
+            linkField(
+              "secondaryCtaHref",
+              "Secondary CTA link",
+              ".home-apply__actions .button--navy",
+            ),
             textField("stepNumber", "Step number", ".home-apply-step__number"),
             richTextField("stepTitle", "Step title", ".home-apply-step h3"),
             richTextField("stepBody", "Step body", ".home-apply-step p"),
@@ -604,6 +1228,53 @@ export const dextaAcademy3Manifest = {
             richTextField("noteBody", "Note body", ".home-apply__note ul", {
               target: "innerHTML",
             }),
+            colorField(
+              "eyebrowTextColor",
+              "Eyebrow text color",
+              ".home-apply__copy .eyebrow",
+              {
+                target: "cssVariable",
+                cssVariable: t3CssVar(
+                  "home",
+                  "how-to-apply",
+                  "eyebrow-text-color",
+                ),
+                defaultValue: "#c8971b",
+                uiGroup: "Section text style",
+                uiOrder: 480,
+              },
+            ),
+            colorField("titleTextColor", "Title text color", ".home-apply", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("home", "how-to-apply", "title-text-color"),
+              defaultValue: "#122a56",
+              uiGroup: "Section text style",
+              uiOrder: 481,
+            }),
+            colorField("bodyTextColor", "Body text color", ".home-apply", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("home", "how-to-apply", "body-text-color"),
+              defaultValue: "#536079",
+              uiGroup: "Section text style",
+              uiOrder: 482,
+            }),
+            ...t3ApplyStepCardStyleFields(),
+            ...homeIconStyle({
+              sectionKey: "how-to-apply",
+              selector: ".home-apply-step__number",
+              defaultIconColor: "#122a56",
+              defaultIconBgColor: "#fff2c9",
+              defaultIconBgOpacity: 100,
+              defaultIconBorderColor: "transparent",
+              defaultIconBorderWidth: 0,
+            })
+              .filter((field) => field.key !== "iconImage")
+              .map((field) => ({
+                ...field,
+                uiGroup: "Step number icon style",
+                uiOrder: (field.uiOrder ?? 400) + 120,
+              })),
+            ...t3ApplyNoteStyleFields(),
             ...t3ButtonStyleFields({
               pageKey: "home",
               sectionKey: "apply-primary",
@@ -1001,18 +1672,51 @@ export const dextaAcademy3Manifest = {
             textField(
               "primaryCtaText",
               "Apply button text",
+              ".contact-button--dark .contact-button__label",
+            ),
+            linkField(
+              "primaryCtaHref",
+              "Apply button link",
               ".contact-button--dark",
             ),
             textField(
               "secondaryCtaText",
               "Call button text",
-              ".contact-button--light",
+              ".contact-button--light .contact-button__label",
             ),
             linkField(
               "secondaryCtaHref",
               "Call button link",
               ".contact-button--light",
             ),
+            colorField("eyebrowTextColor", "Eyebrow text color", ".contact-hero", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "hero", "eyebrow-text-color"),
+              defaultValue: "#ffc43d",
+              uiGroup: "Hero text style",
+              uiOrder: 480,
+            }),
+            colorField("titleTextColor", "Title text color", ".contact-hero", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "hero", "title-text-color"),
+              defaultValue: "#ffffff",
+              uiGroup: "Hero text style",
+              uiOrder: 481,
+            }),
+            colorField("accentTextColor", "Title accent color", ".contact-hero", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "hero", "accent-text-color"),
+              defaultValue: "#ffc43d",
+              uiGroup: "Hero text style",
+              uiOrder: 482,
+            }),
+            colorField("bodyTextColor", "Body text color", ".contact-hero", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "hero", "body-text-color"),
+              defaultValue: "rgba(255,255,255,0.82)",
+              uiGroup: "Hero text style",
+              uiOrder: 483,
+            }),
             ...contactSectionStyle({
               sectionKey: "hero",
               selector: ".contact-hero",
@@ -1024,7 +1728,8 @@ export const dextaAcademy3Manifest = {
               selector: ".contact-button--dark",
               defaultBackgroundColor: "#ffc43d",
               defaultTextColor: "#061a3a",
-              defaultBorderColor: "#ffc43d",
+              defaultBorderColor: "rgba(6,31,68,0.12)",
+              defaultBorderWidth: 1,
             }).map((f) => ({
               ...f,
               label: `Primary ${f.label}`,
@@ -1060,6 +1765,34 @@ export const dextaAcademy3Manifest = {
             ),
             richTextField("title", "Title", ".contact-intro h2"),
             richTextField("body", "Body", ".contact-intro > p:last-of-type"),
+            colorField("eyebrowTextColor", "Eyebrow text color", ".contact-intro", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "intro", "eyebrow-text-color"),
+              defaultValue: "#f5ae00",
+              uiGroup: "Intro text style",
+              uiOrder: 480,
+            }),
+            colorField("titleTextColor", "Title text color", ".contact-intro", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "intro", "title-text-color"),
+              defaultValue: "#061a3a",
+              uiGroup: "Intro text style",
+              uiOrder: 481,
+            }),
+            colorField("bodyTextColor", "Body text color", ".contact-intro", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "intro", "body-text-color"),
+              defaultValue: "#1b2c4b",
+              uiGroup: "Intro text style",
+              uiOrder: 482,
+            }),
+            colorField("dividerColor", "Divider color", ".contact-intro > span", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "intro", "divider-color"),
+              defaultValue: "#f4b31d",
+              uiGroup: "Intro text style",
+              uiOrder: 483,
+            }),
             ...contactSectionStyle({
               sectionKey: "intro",
               selector: ".contact-intro",
@@ -1074,22 +1807,81 @@ export const dextaAcademy3Manifest = {
           selector: ".contact-info-card",
           fields: [
             richTextField("title", "Title", ".contact-info-card h2"),
+            textField("infoIcon", "Icon text", ".contact-info-icon", {
+              helpText:
+                "Use a short symbol, emoji, or 1-2 letters. Example: Phone, @, or ?",
+            }),
+            richTextField(
+              "infoTitle",
+              "Info item title",
+              "strong",
+            ),
             richTextField(
               "infoContent",
               "Info content",
-              ".contact-info-list article p",
+              ".contact-info-text",
             ),
+            colorField("titleTextColor", "Card title color", ".contact-info-card", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "info-card", "title-text-color"),
+              defaultValue: "#061a3a",
+              uiGroup: "Info card text style",
+              uiOrder: 480,
+            }),
+            colorField("itemTitleColor", "Info item title color", ".contact-info-card", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "info-card", "item-title-color"),
+              defaultValue: "#061a3a",
+              uiGroup: "Info card text style",
+              uiOrder: 481,
+            }),
+            colorField("itemTextColor", "Info item text color", ".contact-info-card", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "info-card", "item-text-color"),
+              defaultValue: "#142340",
+              uiGroup: "Info card text style",
+              uiOrder: 482,
+            }),
+            colorField("socialIconColor", "Social icon color", ".contact-socials a", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "info-card", "social-icon-color"),
+              defaultValue: "#061a3a",
+              uiGroup: "Social icon style",
+              uiOrder: 483,
+            }),
+            colorField("socialIconBorderColor", "Social icon border color", ".contact-socials a", {
+              target: "cssVariable",
+              cssVariable: t3CssVar(
+                "contact",
+                "info-card",
+                "social-icon-border-color",
+              ),
+              defaultValue: "rgba(6,26,58,0.18)",
+              uiGroup: "Social icon style",
+              uiOrder: 484,
+            }),
             ...contactSectionStyle({
               sectionKey: "info-card",
               selector: ".contact-info-card",
-              defaultBackgroundColor: "#061f44",
+              defaultBackgroundColor: "#ffffff",
+            }),
+            ...t3ContactCardStyleFields({
+              sectionKey: "info-card",
+              selector: ".contact-info-card",
+              labelPrefix: "Info",
+              defaultBackgroundColor: "#ffffff",
+              defaultBorderColor: "rgba(6,26,58,0.12)",
+              defaultBorderRadius: 9,
+              defaultShadowOpacity: 3,
             }),
             ...contactIconStyle({
               sectionKey: "info-icon",
-              selector: ".contact-icon",
+              selector: ".contact-info-card",
               defaultIconColor: "#f1ad16",
               defaultIconBgColor: "#fffaf1",
               defaultIconBgOpacity: 100,
+              defaultIconBorderColor: "rgba(6,26,58,0.1)",
+              defaultIconBorderWidth: 1,
             }),
             ...contactTypography({ selector: ".contact-info-card" }),
           ],
@@ -1098,6 +1890,28 @@ export const dextaAcademy3Manifest = {
             labelSingular: "Contact info",
             labelPlural: "Contact info items",
           },
+        },
+        {
+          id: "contact-social-links",
+          label: "Contact Social Links",
+          selector: ".contact-socials",
+          fields: [
+            linkField("facebookHref", "Facebook URL", "a:nth-of-type(1)", {
+              defaultValue: "#",
+            }),
+            linkField("instagramHref", "Instagram URL", "a:nth-of-type(2)", {
+              defaultValue: "#",
+            }),
+            linkField("xHref", "X URL", "a:nth-of-type(3)", {
+              defaultValue: "#",
+            }),
+            linkField("youtubeHref", "YouTube URL", "a:nth-of-type(4)", {
+              defaultValue: "#",
+            }),
+            linkField("linkedinHref", "LinkedIn URL", "a:nth-of-type(5)", {
+              defaultValue: "#",
+            }),
+          ],
         },
         {
           id: "contact-message",
@@ -1176,6 +1990,61 @@ export const dextaAcademy3Manifest = {
             ),
             richTextField("title", "Title", ".contact-form-card__header h2"),
             richTextField("body", "Body", ".contact-form-card__header p"),
+            colorField("titleTextColor", "Title text color", ".contact-message-card", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "message", "title-text-color"),
+              defaultValue: "#061a3a",
+              uiGroup: "Message card text style",
+              uiOrder: 480,
+            }),
+            colorField("bodyTextColor", "Body text color", ".contact-message-card", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "message", "body-text-color"),
+              defaultValue: "#4b5873",
+              uiGroup: "Message card text style",
+              uiOrder: 481,
+            }),
+            colorField("dividerColor", "Header divider color", ".contact-message-card", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "message", "divider-color"),
+              defaultValue: "rgba(6,26,58,0.1)",
+              uiGroup: "Message card text style",
+              uiOrder: 482,
+            }),
+            ...t3ContactCardStyleFields({
+              sectionKey: "message",
+              selector: ".contact-message-card",
+              labelPrefix: "Message",
+              defaultBackgroundColor: "#ffffff",
+              defaultBorderColor: "rgba(6,26,58,0.12)",
+              defaultBorderRadius: 9,
+              defaultShadowOpacity: 3,
+            }),
+            colorField("formFrameBgColor", "Form frame background color", ".contact-form-embed", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "message", "form-frame-bg-color"),
+              defaultValue: "#ffffff",
+              uiGroup: "Form frame style",
+              uiOrder: 650,
+            }),
+            colorField("formFrameBorderColor", "Form frame border color", ".contact-form-embed", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "message", "form-frame-border-color"),
+              defaultValue: "rgba(6,26,58,0.12)",
+              uiGroup: "Form frame style",
+              uiOrder: 651,
+            }),
+            numberField("formFrameBorderRadius", "Form frame border radius", ".contact-form-embed", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "message", "form-frame-border-radius"),
+              defaultValue: 12,
+              min: 0,
+              max: 48,
+              step: 1,
+              unit: "px",
+              uiGroup: "Form frame style",
+              uiOrder: 652,
+            }),
             ...contactTypography({ selector: ".contact-message-card" }),
             linkField("formUrl", "School/contact Google Form URL", "iframe", {
               attribute: "src",
@@ -1277,6 +2146,108 @@ export const dextaAcademy3Manifest = {
             ),
             richTextField("eyebrow", "Eyebrow", ".admission-modal__eyebrow"),
             richTextField("title", "Title", "#admission-modal-title"),
+            richTextField(
+              "guideKicker",
+              "Guide eyebrow",
+              ".admission-modal__guide-kicker",
+            ),
+            richTextField("guideTitle", "Guide title", ".admission-modal__guide h3"),
+            richTextField("guideList", "Guide checklist", ".admission-modal__guide ul", {
+              target: "innerHTML",
+            }),
+            textField(
+              "guideLinkText",
+              "Guide link text",
+              ".admission-modal__page-link-label",
+            ),
+            linkField(
+              "guideLinkHref",
+              "Guide link URL",
+              ".admission-modal__page-link",
+            ),
+            colorField("headerBgColor", "Modal header background color", ".admission-modal__header", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "admission", "header-bg-color"),
+              defaultValue: "#061f44",
+              uiGroup: "Modal header style",
+              uiOrder: 480,
+            }),
+            colorField("eyebrowTextColor", "Modal eyebrow color", ".admission-modal__header", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "admission", "eyebrow-text-color"),
+              defaultValue: "#ffc43d",
+              uiGroup: "Modal header style",
+              uiOrder: 482,
+            }),
+            colorField("titleTextColor", "Modal title color", ".admission-modal__header", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "admission", "title-text-color"),
+              defaultValue: "#ffffff",
+              uiGroup: "Modal header style",
+              uiOrder: 483,
+            }),
+            colorField("bodyBgColor", "Modal body background color", ".admission-modal__body", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "admission", "body-bg-color"),
+              defaultValue: "#fff8ed",
+              uiGroup: "Modal body style",
+              uiOrder: 484,
+            }),
+            colorField("guideTitleColor", "Guide title color", ".admission-modal__guide", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "admission", "guide-title-color"),
+              defaultValue: "#061a3a",
+              uiGroup: "Modal guide style",
+              uiOrder: 485,
+            }),
+            colorField("guideTextColor", "Guide text color", ".admission-modal__guide", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "admission", "guide-text-color"),
+              defaultValue: "#33425f",
+              uiGroup: "Modal guide style",
+              uiOrder: 486,
+            }),
+            colorField("guideBulletColor", "Guide bullet color", ".admission-modal__guide", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "admission", "guide-bullet-color"),
+              defaultValue: "#ffc43d",
+              uiGroup: "Modal guide style",
+              uiOrder: 487,
+            }),
+            ...t3ContactCardStyleFields({
+              sectionKey: "admission-panel",
+              selector: ".admission-modal__panel",
+              labelPrefix: "Modal panel",
+              defaultBackgroundColor: "#ffffff",
+              defaultBorderColor: "rgba(255,255,255,0.16)",
+              defaultBorderRadius: 18,
+              defaultShadowColor: "#010918",
+              defaultShadowOpacity: 38,
+              uiOrder: 620,
+            }),
+            ...t3ContactCardStyleFields({
+              sectionKey: "admission-guide",
+              selector: ".admission-modal__guide",
+              labelPrefix: "Modal guide",
+              defaultBackgroundColor: "#ffffff",
+              defaultBorderColor: "rgba(6,31,68,0.1)",
+              defaultBorderRadius: 14,
+              defaultShadowOpacity: 0,
+              uiOrder: 650,
+            }),
+            ...t3ButtonStyleFields({
+              pageKey: "contact",
+              sectionKey: "admission-guide-link",
+              selector: ".admission-modal__page-link",
+              defaultBackgroundColor: "#061f44",
+              defaultTextColor: "#ffffff",
+              defaultBorderColor: "#061f44",
+            }).map((f) => ({
+              ...f,
+              label: `Guide link ${f.label}`,
+              key: `guideLink${f.key.charAt(0).toUpperCase()}${f.key.slice(1)}`,
+              uiGroup: "Modal guide link style",
+            })),
             ...contactTypography({ selector: ".admission-modal" }),
             linkField("formUrl", "Admission Google Form URL", "iframe", {
               attribute: "src",
@@ -1304,22 +2275,88 @@ export const dextaAcademy3Manifest = {
           label: "Contact Benefits",
           selector: ".contact-benefits",
           fields: [
-            richTextField("benefitTitle", "Benefit title", "article p strong"),
-            richTextField("benefitBody", "Benefit body", "article p"),
+            textField("benefitIcon", "Benefit icon text", ".contact-benefit-icon", {
+              helpText:
+                "Use a short text symbol or 1-2 letters for each benefit icon. Emoji icons may not follow the admin icon color.",
+            }),
+            richTextField("benefitTitle", "Benefit title", "strong"),
+            richTextField("benefitBody", "Benefit body", ".contact-benefit-text"),
+            colorField("benefitTitleColor", "Benefit title color", ".contact-benefits", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "benefits", "title-text-color"),
+              defaultValue: "#061a3a",
+              uiGroup: "Benefit text style",
+              uiOrder: 480,
+            }),
+            colorField("benefitBodyColor", "Benefit body text color", ".contact-benefits", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "benefits", "body-text-color"),
+              defaultValue: "#1d2d49",
+              uiGroup: "Benefit text style",
+              uiOrder: 481,
+            }),
+            colorField("benefitCardBgColor", "Benefit card background color", ".contact-benefits article", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "benefits", "card-bg-color"),
+              defaultValue: "transparent",
+              uiGroup: "Benefit card style",
+              uiOrder: 500,
+            }),
+            numberField("benefitCardBgOpacity", "Benefit card background opacity", ".contact-benefits article", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "benefits", "card-bg-opacity"),
+              defaultValue: 0,
+              min: 0,
+              max: 100,
+              step: 1,
+              unit: "%",
+              uiGroup: "Benefit card style",
+              uiOrder: 501,
+            }),
+            colorField("benefitCardBorderColor", "Benefit card divider color", ".contact-benefits article", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "benefits", "card-border-color"),
+              defaultValue: "rgba(6,26,58,0.08)",
+              uiGroup: "Benefit card border",
+              uiOrder: 502,
+            }),
+            numberField("benefitCardBorderWidth", "Benefit card divider width", ".contact-benefits article", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "benefits", "card-border-width"),
+              defaultValue: 1,
+              min: 0,
+              max: 12,
+              step: 1,
+              unit: "px",
+              helpText: "Set to 0 to remove the divider.",
+              uiGroup: "Benefit card border",
+              uiOrder: 503,
+            }),
             ...contactSectionStyle({
               sectionKey: "benefits",
               selector: ".contact-benefits",
               defaultBackgroundColor: "#fffdfb",
             }),
+            ...t3ContactCardStyleFields({
+              sectionKey: "benefits-wrap",
+              selector: ".contact-benefits",
+              labelPrefix: "Benefits wrapper",
+              defaultBackgroundColor: "#fffdfb",
+              defaultBorderColor: "transparent",
+              defaultBorderWidth: 0,
+              defaultBorderRadius: 12,
+              defaultShadowOpacity: 4,
+              uiOrder: 620,
+            }),
             ...contactIconStyle({
               sectionKey: "benefits-icon",
-              selector: ".contact-benefits article > span",
-              defaultIconColor: "#f1ad16",
+              selector: ".contact-benefits",
+              defaultIconColor: "#061a3a",
             }),
             ...contactTypography({ selector: ".contact-benefits" }),
           ],
           repeatable: {
-            itemSelector: "article",
+            itemSelector: ".contact-benefit-item",
             labelSingular: "Benefit",
             labelPlural: "Benefits",
           },
@@ -1333,6 +2370,27 @@ export const dextaAcademy3Manifest = {
             textField("brandName", "Brand name", ".contact-brand strong"),
             textField("tagline", "Tagline", ".contact-brand small"),
             richTextField("body", "Body", ".contact-footer__brand > p"),
+            colorField("brandTextColor", "Brand name color", ".contact-footer__brand", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "footer", "brand-text-color"),
+              defaultValue: "#ffffff",
+              uiGroup: "Footer text style",
+              uiOrder: 480,
+            }),
+            colorField("taglineTextColor", "Tagline color", ".contact-footer__brand", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "footer", "tagline-text-color"),
+              defaultValue: "#ffffff",
+              uiGroup: "Footer text style",
+              uiOrder: 481,
+            }),
+            colorField("bodyTextColor", "Body text color", ".contact-footer__brand", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "footer", "body-text-color"),
+              defaultValue: "#ffffff",
+              uiGroup: "Footer text style",
+              uiOrder: 482,
+            }),
           ],
         },
         {
@@ -1342,6 +2400,21 @@ export const dextaAcademy3Manifest = {
           fields: [
             textField("title", "Title", "h3"),
             textField("linkLabel", "Link label", "a"),
+            linkField("linkHref", "Link URL", "a"),
+            colorField("headingColor", "Heading color", ".contact-footer__grid > section:nth-of-type(2)", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "footer", "heading-color"),
+              defaultValue: "#ffc43d",
+              uiGroup: "Footer text style",
+              uiOrder: 480,
+            }),
+            colorField("linkColor", "Link color", ".contact-footer__grid > section:nth-of-type(2)", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "footer", "link-color"),
+              defaultValue: "#ffffff",
+              uiGroup: "Footer text style",
+              uiOrder: 481,
+            }),
           ],
           repeatable: {
             itemSelector: "a",
@@ -1356,6 +2429,20 @@ export const dextaAcademy3Manifest = {
           fields: [
             textField("title", "Title", "h3"),
             richTextField("detail", "Detail", "p"),
+            colorField("headingColor", "Heading color", ".contact-footer__grid > section:nth-of-type(3)", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "footer", "heading-color"),
+              defaultValue: "#ffc43d",
+              uiGroup: "Footer text style",
+              uiOrder: 480,
+            }),
+            colorField("detailColor", "Detail text color", ".contact-footer__grid > section:nth-of-type(3)", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "footer", "link-color"),
+              defaultValue: "#ffffff",
+              uiGroup: "Footer text style",
+              uiOrder: 481,
+            }),
           ],
           repeatable: {
             itemSelector: "p",
@@ -1373,10 +2460,24 @@ export const dextaAcademy3Manifest = {
               "Copyright text",
               ".contact-footer__bottom p",
             ),
+            colorField("bottomTextColor", "Bottom text color", ".contact-footer", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "footer", "bottom-text-color"),
+              defaultValue: "#ffffff",
+              uiGroup: "Footer bottom style",
+              uiOrder: 480,
+            }),
+            colorField("dividerColor", "Footer divider color", ".contact-footer", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "footer", "divider-color"),
+              defaultValue: "rgba(255,255,255,0.2)",
+              uiGroup: "Footer bottom style",
+              uiOrder: 481,
+            }),
             ...contactSectionStyle({
               sectionKey: "footer",
               selector: ".contact-footer",
-              defaultBackgroundColor: "#09142f",
+              defaultBackgroundColor: "#061f3f",
               includeBackgroundImage: false,
             }),
           ],

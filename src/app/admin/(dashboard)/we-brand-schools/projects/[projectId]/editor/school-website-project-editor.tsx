@@ -61,6 +61,8 @@ type EditableFieldValue = string | number | boolean | null;
 type SectionBinding = {
   content: SchoolTemplateProjectSectionContent;
   snapshot: SchoolTemplateProjectSectionSnapshot | null;
+  scope: "page" | "shared";
+  pageSlug?: string;
 };
 
 type SaveDraftOptions = {
@@ -119,8 +121,17 @@ const MODEL_VALIDATION_PREVIEW_KEY = "preview-models";
 const THEME_HISTORY_KEY = "theme";
 const COMPONENT_HISTORY_LIMIT = 50;
 const DEXTA_ACADEMY_2_SLUG = "dexta-academy-2";
+const DEXTA_ACADEMY_3_SLUG = "dexta-academy-3";
 const DEXTA_ACADEMY_2_FOOTER_SHARED_SECTION_IDS = new Set(["site-footer"]);
-const DEXTA_ACADEMY_2_NAVBAR_SHARED_SECTION_ID = "site-header";
+const DEXTA_ACADEMY_3_FOOTER_SHARED_SECTION_IDS = new Set(["site-footer"]);
+const DEXTA_ACADEMY_3_FOOTER_PAGE_SECTION_IDS = new Set([
+  "contact-footer-brand",
+  "contact-footer-explore",
+  "contact-footer-details",
+  "contact-footer",
+  "contact-footer-legal",
+]);
+const NAVBAR_SHARED_SECTION_ID = "site-header";
 const DEXTA_ACADEMY_2_NAVBAR_FIELD_KEYS = new Set([
   "portalCtaText",
   "portalCtaHref",
@@ -137,14 +148,43 @@ const DEXTA_ACADEMY_2_NAVBAR_FIELD_KEYS = new Set([
   "primaryButtonBorderColor",
   "primaryButtonBorderWidth",
 ]);
+const DEXTA_ACADEMY_3_NAVBAR_FIELD_KEYS = new Set([
+  "navHomeText",
+  "navHomeHref",
+  "navAboutText",
+  "navAboutHref",
+  "navProgrammesText",
+  "navProgrammesHref",
+  "navGalleryText",
+  "navGalleryHref",
+  "navApplyText",
+  "navApplyHref",
+  "navContactText",
+  "navContactHref",
+  "portalText",
+  "portalHref",
+  "portalButtonBgColor",
+  "portalButtonBgOpacity",
+  "portalButtonTextColor",
+  "portalButtonBorderColor",
+  "portalButtonBorderWidth",
+  "headerCtaText",
+  "headerCtaHref",
+  "buttonBgColor",
+  "buttonBgOpacity",
+  "buttonTextColor",
+  "buttonBorderColor",
+  "buttonBorderWidth",
+]);
 const ORIGINAL_THEME_COLORS: Record<
   string,
   Partial<Record<keyof SchoolTemplateProjectContent["theme"], string>>
 > = {
   "dexta-academy-5": {
-    brandNameColor: "#2b2b2b",
-    brandTaglineColor: "#d4a437",
-    logoBorderColor: "#d4a437",
+	    brandNameColor: "#2b2b2b",
+	    brandTaglineColor: "#d4a437",
+	    logoBorderColor: "#d4a437",
+	    logoBackgroundColor: "transparent",
     primaryColor: "#31401c",
     secondaryColor: "#d4a437",
     loadingBackgroundColor: "#ffffff",
@@ -152,9 +192,10 @@ const ORIGINAL_THEME_COLORS: Record<
     navBarColor: "#ffffff",
   },
   "dexta-academy-4": {
-    brandNameColor: "#ffffff",
-    brandTaglineColor: "#dbeafe",
-    logoBorderColor: "#d1d5db",
+	    brandNameColor: "#ffffff",
+	    brandTaglineColor: "#dbeafe",
+	    logoBorderColor: "#d1d5db",
+	    logoBackgroundColor: "transparent",
     primaryColor: "#4a8fff",
     secondaryColor: "#6aaeff",
     loadingBackgroundColor: "#ffffff",
@@ -162,19 +203,25 @@ const ORIGINAL_THEME_COLORS: Record<
     navBarColor: "#ffffff",
   },
   "dexta-academy-3": {
-    brandNameColor: "#061a40",
-    brandTaglineColor: "#061a40",
-    logoBorderColor: "#ffc43d",
+	    brandNameColor: "#061a40",
+	    brandTaglineColor: "#061a40",
+	    logoBorderColor: "#ffc43d",
+	    logoBackgroundColor: "#ffffff",
     primaryColor: "#061a40",
     secondaryColor: "#f5b82e",
+    tertiaryColor: "#dc422e",
     loadingBackgroundColor: "#fff7df",
-    loadingTextColor: "#061a40",
-    navBarColor: "#ffffff",
+	    loadingTextColor: "#061a40",
+	    navBarColor: "#020c20",
+    navLinkColor: "#ffffff",
+	    navHoverColor: "#f5b82e",
+	    buttonOverlayColor: "#ffffff",
   },
   "dexta-academy-2": {
-    brandNameColor: "#ffffff",
-    brandTaglineColor: "#facc15",
-    logoBorderColor: "#ffc433",
+	    brandNameColor: "#ffffff",
+	    brandTaglineColor: "#facc15",
+	    logoBorderColor: "#ffc433",
+	    logoBackgroundColor: "transparent",
     primaryColor: "#081827",
     secondaryColor: "#facc15",
     loadingBackgroundColor: "#081827",
@@ -182,9 +229,10 @@ const ORIGINAL_THEME_COLORS: Record<
     navBarColor: "#081827",
   },
   "dexta-academy-1": {
-    brandNameColor: "#0f172a",
-    brandTaglineColor: "#64748b",
-    logoBorderColor: "#0f766e",
+	    brandNameColor: "#0f172a",
+	    brandTaglineColor: "#64748b",
+	    logoBorderColor: "#0f766e",
+	    logoBackgroundColor: "transparent",
     primaryColor: "#0f766e",
     secondaryColor: "#f97316",
     loadingBackgroundColor: "#ffffff",
@@ -192,9 +240,10 @@ const ORIGINAL_THEME_COLORS: Record<
     navBarColor: "#ffffff",
   },
   default: {
-    brandNameColor: "#111827",
-    brandTaglineColor: "#6b7280",
-    logoBorderColor: "#d1d5db",
+	    brandNameColor: "#111827",
+	    brandTaglineColor: "#6b7280",
+	    logoBorderColor: "#d1d5db",
+	    logoBackgroundColor: "transparent",
     primaryColor: "#0f766e",
     secondaryColor: "#facc15",
     loadingBackgroundColor: "#ffffff",
@@ -662,7 +711,51 @@ function isFilledFieldValue(value: unknown) {
 function getFieldDisplayValue(
   field: SchoolTemplateProjectFieldSnapshot,
   value: EditableFieldValue,
+  originalValue?: EditableFieldValue,
 ) {
+  if (getFieldControlKind(field) === "color") {
+    const computedDefaultValue =
+      field.computedDefaultValue !== undefined
+        ? field.computedDefaultValue
+        : null;
+    const fieldDefaultValue =
+      field.defaultValue !== undefined ? field.defaultValue : null;
+
+    const valueMatchesFieldDefault = (candidate: EditableFieldValue) =>
+      isFilledFieldValue(candidate) &&
+      isFilledFieldValue(fieldDefaultValue) &&
+      normalizeColorValue(getStringValue(candidate)) ===
+        normalizeColorValue(getStringValue(fieldDefaultValue));
+
+    if (isFilledFieldValue(value)) {
+      if (
+        isFilledFieldValue(computedDefaultValue) &&
+        valueMatchesFieldDefault(value)
+      ) {
+        return computedDefaultValue;
+      }
+
+      return value;
+    }
+
+    if (isFilledFieldValue(originalValue)) {
+      if (
+        isFilledFieldValue(computedDefaultValue) &&
+        valueMatchesFieldDefault(originalValue ?? null)
+      ) {
+        return computedDefaultValue;
+      }
+
+      return originalValue;
+    }
+
+    if (isFilledFieldValue(computedDefaultValue)) {
+      return computedDefaultValue;
+    }
+
+    return field.defaultValue ?? value;
+  }
+
   if (value !== null && value !== undefined) {
     return value;
   }
@@ -672,6 +765,37 @@ function getFieldDisplayValue(
 
 function normalizeColorValue(value: string) {
   return value.trim().toLowerCase();
+}
+
+function getColorPickerValue(value: string) {
+  const normalizedValue = normalizeColorValue(value);
+
+  if (/^#[0-9a-f]{6}$/i.test(normalizedValue)) {
+    return normalizedValue;
+  }
+
+  if (/^#[0-9a-f]{3}$/i.test(normalizedValue)) {
+    return `#${normalizedValue
+      .slice(1)
+      .split("")
+      .map((character) => `${character}${character}`)
+      .join("")}`;
+  }
+
+  const rgbMatch = normalizedValue.match(
+    /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i,
+  );
+
+  if (!rgbMatch) return "#000000";
+
+  return `#${rgbMatch
+    .slice(1, 4)
+    .map((channel) =>
+      Math.max(0, Math.min(255, Math.round(Number(channel) || 0)))
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
 }
 
 function getOriginalThemeColor(
@@ -974,6 +1098,7 @@ function getPreviewModelValidationCandidates({
       ...collectSectionModelValidationCandidates(
         {
           content: sectionContent,
+          scope: "shared",
           snapshot:
             sourceSnapshot.sharedSections.find(
               (section) => section.id === sectionContent.id,
@@ -994,6 +1119,8 @@ function getPreviewModelValidationCandidates({
       ...collectSectionModelValidationCandidates(
         {
           content: sectionContent,
+          scope: "page",
+          pageSlug,
           snapshot:
             pageSnapshot?.sections.find(
               (section) => section.id === sectionContent.id,
@@ -1025,7 +1152,7 @@ function FieldControl({
   className?: string;
 }) {
   const controlKind = getFieldControlKind(field);
-  const displayValue = getFieldDisplayValue(field, value);
+  const displayValue = getFieldDisplayValue(field, value, originalValue);
   const displayStringValue = getStringValue(displayValue);
   const originalStringValue = getStringValue(originalValue);
   const shouldShowOriginalColor =
@@ -1107,17 +1234,25 @@ function FieldControl({
       ) : controlKind === "color" ? (
         <div className="space-y-2">
           <div className="grid grid-cols-[44px_minmax(0,1fr)] gap-2">
+            <div
+              className="relative h-10 overflow-hidden rounded-md border border-[#2a2a2a] bg-[#0d0d0d]"
+              style={{
+                backgroundColor: displayStringValue || "#000000",
+              }}
+              title={displayStringValue || "#000000"}
+            >
+              <Input
+                type="color"
+                value={getColorPickerValue(displayStringValue)}
+                onChange={(event) => onChange(event.target.value)}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+            </div>
             <Input
-              type="color"
-              value={getStringValue(displayValue) || "#000000"}
-              onChange={(event) => onChange(event.target.value)}
-              className="h-10 border-[#2a2a2a] bg-[#0d0d0d] p-1"
-            />
-            <Input
-              value={getStringValue(displayValue)}
+              value={displayStringValue}
               onChange={(event) => onChange(event.target.value)}
               className={commonInputClass}
-              placeholder="#000000"
+              placeholder={getStringValue(field.defaultValue) || "#000000"}
             />
           </div>
           {shouldShowOriginalColor ? (
@@ -1263,45 +1398,57 @@ export function SchoolWebsiteProjectEditor({
     [selectedPage?.slug, sourceSnapshot.pages],
   );
   const isDextaAcademy2Template = draft.templateSlug === DEXTA_ACADEMY_2_SLUG;
-  const visibleSharedSections = useMemo(
-    () =>
-      isDextaAcademy2Template
-        ? draft.sharedSections.filter((section) =>
-            DEXTA_ACADEMY_2_FOOTER_SHARED_SECTION_IDS.has(section.id),
-          )
-        : draft.sharedSections,
-    [draft.sharedSections, isDextaAcademy2Template],
-  );
-  const sharedTabLabel = isDextaAcademy2Template ? "Footer" : "Sitewide";
-  const sharedScopeDescription = isDextaAcademy2Template
-    ? "Footer content and links"
-    : "Shared sections";
+  const isDextaAcademy3Template = draft.templateSlug === DEXTA_ACADEMY_3_SLUG;
+  const navbarFieldKeys = isDextaAcademy3Template
+    ? DEXTA_ACADEMY_3_NAVBAR_FIELD_KEYS
+    : isDextaAcademy2Template
+      ? DEXTA_ACADEMY_2_NAVBAR_FIELD_KEYS
+      : null;
+  const visibleSharedSections = useMemo(() => {
+    if (isDextaAcademy2Template) {
+      return draft.sharedSections.filter((section) =>
+        DEXTA_ACADEMY_2_FOOTER_SHARED_SECTION_IDS.has(section.id),
+      );
+    }
+
+    if (isDextaAcademy3Template) {
+      return draft.sharedSections.filter((section) =>
+        DEXTA_ACADEMY_3_FOOTER_SHARED_SECTION_IDS.has(section.id),
+      );
+    }
+
+    return draft.sharedSections;
+  }, [draft.sharedSections, isDextaAcademy2Template, isDextaAcademy3Template]);
+  const sharedTabLabel =
+    isDextaAcademy2Template || isDextaAcademy3Template
+      ? "Footer"
+      : "Sitewide";
+  const sharedScopeDescription =
+    isDextaAcademy2Template || isDextaAcademy3Template
+      ? "Footer content and links"
+      : "Shared sections";
   const navbarHeaderSection = useMemo(
     () =>
       draft.sharedSections.find(
-        (section) => section.id === DEXTA_ACADEMY_2_NAVBAR_SHARED_SECTION_ID,
+        (section) => section.id === NAVBAR_SHARED_SECTION_ID,
       ) ?? null,
     [draft.sharedSections],
   );
   const navbarHeaderSnapshot = useMemo(
     () =>
       sourceSnapshot.sharedSections.find(
-        (section) => section.id === DEXTA_ACADEMY_2_NAVBAR_SHARED_SECTION_ID,
+        (section) => section.id === NAVBAR_SHARED_SECTION_ID,
       ) ?? null,
     [sourceSnapshot.sharedSections],
   );
   const navbarButtonFieldGroups = useMemo(() => {
-    if (
-      !isDextaAcademy2Template ||
-      !navbarHeaderSection ||
-      !navbarHeaderSnapshot
-    ) {
+    if (!navbarFieldKeys || !navbarHeaderSection || !navbarHeaderSnapshot) {
       return [];
     }
 
     const groups = new Map<string, SchoolTemplateProjectFieldSnapshot[]>();
     for (const field of navbarHeaderSnapshot.fields) {
-      if (!DEXTA_ACADEMY_2_NAVBAR_FIELD_KEYS.has(field.key)) continue;
+      if (!navbarFieldKeys.has(field.key)) continue;
 
       const groupName = field.uiGroup ?? "Navbar buttons";
       groups.set(groupName, [...(groups.get(groupName) ?? []), field]);
@@ -1313,7 +1460,19 @@ export function SchoolWebsiteProjectEditor({
         (left, right) => (left.uiOrder ?? 0) - (right.uiOrder ?? 0),
       ),
     }));
-  }, [isDextaAcademy2Template, navbarHeaderSection, navbarHeaderSnapshot]);
+  }, [navbarFieldKeys, navbarHeaderSection, navbarHeaderSnapshot]);
+
+  const visiblePageSections = useMemo(() => {
+    const pageSections = selectedPage?.sections ?? [];
+
+    if (isDextaAcademy3Template && selectedPage?.slug === "contact") {
+      return pageSections.filter(
+        (section) => !DEXTA_ACADEMY_3_FOOTER_PAGE_SECTION_IDS.has(section.id),
+      );
+    }
+
+    return pageSections;
+  }, [isDextaAcademy3Template, selectedPage?.sections, selectedPage?.slug]);
 
   const sectionBindings = useMemo<SectionBinding[]>(() => {
     if (selectedScope === "navbar") {
@@ -1323,6 +1482,7 @@ export function SchoolWebsiteProjectEditor({
     if (selectedScope === "shared") {
       return visibleSharedSections.map((section) => ({
         content: section,
+        scope: "shared",
         snapshot:
           sourceSnapshot.sharedSections.find(
             (snapshotSection) => snapshotSection.id === section.id,
@@ -1330,18 +1490,20 @@ export function SchoolWebsiteProjectEditor({
       }));
     }
 
-    return (selectedPage?.sections ?? []).map((section) => ({
+    return visiblePageSections.map((section) => ({
       content: section,
+      scope: "page",
+      pageSlug: selectedPage?.slug,
       snapshot:
         selectedPageSnapshot?.sections.find(
           (snapshotSection) => snapshotSection.id === section.id,
         ) ?? null,
     }));
   }, [
-    selectedPage?.sections,
     selectedPageSnapshot?.sections,
     selectedScope,
     sourceSnapshot.sharedSections,
+    visiblePageSections,
     visibleSharedSections,
   ]);
 
@@ -1376,6 +1538,8 @@ export function SchoolWebsiteProjectEditor({
     validatingModelKey === MODEL_VALIDATION_PREVIEW_KEY;
   const activeFieldGroups = useMemo(() => {
     const groups = new Map<string, SchoolTemplateProjectFieldSnapshot[]>();
+    const mergeContactPageGroups =
+      isDextaAcademy3Template && selectedPage?.slug === "contact";
     const repeatableItemFields = activeSection
       ? new Set(
           getRepeatableItemFields(activeSection).map((field) => field.key),
@@ -1390,7 +1554,9 @@ export function SchoolWebsiteProjectEditor({
         continue;
       }
 
-      const groupName = field.uiGroup ?? "Content";
+      const groupName = mergeContactPageGroups
+        ? "Contact page"
+        : field.uiGroup ?? "Content";
       groups.set(groupName, [...(groups.get(groupName) ?? []), field]);
     }
 
@@ -1400,7 +1566,11 @@ export function SchoolWebsiteProjectEditor({
         (left, right) => (left.uiOrder ?? 0) - (right.uiOrder ?? 0),
       ),
     }));
-  }, [activeSection?.snapshot?.fields]);
+  }, [
+    activeSection?.snapshot?.fields,
+    isDextaAcademy3Template,
+    selectedPage?.slug,
+  ]);
   const activeRepeatableItemFields = activeSection
     ? getRepeatableItemFields(activeSection)
     : [];
@@ -2720,12 +2890,19 @@ export function SchoolWebsiteProjectEditor({
                     : "text-[#888] hover:bg-[#171717] hover:text-white",
                 )}
               >
-                <span className="truncate">{page.title}</span>
-                <span className="text-[11px] text-[#555]">
-                  {page.sections.length}
-                </span>
-              </button>
-            ))}
+	                <span className="truncate">{page.title}</span>
+	                <span className="text-[11px] text-[#555]">
+	                  {isDextaAcademy3Template && page.slug === "contact"
+	                    ? page.sections.filter(
+	                        (section) =>
+	                          !DEXTA_ACADEMY_3_FOOTER_PAGE_SECTION_IDS.has(
+	                            section.id,
+	                          ),
+	                      ).length
+	                    : page.sections.length}
+	                </span>
+	              </button>
+	            ))}
 
             {visibleSharedSections.length ? (
               <button
@@ -2806,14 +2983,33 @@ export function SchoolWebsiteProjectEditor({
                   updateTheme("secondaryColor", getStringValue(value))
                 }
               />
+              {draft.templateSlug === "dexta-academy-3" ? (
+                <FieldControl
+                  field={{
+                    key: "tertiaryColor",
+                    label: "Tertiary",
+                    type: "color",
+                    selector: ":root",
+                    target: "inlineStyle",
+                  }}
+                  value={draft.theme.tertiaryColor}
+                  originalValue={getOriginalThemeColorValue("tertiaryColor")}
+                  onChange={(value) =>
+                    updateTheme("tertiaryColor", getStringValue(value))
+                  }
+                />
+              ) : null}
               <FieldControl
                 field={{
                   key: "fontFamily",
                   label: "Font",
-                  type: "text",
-                  selector: "body",
-                  target: "inlineStyle",
-                }}
+	                  type: "text",
+	                  selector: "body",
+	                  target: "inlineStyle",
+                  placeholder: "Poppins",
+                  helpText:
+                    "Enter a Google Font family name such as Poppins, Inter, or Nunito Sans. Template 3 will load it automatically.",
+	                }}
                 value={draft.theme.fontFamily}
                 onChange={(value) =>
                   updateTheme("fontFamily", getStringValue(value))
@@ -3001,10 +3197,10 @@ export function SchoolWebsiteProjectEditor({
                         deletePreviousOnReplace={false}
                       />
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FieldControl
-                        field={{
-                          key: "logoWidth",
+	                    <div className="grid gap-4 sm:grid-cols-2">
+	                      <FieldControl
+	                        field={{
+	                          key: "logoWidth",
                           label: "Logo width",
                           type: "number",
                           selector: "nav",
@@ -3033,12 +3229,31 @@ export function SchoolWebsiteProjectEditor({
                         }}
                         value={draft.theme.logoHeight}
                         onChange={(value) =>
-                          updateTheme("logoHeight", getNumberValue(value))
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
+	                          updateTheme("logoHeight", getNumberValue(value))
+	                        }
+	                      />
+	                    </div>
+	                    <FieldControl
+	                      field={{
+	                        key: "logoBackgroundColor",
+	                        label: "Logo background",
+	                        type: "color",
+	                        selector: "nav",
+	                        target: "inlineStyle",
+	                      }}
+	                      value={draft.theme.logoBackgroundColor}
+	                      originalValue={getOriginalThemeColorValue(
+	                        "logoBackgroundColor",
+	                      )}
+	                      onChange={(value) =>
+	                        updateTheme(
+	                          "logoBackgroundColor",
+	                          getStringValue(value),
+	                        )
+	                      }
+	                    />
+	                  </div>
+	                </div>
 
                 <div className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4">
                   <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
@@ -3230,22 +3445,108 @@ export function SchoolWebsiteProjectEditor({
                   <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
                     Navigation links
                   </p>
-                  <FieldControl
-                    field={{
-                      key: "navLinkFontFamily",
-                      label: "Link font",
-                      type: "text",
-                      selector: "nav a",
-                      target: "inlineStyle",
-                      placeholder: draft.theme.fontFamily,
+                  <div className="space-y-4">
+	                    <FieldControl
+	                      field={{
+	                        key: "navLinkFontFamily",
+                        label: "Link font",
+                        type: "text",
+                        selector: "nav a",
+                        target: "inlineStyle",
+                        placeholder: draft.theme.fontFamily,
                       helpText:
-                        "Use a font already loaded by the template or added through a font stylesheet field.",
-                    }}
-                    value={draft.theme.navLinkFontFamily}
-                    onChange={(value) =>
-                      updateTheme("navLinkFontFamily", getStringValue(value))
-                    }
-                  />
+                        "Enter a Google Font family name such as Montserrat, Poppins, or Nunito Sans. Template 3 will load it automatically.",
+                      }}
+                      value={draft.theme.navLinkFontFamily}
+	                      onChange={(value) =>
+	                        updateTheme("navLinkFontFamily", getStringValue(value))
+	                      }
+	                    />
+                    <FieldControl
+                      field={{
+                        key: "navLinkColor",
+                        label: "Link color",
+                        type: "color",
+                        selector: "nav a",
+                        target: "inlineStyle",
+                      }}
+                      value={draft.theme.navLinkColor}
+                      originalValue={getOriginalThemeColorValue("navLinkColor")}
+                      onChange={(value) =>
+                        updateTheme("navLinkColor", getStringValue(value))
+                      }
+                    />
+	                    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#222] bg-[#0d0d0d] p-3">
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          Show hover effect
+                        </p>
+                        <p className="text-xs text-[#666]">
+                          Turn off to remove the navbar underline and hover color.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={draft.theme.navHoverEnabled}
+                        onCheckedChange={(checked) =>
+                          updateTheme("navHoverEnabled", checked)
+                        }
+                      />
+                    </div>
+                    <FieldControl
+                      field={{
+                        key: "navHoverColor",
+                        label: "Hover color",
+                        type: "color",
+                        selector: "nav a",
+                        target: "inlineStyle",
+                      }}
+                      value={draft.theme.navHoverColor}
+                      originalValue={getOriginalThemeColorValue("navHoverColor")}
+                      onChange={(value) =>
+                        updateTheme("navHoverColor", getStringValue(value))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4">
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                    Button overlay
+                  </p>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#222] bg-[#0d0d0d] p-3">
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          Show overlay on buttons
+                        </p>
+                        <p className="text-xs text-[#666]">
+                          Applies the hover overlay to every button in this template.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={draft.theme.buttonOverlayEnabled}
+                        onCheckedChange={(checked) =>
+                          updateTheme("buttonOverlayEnabled", checked)
+                        }
+                      />
+                    </div>
+                    <FieldControl
+                      field={{
+                        key: "buttonOverlayColor",
+                        label: "Overlay color",
+                        type: "color",
+                        selector: ".button",
+                        target: "inlineStyle",
+                      }}
+                      value={draft.theme.buttonOverlayColor}
+                      originalValue={getOriginalThemeColorValue(
+                        "buttonOverlayColor",
+                      )}
+                      onChange={(value) =>
+                        updateTheme("buttonOverlayColor", getStringValue(value))
+                      }
+                    />
+                  </div>
                 </div>
 
                 <div className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4">
@@ -3267,13 +3568,32 @@ export function SchoolWebsiteProjectEditor({
                         updateTheme("navBarColor", getStringValue(value))
                       }
                     />
+                    <FieldControl
+                      field={{
+                        key: "navBarOpacity",
+                        label: "Navbar opacity",
+                        type: "number",
+                        selector: "nav",
+                        target: "inlineStyle",
+                        unit: "%",
+                        min: 0,
+                        max: 100,
+                        step: 1,
+                        helpText:
+                          "Only applies when transparent navbar is on. 100 is full color; lower values let the page show through.",
+                      }}
+                      value={draft.theme.navBarOpacity}
+                      onChange={(value) =>
+                        updateTheme("navBarOpacity", getNumberValue(value))
+                      }
+                    />
                     <div className="flex items-center justify-between gap-3 rounded-lg border border-[#222] bg-[#0d0d0d] p-3">
                       <div>
                         <p className="text-sm font-medium text-white">
                           Transparent navbar
                         </p>
                         <p className="text-xs text-[#666]">
-                          Let the page show through behind the navbar.
+                          Turn on to use navbar opacity. Turn off for the full selected color.
                         </p>
                       </div>
                       <Switch
@@ -3311,12 +3631,12 @@ export function SchoolWebsiteProjectEditor({
                                   null
                                 }
                                 originalValue={getOriginalSharedSectionFieldValue(
-                                  DEXTA_ACADEMY_2_NAVBAR_SHARED_SECTION_ID,
+                                  NAVBAR_SHARED_SECTION_ID,
                                   field,
                                 )}
                                 onChange={(value) =>
                                   updateSharedSectionField(
-                                    DEXTA_ACADEMY_2_NAVBAR_SHARED_SECTION_ID,
+                                    NAVBAR_SHARED_SECTION_ID,
                                     field.key,
                                     value,
                                   )

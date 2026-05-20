@@ -183,7 +183,7 @@ export const WE_BRAND_SCHOOLS_TEMPLATE_SEED_DATA = [
       "Embedded form modals",
     ],
     isVisible: true,
-    position: 7,
+    position: 8,
     assets: [
       {
         id: "school-template-dexta-academy-5-cover",
@@ -192,6 +192,35 @@ export const WE_BRAND_SCHOOLS_TEMPLATE_SEED_DATA = [
         mediaType: "IMAGE" as const,
         thumbnailPublicId: null,
         caption: "Dexta Academy 5 template preview",
+        position: 0,
+      },
+    ],
+  },
+  {
+    id: "school-template-dexta-academy-3",
+    name: "Dexta Academy 3",
+    slug: "dexta-academy-3",
+    summary:
+      "A complete multi-page school website template with a joyful homepage, about page, gallery, contact page, and admissions prompts.",
+    description:
+      "This template uses the complete Dexta Academy 3 source files from src/app/(public)/dexta-academy-3, including its dedicated HTML, CSS, JavaScript, and local gallery assets.",
+    websiteUrl: "/dexta-academy-3",
+    highlights: [
+      "Complete source template",
+      "Homepage and inner pages",
+      "Gallery and contact flows",
+      "Admissions-ready sections",
+    ],
+    isVisible: true,
+    position: 7,
+    assets: [
+      {
+        id: "school-template-dexta-academy-3-cover",
+        publicId:
+          "https://res.cloudinary.com/dxoorukfj/image/upload/v1776866714/ChatGPT_Image_Apr_22_2026_03_04_47_PM_szdmih.png",
+        mediaType: "IMAGE" as const,
+        thumbnailPublicId: null,
+        caption: "Dexta Academy 3 template preview",
         position: 0,
       },
     ],

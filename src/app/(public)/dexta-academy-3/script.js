@@ -31,6 +31,8 @@ const testimonials = [
   },
 ];
 
+const body = document.body;
+
 function createPageLoader() {
   if (!document.body) {
     return null;
@@ -58,7 +60,103 @@ function createPageLoader() {
   return loader;
 }
 
-const body = document.body;
+function getCurrentPageKey() {
+  if (body?.classList.contains("about-page")) {
+    return "about";
+  }
+
+  if (body?.classList.contains("gallery-page")) {
+    return "gallery";
+  }
+
+  if (body?.classList.contains("contact-page")) {
+    return "contact";
+  }
+
+  return "home";
+}
+
+function createHomeAnchorHref(anchorId, currentPage) {
+  return currentPage === "home" ? `#${anchorId}` : `index.html#${anchorId}`;
+}
+
+function createNavLink({ href, label, page }, currentPage) {
+  const currentAttribute = page === currentPage ? ' aria-current="page"' : "";
+
+  return `<a href="${href}"${currentAttribute}>${label}</a>`;
+}
+
+function renderSiteNavbar() {
+  const navbarMounts = document.querySelectorAll("[data-site-navbar]");
+
+  if (!navbarMounts.length) {
+    return;
+  }
+
+  const currentPage = getCurrentPageKey();
+  const hasAdmissionModal = Boolean(document.getElementById("admission-modal"));
+  const programmesHref = createHomeAnchorHref("programmes", currentPage);
+  const applyHref = createHomeAnchorHref("how-to-apply", currentPage);
+  const applyAttributes = hasAdmissionModal
+    ? 'href="#admission" data-admission-modal-open aria-controls="admission-modal"'
+    : `href="${applyHref}"`;
+  const links = [
+    { href: "index.html", label: "Home", page: "home" },
+    { href: "about.html", label: "About", page: "about" },
+    { href: programmesHref, label: "Programmes" },
+    { href: "gallery.html", label: "Gallery", page: "gallery" },
+    { href: applyHref, label: "How To Apply" },
+    { href: "contact.html", label: "Contact", page: "contact" },
+  ];
+
+  const navbarMarkup = `
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="DXT Academy home">
+        <span class="brand__crest" aria-hidden="true">
+          <span class="brand__crest-inner"></span>
+        </span>
+        <span class="brand__name">
+          <strong>DXT</strong>
+          <span>Academy</span>
+        </span>
+      </a>
+
+      <button
+        class="nav-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="site-nav"
+      >
+        Menu
+      </button>
+
+      <nav class="site-nav" id="site-nav" aria-label="Primary navigation">
+        ${links.map((link) => createNavLink(link, currentPage)).join("")}
+      </nav>
+
+      <div class="header-actions">
+        <a class="portal-link" href="#">Portal</a>
+        <a class="button button--gold" ${applyAttributes}>Apply Now</a>
+      </div>
+    </header>
+  `;
+
+  const navbarTemplate = document.createElement("template");
+  navbarTemplate.innerHTML = navbarMarkup.trim();
+
+  const navbar = navbarTemplate.content.firstElementChild;
+
+  if (navbar && body) {
+    body.insertBefore(navbar, body.firstChild);
+  }
+
+  navbarMounts.forEach((mount) => {
+    mount.remove();
+  });
+}
+
+renderSiteNavbar();
+
 const isHomePage = body?.classList.contains("home-page");
 const header = document.querySelector(".site-header");
 const navToggle = document.querySelector(".nav-toggle");
@@ -86,8 +184,12 @@ const admissionCloseButtons = document.querySelectorAll(
   "[data-admission-modal-close]",
 );
 const storyModal = document.getElementById("story-modal");
-const storyOpenButtons = document.querySelectorAll("[data-story-modal-open]");
-const storyCloseButtons = document.querySelectorAll("[data-story-modal-close]");
+const storyOpenButtons = document.querySelectorAll(
+  "[data-story-modal-open]",
+);
+const storyCloseButtons = document.querySelectorAll(
+  "[data-story-modal-close]",
+);
 
 const shouldUseLoader = Boolean(body && pageLoader && isHomePage);
 const shouldResetScroll = !window.location.hash;
@@ -245,8 +347,7 @@ function setAdmissionModalState(isOpen) {
       const closeButton = admissionModal.querySelector(
         ".admission-modal__close",
       );
-      const focusTarget =
-        closeButton || getAdmissionModalFocusableElements()[0];
+      const focusTarget = closeButton || getAdmissionModalFocusableElements()[0];
       focusTarget?.focus();
     }, 0);
 
@@ -396,7 +497,8 @@ function getFilteredGalleryItems() {
   return Array.from(galleryItems).filter((item) => {
     const categories = item.dataset.galleryItem.split(" ");
     return (
-      activeGalleryFilter === "all" || categories.includes(activeGalleryFilter)
+      activeGalleryFilter === "all" ||
+      categories.includes(activeGalleryFilter)
     );
   });
 }
@@ -708,10 +810,7 @@ storyCloseButtons.forEach((button) => {
 // Close story modal when clicking on backdrop
 if (storyModal) {
   storyModal.addEventListener("click", (event) => {
-    if (
-      event.target === storyModal ||
-      event.target.classList.contains("story-modal__backdrop")
-    ) {
+    if (event.target === storyModal || event.target.classList.contains("story-modal__backdrop")) {
       setStoryModalState(false);
     }
   });

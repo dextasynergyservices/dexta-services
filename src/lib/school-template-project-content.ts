@@ -16,6 +16,7 @@ export type SchoolTemplateProjectTheme = {
   logoUrl: string;
   logoWidth: number;
   logoHeight: number;
+  logoBackgroundColor: string;
   loadingText: string;
   loadingTextColor: string;
   loadingLogoWidth: number;
@@ -32,12 +33,19 @@ export type SchoolTemplateProjectTheme = {
   logoBorderRadius: number;
   primaryColor: string;
   secondaryColor: string;
+  tertiaryColor: string;
   fontFamily: string;
   navLinkFontFamily: string;
+  navLinkColor: string;
   loadingBackgroundColor: string;
   loadingBarColor: string;
   navBarColor: string;
+  navBarOpacity: number;
   navBarTransparent: boolean;
+  navHoverEnabled: boolean;
+  navHoverColor: string;
+  buttonOverlayEnabled: boolean;
+  buttonOverlayColor: string;
 };
 
 export type SchoolTemplateProjectAsset = {
@@ -87,6 +95,7 @@ export type SchoolTemplateProjectFieldSnapshot = {
   selector: string;
   target: SchoolTemplateField["target"];
   defaultValue?: SchoolTemplateField["defaultValue"];
+  computedDefaultValue?: SchoolTemplateField["defaultValue"];
   attribute?: string;
   configPath?: string;
   cssVariable?: string;
@@ -217,6 +226,7 @@ export const schoolTemplateProjectContentSchema = z.object({
     logoUrl: z.string().default(""),
     logoWidth: z.number().default(56),
     logoHeight: z.number().default(56),
+    logoBackgroundColor: z.string().default("transparent"),
     loadingText: z.string().default("Loading school website"),
     loadingTextColor: z.string().default("#111827"),
     loadingLogoWidth: z.number().default(64),
@@ -233,12 +243,19 @@ export const schoolTemplateProjectContentSchema = z.object({
     logoBorderRadius: z.number().default(18),
     primaryColor: z.string().min(1),
     secondaryColor: z.string().min(1),
+    tertiaryColor: z.string().default("#dc422e"),
     fontFamily: z.string().min(1),
     navLinkFontFamily: z.string().default(""),
+    navLinkColor: z.string().default(""),
     loadingBackgroundColor: z.string().default("#ffffff"),
     loadingBarColor: z.string().default(""),
     navBarColor: z.string().default("#ffffff"),
+    navBarOpacity: z.number().default(100),
     navBarTransparent: z.boolean().default(false),
+    navHoverEnabled: z.boolean().default(true),
+    navHoverColor: z.string().default("#facc15"),
+    buttonOverlayEnabled: z.boolean().default(true),
+    buttonOverlayColor: z.string().default("#ffffff"),
   }),
   assets: z.array(schoolTemplateProjectAssetSchema),
   sharedSections: z.array(schoolTemplateProjectSectionContentSchema),
@@ -340,6 +357,25 @@ const SECTION_FIELD_ALIASES: Record<string, Record<string, string[]>> = {
     introBody: ["body"],
   },
 };
+
+const DEXTA_ACADEMY_3_CLEARABLE_HEADER_FIELD_KEYS = new Set([
+  "navHomeText",
+  "navHomeHref",
+  "navAboutText",
+  "navAboutHref",
+  "navProgrammesText",
+  "navProgrammesHref",
+  "navGalleryText",
+  "navGalleryHref",
+  "navApplyText",
+  "navApplyHref",
+  "navContactText",
+  "navContactHref",
+  "portalText",
+  "portalHref",
+  "headerCtaText",
+  "headerCtaHref",
+]);
 
 const ALLOWED_IMAGE_EXTENSIONS = new Set([
   ".jpg",
@@ -1070,12 +1106,23 @@ function readTemplatePageRoot(
 ) {
   try {
     const publicRoot = path.resolve(process.cwd(), "public");
+    const appPublicRoot = path.resolve(
+      process.cwd(),
+      "src",
+      "app",
+      "(public)",
+    );
     const sourcePath = path.resolve(
       process.cwd(),
       manifest.sourceDir,
       page.fileName,
     );
-    if (!sourcePath.startsWith(`${publicRoot}${path.sep}`)) return null;
+    const isPublicTemplate = sourcePath.startsWith(`${publicRoot}${path.sep}`);
+    const isAppPublicTemplate = sourcePath.startsWith(
+      `${appPublicRoot}${path.sep}`,
+    );
+
+    if (!isPublicTemplate && !isAppPublicTemplate) return null;
     return parseTemplateHtml(readFileSync(sourcePath, "utf8"));
   } catch {
     return null;
@@ -1083,6 +1130,24 @@ function readTemplatePageRoot(
 }
 
 function isRelativeOrAllowedUrl(value: string) {
+  if (
+    /^[a-z0-9][a-z0-9+.-]*:/i.test(value) &&
+    !/^https?:\/\//i.test(value) &&
+    !/^mailto:/i.test(value) &&
+    !/^tel:/i.test(value)
+  ) {
+    return false;
+  }
+
+  if (
+    !/^[a-z0-9][a-z0-9+.-]*:/i.test(value) &&
+    /^[a-z0-9._~!$&'()*+,;=:@%/-]+(?:[?#][a-z0-9._~!$&'()*+,;=:@%/?#-]*)?$/i.test(
+      value,
+    )
+  ) {
+    return true;
+  }
+
   return (
     value.startsWith("/") ||
     value.startsWith("./") ||
@@ -1191,7 +1256,8 @@ function sanitizeSectionContent(
                 const field = fieldMap.get(`${section.id}:${key}`);
                 const sanitized = isIframeEmbedField(field)
                   ? sanitizeIframeEmbedValue(value)
-                  : field?.type === "richText" || field?.target === "innerHTML"
+                  : field?.type === "richText" ||
+                      field?.target === "innerHTML"
                     ? sanitizeRichText(value)
                     : sanitizePlainText(value);
 
@@ -1218,6 +1284,9 @@ export function sanitizeSchoolTemplateProjectContent(
       logoUrl: sanitizePlainText(content.theme.logoUrl ?? ""),
       logoWidth: Number(content.theme.logoWidth ?? 56),
       logoHeight: Number(content.theme.logoHeight ?? 56),
+      logoBackgroundColor: sanitizePlainText(
+        content.theme.logoBackgroundColor ?? "transparent",
+      ),
       loadingText: sanitizePlainText(
         content.theme.loadingText ?? "Loading school website",
       ),
@@ -1244,16 +1313,30 @@ export function sanitizeSchoolTemplateProjectContent(
       logoBorderRadius: Number(content.theme.logoBorderRadius ?? 18),
       primaryColor: sanitizePlainText(content.theme.primaryColor),
       secondaryColor: sanitizePlainText(content.theme.secondaryColor),
+      tertiaryColor: sanitizePlainText(content.theme.tertiaryColor ?? "#dc422e"),
       fontFamily: sanitizePlainText(content.theme.fontFamily),
       navLinkFontFamily: sanitizePlainText(
         content.theme.navLinkFontFamily || content.theme.fontFamily,
       ),
+      navLinkColor: sanitizePlainText(content.theme.navLinkColor ?? ""),
       loadingBackgroundColor: sanitizePlainText(
         content.theme.loadingBackgroundColor ?? "#ffffff",
       ),
       loadingBarColor: sanitizePlainText(content.theme.loadingBarColor ?? ""),
       navBarColor: sanitizePlainText(content.theme.navBarColor ?? "#ffffff"),
+      navBarOpacity: Math.max(
+        0,
+        Math.min(100, Number(content.theme.navBarOpacity ?? 100)),
+      ),
       navBarTransparent: Boolean(content.theme.navBarTransparent),
+      navHoverEnabled: Boolean(content.theme.navHoverEnabled ?? true),
+      navHoverColor: sanitizePlainText(content.theme.navHoverColor ?? "#facc15"),
+      buttonOverlayEnabled: Boolean(
+        content.theme.buttonOverlayEnabled ?? true,
+      ),
+      buttonOverlayColor: sanitizePlainText(
+        content.theme.buttonOverlayColor ?? "#ffffff",
+      ),
     },
     assets: content.assets.map((asset) => ({
       ...asset,
@@ -1377,6 +1460,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoUrl: "",
         logoWidth: 48,
         logoHeight: 56,
+        logoBackgroundColor: "transparent",
         loadingText: "Loading DXT Academy",
         loadingTextColor: "#2b2b2b",
         loadingLogoWidth: 64,
@@ -1393,12 +1477,19 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoBorderRadius: 0,
         primaryColor: "#31401c",
         secondaryColor: "#d4a437",
+        tertiaryColor: "#d4a437",
         fontFamily: "Manrope",
         navLinkFontFamily: "Manrope",
+        navLinkColor: "#2b2b2b",
         loadingBackgroundColor: "#ffffff",
         loadingBarColor: "",
         navBarColor: "#ffffff",
+        navBarOpacity: 100,
         navBarTransparent: true,
+        navHoverEnabled: true,
+        navHoverColor: "#d4a437",
+        buttonOverlayEnabled: true,
+        buttonOverlayColor: "#ffffff",
       };
     case "dexta-academy-4":
       return {
@@ -1406,6 +1497,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
           "https://res.cloudinary.com/dxoorukfj/image/upload/v1776778370/schoolportal/4/branding/umnqe2oopwmohrth30en.png",
         logoWidth: 72,
         logoHeight: 48,
+        logoBackgroundColor: "transparent",
         loadingText: "Preparing School B",
         loadingTextColor: "#111827",
         loadingLogoWidth: 260,
@@ -1422,18 +1514,26 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoBorderRadius: 0,
         primaryColor: "#4a8fff",
         secondaryColor: "#6aaeff",
+        tertiaryColor: "#6aaeff",
         fontFamily: "Manrope",
         navLinkFontFamily: "Manrope",
+        navLinkColor: "#ffffff",
         loadingBackgroundColor: "#ffffff",
         loadingBarColor: "",
         navBarColor: "#ffffff",
+        navBarOpacity: 100,
         navBarTransparent: true,
+        navHoverEnabled: true,
+        navHoverColor: "#6aaeff",
+        buttonOverlayEnabled: true,
+        buttonOverlayColor: "#ffffff",
       };
     case "dexta-academy-3":
       return {
         logoUrl: "",
         logoWidth: 46,
         logoHeight: 46,
+        logoBackgroundColor: "#ffffff",
         loadingText: "Preparing DXT Academy",
         loadingTextColor: "#061a40",
         loadingLogoWidth: 88,
@@ -1450,18 +1550,26 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoBorderRadius: 18,
         primaryColor: "#061a40",
         secondaryColor: "#f5b82e",
+        tertiaryColor: "#dc422e",
         fontFamily: "Sora",
         navLinkFontFamily: "Sora",
+        navLinkColor: "#ffffff",
         loadingBackgroundColor: "#fff7df",
         loadingBarColor: "",
-        navBarColor: "#ffffff",
+        navBarColor: "#020c20",
+        navBarOpacity: 94,
         navBarTransparent: false,
+        navHoverEnabled: true,
+        navHoverColor: "#f5b82e",
+        buttonOverlayEnabled: true,
+        buttonOverlayColor: "#ffffff",
       };
     case "dexta-academy-2":
       return {
         logoUrl: "",
         logoWidth: 48,
         logoHeight: 48,
+        logoBackgroundColor: "transparent",
         loadingText: "Loading DXT Academy",
         loadingTextColor: "#ffffff",
         loadingLogoWidth: 48,
@@ -1478,12 +1586,19 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoBorderRadius: 12,
         primaryColor: "#081827",
         secondaryColor: "#facc15",
+        tertiaryColor: "#facc15",
         fontFamily: "Montserrat",
         navLinkFontFamily: "Montserrat",
+        navLinkColor: "#ffffff",
         loadingBackgroundColor: "#081827",
         loadingBarColor: "",
         navBarColor: "#081827",
+        navBarOpacity: 100,
         navBarTransparent: true,
+        navHoverEnabled: true,
+        navHoverColor: "#facc15",
+        buttonOverlayEnabled: true,
+        buttonOverlayColor: "#ffffff",
       };
     case "dexta-academy-1":
       return {
@@ -1491,6 +1606,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
           "https://res.cloudinary.com/dxoorukfj/image/upload/v1776695413/DXT-Logo_mmyi2e.png",
         logoWidth: 72,
         logoHeight: 56,
+        logoBackgroundColor: "transparent",
         loadingText: "Loading DXT Grade",
         loadingTextColor: "#0f172a",
         loadingLogoWidth: 72,
@@ -1507,18 +1623,26 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoBorderRadius: 0,
         primaryColor: "#0f766e",
         secondaryColor: "#f97316",
+        tertiaryColor: "#f97316",
         fontFamily: "Manrope",
         navLinkFontFamily: "Manrope",
+        navLinkColor: "#0f172a",
         loadingBackgroundColor: "#ffffff",
         loadingBarColor: "",
         navBarColor: "#ffffff",
+        navBarOpacity: 100,
         navBarTransparent: false,
+        navHoverEnabled: true,
+        navHoverColor: "#f97316",
+        buttonOverlayEnabled: true,
+        buttonOverlayColor: "#ffffff",
       };
     default:
       return {
         logoUrl: "",
         logoWidth: 56,
         logoHeight: 56,
+        logoBackgroundColor: "transparent",
         loadingText: "Loading school website",
         loadingTextColor: "#111827",
         loadingLogoWidth: 64,
@@ -1535,12 +1659,19 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoBorderRadius: 18,
         primaryColor: "#0f766e",
         secondaryColor: "#facc15",
+        tertiaryColor: "#facc15",
         fontFamily: "Inter",
         navLinkFontFamily: "Inter",
+        navLinkColor: "#111827",
         loadingBackgroundColor: "#ffffff",
         loadingBarColor: "",
         navBarColor: "#ffffff",
+        navBarOpacity: 100,
         navBarTransparent: false,
+        navHoverEnabled: true,
+        navHoverColor: "#facc15",
+        buttonOverlayEnabled: true,
+        buttonOverlayColor: "#ffffff",
       };
   }
 }
@@ -1592,9 +1723,104 @@ function buildSectionContent(
   };
 }
 
+function splitCssFunctionArguments(value: string) {
+  const args: string[] = [];
+  let depth = 0;
+  let start = 0;
+
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+
+    if (character === "(") {
+      depth += 1;
+    } else if (character === ")") {
+      depth = Math.max(0, depth - 1);
+    } else if (character === "," && depth === 0) {
+      args.push(value.slice(start, index).trim());
+      start = index + 1;
+    }
+  }
+
+  args.push(value.slice(start).trim());
+  return args;
+}
+
+function extractCssVariableFallbacks(cssText: string) {
+  const fallbacks = new Map<string, string>();
+  let searchIndex = 0;
+
+  while (searchIndex < cssText.length) {
+    const varIndex = cssText.indexOf("var(", searchIndex);
+    if (varIndex === -1) break;
+
+    let depth = 0;
+    let endIndex = -1;
+    for (let index = varIndex + 3; index < cssText.length; index += 1) {
+      const character = cssText[index];
+      if (character === "(") {
+        depth += 1;
+      } else if (character === ")") {
+        depth -= 1;
+        if (depth === 0) {
+          endIndex = index;
+          break;
+        }
+      }
+    }
+
+    if (endIndex === -1) break;
+
+    const [name, fallback] = splitCssFunctionArguments(
+      cssText.slice(varIndex + 4, endIndex),
+    );
+    if (
+      name?.startsWith("--") &&
+      fallback &&
+      !fallback.startsWith("var(") &&
+      !fallbacks.has(name)
+    ) {
+      fallbacks.set(name, fallback);
+    }
+
+    searchIndex = endIndex + 1;
+  }
+
+  return fallbacks;
+}
+
+function getTemplateCssVariableFallbacks(manifest: SchoolTemplateManifest) {
+  if (manifest.templateSlug !== "dexta-academy-3") {
+    return new Map<string, string>();
+  }
+
+  const fallbacks = new Map<string, string>();
+  for (const stylesheet of manifest.assetInventory.stylesheets) {
+    try {
+      const cssText = readFileSync(
+        path.join(process.cwd(), manifest.sourceDir, stylesheet),
+        "utf8",
+      );
+      for (const [name, fallback] of extractCssVariableFallbacks(cssText)) {
+        if (fallbacks.has(name)) continue;
+        fallbacks.set(name, fallback);
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return fallbacks;
+}
+
 function buildFieldSnapshot(
   field: SchoolTemplateField,
+  cssVariableFallbacks: Map<string, string> = new Map(),
 ): SchoolTemplateProjectFieldSnapshot {
+  const computedDefaultValue =
+    field.type === "color" && field.cssVariable
+      ? cssVariableFallbacks.get(field.cssVariable)
+      : undefined;
+
   return {
     key: field.key,
     label: field.label,
@@ -1604,6 +1830,7 @@ function buildFieldSnapshot(
     ...(field.defaultValue !== undefined
       ? { defaultValue: field.defaultValue }
       : {}),
+    ...(computedDefaultValue !== undefined ? { computedDefaultValue } : {}),
     ...(field.attribute ? { attribute: field.attribute } : {}),
     ...(field.configPath ? { configPath: field.configPath } : {}),
     ...(field.cssVariable ? { cssVariable: field.cssVariable } : {}),
@@ -1624,13 +1851,16 @@ function buildFieldSnapshot(
 
 function buildSectionSnapshot(
   section: SchoolTemplateSection,
+  cssVariableFallbacks: Map<string, string> = new Map(),
 ): SchoolTemplateProjectSectionSnapshot {
   return {
     id: section.id,
     label: section.label,
     selector: section.selector,
     ...(section.description ? { description: section.description } : {}),
-    fields: section.fields.map(buildFieldSnapshot),
+    fields: section.fields.map((field) =>
+      buildFieldSnapshot(field, cssVariableFallbacks),
+    ),
     ...(section.repeatable
       ? {
           repeatable: {
@@ -1669,6 +1899,14 @@ function buildPageContent(
 export function buildSchoolTemplateProjectContent(
   manifest: SchoolTemplateManifest,
 ): SchoolTemplateProjectContent {
+  const sharedSourcePage =
+    manifest.pages.find((page) => page.fileName === manifest.entryFile) ??
+    manifest.pages.find((page) => page.isHome) ??
+    manifest.pages[0];
+  const sharedSourceRoot = sharedSourcePage
+    ? readTemplatePageRoot(manifest, sharedSourcePage)
+    : null;
+
   return {
     version: 1,
     templateSlug: manifest.templateSlug,
@@ -1677,7 +1915,7 @@ export function buildSchoolTemplateProjectContent(
     theme: getDefaultTheme(manifest.templateSlug),
     assets: [],
     sharedSections: manifest.sharedSections.map((section) =>
-      buildSectionContent(section),
+      buildSectionContent(section, sharedSourceRoot),
     ),
     pages: manifest.pages.map((page) => buildPageContent(manifest, page)),
   };
@@ -1686,6 +1924,8 @@ export function buildSchoolTemplateProjectContent(
 export function buildSchoolTemplateSourceSnapshot(
   manifest: SchoolTemplateManifest,
 ): SchoolTemplateSourceSnapshot {
+  const cssVariableFallbacks = getTemplateCssVariableFallbacks(manifest);
+
   return {
     version: 1,
     capturedAt: new Date().toISOString(),
@@ -1695,35 +1935,129 @@ export function buildSchoolTemplateSourceSnapshot(
     entryFile: manifest.entryFile,
     previewPath: manifest.previewPath,
     assetInventory: manifest.assetInventory,
-    sharedSections: manifest.sharedSections.map(buildSectionSnapshot),
+    sharedSections: manifest.sharedSections.map((section) =>
+      buildSectionSnapshot(section, cssVariableFallbacks),
+    ),
     pages: manifest.pages.map((page) => ({
       slug: page.slug,
       fileName: page.fileName,
       title: page.title,
       isHome: Boolean(page.isHome),
-      sections: page.sections.map(buildSectionSnapshot),
+      sections: page.sections.map((section) =>
+        buildSectionSnapshot(section, cssVariableFallbacks),
+      ),
     })),
   };
+}
+
+function getDextaAcademyThreeFooterLinkValue(
+  item: Record<string, SchoolTemplateProjectFieldValue>,
+  key: string,
+) {
+  return String(item[key] ?? "").trim();
+}
+
+function isDextaAcademyThreeLegacyFooterContactLink(
+  item: Record<string, SchoolTemplateProjectFieldValue>,
+) {
+  const label = getDextaAcademyThreeFooterLinkValue(item, "footerLinkLabel");
+  const href = getDextaAcademyThreeFooterLinkValue(
+    item,
+    "footerLinkHref",
+  ).toLowerCase();
+
+  return (
+    href.startsWith("tel:") ||
+    href.startsWith("mailto:") ||
+    /^[+\d][\d\s().-]{6,}$/.test(label) ||
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(label)
+  );
+}
+
+function getDextaAcademyThreeLegacyFooterContactItems(
+  existingSection?: SchoolTemplateProjectSectionContent,
+) {
+  const result: {
+    phoneText?: string;
+    phoneHref?: string;
+    emailText?: string;
+    emailHref?: string;
+  } = {};
+
+  for (const item of existingSection?.repeatable?.items ?? []) {
+    const label = getDextaAcademyThreeFooterLinkValue(item, "footerLinkLabel");
+    const href = getDextaAcademyThreeFooterLinkValue(item, "footerLinkHref");
+    const normalizedHref = href.toLowerCase();
+
+    if (
+      !result.phoneText &&
+      (normalizedHref.startsWith("tel:") || /^[+\d][\d\s().-]{6,}$/.test(label))
+    ) {
+      result.phoneText = label;
+      result.phoneHref = href;
+      continue;
+    }
+
+    if (
+      !result.emailText &&
+      (normalizedHref.startsWith("mailto:") ||
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(label))
+    ) {
+      result.emailText = label;
+      result.emailHref = href;
+    }
+  }
+
+  return result;
 }
 
 function mergeSectionContent(
   freshSection: SchoolTemplateProjectSectionContent,
   existingSection?: SchoolTemplateProjectSectionContent,
+  options: {
+    hydrateEmptyExisting?: boolean;
+    preserveEmptyExistingField?: (sectionId: string, key: string) => boolean;
+  } = {},
 ): SchoolTemplateProjectSectionContent {
   const valuesIntroBody =
     existingSection?.fields.introBody ?? existingSection?.fields.body;
   const valuesLegacyTitle = existingSection?.fields.title;
+  const isDextaAcademyThreeFooter =
+    freshSection.id === "site-footer" &&
+    Object.prototype.hasOwnProperty.call(freshSection.fields, "footerLinkLabel");
+  const legacyFooterContactItems = isDextaAcademyThreeFooter
+    ? getDextaAcademyThreeLegacyFooterContactItems(existingSection)
+    : {};
+  const normalizeFieldValue = (
+    key: string,
+    value: SchoolTemplateProjectFieldValue | undefined,
+  ) => {
+    if (
+      freshSection.id === "contact-benefits" &&
+      key === "benefitIcon" &&
+      typeof value === "string" &&
+      (value.trim() === "🤝" || value.trim() === "🤝︎")
+    ) {
+      return "◎";
+    }
+
+    return value;
+  };
   const mergeFieldValue = (
     key: string,
     freshValue: SchoolTemplateProjectFieldValue,
     existingValue: SchoolTemplateProjectFieldValue | undefined,
   ) => {
-    if (freshSection.id === "values" && key === "introTitle") {
-      if (
-        hasProjectFieldValue(existingValue) &&
-        !projectFieldTextMatches(existingValue, valuesIntroBody)
+    const normalizedFreshValue = normalizeFieldValue(key, freshValue) ?? null;
+    const normalizedExistingValue =
+      normalizeFieldValue(key, existingValue) ?? null;
+
+	    if (freshSection.id === "values" && key === "introTitle") {
+	      if (
+	        hasProjectFieldValue(normalizedExistingValue) &&
+	        !projectFieldTextMatches(normalizedExistingValue, valuesIntroBody)
       ) {
-        return existingValue;
+        return normalizedExistingValue;
       }
 
       if (
@@ -1732,27 +2066,55 @@ function mergeSectionContent(
       ) {
         return valuesLegacyTitle;
       }
+	
+	      return normalizedFreshValue;
+	    }
 
-      return freshValue;
+    if (isDextaAcademyThreeFooter) {
+      if (key === "footerPhone" && hasProjectFieldValue(legacyFooterContactItems.phoneText)) {
+        return legacyFooterContactItems.phoneText;
+      }
+      if (key === "footerPhoneHref" && hasProjectFieldValue(legacyFooterContactItems.phoneHref)) {
+        return legacyFooterContactItems.phoneHref;
+      }
+      if (key === "footerEmail" && hasProjectFieldValue(legacyFooterContactItems.emailText)) {
+        return legacyFooterContactItems.emailText;
+      }
+      if (key === "footerEmailHref" && hasProjectFieldValue(legacyFooterContactItems.emailHref)) {
+        return legacyFooterContactItems.emailHref;
+      }
     }
 
-    if (existingValue !== undefined) {
-      return existingValue;
+    const shouldHydrateEmptyExisting =
+      options.hydrateEmptyExisting &&
+      !options.preserveEmptyExistingField?.(freshSection.id, key);
+
+    if (
+      existingValue !== undefined &&
+      (!shouldHydrateEmptyExisting ||
+        hasProjectFieldValue(normalizedExistingValue) ||
+        !hasProjectFieldValue(normalizedFreshValue))
+    ) {
+      return normalizedExistingValue;
     }
 
     for (const aliasKey of SECTION_FIELD_ALIASES[freshSection.id]?.[key] ??
       []) {
       const aliasValue = existingSection?.fields[aliasKey];
       if (aliasValue !== undefined) {
-        return aliasValue;
+        return normalizeFieldValue(key, aliasValue) ?? null;
       }
     }
 
-    return freshValue;
+    return normalizedFreshValue;
   };
 
   const freshItems = freshSection.repeatable?.items ?? [];
-  const existingItems = existingSection?.repeatable?.items ?? [];
+  const existingItems = isDextaAcademyThreeFooter
+    ? (existingSection?.repeatable?.items ?? []).filter(
+        (item) => !isDextaAcademyThreeLegacyFooterContactLink(item),
+      )
+    : existingSection?.repeatable?.items ?? [];
   const itemCount = Math.max(freshItems.length, existingItems.length);
 
   return {
@@ -1912,12 +2274,15 @@ export function syncSchoolTemplateProjectContentWithManifest({
   content,
   sourceSnapshot,
   rawContent,
+  templateSlug,
 }: {
   content: SchoolTemplateProjectContent;
   sourceSnapshot: SchoolTemplateSourceSnapshot;
   rawContent?: unknown;
+  templateSlug?: string | null;
 }) {
   const manifest =
+    (templateSlug ? getSchoolTemplateManifest(templateSlug) : null) ??
     getSchoolTemplateManifest(content.templateSlug) ??
     getSchoolTemplateManifest(sourceSnapshot.templateSlug);
 
@@ -1927,6 +2292,13 @@ export function syncSchoolTemplateProjectContentWithManifest({
 
   const freshContent = buildSchoolTemplateProjectContent(manifest);
   const freshSnapshot = buildSchoolTemplateSourceSnapshot(manifest);
+  const mergeOptions = {
+    hydrateEmptyExisting: manifest.templateSlug === "dexta-academy-3",
+    preserveEmptyExistingField: (sectionId: string, key: string) =>
+      manifest.templateSlug === "dexta-academy-3" &&
+      sectionId === "site-header" &&
+      DEXTA_ACADEMY_3_CLEARABLE_HEADER_FIELD_KEYS.has(key),
+  };
   const rawTheme =
     rawContent &&
     typeof rawContent === "object" &&
@@ -1963,6 +2335,40 @@ export function syncSchoolTemplateProjectContentWithManifest({
       content.theme.fontFamily || freshContent.theme.navLinkFontFamily;
   }
 
+  if (wasThemeFieldMissing("tertiaryColor")) {
+    syncedTheme.tertiaryColor = freshContent.theme.tertiaryColor;
+  }
+
+  if (wasThemeFieldMissing("navLinkColor")) {
+    syncedTheme.navLinkColor = freshContent.theme.navLinkColor;
+  }
+
+  if (wasThemeFieldMissing("navBarOpacity")) {
+    syncedTheme.navBarOpacity = freshContent.theme.navBarOpacity;
+    if (
+      manifest.templateSlug === "dexta-academy-3" &&
+      syncedTheme.navBarColor.trim().toLowerCase() === "#ffffff"
+    ) {
+      syncedTheme.navBarColor = freshContent.theme.navBarColor;
+    }
+  }
+
+  if (wasThemeFieldMissing("navHoverEnabled")) {
+    syncedTheme.navHoverEnabled = freshContent.theme.navHoverEnabled;
+  }
+
+  if (wasThemeFieldMissing("navHoverColor")) {
+    syncedTheme.navHoverColor = freshContent.theme.navHoverColor;
+  }
+
+  if (wasThemeFieldMissing("buttonOverlayEnabled")) {
+    syncedTheme.buttonOverlayEnabled = freshContent.theme.buttonOverlayEnabled;
+  }
+
+  if (wasThemeFieldMissing("buttonOverlayColor")) {
+    syncedTheme.buttonOverlayColor = freshContent.theme.buttonOverlayColor;
+  }
+
   const syncedContent: SchoolTemplateProjectContent = {
     ...freshContent,
     generatedAt: content.generatedAt,
@@ -1974,6 +2380,7 @@ export function syncSchoolTemplateProjectContentWithManifest({
         content.sharedSections.find(
           (existingSection) => existingSection.id === section.id,
         ),
+        mergeOptions,
       ),
     ),
     pages: freshContent.pages.map((page) => {
@@ -1988,7 +2395,7 @@ export function syncSchoolTemplateProjectContentWithManifest({
             (candidate) => candidate.id === section.id,
           );
           if (existingSection) {
-            return mergeSectionContent(section, existingSection);
+            return mergeSectionContent(section, existingSection, mergeOptions);
           }
 
           if (
@@ -2001,10 +2408,11 @@ export function syncSchoolTemplateProjectContentWithManifest({
               content.sharedSections.find(
                 (candidate) => candidate.id === "admission-modal",
               ),
+              mergeOptions,
             );
           }
 
-          return mergeSectionContent(section);
+          return mergeSectionContent(section, undefined, mergeOptions);
         }),
       };
     }),
@@ -2023,6 +2431,18 @@ export function resolveSchoolTemplateManifestForSelection(input: {
   templateSlug?: string | null;
   websiteUrl?: string | null;
 }) {
+  const websiteUrl = input.websiteUrl?.trim();
+  const urlManifest = websiteUrl
+    ? (websiteUrl
+        .split(/[/?#]/)
+        .map((part) => getSchoolTemplateManifest(part))
+        .find((manifest) => manifest !== null) ?? null)
+    : null;
+
+  if (urlManifest) {
+    return urlManifest;
+  }
+
   const directManifest = input.templateSlug
     ? getSchoolTemplateManifest(input.templateSlug)
     : null;
@@ -2030,15 +2450,5 @@ export function resolveSchoolTemplateManifestForSelection(input: {
   if (directManifest) {
     return directManifest;
   }
-
-  const websiteUrl = input.websiteUrl?.trim();
-  if (!websiteUrl) {
-    return null;
-  }
-
-  const matchingSlug = websiteUrl
-    .split(/[/?#]/)
-    .find((part) => getSchoolTemplateManifest(part));
-
-  return matchingSlug ? getSchoolTemplateManifest(matchingSlug) : null;
+  return null;
 }

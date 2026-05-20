@@ -176,6 +176,7 @@ type SchoolWebsiteProjectEditorDataResult = ActionResult & {
     id: string;
     applicationId: string;
     schoolName: string;
+    templateSlug: string;
     status: SchoolWebsiteProjectStatusRow;
     contentJson: SchoolTemplateProjectContent;
     sourceSnapshot: SchoolTemplateSourceSnapshot;
@@ -748,9 +749,11 @@ async function notifyReferralOwnerSiteLive(
 function getSafeProjectContent({
   contentJson,
   sourceSnapshot,
+  templateSlug,
 }: {
   contentJson: unknown;
   sourceSnapshot: unknown;
+  templateSlug?: string | null;
 }) {
   const parsedContent = parseSchoolTemplateProjectContent(contentJson);
   if (!parsedContent.success) {
@@ -771,18 +774,8 @@ function getSafeProjectContent({
     content: parsedContent.data,
     sourceSnapshot,
     rawContent: contentJson,
+    templateSlug,
   });
-
-  const rawReferenceIssues = validateSchoolTemplateProjectContentReferences(
-    syncedProjectContent.contentJson,
-    syncedProjectContent.sourceSnapshot,
-  );
-  if (rawReferenceIssues.length > 0) {
-    return {
-      success: false as const,
-      message: rawReferenceIssues[0],
-    };
-  }
 
   const sanitizedContent = sanitizeSchoolTemplateProjectContent(
     syncedProjectContent.contentJson,
@@ -3046,6 +3039,7 @@ export async function getSchoolWebsiteProject(
         id: true,
         applicationId: true,
         schoolName: true,
+        templateSlug: true,
         status: true,
         contentJson: true,
         sourceSnapshot: true,
@@ -3065,6 +3059,7 @@ export async function getSchoolWebsiteProject(
     const safeProjectContent = getSafeProjectContent({
       contentJson: project.contentJson,
       sourceSnapshot: project.sourceSnapshot,
+      templateSlug: project.templateSlug,
     });
     if (!safeProjectContent.success) return safeProjectContent;
 
@@ -3099,7 +3094,7 @@ export async function createSchoolWebsiteProjectRevision(
     let revisionContent: SchoolTemplateProjectContent;
     const project = await weBrandSchoolsPrisma.schoolWebsiteProject.findUnique({
       where: { id: projectId },
-      select: { contentJson: true, sourceSnapshot: true },
+      select: { templateSlug: true, contentJson: true, sourceSnapshot: true },
     });
 
     if (!project) {
@@ -3112,6 +3107,7 @@ export async function createSchoolWebsiteProjectRevision(
     const safeProjectContent = getSafeProjectContent({
       contentJson: contentJson ?? project.contentJson,
       sourceSnapshot: project.sourceSnapshot,
+      templateSlug: project.templateSlug,
     });
 
     if (!safeProjectContent.success) {
@@ -3157,6 +3153,7 @@ export async function saveSchoolWebsiteProject(
       where: { id: projectId },
       select: {
         applicationId: true,
+        templateSlug: true,
         contentJson: true,
         sourceSnapshot: true,
       },
@@ -3182,6 +3179,7 @@ export async function saveSchoolWebsiteProject(
     const safeProjectContent = getSafeProjectContent({
       contentJson,
       sourceSnapshot: project.sourceSnapshot,
+      templateSlug: project.templateSlug,
     });
 
     if (!safeProjectContent.success) {
@@ -3197,6 +3195,7 @@ export async function saveSchoolWebsiteProject(
       const existingProjectContent = getSafeProjectContent({
         contentJson: project.contentJson,
         sourceSnapshot: project.sourceSnapshot,
+        templateSlug: project.templateSlug,
       });
 
       if (existingProjectContent.success) {
@@ -3363,6 +3362,7 @@ export async function resetSchoolWebsiteProjectToOriginal(
     const existingProjectContent = getSafeProjectContent({
       contentJson: project.contentJson,
       sourceSnapshot: project.sourceSnapshot,
+      templateSlug: project.templateSlug,
     });
 
     if (existingProjectContent.success) {
@@ -3521,6 +3521,7 @@ export async function exportSchoolWebsiteProject(
         id: true,
         applicationId: true,
         schoolName: true,
+        templateSlug: true,
         contentJson: true,
         sourceSnapshot: true,
       },
@@ -3549,6 +3550,7 @@ export async function exportSchoolWebsiteProject(
     const safeProjectContent = getSafeProjectContent({
       contentJson: project.contentJson,
       sourceSnapshot: project.sourceSnapshot,
+      templateSlug: project.templateSlug,
     });
 
     if (!safeProjectContent.success) {
