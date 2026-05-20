@@ -294,6 +294,25 @@ function parseHtml(html: string) {
       if (!openingTag.selfClosing && !VOID_TAGS.has(openingTag.tagName)) {
         stack.push(element);
       }
+
+      // Raw text elements: treat content as text until matching closing tag
+      if (openingTag.tagName === "script" || openingTag.tagName === "style") {
+        const closeRe = new RegExp(`</${openingTag.tagName}\\s*>`, "i");
+        const remaining = html.slice(tokenPattern.lastIndex);
+        const closeMatch = closeRe.exec(remaining);
+        if (closeMatch) {
+          const rawContent = remaining.slice(0, closeMatch.index);
+          if (rawContent) {
+            element.children.push({
+              type: "text",
+              content: rawContent,
+              parent: element,
+            });
+          }
+          tokenPattern.lastIndex += closeMatch.index + closeMatch[0].length;
+          stack.pop();
+        }
+      }
       continue;
     }
 
@@ -1412,6 +1431,16 @@ body[data-page="home"] .site-header__bar {
 }`);
   } else if (content.templateSlug === "dexta-academy-3") {
     // Template 3: .site-header handled by section override CSS — skip generic navbar override
+    css.push(`
+.navbar,
+.navbar.bg-white,
+.ftco-navbar-light {
+  background: ${navbarBackground} !important;
+  background-color: ${navbarBackground} !important;
+  box-shadow: ${navbarShadow} !important;
+}`);
+  } else if (content.templateSlug === "dexta-academy-5") {
+    // Template 5: .site-header handled by section override CSS — skip generic navbar override
     css.push(`
 .navbar,
 .navbar.bg-white,
@@ -3099,6 +3128,142 @@ body:not(.home-page) .site-header {
 
   if (content.templateSlug === "dexta-academy-5") {
     templateCss += `
+/* Shared Header */
+.site-header {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-shared-header-section-bg-color, #ffffff) var(--dexta-academy-5-shared-header-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-shared-header-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-shared-header-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-shared-header-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+.site-header .header-cta {
+  background: color-mix(in srgb, var(--dexta-academy-5-shared-header-cta-button-bg-color, #f8b533) var(--dexta-academy-5-shared-header-cta-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-5-shared-header-cta-button-text-color, #0e1d45) !important;
+  border: var(--dexta-academy-5-shared-header-cta-button-border-width, 0px) solid var(--dexta-academy-5-shared-header-cta-button-border-color, #f8b533) !important;
+}
+/* Shared Footer */
+.site-footer {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-shared-footer-section-bg-color, #31401c) var(--dexta-academy-5-shared-footer-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-shared-footer-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-shared-footer-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-shared-footer-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+.site-footer .newsletter-form button {
+  background: color-mix(in srgb, var(--dexta-academy-5-shared-footer-newsletter-button-bg-color, #d4a437) var(--dexta-academy-5-shared-footer-newsletter-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-5-shared-footer-newsletter-button-text-color, #0e1d45) !important;
+  border: var(--dexta-academy-5-shared-footer-newsletter-button-border-width, 0px) solid var(--dexta-academy-5-shared-footer-newsletter-button-border-color, #d4a437) !important;
+}
+/* Home Hero */
+.hero {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-home-hero-section-bg-color, #ffffff) var(--dexta-academy-5-home-hero-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-home-hero-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-home-hero-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-home-hero-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+.hero .hero__actions .button--primary {
+  background: color-mix(in srgb, var(--dexta-academy-5-home-hero-button-bg-color, #556b2f) var(--dexta-academy-5-home-hero-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-5-home-hero-button-text-color, #ffffff) !important;
+  border: var(--dexta-academy-5-home-hero-button-border-width, 0px) solid var(--dexta-academy-5-home-hero-button-border-color, #556b2f) !important;
+}
+.hero .stat-card__icon {
+  color: var(--dexta-academy-5-home-hero-icon-color, #556b2f) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-5-home-hero-icon-bg-color, #f3fae3) var(--dexta-academy-5-home-hero-icon-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-home-hero-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-5-home-hero-icon-border-width, 0px) solid var(--dexta-academy-5-home-hero-icon-border-color, #f3fae3) !important;
+}
+/* Home About Preview */
+.about-preview {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-home-about-preview-section-bg-color, #f3fae3) var(--dexta-academy-5-home-about-preview-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-home-about-preview-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-home-about-preview-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-home-about-preview-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+.about-preview .about-preview__button {
+  background: color-mix(in srgb, var(--dexta-academy-5-home-about-preview-button-bg-color, #556b2f) var(--dexta-academy-5-home-about-preview-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-5-home-about-preview-button-text-color, #ffffff) !important;
+  border: var(--dexta-academy-5-home-about-preview-button-border-width, 0px) solid var(--dexta-academy-5-home-about-preview-button-border-color, #556b2f) !important;
+}
+/* Home Programmes */
+.programmes-section {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-home-programmes-section-bg-color, #ffffff) var(--dexta-academy-5-home-programmes-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-home-programmes-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-home-programmes-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-home-programmes-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+.programmes-section .section-action .button {
+  background: color-mix(in srgb, var(--dexta-academy-5-home-programmes-button-bg-color, #556b2f) var(--dexta-academy-5-home-programmes-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-5-home-programmes-button-text-color, #ffffff) !important;
+  border: var(--dexta-academy-5-home-programmes-button-border-width, 0px) solid var(--dexta-academy-5-home-programmes-button-border-color, #556b2f) !important;
+}
+.programmes-section .programme-card__icon {
+  color: var(--dexta-academy-5-home-programmes-icon-color, #556b2f) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-5-home-programmes-icon-bg-color, #f3fae3) var(--dexta-academy-5-home-programmes-icon-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-home-programmes-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-5-home-programmes-icon-border-width, 0px) solid var(--dexta-academy-5-home-programmes-icon-border-color, #f3fae3) !important;
+}
+/* Home Approach */
+.approach-section {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-home-approach-section-bg-color, #31401c) var(--dexta-academy-5-home-approach-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-home-approach-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-home-approach-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-home-approach-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+.approach-section .approach-section__content .button {
+  background: color-mix(in srgb, var(--dexta-academy-5-home-approach-button-bg-color, #556b2f) var(--dexta-academy-5-home-approach-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-5-home-approach-button-text-color, #ffffff) !important;
+  border: var(--dexta-academy-5-home-approach-button-border-width, 0px) solid var(--dexta-academy-5-home-approach-button-border-color, #556b2f) !important;
+}
+.approach-section .approach-badges span {
+  color: var(--dexta-academy-5-home-approach-icon-color, #ffffff) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-5-home-approach-icon-bg-color, #ffffff) var(--dexta-academy-5-home-approach-icon-bg-opacity, 0%), transparent) !important;
+  background-image: var(--dexta-academy-5-home-approach-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-5-home-approach-icon-border-width, 0px) solid var(--dexta-academy-5-home-approach-icon-border-color, #ffffff) !important;
+}
+/* Home Testimonials */
+.testimonials-section {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-home-testimonials-section-bg-color, #ffffff) var(--dexta-academy-5-home-testimonials-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-home-testimonials-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-home-testimonials-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-home-testimonials-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+/* Home Admissions Journey */
+.journey-section {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-home-admissions-journey-section-bg-color, #ffffff) var(--dexta-academy-5-home-admissions-journey-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-home-admissions-journey-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-home-admissions-journey-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-home-admissions-journey-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+.journey-section .journey-action {
+  background: color-mix(in srgb, var(--dexta-academy-5-home-admissions-journey-button-bg-color, #31401c) var(--dexta-academy-5-home-admissions-journey-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-5-home-admissions-journey-button-text-color, #ffffff) !important;
+  border: var(--dexta-academy-5-home-admissions-journey-button-border-width, 0px) solid var(--dexta-academy-5-home-admissions-journey-button-border-color, #31401c) !important;
+}
+.journey-section .journey-action__icon {
+  color: var(--dexta-academy-5-home-admissions-journey-icon-color, #556b2f) !important;
+  background-color: color-mix(in srgb, var(--dexta-academy-5-home-admissions-journey-icon-bg-color, #f3fae3) var(--dexta-academy-5-home-admissions-journey-icon-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-home-admissions-journey-icon-image, none) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  border: var(--dexta-academy-5-home-admissions-journey-icon-border-width, 0px) solid var(--dexta-academy-5-home-admissions-journey-icon-border-color, #f3fae3) !important;
+}
+/* Home Admission Modal */
 .admission-modal:not(.contact-modal) .admission-modal__dialog {
   background-color: color-mix(in srgb, var(--dexta-academy-5-admission-form-section-bg-color, #fff) var(--dexta-academy-5-admission-form-section-bg-opacity, 100%), transparent) !important;
   background-image: var(--dexta-academy-5-admission-form-section-bg-image, none) !important;
@@ -3106,6 +3271,7 @@ body:not(.home-page) .site-header {
   background-size: var(--dexta-academy-5-admission-form-section-bg-size, cover) !important;
   background-repeat: no-repeat !important;
 }
+/* Home Contact Modal */
 .contact-modal .admission-modal__dialog {
   background-color: color-mix(in srgb, var(--dexta-academy-5-contact-modal-section-bg-color, #fff) var(--dexta-academy-5-contact-modal-section-bg-opacity, 100%), transparent) !important;
   background-image: var(--dexta-academy-5-contact-modal-section-bg-image, none) !important;
@@ -3113,6 +3279,89 @@ body:not(.home-page) .site-header {
   background-size: var(--dexta-academy-5-contact-modal-section-bg-size, cover) !important;
   background-repeat: no-repeat !important;
 }
+/* About/Campus/Gallery/Contact Page Hero */
+.page-hero {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-about-hero-section-bg-color, var(--dexta-academy-5-campus-life-hero-section-bg-color, var(--dexta-academy-5-gallery-hero-section-bg-color, var(--dexta-academy-5-contact-hero-section-bg-color, #31401c)))) var(--dexta-academy-5-about-hero-section-bg-opacity, var(--dexta-academy-5-campus-life-hero-section-bg-opacity, var(--dexta-academy-5-gallery-hero-section-bg-opacity, var(--dexta-academy-5-contact-hero-section-bg-opacity, 100%)))), transparent) !important;
+  background-image: var(--dexta-academy-5-about-hero-section-bg-image, var(--dexta-academy-5-campus-life-hero-section-bg-image, var(--dexta-academy-5-gallery-hero-section-bg-image, var(--dexta-academy-5-contact-hero-section-bg-image, none)))) !important;
+  background-position: var(--dexta-academy-5-about-hero-section-bg-position, var(--dexta-academy-5-campus-life-hero-section-bg-position, var(--dexta-academy-5-gallery-hero-section-bg-position, var(--dexta-academy-5-contact-hero-section-bg-position, center center)))) !important;
+  background-size: var(--dexta-academy-5-about-hero-section-bg-size, var(--dexta-academy-5-campus-life-hero-section-bg-size, var(--dexta-academy-5-gallery-hero-section-bg-size, var(--dexta-academy-5-contact-hero-section-bg-size, cover)))) !important;
+  background-repeat: no-repeat !important;
+}
+.page-hero .page-actions .button {
+  background: color-mix(in srgb, var(--dexta-academy-5-about-hero-button-bg-color, var(--dexta-academy-5-campus-life-hero-button-bg-color, var(--dexta-academy-5-gallery-hero-button-bg-color, var(--dexta-academy-5-contact-hero-button-bg-color, #556b2f)))) var(--dexta-academy-5-about-hero-button-bg-opacity, var(--dexta-academy-5-campus-life-hero-button-bg-opacity, var(--dexta-academy-5-gallery-hero-button-bg-opacity, var(--dexta-academy-5-contact-hero-button-bg-opacity, 100%)))), transparent) !important;
+  color: var(--dexta-academy-5-about-hero-button-text-color, var(--dexta-academy-5-campus-life-hero-button-text-color, var(--dexta-academy-5-gallery-hero-button-text-color, var(--dexta-academy-5-contact-hero-button-text-color, #ffffff)))) !important;
+  border: var(--dexta-academy-5-about-hero-button-border-width, var(--dexta-academy-5-campus-life-hero-button-border-width, var(--dexta-academy-5-gallery-hero-button-border-width, var(--dexta-academy-5-contact-hero-button-border-width, 0px)))) solid var(--dexta-academy-5-about-hero-button-border-color, var(--dexta-academy-5-campus-life-hero-button-border-color, var(--dexta-academy-5-gallery-hero-button-border-color, var(--dexta-academy-5-contact-hero-button-border-color, #556b2f)))) !important;
+}
+/* About Stats */
+.page-stat-grid {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-about-stats-section-bg-color, #ffffff) var(--dexta-academy-5-about-stats-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-about-stats-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-about-stats-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-about-stats-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+/* About Story */
+.page-section--olive {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-about-story-section-bg-color, #31401c) var(--dexta-academy-5-about-story-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-about-story-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-about-story-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-about-story-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+.page-section--olive .story-read-more {
+  background: color-mix(in srgb, var(--dexta-academy-5-about-story-button-bg-color, #d4a437) var(--dexta-academy-5-about-story-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-5-about-story-button-text-color, #0e1d45) !important;
+  border: var(--dexta-academy-5-about-story-button-border-width, 0px) solid var(--dexta-academy-5-about-story-button-border-color, #d4a437) !important;
+}
+/* About Values */
+.value-grid {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-about-values-section-bg-color, #ffffff) var(--dexta-academy-5-about-values-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-about-values-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-about-values-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-about-values-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+/* About Story Modal */
+.story-modal .admission-modal__dialog {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-about-story-modal-section-bg-color, #ffffff) var(--dexta-academy-5-about-story-modal-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-about-story-modal-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-about-story-modal-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-about-story-modal-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+/* Campus Life Overview */
+.school-life-overview {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-campus-life-overview-section-bg-color, #ffffff) var(--dexta-academy-5-campus-life-overview-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-campus-life-overview-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-campus-life-overview-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-campus-life-overview-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+/* Campus Life Day */
+.school-life-day {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-campus-life-day-section-bg-color, #f3fae3) var(--dexta-academy-5-campus-life-day-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-campus-life-day-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-campus-life-day-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-campus-life-day-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+/* Gallery Grid */
+.gallery-grid {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-gallery-grid-section-bg-color, #ffffff) var(--dexta-academy-5-gallery-grid-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-gallery-grid-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-gallery-grid-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-gallery-grid-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+/* Contact Details */
+.contact-panel {
+  background-color: color-mix(in srgb, var(--dexta-academy-5-contact-details-section-bg-color, #ffffff) var(--dexta-academy-5-contact-details-section-bg-opacity, 100%), transparent) !important;
+  background-image: var(--dexta-academy-5-contact-details-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-5-contact-details-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-5-contact-details-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+/* Contact Form */
 .contact-form-panel {
   background-color: color-mix(in srgb, var(--dexta-academy-5-contact-form-section-bg-color, #fff) var(--dexta-academy-5-contact-form-section-bg-opacity, 100%), transparent) !important;
   background-image: var(--dexta-academy-5-contact-form-section-bg-image, none) !important;
@@ -3139,9 +3388,17 @@ function isSafeFontStylesheetUrl(value: string) {
 
 function collectFontStylesheetUrls(content: SchoolTemplateProjectContent) {
   const urls = new Set<string>();
-  if (content.templateSlug === "dexta-academy-2") {
+  if (content.templateSlug === "dexta-academy-1") {
+    urls.add(
+      "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap",
+    );
+  } else if (content.templateSlug === "dexta-academy-2") {
     urls.add(
       "https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap",
+    );
+  } else if (content.templateSlug === "dexta-academy-5") {
+    urls.add(
+      "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap",
     );
   }
   const scanFields = (fields: Record<string, unknown>) => {
@@ -3175,7 +3432,7 @@ function getFontStylesheetMarkup(content: SchoolTemplateProjectContent) {
   return collectFontStylesheetUrls(content)
     .map(
       (href) =>
-        `<link rel="stylesheet" href="${escapeAttribute(href)}" data-dexta-font-stylesheet="true">`,
+        `<link rel="stylesheet" href="${href}" data-dexta-font-stylesheet="true">`,
     )
     .join("\n");
 }
@@ -3223,7 +3480,7 @@ function getNavLinkFontCss(content: SchoolTemplateProjectContent) {
 .footer__links a,
 .footer__contact,
 .footer__bottom${templateTwoButtonSelectors} {
-  font-family: ${JSON.stringify(navLinkFont)}, var(--font-family, inherit) !important;
+  font-family: ${JSON.stringify(navLinkFont)}, "Segoe UI", sans-serif !important;
 }`;
 }
 
@@ -3244,7 +3501,7 @@ ${THEME_SCOPE_SELECTOR} {
 ${getThemeVariableDeclarations(content)}
 }
 body {
-  font-family: ${JSON.stringify(getBodyFont(content))}, var(--font-family, inherit);
+  font-family: ${JSON.stringify(getBodyFont(content))}, "Segoe UI", sans-serif !important;
 }
 ${getNavLinkFontCss(content)}
 ${getGlobalAppearanceCss(content)}
@@ -3302,7 +3559,39 @@ function getTemplateTwoAdmissionFormRuntimeFields(
   };
 }
 
-function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
+function getTemplateTwoContactFormRuntimeFields(
+  content: SchoolTemplateProjectContent,
+) {
+  const contactSection = content.pages
+    .find((page) => page.slug === "contact")
+    ?.sections.find((section) => section.id === "contact-form");
+
+  return {
+    formUrl: toText(contactSection?.fields.formUrl).trim(),
+    formIframe: toText(contactSection?.fields.formIframe).trim(),
+    formTitle: toText(contactSection?.fields.formTitle).trim(),
+  };
+}
+
+function getTemplateTwoResolvedAdmissionFormUrl(
+  content: SchoolTemplateProjectContent,
+): string {
+  const fields = getTemplateTwoAdmissionFormRuntimeFields(content);
+  const embed = parseIframeEmbedValue(fields.formIframe);
+  if (embed?.src && isSafeIframeSrc(embed.src)) {
+    return embed.src;
+  }
+  const urlText = fields.formUrl.trim();
+  if (urlText && isSafeIframeSrc(urlText)) {
+    return urlText;
+  }
+  return "";
+}
+
+function getThemeRuntimeMarkup(
+  content: SchoolTemplateProjectContent,
+  sourceSnapshot: SchoolTemplateSourceSnapshot,
+) {
   const siteHeader = content.sharedSections.find(
     (section) => section.id === "site-header",
   );
@@ -3382,8 +3671,14 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
     href: toText(t4Header?.fields.applyHref).trim() || "admissions.html",
   };
   const admissionForm = getTemplateTwoAdmissionFormRuntimeFields(content);
+  const contactForm = getTemplateTwoContactFormRuntimeFields(content);
+
+  const hasSharedSectionContent = content.sharedSections.some((s) =>
+    Object.values(s.fields).some((v) => isFilled(v)),
+  );
 
   if (
+    !hasSharedSectionContent &&
     !logoUrl &&
     !brandName &&
     !brandTagline &&
@@ -3412,6 +3707,49 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
     return "";
   }
 
+  // Build shared sections data with pre-resolved image URLs for runtime application
+  const exportSharedSections = content.sharedSections
+    .map((sectionContent) => {
+      const sectionSnapshot = sourceSnapshot.sharedSections.find(
+        (s) => s.id === sectionContent.id,
+      );
+      if (!sectionSnapshot) return null;
+
+      // Pre-resolve image field values to full URLs
+      const resolvedFields: Record<string, string> = {};
+      for (const [key, value] of Object.entries(sectionContent.fields)) {
+        const fieldSnapshot = sectionSnapshot.fields.find((f) => f.key === key);
+        if (
+          fieldSnapshot &&
+          (fieldSnapshot.type === "image" || fieldSnapshot.type === "model3d")
+        ) {
+          resolvedFields[key] = resolveAsset(value, fieldSnapshot);
+        } else {
+          resolvedFields[key] = toText(value);
+        }
+      }
+
+      // Build minimal field metadata for runtime
+      const fields = sectionSnapshot.fields.map((f) => ({
+        key: f.key,
+        type: f.type,
+        selector: f.selector,
+        target: f.target,
+        attribute: f.attribute || undefined,
+        cssVariable: f.cssVariable || undefined,
+        defaultValue: f.defaultValue,
+        unit: f.unit || undefined,
+      }));
+
+      return {
+        id: sectionContent.id,
+        selector: sectionSnapshot.selector,
+        fields,
+        resolvedFields,
+      };
+    })
+    .filter(Boolean);
+
   return `<script data-dexta-export-theme-runtime="true">
 (function () {
   var logoUrl = ${escapeScriptJson(logoUrl)};
@@ -3432,7 +3770,224 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
 		  var admissionFormUrl = ${escapeScriptJson(admissionForm.formUrl)};
 		  var admissionFormIframe = ${escapeScriptJson(admissionForm.formIframe)};
 		  var admissionFormTitle = ${escapeScriptJson(admissionForm.formTitle)};
-		  var admissionModalTitle = ${escapeScriptJson(admissionForm.modalTitle)};
+		  var admissionModalTitle = ${escapeScriptJson(
+        (() => {
+          const defaultTitle = "Apply to DXT Academy";
+          const sharedValue = toText(
+            content.sharedSections.find((s) => s.id === "admission-modal")
+              ?.fields["title"],
+          ).trim();
+          const pageValue = toText(
+            content.pages
+              .find((p) => p.slug === "admissions")
+              ?.sections.find((s) => s.id === "admission-form")?.fields[
+              "title"
+            ],
+          ).trim();
+          if (pageValue && pageValue !== defaultTitle) return pageValue;
+          if (sharedValue && sharedValue !== defaultTitle) return sharedValue;
+          return admissionForm.modalTitle !== defaultTitle
+            ? admissionForm.modalTitle
+            : "";
+        })(),
+      )};
+		  var contactFormUrl = ${escapeScriptJson(contactForm.formUrl)};
+		  var contactFormIframe = ${escapeScriptJson(contactForm.formIframe)};
+		  var contactFormTitle = ${escapeScriptJson(contactForm.formTitle)};
+		  var exportSharedSections = ${escapeScriptJson(exportSharedSections)};
+
+  function isFilled(value) {
+    return value !== null && value !== undefined && value !== "";
+  }
+
+  function toText(value) {
+    return value === null || value === undefined ? "" : String(value);
+  }
+
+  function withUnit(value, unit) {
+    if (value === null || value === undefined || value === "") return "";
+    var text = String(value);
+    if (!unit || /[a-z%]+$/i.test(text)) return text;
+    return text + unit;
+  }
+
+  function queryWithinExport(root, selector) {
+    var nodes = [];
+    try {
+      if (root.matches && root.matches(selector)) nodes.push(root);
+      nodes = nodes.concat(Array.from(root.querySelectorAll(selector)));
+    } catch (e) {}
+    return nodes;
+  }
+
+  function getSectionRootsExport(section) {
+    try {
+      var roots = Array.from(document.querySelectorAll(section.selector));
+      return roots.length ? roots : [document.documentElement];
+    } catch (e) {
+      return [document.documentElement];
+    }
+  }
+
+  function shouldApplyExportField(value, field) {
+    if (isFilled(value)) return true;
+    if (field.type === "image" && field.defaultValue !== undefined && (field.target === "attribute" || field.target === "backgroundImage")) return true;
+    return false;
+  }
+
+  function ensureImageChildExport(node) {
+    var image = node.querySelector("img");
+    if (image) return image;
+    image = document.createElement("img");
+    image.alt = "School logo";
+    node.textContent = "";
+    node.appendChild(image);
+    return image;
+  }
+
+  function toInlineHtmlExport(value) {
+    var container = document.createElement("div");
+    container.innerHTML = toText(value);
+    var parts = [];
+    Array.from(container.childNodes).forEach(function (node) {
+      var tagName = (node.tagName || "").toLowerCase();
+      var isBlock = /^(p|div|h[1-6]|blockquote)$/i.test(tagName);
+      if (isBlock) {
+        parts.push(node.innerHTML || "");
+      } else {
+        var wrapper = document.createElement("div");
+        wrapper.appendChild(node.cloneNode(true));
+        parts.push(wrapper.innerHTML);
+      }
+    });
+    return parts.filter(function (p) { return p.trim(); }).join("<br><br>");
+  }
+
+  function setElementHtmlExport(node, value) {
+    var tagName = String(node.tagName || "").toLowerCase();
+    node.innerHTML = /^(h[1-6]|p)$/.test(tagName) ? toInlineHtmlExport(value) : toText(value);
+  }
+
+  function isIframeEmbedFieldExport(field) {
+    return field && field.type === "textarea" && field.target === "attribute" && (
+      field.key === "formIframe" || field.key === "formEmbedCode" || field.key === "iframeEmbedCode"
+    );
+  }
+
+  function parseIframeEmbedExport(value) {
+    var text = toText(value).trim();
+    if (!text) return null;
+    if (text.toLowerCase().indexOf("<iframe") === -1) {
+      return { src: text, attrs: {} };
+    }
+    var template = document.createElement("template");
+    template.innerHTML = text;
+    var iframe = template.content.querySelector("iframe");
+    if (!iframe) return null;
+    var attrs = {};
+    ["width","height","frameborder","marginheight","marginwidth","loading","referrerpolicy","allow","title"].forEach(function (name) {
+      var v = iframe.getAttribute(name);
+      if (v !== null && v !== "") attrs[name] = v;
+    });
+    return { src: iframe.getAttribute("src") || "", attrs: attrs };
+  }
+
+  function applyExportField(node, field, value) {
+    if (field.target === "threeConfig") return;
+
+    if (field.target === "cssVariable" && field.cssVariable) {
+      var cssValue;
+      if (field.type === "image" || field.type === "model3d") {
+        var asset = toText(value).replace(/"/g, "&quot;");
+        cssValue = asset ? 'url("' + asset + '")' : "none";
+      } else {
+        cssValue = withUnit(value, field.unit);
+      }
+      node.style.setProperty(field.cssVariable, cssValue);
+      return;
+    }
+
+    if (field.target === "innerHTML") {
+      setElementHtmlExport(node, value);
+      return;
+    }
+
+    if (field.target === "attribute") {
+      var attribute = field.attribute || (field.type === "link" ? "href" : "src");
+
+      // Handle iframe embed fields
+      if (isIframeEmbedFieldExport(field) && String(node.tagName || "").toLowerCase() === "iframe" && (attribute === "src" || attribute === "data-src")) {
+        var embed = parseIframeEmbedExport(value);
+        if (embed && embed.src && (/^https?:\\/\\//i.test(embed.src) || embed.src.indexOf("/") === 0)) {
+          node.setAttribute(attribute, embed.src);
+          ["width","height","frameborder","marginheight","marginwidth","loading","referrerpolicy","allow","title"].forEach(function (name) {
+            if (embed.attrs[name]) node.setAttribute(name, embed.attrs[name]);
+          });
+        }
+        return;
+      }
+
+      // Handle image fields
+      if (field.type === "image") {
+        var imgAsset = toText(value);
+        var tagName = String(node.tagName || "").toLowerCase();
+        if (attribute === "src" && tagName !== "img") {
+          if (!imgAsset) {
+            node.querySelectorAll("img").forEach(function (img) { img.remove(); });
+            node.style.display = "none";
+            return;
+          }
+          node.style.display = "";
+          node.classList.add("dexta-theme-logo-mark");
+          var image = ensureImageChildExport(node);
+          image.src = imgAsset;
+          return;
+        }
+        if (!imgAsset) {
+          node.removeAttribute(attribute);
+          node.style.display = "none";
+          return;
+        }
+        node.style.display = "";
+        node.setAttribute(attribute, imgAsset);
+        return;
+      }
+
+      node.setAttribute(attribute, toText(value));
+      return;
+    }
+
+    if (field.target === "backgroundImage") {
+      var bgAsset = toText(value).replace(/"/g, "&quot;");
+      node.style.backgroundImage = bgAsset ? 'url("' + bgAsset + '")' : "none";
+      return;
+    }
+
+    // Default: textContent
+    node.textContent = toText(value);
+  }
+
+  function applyExportSection(section) {
+    if (!section) return;
+    var roots = getSectionRootsExport(section);
+    section.fields.forEach(function (field) {
+      var value = section.resolvedFields[field.key];
+      if (value === undefined) value = null;
+      if (!shouldApplyExportField(value, field)) return;
+      if (field.target === "threeConfig") return;
+      roots.forEach(function (root) {
+        queryWithinExport(root, field.selector).forEach(function (node) {
+          applyExportField(node, field, value);
+        });
+      });
+    });
+  }
+
+  function applyExportSections() {
+    exportSharedSections.forEach(function (section) {
+      applyExportSection(section);
+    });
+  }
 
   function setImageLogo(selector) {
     if (!logoUrl) return;
@@ -3698,9 +4253,7 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
 		    var embed = parseAdmissionIframeEmbedValue(admissionFormIframe) || parseAdmissionIframeEmbedValue(admissionFormUrl);
 		    if (embed && embed.src && isSafeAdmissionIframeSrc(embed.src)) {
 		      frame.setAttribute("data-src", embed.src);
-		      if (frame.getAttribute("src")) {
-		        frame.setAttribute("src", embed.src);
-		      }
+		      frame.setAttribute("src", embed.src);
 
 		      [
 		        "width",
@@ -3719,6 +4272,36 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
 
 		    if (admissionFormTitle) {
 		      frame.setAttribute("title", admissionFormTitle);
+		    }
+		  }
+
+		  function applyTemplateTwoContactForm() {
+		    if (!${escapeScriptJson(content.templateSlug === "dexta-academy-2")}) return;
+
+		    var frame = document.querySelector(".google-form-frame--contact iframe, .google-form-card iframe");
+		    if (!frame) return;
+
+		    var embed = parseAdmissionIframeEmbedValue(contactFormIframe) || parseAdmissionIframeEmbedValue(contactFormUrl);
+		    if (embed && embed.src && isSafeAdmissionIframeSrc(embed.src)) {
+		      frame.setAttribute("src", embed.src);
+
+		      [
+		        "width",
+		        "height",
+		        "frameborder",
+		        "marginheight",
+		        "marginwidth",
+		        "loading",
+		        "referrerpolicy",
+		        "allow",
+		        "title"
+		      ].forEach(function (name) {
+		        if (embed.attrs[name]) frame.setAttribute(name, embed.attrs[name]);
+		      });
+		    }
+
+		    if (contactFormTitle) {
+		      frame.setAttribute("title", contactFormTitle);
 		    }
 		  }
 	
@@ -3809,12 +4392,14 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
 		    applyTemplateTwoFooterContact();
 		    applyTemplateTwoFooterVisibility();
 		    applyTemplateTwoAdmissionForm();
+		    applyTemplateTwoContactForm();
 		  }
 	
 	  applyThemeIdentity();
+	  applyExportSections();
 	  document.body.className = document.body.className.replace(/\bis-preloading\b/g, "").trim();
 	  if (document.readyState === "loading") {
-	    document.addEventListener("DOMContentLoaded", function() { document.body.className = document.body.className.replace(/\bis-preloading\b/g, "").trim(); applyThemeIdentity(); }, { once: true });
+	    document.addEventListener("DOMContentLoaded", function() { document.body.className = document.body.className.replace(/\bis-preloading\b/g, "").trim(); applyThemeIdentity(); applyExportSections(); }, { once: true });
 	  }
 
 	  // Ensure hamburger toggle works without Bootstrap jQuery plugin
@@ -3835,9 +4420,9 @@ function getThemeRuntimeMarkup(content: SchoolTemplateProjectContent) {
 	    });
 	  });
 
-	  window.setTimeout(applyThemeIdentity, 80);
-	  window.setTimeout(applyThemeIdentity, 350);
-	  window.setTimeout(applyThemeIdentity, 1000);
+	  window.setTimeout(function() { applyThemeIdentity(); applyExportSections(); }, 80);
+	  window.setTimeout(function() { applyThemeIdentity(); applyExportSections(); }, 350);
+	  window.setTimeout(function() { applyThemeIdentity(); applyExportSections(); }, 1000);
 })();
 </script>`;
 }
@@ -3938,7 +4523,7 @@ async function renderPage({
     injectBeforeBodyClose(root, renderThreeConfigMarkup(threeConfig));
   }
 
-  injectBeforeBodyClose(root, getThemeRuntimeMarkup(content));
+  injectBeforeBodyClose(root, getThemeRuntimeMarkup(content, sourceSnapshot));
 
   // Inject gallery lightbox for template 4
   if (content.templateSlug === "dexta-academy-4") {
@@ -4196,10 +4781,58 @@ async function rewriteRemoteAssets(files: Map<string, ExportFile>) {
   }
 }
 
+const TEMPLATE_DEFAULT_FONTS: Record<string, string> = {
+  "dexta-academy-1": "Manrope",
+  "dexta-academy-2": "Montserrat",
+  "dexta-academy-4": "Poppins",
+  "dexta-academy-5": "Manrope",
+};
+
+function rewriteTemplateFontFamily(
+  text: string,
+  content: SchoolTemplateProjectContent,
+  bodyFont: string,
+): string {
+  const defaultFont = TEMPLATE_DEFAULT_FONTS[content.templateSlug];
+  if (!defaultFont || defaultFont === bodyFont) return text;
+
+  // Replace all instances of the template's default font with the user's chosen font
+  const pattern = new RegExp(`font-family:\\s*"${defaultFont}"`, "gi");
+  return text.replace(pattern, `font-family: "${bodyFont}"`);
+}
+
 async function rewriteTextAssets(
   files: Map<string, ExportFile>,
   sourceSnapshot: SchoolTemplateSourceSnapshot,
+  content: SchoolTemplateProjectContent,
 ) {
+  const bodyFont = getBodyFont(content);
+
+  // For template 2: resolve the user's admission form URL and modal title to rewrite app.js
+  const resolvedAdmissionUrl =
+    content.templateSlug === "dexta-academy-2"
+      ? getTemplateTwoResolvedAdmissionFormUrl(content)
+      : "";
+
+  const resolvedAdmissionModalTitle = (() => {
+    if (content.templateSlug !== "dexta-academy-2") return "";
+    const defaultTitle = "Apply to DXT Academy";
+    const sharedValue = toText(
+      content.sharedSections.find((s) => s.id === "admission-modal")?.fields[
+        "title"
+      ],
+    ).trim();
+    const pageValue = toText(
+      content.pages
+        .find((p) => p.slug === "admissions")
+        ?.sections.find((s) => s.id === "admission-form")?.fields["title"],
+    ).trim();
+    // Prefer whichever is not the default
+    if (pageValue && pageValue !== defaultTitle) return pageValue;
+    if (sharedValue && sharedValue !== defaultTitle) return sharedValue;
+    return "";
+  })();
+
   for (const file of files.values()) {
     if (!isTextFile(file.path)) {
       continue;
@@ -4210,6 +4843,36 @@ async function rewriteTextAssets(
 
     if (file.path.replace(/\\/g, "/") === "js/hero-3d.js") {
       text = patchHero3dScript(text);
+    }
+
+    // Rewrite hardcoded admission form URL in template 2 app.js
+    if (
+      resolvedAdmissionUrl &&
+      file.path.replace(/\\/g, "/") === "assets/js/app.js"
+    ) {
+      text = text.replace(
+        /const\s+admissionFormUrl\s*=\s*\n?\s*"([^"]+)"/,
+        `const admissionFormUrl =\n  "${resolvedAdmissionUrl.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`,
+      );
+    }
+
+    // Rewrite hardcoded admission modal title in template 2 app.js
+    if (
+      resolvedAdmissionModalTitle &&
+      file.path.replace(/\\/g, "/") === "assets/js/app.js"
+    ) {
+      text = text.replace(
+        /const\s+admissionModalTitle\s*=\s*"([^"]+)"/,
+        `const admissionModalTitle = "${resolvedAdmissionModalTitle.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`,
+      );
+    }
+
+    // Rewrite hardcoded font-family in CSS/HTML to user's chosen font
+    if (
+      bodyFont &&
+      (file.path.endsWith(".css") || file.path.endsWith(".html"))
+    ) {
+      text = rewriteTemplateFontFamily(text, content, bodyFont);
     }
 
     file.data = text;
@@ -4238,8 +4901,79 @@ export async function buildSchoolWebsiteProjectExportZip({
     });
   }
 
-  await rewriteTextAssets(files, sourceSnapshot);
+  await rewriteTextAssets(files, sourceSnapshot, content);
   await rewriteRemoteAssets(files);
+
+  // Include .htaccess for security on cPanel/Apache hosting
+  files.set(".htaccess", {
+    path: ".htaccess",
+    data: [
+      "# Security Headers",
+      "<IfModule mod_headers.c>",
+      '    Header set X-Content-Type-Options "nosniff"',
+      '    Header set X-Frame-Options "SAMEORIGIN"',
+      '    Header set X-XSS-Protection "1; mode=block"',
+      '    Header set Referrer-Policy "strict-origin-when-cross-origin"',
+      '    Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"',
+      '    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"',
+      "</IfModule>",
+      "",
+      "# Prevent directory listing",
+      "Options -Indexes",
+      "",
+      "# Prevent access to hidden files",
+      '<FilesMatch "^\\.">',
+      "    Order allow,deny",
+      "    Deny from all",
+      "</FilesMatch>",
+      "",
+      "# Allow .htaccess itself to be read by Apache",
+      '<Files ".htaccess">',
+      "    Order allow,deny",
+      "    Allow from all",
+      "</Files>",
+      "",
+      "# Block access to sensitive file types",
+      '<FilesMatch "\\.(env|log|ini|conf|bak|sql|sh|yml|yaml|lock)$">',
+      "    Order allow,deny",
+      "    Deny from all",
+      "</FilesMatch>",
+      "",
+      "# Disable server signature",
+      "ServerSignature Off",
+      "",
+      "# Force HTTPS",
+      "<IfModule mod_rewrite.c>",
+      "    RewriteEngine On",
+      "    RewriteCond %{HTTPS} off",
+      "    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]",
+      "</IfModule>",
+      "",
+      "# Prevent PHP execution (static site)",
+      '<FilesMatch "\\.ph(p[3457]?|t|tml)$">',
+      "    Order allow,deny",
+      "    Deny from all",
+      "</FilesMatch>",
+      "",
+      "# Cache static assets",
+      "<IfModule mod_expires.c>",
+      "    ExpiresActive On",
+      '    ExpiresByType text/css "access plus 1 month"',
+      '    ExpiresByType application/javascript "access plus 1 month"',
+      '    ExpiresByType image/jpeg "access plus 1 year"',
+      '    ExpiresByType image/png "access plus 1 year"',
+      '    ExpiresByType image/webp "access plus 1 year"',
+      '    ExpiresByType image/svg+xml "access plus 1 year"',
+      '    ExpiresByType font/woff2 "access plus 1 year"',
+      '    ExpiresByType font/woff "access plus 1 year"',
+      "</IfModule>",
+      "",
+      "# GZIP compression",
+      "<IfModule mod_deflate.c>",
+      "    AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml",
+      "</IfModule>",
+    ].join("\n"),
+  });
 
   return {
     fileName: `${slugifyFileName(content.templateName)}-website.zip`,

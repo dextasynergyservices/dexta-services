@@ -122,8 +122,6 @@ const THEME_HISTORY_KEY = "theme";
 const COMPONENT_HISTORY_LIMIT = 50;
 const DEXTA_ACADEMY_2_SLUG = "dexta-academy-2";
 const DEXTA_ACADEMY_3_SLUG = "dexta-academy-3";
-const DEXTA_ACADEMY_2_FOOTER_SHARED_SECTION_IDS = new Set(["site-footer"]);
-const DEXTA_ACADEMY_3_FOOTER_SHARED_SECTION_IDS = new Set(["site-footer"]);
 const DEXTA_ACADEMY_3_FOOTER_PAGE_SECTION_IDS = new Set([
   "contact-footer-brand",
   "contact-footer-explore",
@@ -132,6 +130,9 @@ const DEXTA_ACADEMY_3_FOOTER_PAGE_SECTION_IDS = new Set([
   "contact-footer-legal",
 ]);
 const NAVBAR_SHARED_SECTION_ID = "site-header";
+const DEXTA_ACADEMY_5_SLUG = "dexta-academy-5";
+const DEXTA_ACADEMY_1_SLUG = "dexta-academy-1";
+const FOOTER_ONLY_SHARED_SECTION_IDS = new Set(["site-footer"]);
 const DEXTA_ACADEMY_2_NAVBAR_FIELD_KEYS = new Set([
   "portalCtaText",
   "portalCtaHref",
@@ -848,6 +849,17 @@ function getRepeatableItemFields(
     for (const cls of itemClasses) {
       if (sel.includes(cls)) return true;
     }
+    // If the field selector starts with or contains the bare item element
+    // e.g., itemSelector "article" matches field selector "article h2"
+    const bareItemTag = itemSelector.replace(/\.[a-zA-Z0-9_-]+/g, "").trim();
+    if (bareItemTag && /^[a-z]+$/i.test(bareItemTag)) {
+      if (
+        sel === bareItemTag ||
+        sel.startsWith(bareItemTag + " ") ||
+        sel.startsWith(bareItemTag + ">")
+      )
+        return true;
+    }
     // If the selector class name shares a prefix with the item class
     // e.g., ".gallery-preview-label" shares prefix with ".gallery-preview-card"
     const fieldClasses = sel.match(/\.[a-zA-Z0-9_-]+/g) ?? [];
@@ -868,7 +880,7 @@ function getRepeatableItemFields(
     }
     // Bare inline/content elements that typically appear inside repeatable cards
     if (
-      /^(strong|span|em|small|a|img|figure|figcaption|h3|h4|h5|h6|p)$/i.test(
+      /^(strong|span|em|small|a|img|figure|figcaption|li|h2|h3|h4|h5|h6|p)$/i.test(
         sel,
       )
     )
@@ -884,24 +896,13 @@ function getRepeatableItemFields(
       .map((selector) => selector.trim())
       .includes(itemSelector);
 
-  const sectionLevelKeys = new Set([
-    "body",
-    "ctaHref",
-    "ctaText",
-    "eyebrow",
-    "intro",
-    "title",
-  ]);
-
   // When section selector = item selector, all non-styling fields are item-level
   if (sectionTargetsItems) return fields.filter((f) => !isSectionLevelField(f));
 
   // Use selector-based heuristic to determine item-level fields
+  // If the field matches item selectors, include it even if its key is in sectionLevelKeys
   return fields.filter(
-    (field) =>
-      !isSectionLevelField(field) &&
-      !sectionLevelKeys.has(field.key) &&
-      isLikelyItemField(field),
+    (field) => !isSectionLevelField(field) && isLikelyItemField(field),
   );
 }
 
@@ -1404,29 +1405,24 @@ export function SchoolWebsiteProjectEditor({
     : isDextaAcademy2Template
       ? DEXTA_ACADEMY_2_NAVBAR_FIELD_KEYS
       : null;
-  const visibleSharedSections = useMemo(() => {
-    if (isDextaAcademy2Template) {
-      return draft.sharedSections.filter((section) =>
-        DEXTA_ACADEMY_2_FOOTER_SHARED_SECTION_IDS.has(section.id),
-      );
-    }
-
-    if (isDextaAcademy3Template) {
-      return draft.sharedSections.filter((section) =>
-        DEXTA_ACADEMY_3_FOOTER_SHARED_SECTION_IDS.has(section.id),
-      );
-    }
-
-    return draft.sharedSections;
-  }, [draft.sharedSections, isDextaAcademy2Template, isDextaAcademy3Template]);
-  const sharedTabLabel =
-    isDextaAcademy2Template || isDextaAcademy3Template
-      ? "Footer"
-      : "Sitewide";
-  const sharedScopeDescription =
-    isDextaAcademy2Template || isDextaAcademy3Template
-      ? "Footer content and links"
-      : "Shared sections";
+  const hasNavbarTab =
+    isDextaAcademy2Template ||
+    isDextaAcademy3Template ||
+    draft.templateSlug === DEXTA_ACADEMY_5_SLUG ||
+    draft.templateSlug === DEXTA_ACADEMY_1_SLUG;
+  const visibleSharedSections = useMemo(
+    () =>
+      hasNavbarTab
+        ? draft.sharedSections.filter((section) =>
+            FOOTER_ONLY_SHARED_SECTION_IDS.has(section.id),
+          )
+        : draft.sharedSections,
+    [draft.sharedSections, hasNavbarTab],
+  );
+  const sharedTabLabel = hasNavbarTab ? "Footer" : "Sitewide";
+  const sharedScopeDescription = hasNavbarTab
+    ? "Footer content and links"
+    : "Shared sections";
   const navbarHeaderSection = useMemo(
     () =>
       draft.sharedSections.find(
@@ -1442,13 +1438,21 @@ export function SchoolWebsiteProjectEditor({
     [sourceSnapshot.sharedSections],
   );
   const navbarButtonFieldGroups = useMemo(() => {
-    if (!navbarFieldKeys || !navbarHeaderSection || !navbarHeaderSnapshot) {
+    if (!hasNavbarTab || !navbarHeaderSection || !navbarHeaderSnapshot) {
       return [];
     }
 
+    const isTemplate5 = draft.templateSlug === DEXTA_ACADEMY_5_SLUG;
+    const isTemplate1 = draft.templateSlug === DEXTA_ACADEMY_1_SLUG;
     const groups = new Map<string, SchoolTemplateProjectFieldSnapshot[]>();
     for (const field of navbarHeaderSnapshot.fields) {
-      if (!navbarFieldKeys.has(field.key)) continue;
+      if (navbarFieldKeys && !navbarFieldKeys.has(field.key)) continue;
+      // Template 5/1 shows all header fields except Section background.
+      if (
+        (isTemplate5 || isTemplate1) &&
+        field.uiGroup === "Section background"
+      )
+        continue;
 
       const groupName = field.uiGroup ?? "Navbar buttons";
       groups.set(groupName, [...(groups.get(groupName) ?? []), field]);
@@ -1460,7 +1464,13 @@ export function SchoolWebsiteProjectEditor({
         (left, right) => (left.uiOrder ?? 0) - (right.uiOrder ?? 0),
       ),
     }));
-  }, [navbarFieldKeys, navbarHeaderSection, navbarHeaderSnapshot]);
+  }, [
+    draft.templateSlug,
+    hasNavbarTab,
+    navbarFieldKeys,
+    navbarHeaderSection,
+    navbarHeaderSnapshot,
+  ]);
 
   const visiblePageSections = useMemo(() => {
     const pageSections = selectedPage?.sections ?? [];
@@ -3907,14 +3917,32 @@ export function SchoolWebsiteProjectEditor({
                                           itemIndex,
                                           field,
                                         )}
-                                        onChange={(value) =>
+                                        onChange={(value) => {
                                           updateRepeatableItemField(
                                             activeSection.content.id,
                                             itemIndex,
                                             field.key,
                                             value,
-                                          )
-                                        }
+                                          );
+                                          // Auto-sync image to imageHref for gallery lightbox.
+                                          if (
+                                            field.key === "image" &&
+                                            field.type === "image" &&
+                                            typeof value === "string" &&
+                                            value &&
+                                            activeRepeatableItemFields.some(
+                                              (f) => f.key === "imageHref",
+                                            )
+                                          ) {
+                                            updateRepeatableItemField(
+                                              activeSection.content.id,
+                                              itemIndex,
+                                              "imageHref",
+                                              value,
+                                              { saveHistory: false },
+                                            );
+                                          }
+                                        }}
                                         onValidateModel={
                                           field.type === "model3d"
                                             ? (nextValue) =>
