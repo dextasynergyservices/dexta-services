@@ -39,6 +39,10 @@ export type SchoolTemplateProjectTheme = {
   navLinkColor: string;
   loadingBackgroundColor: string;
   loadingBarColor: string;
+  loadingCardBorderColor: string;
+  loadingCardBorderWidth: number;
+  loadingCardShadowColor: string;
+  loadingCardShadowOpacity: number;
   navBarColor: string;
   navBarOpacity: number;
   navBarTransparent: boolean;
@@ -249,6 +253,10 @@ export const schoolTemplateProjectContentSchema = z.object({
     navLinkColor: z.string().default(""),
     loadingBackgroundColor: z.string().default("#ffffff"),
     loadingBarColor: z.string().default(""),
+    loadingCardBorderColor: z.string().default("transparent"),
+    loadingCardBorderWidth: z.number().default(0),
+    loadingCardShadowColor: z.string().default("#000000"),
+    loadingCardShadowOpacity: z.number().default(0),
     navBarColor: z.string().default("#ffffff"),
     navBarOpacity: z.number().default(100),
     navBarTransparent: z.boolean().default(false),
@@ -1321,6 +1329,20 @@ export function sanitizeSchoolTemplateProjectContent(
         content.theme.loadingBackgroundColor ?? "#ffffff",
       ),
       loadingBarColor: sanitizePlainText(content.theme.loadingBarColor ?? ""),
+      loadingCardBorderColor: sanitizePlainText(
+        content.theme.loadingCardBorderColor ?? "transparent",
+      ),
+      loadingCardBorderWidth: Math.max(
+        0,
+        Math.min(12, Number(content.theme.loadingCardBorderWidth ?? 0)),
+      ),
+      loadingCardShadowColor: sanitizePlainText(
+        content.theme.loadingCardShadowColor ?? "#000000",
+      ),
+      loadingCardShadowOpacity: Math.max(
+        0,
+        Math.min(100, Number(content.theme.loadingCardShadowOpacity ?? 0)),
+      ),
       navBarColor: sanitizePlainText(content.theme.navBarColor ?? "#ffffff"),
       navBarOpacity: Math.max(
         0,
@@ -1481,6 +1503,10 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         navLinkColor: "#2b2b2b",
         loadingBackgroundColor: "#ffffff",
         loadingBarColor: "",
+        loadingCardBorderColor: "transparent",
+        loadingCardBorderWidth: 0,
+        loadingCardShadowColor: "#000000",
+        loadingCardShadowOpacity: 0,
         navBarColor: "#ffffff",
         navBarOpacity: 100,
         navBarTransparent: true,
@@ -1518,6 +1544,10 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         navLinkColor: "#ffffff",
         loadingBackgroundColor: "#ffffff",
         loadingBarColor: "",
+        loadingCardBorderColor: "transparent",
+        loadingCardBorderWidth: 0,
+        loadingCardShadowColor: "#000000",
+        loadingCardShadowOpacity: 0,
         navBarColor: "#ffffff",
         navBarOpacity: 100,
         navBarTransparent: true,
@@ -1554,6 +1584,10 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         navLinkColor: "#ffffff",
         loadingBackgroundColor: "#fff7df",
         loadingBarColor: "",
+        loadingCardBorderColor: "rgba(255,255,255,0.1)",
+        loadingCardBorderWidth: 1,
+        loadingCardShadowColor: "#010814",
+        loadingCardShadowOpacity: 42,
         navBarColor: "#020c20",
         navBarOpacity: 94,
         navBarTransparent: false,
@@ -1590,6 +1624,10 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         navLinkColor: "#ffffff",
         loadingBackgroundColor: "#081827",
         loadingBarColor: "",
+        loadingCardBorderColor: "transparent",
+        loadingCardBorderWidth: 0,
+        loadingCardShadowColor: "#000000",
+        loadingCardShadowOpacity: 0,
         navBarColor: "#081827",
         navBarOpacity: 100,
         navBarTransparent: true,
@@ -1627,6 +1665,10 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         navLinkColor: "#0f172a",
         loadingBackgroundColor: "#ffffff",
         loadingBarColor: "",
+        loadingCardBorderColor: "transparent",
+        loadingCardBorderWidth: 0,
+        loadingCardShadowColor: "#000000",
+        loadingCardShadowOpacity: 0,
         navBarColor: "#ffffff",
         navBarOpacity: 100,
         navBarTransparent: false,
@@ -1663,6 +1705,10 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         navLinkColor: "#111827",
         loadingBackgroundColor: "#ffffff",
         loadingBarColor: "",
+        loadingCardBorderColor: "transparent",
+        loadingCardBorderWidth: 0,
+        loadingCardShadowColor: "#000000",
+        loadingCardShadowOpacity: 0,
         navBarColor: "#ffffff",
         navBarOpacity: 100,
         navBarTransparent: false,
@@ -2167,11 +2213,14 @@ function projectFieldTextMatches(
   return normalizedLeft !== "" && normalizedLeft === normalizedRight;
 }
 
-function restoreDextaAcademy2HeaderCtaDefaults(
+function restoreDextaAcademyHeaderCtaDefaults(
   content: SchoolTemplateProjectContent,
   freshContent: SchoolTemplateProjectContent,
 ) {
-  if (content.templateSlug !== "dexta-academy-2") {
+  if (
+    content.templateSlug !== "dexta-academy-1" &&
+    content.templateSlug !== "dexta-academy-2"
+  ) {
     return content;
   }
 
@@ -2328,6 +2377,26 @@ export function syncSchoolTemplateProjectContentWithManifest({
     syncedTheme.loadingLogoHeight = freshContent.theme.loadingLogoHeight;
   }
 
+  if (wasThemeFieldMissing("loadingCardBorderColor")) {
+    syncedTheme.loadingCardBorderColor =
+      freshContent.theme.loadingCardBorderColor;
+  }
+
+  if (wasThemeFieldMissing("loadingCardBorderWidth")) {
+    syncedTheme.loadingCardBorderWidth =
+      freshContent.theme.loadingCardBorderWidth;
+  }
+
+  if (wasThemeFieldMissing("loadingCardShadowColor")) {
+    syncedTheme.loadingCardShadowColor =
+      freshContent.theme.loadingCardShadowColor;
+  }
+
+  if (wasThemeFieldMissing("loadingCardShadowOpacity")) {
+    syncedTheme.loadingCardShadowOpacity =
+      freshContent.theme.loadingCardShadowOpacity;
+  }
+
   if (wasThemeFieldMissing("navLinkFontFamily")) {
     syncedTheme.navLinkFontFamily =
       content.theme.fontFamily || freshContent.theme.navLinkFontFamily;
@@ -2418,7 +2487,7 @@ export function syncSchoolTemplateProjectContentWithManifest({
 
   return {
     contentJson: restoreDextaAcademy2AdmissionFormTitle(
-      restoreDextaAcademy2HeaderCtaDefaults(syncedContent, freshContent),
+      restoreDextaAcademyHeaderCtaDefaults(syncedContent, freshContent),
       freshContent,
     ),
     sourceSnapshot: freshSnapshot,

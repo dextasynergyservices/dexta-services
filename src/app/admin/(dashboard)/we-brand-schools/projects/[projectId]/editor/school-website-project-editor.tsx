@@ -203,20 +203,22 @@ const ORIGINAL_THEME_COLORS: Record<
     loadingTextColor: "#111827",
     navBarColor: "#ffffff",
   },
-  "dexta-academy-3": {
-	    brandNameColor: "#061a40",
-	    brandTaglineColor: "#061a40",
-	    logoBorderColor: "#ffc43d",
-	    logoBackgroundColor: "#ffffff",
+	  "dexta-academy-3": {
+    brandNameColor: "#061a40",
+    brandTaglineColor: "#061a40",
+    logoBorderColor: "#ffc43d",
+    logoBackgroundColor: "#ffffff",
     primaryColor: "#061a40",
     secondaryColor: "#f5b82e",
     tertiaryColor: "#dc422e",
     loadingBackgroundColor: "#fff7df",
-	    loadingTextColor: "#061a40",
-	    navBarColor: "#020c20",
+    loadingTextColor: "#061a40",
+    loadingCardBorderColor: "rgba(255,255,255,0.1)",
+    loadingCardShadowColor: "#010814",
+    navBarColor: "#020c20",
     navLinkColor: "#ffffff",
-	    navHoverColor: "#f5b82e",
-	    buttonOverlayColor: "#ffffff",
+    navHoverColor: "#f5b82e",
+    buttonOverlayColor: "#ffffff",
   },
   "dexta-academy-2": {
 	    brandNameColor: "#ffffff",
@@ -3118,6 +3120,94 @@ export function SchoolWebsiteProjectEditor({
                   }
                 />
               </div>
+              {isDextaAcademy3Template ? (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <FieldControl
+                      field={{
+                        key: "loadingCardBorderColor",
+                        label: "Loading card border",
+                        type: "color",
+                        selector: "body",
+                        target: "inlineStyle",
+                      }}
+                      value={draft.theme.loadingCardBorderColor}
+                      originalValue={getOriginalThemeColorValue(
+                        "loadingCardBorderColor",
+                      )}
+                      onChange={(value) =>
+                        updateTheme(
+                          "loadingCardBorderColor",
+                          getStringValue(value),
+                        )
+                      }
+                    />
+                    <FieldControl
+                      field={{
+                        key: "loadingCardBorderWidth",
+                        label: "Loading card border width",
+                        type: "number",
+                        selector: "body",
+                        target: "inlineStyle",
+                        unit: "px",
+                        min: 0,
+                        max: 12,
+                        step: 1,
+                        helpText: "Set to 0 to remove the border.",
+                      }}
+                      value={draft.theme.loadingCardBorderWidth}
+                      onChange={(value) =>
+                        updateTheme(
+                          "loadingCardBorderWidth",
+                          getNumberValue(value),
+                        )
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <FieldControl
+                      field={{
+                        key: "loadingCardShadowColor",
+                        label: "Loading card shadow",
+                        type: "color",
+                        selector: "body",
+                        target: "inlineStyle",
+                      }}
+                      value={draft.theme.loadingCardShadowColor}
+                      originalValue={getOriginalThemeColorValue(
+                        "loadingCardShadowColor",
+                      )}
+                      onChange={(value) =>
+                        updateTheme(
+                          "loadingCardShadowColor",
+                          getStringValue(value),
+                        )
+                      }
+                    />
+                    <FieldControl
+                      field={{
+                        key: "loadingCardShadowOpacity",
+                        label: "Loading card shadow opacity",
+                        type: "number",
+                        selector: "body",
+                        target: "inlineStyle",
+                        unit: "%",
+                        min: 0,
+                        max: 100,
+                        step: 1,
+                        helpText: "Set to 0 to hide the shadow.",
+                      }}
+                      value={draft.theme.loadingCardShadowOpacity}
+                      onChange={(value) =>
+                        updateTheme(
+                          "loadingCardShadowOpacity",
+                          getNumberValue(value),
+                        )
+                      }
+                    />
+                  </div>
+                </>
+              ) : null}
             </div>
           </div>
         </aside>

@@ -1357,6 +1357,7 @@ function getGlobalAppearanceCss(content: SchoolTemplateProjectContent) {
   const loadingBackground = content.theme.loadingBackgroundColor;
   const loadingTextColor = content.theme.loadingTextColor || "currentColor";
   const isTemplateTwo = content.templateSlug === "dexta-academy-2";
+  const isTemplateThree = content.templateSlug === "dexta-academy-3";
   const navbarBackground = content.theme.navBarTransparent
     ? "transparent"
     : content.theme.navBarColor;
@@ -1366,11 +1367,33 @@ function getGlobalAppearanceCss(content: SchoolTemplateProjectContent) {
   const logoBorder = content.theme.logoBorderEnabled
     ? `1px solid ${content.theme.logoBorderColor}`
     : "0";
+  const templateThreeLogoShadowRule = isTemplateThree
+    ? "\n  box-shadow: none !important;"
+    : "";
+  const templateThreeLoaderLogoFrameRule = isTemplateThree
+    ? "\n.page-loader__crest {\n  border: 0 !important;\n  box-shadow: none !important;\n}"
+    : "";
   const logoRadius = `${content.theme.logoBorderRadius}px`;
   const logoWidth = `${content.theme.logoWidth}px`;
   const logoHeight = `${content.theme.logoHeight}px`;
   const loadingLogoWidth = `${content.theme.loadingLogoWidth}px`;
   const loadingLogoHeight = `${content.theme.loadingLogoHeight}px`;
+  const loadingCardBorderColor =
+    content.theme.loadingCardBorderColor || "rgba(255,255,255,0.1)";
+  const loadingCardBorderWidth = Math.max(
+    0,
+    Math.min(12, Number(content.theme.loadingCardBorderWidth ?? 1)),
+  );
+  const loadingCardShadowColor =
+    content.theme.loadingCardShadowColor || "#010814";
+  const loadingCardShadowOpacity = Math.max(
+    0,
+    Math.min(100, Number(content.theme.loadingCardShadowOpacity ?? 42)),
+  );
+  const loadingCardInsetShadow =
+    loadingCardShadowOpacity > 0
+      ? ", inset 0 1px 0 rgba(255,255,255,0.06)"
+      : "";
   const brandTextDisplay = content.theme.brandTextVisible ? "" : "none";
   const brandLine2Display =
     content.theme.brandTextVisible && content.theme.brandTagline.trim()
@@ -1494,11 +1517,11 @@ body[data-page="home"] .site-header__bar {
 .school-footer-brand-logo,
 .site-preloader-logo {
   border: ${logoBorder} !important;
-  border-radius: ${logoRadius} !important;
+  border-radius: ${logoRadius} !important;${templateThreeLogoShadowRule}
   width: ${logoWidth} !important;
   height: ${logoHeight} !important;
   max-width: ${logoWidth} !important;
-}
+}${templateThreeLoaderLogoFrameRule}
 .dexta-theme-logo-mark {
   background: transparent !important;
   overflow: hidden;
@@ -1521,6 +1544,10 @@ body[data-page="home"] .site-header__bar {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 .navbar-brand img,
 .hero-brand img,
@@ -1583,8 +1610,16 @@ body[data-page="home"] .site-header__bar {
     );
   }
 
+  if (isTemplateThree) {
+    css.push(`
+.page-loader__inner {
+  border: ${loadingCardBorderWidth}px solid ${loadingCardBorderColor} !important;
+  box-shadow: 0 34px 70px color-mix(in srgb, ${loadingCardShadowColor} ${loadingCardShadowOpacity}%, transparent)${loadingCardInsetShadow} !important;
+}`);
+  }
+
   css.push(`
-	.brand__name,
+		.brand__name,
 .brand__copy,
 .brand__text,
 .contact-brand > span {
@@ -2561,6 +2596,10 @@ body:not(.home-page) .site-header {
   color: var(--dexta-academy-3-home-programmes-cta-button-text-color, #fff) !important;
   border: var(--dexta-academy-3-home-programmes-cta-button-border-width, 1px) solid var(--dexta-academy-3-home-programmes-cta-button-border-color, rgba(255,255,255,0.22)) !important;
 }
+.programme-tile {
+  border: var(--dexta-academy-3-home-programmes-card-border-width, 1px) solid var(--dexta-academy-3-home-programmes-card-border-color, rgba(243,191,53,0.34)) !important;
+  box-shadow: 0 24px 55px color-mix(in srgb, var(--dexta-academy-3-home-programmes-card-shadow-color, #0d1c40) var(--dexta-academy-3-home-programmes-card-shadow-opacity, 0%), transparent) !important;
+}
 .programme-tile::before {
   height: var(--dexta-academy-3-home-programmes-card-overlay-height, 76%) !important;
   background: linear-gradient(180deg, color-mix(in srgb, var(--dexta-academy-3-home-programmes-card-overlay-color, #050e21) 0%, transparent) 0%, color-mix(in srgb, var(--dexta-academy-3-home-programmes-card-overlay-color, #050e21) var(--dexta-academy-3-home-programmes-card-overlay-opacity, 96%), transparent) 42%, color-mix(in srgb, var(--dexta-academy-3-home-programmes-card-overlay-color, #050e21) var(--dexta-academy-3-home-programmes-card-overlay-opacity, 96%), transparent) 100%) !important;
@@ -2646,6 +2685,10 @@ body:not(.home-page) .site-header {
   color: var(--dexta-academy-3-home-gallery-cta-button-text-color, #fff) !important;
   border: var(--dexta-academy-3-home-gallery-cta-button-border-width, 0px) solid var(--dexta-academy-3-home-gallery-cta-button-border-color, #122a56) !important;
 }
+.home-gallery-card {
+  border: var(--dexta-academy-3-home-gallery-preview-card-border-width, 0px) solid var(--dexta-academy-3-home-gallery-preview-card-border-color, transparent) !important;
+  box-shadow: 0 24px 55px color-mix(in srgb, var(--dexta-academy-3-home-gallery-preview-card-shadow-color, #0d1c40) var(--dexta-academy-3-home-gallery-preview-card-shadow-opacity, 0%), transparent) !important;
+}
 /* About Hero */
 .about-hero {
   background-color: color-mix(in srgb, var(--dexta-academy-3-about-hero-section-bg-color, #07162f) var(--dexta-academy-3-about-hero-section-bg-opacity, 100%), transparent) !important;
@@ -2667,6 +2710,10 @@ body:not(.home-page) .site-header {
   background-size: var(--dexta-academy-3-about-story-section-bg-size, cover) !important;
   background-repeat: no-repeat !important;
 }
+.about-story-card {
+  border: var(--dexta-academy-3-about-story-card-border-width, 0px) solid var(--dexta-academy-3-about-story-card-border-color, transparent) !important;
+  box-shadow: 0 24px 55px color-mix(in srgb, var(--dexta-academy-3-about-story-card-shadow-color, #0d1c40) var(--dexta-academy-3-about-story-card-shadow-opacity, 0%), transparent) !important;
+}
 .about-story-card .button {
   background: color-mix(in srgb, var(--dexta-academy-3-about-story-cta-button-bg-color, #f3bf35) var(--dexta-academy-3-about-story-cta-button-bg-opacity, 100%), transparent) !important;
   color: var(--dexta-academy-3-about-story-cta-button-text-color, #09142f) !important;
@@ -2687,6 +2734,10 @@ body:not(.home-page) .site-header {
   background-position: var(--dexta-academy-3-about-values-section-bg-position, center center) !important;
   background-size: var(--dexta-academy-3-about-values-section-bg-size, cover) !important;
   background-repeat: no-repeat !important;
+}
+.about-value-card {
+  border: var(--dexta-academy-3-about-values-card-border-width, 1px) solid var(--dexta-academy-3-about-values-card-border-color, rgba(17,34,70,0.08)) !important;
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--dexta-academy-3-about-values-card-shadow-color, #0d1c40) var(--dexta-academy-3-about-values-card-shadow-opacity, 9%), transparent) !important;
 }
 .about-icon {
   color: var(--dexta-academy-3-about-values-icon-icon-color, #101f4a) !important;
@@ -2772,6 +2823,15 @@ body:not(.home-page) .site-header {
   background-position: var(--dexta-academy-3-gallery-grid-section-bg-position, center center) !important;
   background-size: var(--dexta-academy-3-gallery-grid-section-bg-size, cover) !important;
   background-repeat: no-repeat !important;
+}
+.gallery-page .gallery-reference-card {
+  border: var(--dexta-academy-3-gallery-grid-card-border-width, 0px) solid var(--dexta-academy-3-gallery-grid-card-border-color, transparent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dexta-academy-3-gallery-grid-card-shadow-color, #0a1833) var(--dexta-academy-3-gallery-grid-card-shadow-opacity, 4%), transparent) !important;
+}
+.gallery-page .gallery-reference-card:hover,
+.gallery-page .gallery-reference-card:focus-within,
+.gallery-page .gallery-reference-card:focus-visible {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dexta-academy-3-gallery-grid-card-shadow-color, #0a1833) var(--dexta-academy-3-gallery-grid-card-shadow-opacity, 4%), transparent), 0 18px 32px color-mix(in srgb, var(--dexta-academy-3-gallery-grid-card-shadow-color, #071a38) calc(var(--dexta-academy-3-gallery-grid-card-shadow-opacity, 4%) * 3), transparent) !important;
 }
 /* Contact Hero */
 .contact-hero {
@@ -2870,6 +2930,7 @@ body:not(.home-page) .site-header {
 .contact-benefits article {
   background-color: color-mix(in srgb, var(--dexta-academy-3-contact-benefits-card-bg-color, transparent) var(--dexta-academy-3-contact-benefits-card-bg-opacity, 0%), transparent) !important;
   border-right: var(--dexta-academy-3-contact-benefits-card-border-width, 1px) solid var(--dexta-academy-3-contact-benefits-card-border-color, rgba(6,26,58,0.08)) !important;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--dexta-academy-3-contact-benefits-card-shadow-color, #061a3a) var(--dexta-academy-3-contact-benefits-card-shadow-opacity, 0%), transparent) !important;
 }
 .contact-benefit-icon {
   color: var(--dexta-academy-3-contact-benefits-icon-icon-color, #061a3a) !important;

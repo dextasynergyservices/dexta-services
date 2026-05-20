@@ -64,6 +64,12 @@ describe("Dexta Academy 3 manifest", () => {
 	    assert.equal(programmes?.fields.cardOverlayOpacity, 96);
 	    assert.equal(programmes?.fields.cardOverlayHeight, 76);
 	    assert.equal(programmes?.repeatable?.items[0]?.programmeIcon, "SC");
+	    assert.equal(programmes?.repeatable?.items[0]?.cardBorderWidth, 1);
+	    assert.equal(
+	      programmes?.repeatable?.items[0]?.cardBorderColor,
+	      "rgba(243,191,53,0.34)",
+	    );
+	    assert.equal(programmes?.repeatable?.items[0]?.cardShadowOpacity, 0);
 	    assert.equal(programmes?.repeatable?.items[0]?.iconColor, "#f3bf35");
 	    assert.equal(
 	      programmes?.repeatable?.items[0]?.iconBgColor,
@@ -95,8 +101,10 @@ describe("Dexta Academy 3 manifest", () => {
 	      ),
 	      false,
 	    );
-	    assert.equal(homeGallery?.repeatable?.items.length, 3);
-    assert.equal(header?.fields.navHomeText, "Home");
+		    assert.equal(homeGallery?.repeatable?.items.length, 3);
+	    assert.equal(homeGallery?.repeatable?.items[0]?.cardBorderWidth, 0);
+	    assert.equal(homeGallery?.repeatable?.items[0]?.cardShadowOpacity, 0);
+	    assert.equal(header?.fields.navHomeText, "Home");
     assert.equal(header?.fields.navHomeHref, "index.html");
     assert.equal(header?.fields.navAboutText, "About");
     assert.equal(header?.fields.navAboutHref, "about.html");
@@ -108,10 +116,16 @@ describe("Dexta Academy 3 manifest", () => {
     assert.equal(header?.fields.navApplyHref, "index.html#how-to-apply");
     assert.equal(header?.fields.navContactText, "Contact");
     assert.equal(header?.fields.navContactHref, "contact.html");
-    assert.equal(aboutStory?.repeatable?.items.length, 3);
-    assert.equal(values?.repeatable?.items.length, 10);
-    assert.equal(impact?.repeatable?.items.length, 4);
-    assert.equal(galleryGrid?.repeatable?.items.length, 20);
+	    assert.equal(aboutStory?.repeatable?.items.length, 3);
+	    assert.equal(aboutStory?.repeatable?.items[0]?.cardBorderWidth, 0);
+	    assert.equal(aboutStory?.repeatable?.items[0]?.cardShadowOpacity, 0);
+	    assert.equal(values?.repeatable?.items.length, 10);
+	    assert.equal(values?.repeatable?.items[0]?.cardBorderWidth, 1);
+	    assert.equal(values?.repeatable?.items[0]?.cardShadowOpacity, 9);
+	    assert.equal(impact?.repeatable?.items.length, 4);
+	    assert.equal(galleryGrid?.repeatable?.items.length, 20);
+	    assert.equal(galleryGrid?.repeatable?.items[0]?.cardBorderWidth, 0);
+	    assert.equal(galleryGrid?.repeatable?.items[0]?.cardShadowOpacity, 4);
     assert.match(
       String(galleryGrid?.repeatable?.items[0]?.image),
       /ChatGPT_Image_Apr_24_2026_06_38_15_PM_ioqvmr\.png/,
@@ -149,10 +163,14 @@ describe("Dexta Academy 3 manifest", () => {
 	      dextaAcademy3Manifest,
 	    );
     content.theme.loadingBackgroundColor = "#fff7df";
-    content.theme.loadingText = "Preparing DXT Academy";
-    content.theme.loadingTextColor = "#061a40";
-    content.theme.loadingBarColor = "#000000";
-	    const html = await renderSchoolTemplatePreview({
+	    content.theme.loadingText = "Preparing DXT Academy";
+	    content.theme.loadingTextColor = "#061a40";
+	    content.theme.loadingBarColor = "#000000";
+	    content.theme.loadingCardBorderColor = "#20c997";
+	    content.theme.loadingCardBorderWidth = 4;
+	    content.theme.loadingCardShadowColor = "#fe0066";
+	    content.theme.loadingCardShadowOpacity = 35;
+		    const html = await renderSchoolTemplatePreview({
 	      content,
 	      sourceSnapshot,
       pageSlug: "home",
@@ -182,12 +200,18 @@ describe("Dexta Academy 3 manifest", () => {
       html,
       /\.page-loader,\.js body \.page-loader\{background:" \+ loadingBackground/,
     );
-    assert.match(
-      html,
-      /\.site-loader__bar::after,\.page-loader__bar\{background:" \+ loadingBarColor/,
-    );
 	    assert.match(
 	      html,
+	      /\.site-loader__bar::after,\.page-loader__bar\{background:" \+ loadingBarColor/,
+	    );
+	    assert.match(html, /border:4px solid #20c997!important/);
+	    assert.match(html, /0 34px 70px rgba\(254,\s*0,\s*102,\s*0\.35\)/);
+	    assert.match(
+	      html,
+	      /loadingCardBorderWidth = Math\.max\(0, Math\.min\(12, Number\(preview\.content\.theme\.loadingCardBorderWidth/,
+	    );
+		    assert.match(
+		      html,
 	      /\.site-header \.site-nav\{display:inline-flex!important;\}/,
     );
     assert.match(
@@ -520,11 +544,13 @@ describe("Dexta Academy 3 manifest", () => {
 	    });
 	    Object.assign(benefits.repeatable.items[0], {
 	      benefitIcon: "school-building",
-	      benefitTitle: "Family Support",
-	      benefitBody: "Every family gets a clear admissions guide.",
-	      benefitTitleColor: "#061f44",
-	      benefitBodyColor: "#123456",
-	    });
+		      benefitTitle: "Family Support",
+		      benefitBody: "Every family gets a clear admissions guide.",
+		      benefitTitleColor: "#061f44",
+		      benefitBodyColor: "#123456",
+		      benefitCardShadowColor: "#20c997",
+		      benefitCardShadowOpacity: 28,
+		    });
 	    Object.assign(benefits.fields, {
 	      iconColor: "#fe0066",
 	    });
@@ -562,9 +588,13 @@ describe("Dexta Academy 3 manifest", () => {
 	    assert.match(html, /Bring these documents/);
 	    assert.match(html, /Birth certificate/);
 	    assert.match(html, /See process/);
-	    assert.match(html, /--dexta-academy-3-contact-info-icon-icon-color/);
-	    assert.match(html, /--dexta-academy-3-contact-benefits-icon-icon-color/);
-	    assert.match(html, /--dexta-academy-3-contact-admission-header-bg-color/);
+		    assert.match(html, /--dexta-academy-3-contact-info-icon-icon-color/);
+		    assert.match(html, /--dexta-academy-3-contact-benefits-icon-icon-color/);
+		    assert.match(
+		      html,
+		      /--dexta-academy-3-contact-benefits-card-shadow-color/,
+		    );
+		    assert.match(html, /--dexta-academy-3-contact-admission-header-bg-color/);
 		    assert.match(html, /#fe0066/);
 		    assert.match(html, /#20c997/);
 		  });

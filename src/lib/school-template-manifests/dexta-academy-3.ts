@@ -299,6 +299,69 @@ function t3CardOverlayStyleFields({
   ];
 }
 
+function t3CardFrameStyleFields({
+  pageKey,
+  sectionKey,
+  selector,
+  labelPrefix = "Card",
+  defaultBorderColor = "transparent",
+  defaultBorderWidth = 0,
+  defaultShadowColor = "#0d1c40",
+  defaultShadowOpacity = 0,
+  uiOrder = 500,
+}: {
+  pageKey: string;
+  sectionKey: string;
+  selector: string;
+  labelPrefix?: string;
+  defaultBorderColor?: string;
+  defaultBorderWidth?: number;
+  defaultShadowColor?: string;
+  defaultShadowOpacity?: number;
+  uiOrder?: number;
+}): SchoolTemplateField[] {
+  return [
+    colorField("cardBorderColor", `${labelPrefix} border color`, selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "card-border-color"),
+      defaultValue: defaultBorderColor,
+      uiGroup: `${labelPrefix} border`,
+      uiOrder,
+    }),
+    numberField("cardBorderWidth", `${labelPrefix} border width`, selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "card-border-width"),
+      defaultValue: defaultBorderWidth,
+      min: 0,
+      max: 12,
+      step: 1,
+      unit: "px",
+      helpText: "Set to 0 to remove the border.",
+      uiGroup: `${labelPrefix} border`,
+      uiOrder: uiOrder + 1,
+    }),
+    colorField("cardShadowColor", `${labelPrefix} shadow color`, selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "card-shadow-color"),
+      defaultValue: defaultShadowColor,
+      uiGroup: `${labelPrefix} shadow`,
+      uiOrder: uiOrder + 2,
+    }),
+    numberField("cardShadowOpacity", `${labelPrefix} shadow opacity`, selector, {
+      target: "cssVariable",
+      cssVariable: t3CssVar(pageKey, sectionKey, "card-shadow-opacity"),
+      defaultValue: defaultShadowOpacity,
+      min: 0,
+      max: 100,
+      step: 1,
+      unit: "%",
+      helpText: "Set to 0 to hide the shadow.",
+      uiGroup: `${labelPrefix} shadow`,
+      uiOrder: uiOrder + 3,
+    }),
+  ];
+}
+
 // ── Icon style fields ─────────────────────────────────────────
 function t3IconStyleFields({
   pageKey,
@@ -1181,6 +1244,17 @@ export const dextaAcademy3Manifest = {
               sectionKey: "programmes",
               selector: ".programme-tile",
             }),
+            ...t3CardFrameStyleFields({
+              pageKey: "home",
+              sectionKey: "programmes",
+              selector: ".programme-tile",
+              labelPrefix: "Programme card",
+              defaultBorderColor: "rgba(243,191,53,0.34)",
+              defaultBorderWidth: 1,
+              defaultShadowColor: "#0d1c40",
+              defaultShadowOpacity: 0,
+              uiOrder: 370,
+            }),
             ...homeTypography({ selector: ".programmes-showcase" }),
           ],
           repeatable: {
@@ -1360,6 +1434,16 @@ export const dextaAcademy3Manifest = {
               defaultTextColor: "#ffffff",
               defaultBorderColor: "#122a56",
             }),
+            ...t3CardFrameStyleFields({
+              pageKey: "home",
+              sectionKey: "gallery-preview",
+              selector: ".home-gallery-card",
+              labelPrefix: "Gallery card",
+              defaultBorderColor: "transparent",
+              defaultBorderWidth: 0,
+              defaultShadowColor: "#0d1c40",
+              defaultShadowOpacity: 0,
+            }),
             ...homeTypography({ selector: ".home-gallery" }),
           ],
           repeatable: {
@@ -1428,6 +1512,16 @@ export const dextaAcademy3Manifest = {
               defaultTextColor: "#09142f",
               defaultBorderColor: "#f3bf35",
             }),
+            ...t3CardFrameStyleFields({
+              pageKey: "about",
+              sectionKey: "story",
+              selector: ".about-story-card",
+              labelPrefix: "Story card",
+              defaultBorderColor: "transparent",
+              defaultBorderWidth: 0,
+              defaultShadowColor: "#0d1c40",
+              defaultShadowOpacity: 0,
+            }),
             ...aboutTypography({ selector: ".about-story" }),
           ],
           repeatable: {
@@ -1472,6 +1566,16 @@ export const dextaAcademy3Manifest = {
               sectionKey: "values-icon",
               selector: ".about-icon",
               defaultIconColor: "#101f4a",
+            }),
+            ...t3CardFrameStyleFields({
+              pageKey: "about",
+              sectionKey: "values",
+              selector: ".about-value-card",
+              labelPrefix: "Value card",
+              defaultBorderColor: "rgba(17,34,70,0.08)",
+              defaultBorderWidth: 1,
+              defaultShadowColor: "#0d1c40",
+              defaultShadowOpacity: 9,
             }),
             ...aboutTypography({ selector: ".about-values" }),
           ],
@@ -1637,6 +1741,16 @@ export const dextaAcademy3Manifest = {
               sectionKey: "grid",
               selector: ".gallery-gallery-ref",
               defaultBackgroundColor: "#ffffff",
+            }),
+            ...t3CardFrameStyleFields({
+              pageKey: "gallery",
+              sectionKey: "grid",
+              selector: ".gallery-reference-card",
+              labelPrefix: "Gallery item",
+              defaultBorderColor: "transparent",
+              defaultBorderWidth: 0,
+              defaultShadowColor: "#0a1833",
+              defaultShadowOpacity: 4,
             }),
           ],
           repeatable: {
@@ -2331,6 +2445,25 @@ export const dextaAcademy3Manifest = {
               helpText: "Set to 0 to remove the divider.",
               uiGroup: "Benefit card border",
               uiOrder: 503,
+            }),
+            colorField("benefitCardShadowColor", "Benefit card shadow color", ".contact-benefits article", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "benefits", "card-shadow-color"),
+              defaultValue: "#061a3a",
+              uiGroup: "Benefit card shadow",
+              uiOrder: 504,
+            }),
+            numberField("benefitCardShadowOpacity", "Benefit card shadow opacity", ".contact-benefits article", {
+              target: "cssVariable",
+              cssVariable: t3CssVar("contact", "benefits", "card-shadow-opacity"),
+              defaultValue: 0,
+              min: 0,
+              max: 100,
+              step: 1,
+              unit: "%",
+              helpText: "Set to 0 to hide the shadow.",
+              uiGroup: "Benefit card shadow",
+              uiOrder: 505,
             }),
             ...contactSectionStyle({
               sectionKey: "benefits",
