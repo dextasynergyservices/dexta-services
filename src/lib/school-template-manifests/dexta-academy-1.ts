@@ -4,6 +4,7 @@ import {
   imageField,
   linkField,
   numberField,
+  selectField,
   textField,
   textareaField,
   type SchoolTemplateField,
@@ -258,6 +259,696 @@ function t1TypographyFields({
   ];
 }
 
+// ── Template 1 responsive logo controls ─────────────────────
+function t1ResponsiveLogoFields(): SchoolTemplateField[] {
+  const fieldBase = {
+    selector: ".navbar",
+    target: "cssVariable" as const,
+    unit: "px",
+    min: 24,
+    max: 220,
+    step: 1,
+    uiGroup: "Responsive logo size",
+  };
+
+  return [
+    numberField("logoWidthDesktop", "Logo width on desktop", ".navbar", {
+      ...fieldBase,
+      cssVariable: t1CssVar("shared", "navbar", "logo-width-desktop"),
+      defaultValue: 72,
+      uiOrder: 10,
+    }),
+    numberField("logoHeightDesktop", "Logo height on desktop", ".navbar", {
+      ...fieldBase,
+      cssVariable: t1CssVar("shared", "navbar", "logo-height-desktop"),
+      defaultValue: 56,
+      uiOrder: 11,
+    }),
+    numberField("logoWidthTablet", "Logo width on tablet", ".navbar", {
+      ...fieldBase,
+      cssVariable: t1CssVar("shared", "navbar", "logo-width-tablet"),
+      defaultValue: 72,
+      uiOrder: 12,
+    }),
+    numberField("logoHeightTablet", "Logo height on tablet", ".navbar", {
+      ...fieldBase,
+      cssVariable: t1CssVar("shared", "navbar", "logo-height-tablet"),
+      defaultValue: 56,
+      uiOrder: 13,
+    }),
+    numberField("logoWidthMobile", "Logo width on mobile", ".navbar", {
+      ...fieldBase,
+      cssVariable: t1CssVar("shared", "navbar", "logo-width-mobile"),
+      defaultValue: 72,
+      uiOrder: 14,
+    }),
+    numberField("logoHeightMobile", "Logo height on mobile", ".navbar", {
+      ...fieldBase,
+      cssVariable: t1CssVar("shared", "navbar", "logo-height-mobile"),
+      defaultValue: 56,
+      uiOrder: 15,
+    }),
+  ];
+}
+
+// ── Template 1 hero-specific controls ───────────────────────
+function t1HeroResponsiveTextFields(): SchoolTemplateField[] {
+  const fieldBase = {
+    selector: ".school-hero",
+    target: "cssVariable" as const,
+    unit: "px",
+    min: 12,
+    max: 120,
+    step: 1,
+    uiGroup: "Mobile and tablet hero text sizes",
+    helpText:
+      "Only the font size changes at this screen size. Other text styling stays the same.",
+  };
+
+  return [
+    numberField(
+      "headlineTabletFontSize",
+      "Hero headline tablet size",
+      ".school-hero",
+      {
+        ...fieldBase,
+        cssVariable: t1CssVar(
+          "home",
+          "hero",
+          "headline-tablet-font-size",
+        ),
+        defaultValue: 58,
+        min: 24,
+        max: 120,
+        uiOrder: 220,
+      },
+    ),
+    numberField(
+      "headlineMobileFontSize",
+      "Hero headline mobile size",
+      ".school-hero",
+      {
+        ...fieldBase,
+        cssVariable: t1CssVar(
+          "home",
+          "hero",
+          "headline-mobile-font-size",
+        ),
+        defaultValue: 42,
+        min: 22,
+        max: 88,
+        uiOrder: 221,
+      },
+    ),
+    numberField(
+      "bodyTabletFontSize",
+      "Hero body tablet size",
+      ".school-hero",
+      {
+        ...fieldBase,
+        cssVariable: t1CssVar("home", "hero", "body-tablet-font-size"),
+        defaultValue: 22,
+        min: 12,
+        max: 48,
+        uiOrder: 222,
+      },
+    ),
+    numberField("bodyMobileFontSize", "Hero body mobile size", ".school-hero", {
+      ...fieldBase,
+      cssVariable: t1CssVar("home", "hero", "body-mobile-font-size"),
+      defaultValue: 18,
+      min: 12,
+      max: 40,
+      uiOrder: 223,
+    }),
+  ];
+}
+
+function t1HeroAnimatedLineFields(): SchoolTemplateField[] {
+  const colorBase = {
+    selector: ".school-hero",
+    target: "cssVariable" as const,
+    uiGroup: "Animated hero lines",
+  };
+  const opacityBase = {
+    selector: ".school-hero",
+    target: "cssVariable" as const,
+    defaultValue: 100,
+    min: 0,
+    max: 100,
+    step: 1,
+    unit: "%",
+    uiGroup: "Animated hero lines",
+    helpText: "100 is fully visible; 0 is transparent.",
+  };
+
+  return [
+    colorField("lineOrangeColor", "Orange line color", ".school-hero", {
+      ...colorBase,
+      cssVariable: t1CssVar("home", "hero", "line-orange-color"),
+      defaultValue: "#FF6B35",
+      uiOrder: 240,
+    }),
+    numberField("lineOrangeOpacity", "Orange line opacity", ".school-hero", {
+      ...opacityBase,
+      cssVariable: t1CssVar("home", "hero", "line-orange-opacity"),
+      uiOrder: 241,
+    }),
+    colorField("lineSkyColor", "Sky line color", ".school-hero", {
+      ...colorBase,
+      cssVariable: t1CssVar("home", "hero", "line-sky-color"),
+      defaultValue: "#7fd0ff",
+      uiOrder: 242,
+    }),
+    numberField("lineSkyOpacity", "Sky line opacity", ".school-hero", {
+      ...opacityBase,
+      cssVariable: t1CssVar("home", "hero", "line-sky-opacity"),
+      uiOrder: 243,
+    }),
+    colorField("lineWhiteColor", "White line color", ".school-hero", {
+      ...colorBase,
+      cssVariable: t1CssVar("home", "hero", "line-white-color"),
+      defaultValue: "#ffffff",
+      uiOrder: 244,
+    }),
+    numberField("lineWhiteOpacity", "White line opacity", ".school-hero", {
+      ...opacityBase,
+      cssVariable: t1CssVar("home", "hero", "line-white-opacity"),
+      uiOrder: 245,
+    }),
+    colorField("lineGreenBlueColor", "Green/blue line color", ".school-hero", {
+      ...colorBase,
+      cssVariable: t1CssVar("home", "hero", "line-green-blue-color"),
+      defaultValue: "#07801b",
+      uiOrder: 246,
+    }),
+    numberField(
+      "lineGreenBlueOpacity",
+      "Green/blue line opacity",
+      ".school-hero",
+      {
+        ...opacityBase,
+        cssVariable: t1CssVar("home", "hero", "line-green-blue-opacity"),
+        uiOrder: 247,
+      },
+    ),
+    colorField(
+      "lineFineAccentColor",
+      "Fine accent line color",
+      ".school-hero",
+      {
+        ...colorBase,
+        cssVariable: t1CssVar("home", "hero", "line-fine-accent-color"),
+        defaultValue: "#acb893",
+        uiOrder: 248,
+      },
+    ),
+    numberField(
+      "lineFineAccentOpacity",
+      "Fine accent line opacity",
+      ".school-hero",
+      {
+        ...opacityBase,
+        cssVariable: t1CssVar("home", "hero", "line-fine-accent-opacity"),
+        uiOrder: 249,
+      },
+    ),
+  ];
+}
+
+function t1HeroCardBackgroundFields(): SchoolTemplateField[] {
+  const colorBase = {
+    selector: ".school-hero",
+    target: "cssVariable" as const,
+    uiGroup: "Hero image card backgrounds",
+  };
+  const opacityBase = {
+    selector: ".school-hero",
+    target: "cssVariable" as const,
+    defaultValue: 100,
+    min: 0,
+    max: 100,
+    step: 1,
+    unit: "%",
+    uiGroup: "Hero image card backgrounds",
+    helpText: "100 is fully visible; 0 is transparent.",
+  };
+
+  return [
+    colorField("cardCenterBgColor", "Center image card background", ".school-hero", {
+      ...colorBase,
+      cssVariable: t1CssVar("home", "hero", "card-center-bg-color"),
+      defaultValue: "#0a4d3c",
+      uiOrder: 180,
+    }),
+    numberField("cardCenterBgOpacity", "Center image card opacity", ".school-hero", {
+      ...opacityBase,
+      cssVariable: t1CssVar("home", "hero", "card-center-bg-opacity"),
+      uiOrder: 181,
+    }),
+    colorField("cardTopBgColor", "Top image card background", ".school-hero", {
+      ...colorBase,
+      cssVariable: t1CssVar("home", "hero", "card-top-bg-color"),
+      defaultValue: "#ff6b35",
+      uiOrder: 182,
+    }),
+    numberField("cardTopBgOpacity", "Top image card opacity", ".school-hero", {
+      ...opacityBase,
+      cssVariable: t1CssVar("home", "hero", "card-top-bg-opacity"),
+      uiOrder: 183,
+    }),
+    colorField("cardBottomBgColor", "Bottom image card background", ".school-hero", {
+      ...colorBase,
+      cssVariable: t1CssVar("home", "hero", "card-bottom-bg-color"),
+      defaultValue: "#dce5c8",
+      uiOrder: 184,
+    }),
+    numberField("cardBottomBgOpacity", "Bottom image card opacity", ".school-hero", {
+      ...opacityBase,
+      cssVariable: t1CssVar("home", "hero", "card-bottom-bg-opacity"),
+      uiOrder: 185,
+    }),
+  ];
+}
+
+function t1AboutPreviewImageBorderFields(): SchoolTemplateField[] {
+  const selector = ".landing-about__shape";
+
+  return [
+    selectField(
+      "imageBorderStyle",
+      "Image border pattern",
+      selector,
+      [
+        { label: "Solid", value: "solid" },
+        { label: "Dashed", value: "dashed" },
+        { label: "Dotted", value: "dotted" },
+        { label: "Double", value: "double" },
+        { label: "None", value: "none" },
+      ],
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar("home", "about-preview", "image-border-style"),
+        defaultValue: "solid",
+        helpText: "Choose None to remove the border line.",
+        uiGroup: "Who We Are image border",
+        uiOrder: 420,
+      },
+    ),
+    colorField("imageBorderColor", "Image border color", selector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("home", "about-preview", "image-border-color"),
+      defaultValue: "#0a4d3c",
+      uiGroup: "Who We Are image border",
+      uiOrder: 421,
+    }),
+    numberField("imageBorderWidth", "Image border thickness", selector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("home", "about-preview", "image-border-width"),
+      defaultValue: 0,
+      min: 0,
+      max: 24,
+      step: 1,
+      unit: "px",
+      helpText: "Set to 0 to remove the border line.",
+      uiGroup: "Who We Are image border",
+      uiOrder: 422,
+    }),
+  ];
+}
+
+function t1AcademicsCardStyleFields(): SchoolTemplateField[] {
+  const cardSelector = ".landing-academics__card";
+  const iconSelector = ".landing-academics__card .landing-academics__icon";
+
+  return [
+    colorField("cardBgColor", "This card background color", cardSelector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("home", "academics", "card-bg-color"),
+      defaultValue: "",
+      uiGroup: "This academic card style",
+      uiOrder: 360,
+    }),
+    colorField("cardIconColor", "This card icon color", iconSelector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("home", "academics", "card-icon-color"),
+      defaultValue: "",
+      uiGroup: "This academic card style",
+      uiOrder: 361,
+    }),
+    colorField(
+      "cardIconBgColor",
+      "This card icon background color",
+      iconSelector,
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar("home", "academics", "card-icon-bg-color"),
+        defaultValue: "",
+        uiGroup: "This academic card style",
+        uiOrder: 362,
+      },
+    ),
+    imageField("cardIconImage", "This card icon image", iconSelector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("home", "academics", "card-icon-image"),
+      defaultValue: "",
+      helpText:
+        "Upload an image to replace this card icon. Leave blank to keep the font icon.",
+      uiGroup: "This academic card style",
+      uiOrder: 363,
+    }),
+  ];
+}
+
+function t1AcademicsPerformanceFields(): SchoolTemplateField[] {
+  return [
+    colorField(
+      "performanceBgColor",
+      "Academic Performance background color",
+      ".landing-performance",
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar("home", "academics", "performance-bg-color"),
+        defaultValue: "",
+        uiGroup: "Academic Performance card",
+        uiOrder: 430,
+      },
+    ),
+    colorField(
+      "performanceChartBgColor",
+      "Academic Performance inner background color",
+      ".landing-performance__chart",
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar("home", "academics", "performance-chart-bg-color"),
+        defaultValue: "",
+        uiGroup: "Academic Performance card",
+        uiOrder: 431,
+      },
+    ),
+    textField(
+      "performanceEyebrow",
+      "Academic Performance label",
+      ".landing-performance__header span",
+      {
+        uiGroup: "Academic Performance content",
+        uiOrder: 432,
+      },
+    ),
+    textField(
+      "performanceTitle",
+      "Academic Performance title",
+      ".landing-performance__header strong",
+      {
+        uiGroup: "Academic Performance content",
+        uiOrder: 433,
+      },
+    ),
+    textareaField(
+      "performanceBody",
+      "Academic Performance writeup",
+      ".landing-performance > p",
+      {
+        uiGroup: "Academic Performance content",
+        uiOrder: 434,
+      },
+    ),
+    textField(
+      "performanceBarGreenLabel",
+      "Chart label 1",
+      ".landing-performance__bar--green small",
+      {
+        uiGroup: "Academic Performance chart",
+        uiOrder: 440,
+      },
+    ),
+    colorField(
+      "performanceBarGreenColor",
+      "Chart color 1",
+      ".landing-performance__bar--green span",
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar("home", "academics", "performance-bar-green-color"),
+        defaultValue: "#0a4d3c",
+        uiGroup: "Academic Performance chart",
+        uiOrder: 441,
+      },
+    ),
+    numberField(
+      "performanceBarGreenHeight",
+      "Chart height 1",
+      ".landing-performance__bar--green span",
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar("home", "academics", "performance-bar-green-height"),
+        defaultValue: 82,
+        min: 8,
+        max: 100,
+        step: 1,
+        unit: "%",
+        uiGroup: "Academic Performance chart",
+        uiOrder: 442,
+      },
+    ),
+    textField(
+      "performanceBarOrangeLabel",
+      "Chart label 2",
+      ".landing-performance__bar--orange small",
+      {
+        uiGroup: "Academic Performance chart",
+        uiOrder: 443,
+      },
+    ),
+    colorField(
+      "performanceBarOrangeColor",
+      "Chart color 2",
+      ".landing-performance__bar--orange span",
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar(
+          "home",
+          "academics",
+          "performance-bar-orange-color",
+        ),
+        defaultValue: "#ff6b35",
+        uiGroup: "Academic Performance chart",
+        uiOrder: 444,
+      },
+    ),
+    numberField(
+      "performanceBarOrangeHeight",
+      "Chart height 2",
+      ".landing-performance__bar--orange span",
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar(
+          "home",
+          "academics",
+          "performance-bar-orange-height",
+        ),
+        defaultValue: 72,
+        min: 8,
+        max: 100,
+        step: 1,
+        unit: "%",
+        uiGroup: "Academic Performance chart",
+        uiOrder: 445,
+      },
+    ),
+    textField(
+      "performanceBarChampagneLabel",
+      "Chart label 3",
+      ".landing-performance__bar--champagne small",
+      {
+        uiGroup: "Academic Performance chart",
+        uiOrder: 446,
+      },
+    ),
+    colorField(
+      "performanceBarChampagneColor",
+      "Chart color 3",
+      ".landing-performance__bar--champagne span",
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar(
+          "home",
+          "academics",
+          "performance-bar-champagne-color",
+        ),
+        defaultValue: "#e9d7b1",
+        uiGroup: "Academic Performance chart",
+        uiOrder: 447,
+      },
+    ),
+    numberField(
+      "performanceBarChampagneHeight",
+      "Chart height 3",
+      ".landing-performance__bar--champagne span",
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar(
+          "home",
+          "academics",
+          "performance-bar-champagne-height",
+        ),
+        defaultValue: 64,
+        min: 8,
+        max: 100,
+        step: 1,
+        unit: "%",
+        uiGroup: "Academic Performance chart",
+        uiOrder: 448,
+      },
+    ),
+  ];
+}
+
+function t1GalleryPaginationFields(): SchoolTemplateField[] {
+  const selector = ".landing-gallery__pagination";
+
+  return [
+    colorField("paginationBgColor", "Pagination button background", selector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("home", "gallery", "pagination-bg-color"),
+      defaultValue: "#ffffff",
+      uiGroup: "Gallery pagination buttons",
+      uiOrder: 420,
+    }),
+    colorField("paginationTextColor", "Pagination button text color", selector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("home", "gallery", "pagination-text-color"),
+      defaultValue: "rgba(30,30,46,.7)",
+      uiGroup: "Gallery pagination buttons",
+      uiOrder: 421,
+    }),
+    colorField(
+      "paginationActiveBgColor",
+      "Active pagination button background",
+      selector,
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar("home", "gallery", "pagination-active-bg-color"),
+        defaultValue: "#0a4d3c",
+        uiGroup: "Gallery pagination buttons",
+        uiOrder: 422,
+      },
+    ),
+    colorField(
+      "paginationActiveTextColor",
+      "Active pagination button text color",
+      selector,
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar(
+          "home",
+          "gallery",
+          "pagination-active-text-color",
+        ),
+        defaultValue: "#ffffff",
+        uiGroup: "Gallery pagination buttons",
+        uiOrder: 423,
+      },
+    ),
+  ];
+}
+
+function t1AdmissionsStepFields(): SchoolTemplateField[] {
+  const stepSelector = ".landing-step";
+
+  return [
+    colorField("stepCardBgColor", "Step card background color", stepSelector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("home", "admissions", "step-card-bg-color"),
+      defaultValue: "#ffffff",
+      uiGroup: "Admission step card",
+      uiOrder: 360,
+    }),
+    colorField(
+      "stepNumberColor",
+      "Step number text color",
+      ".landing-step .landing-step__number",
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar("home", "admissions", "step-number-color"),
+        defaultValue: "rgba(10,77,60,.42)",
+        uiGroup: "Admission step text colors",
+        uiOrder: 361,
+      },
+    ),
+    colorField("stepTitleColor", "Step title text color", ".landing-step h3", {
+      target: "cssVariable",
+      cssVariable: t1CssVar("home", "admissions", "step-title-color"),
+      defaultValue: "#1e1e2e",
+      uiGroup: "Admission step text colors",
+      uiOrder: 362,
+    }),
+    colorField("stepBodyColor", "Step body text color", ".landing-step p", {
+      target: "cssVariable",
+      cssVariable: t1CssVar("home", "admissions", "step-body-color"),
+      defaultValue: "rgba(30,30,46,.72)",
+      uiGroup: "Admission step text colors",
+      uiOrder: 363,
+    }),
+    textField("stepNumber", "Step number", ".landing-step .landing-step__number", {
+      uiGroup: "Admission step content",
+      uiOrder: 370,
+    }),
+    textField("stepTitle", "Step title", ".landing-step h3", {
+      uiGroup: "Admission step content",
+      uiOrder: 371,
+    }),
+    textareaField("stepBody", "Step body", ".landing-step p", {
+      uiGroup: "Admission step content",
+      uiOrder: 372,
+    }),
+  ];
+}
+
+function t1ContactInfoFields(): SchoolTemplateField[] {
+  const contactDetails = [
+    {
+      key: "address",
+      label: "Address",
+      selector: ".landing-contact__detail:nth-of-type(1)",
+    },
+    {
+      key: "phone",
+      label: "Phone",
+      selector: ".landing-contact__detail:nth-of-type(2)",
+    },
+    {
+      key: "email",
+      label: "Email",
+      selector: ".landing-contact__detail:nth-of-type(3)",
+    },
+  ];
+
+  return contactDetails.flatMap(({ key, label, selector }, index) => [
+    textField(`${key}IconClass`, `${label} icon class`, `${selector} i`, {
+      target: "attribute",
+      attribute: "class",
+      helpText:
+        "Font Awesome icon class, e.g. fa-solid fa-phone or fa fa-phone-alt.",
+      uiGroup: "Contact info icons and cards",
+      uiOrder: 500 + index * 10,
+    }),
+    colorField(`${key}IconColor`, `${label} icon color`, `${selector} i`, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("home", "contact", `${key}-icon-color`),
+      defaultValue: "#0d6efd",
+      uiGroup: "Contact info icons and cards",
+      uiOrder: 501 + index * 10,
+    }),
+    colorField(`${key}CardBgColor`, `${label} info background`, selector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("home", "contact", `${key}-card-bg-color`),
+      defaultValue: "rgba(255,255,255,.92)",
+      uiGroup: "Contact info icons and cards",
+      uiOrder: 502 + index * 10,
+    }),
+  ]);
+}
+
 // ── Page-scoped helpers ──────────────────────────────────────
 function homeSectionStyle(
   opts: Omit<Parameters<typeof t1SectionStyleFields>[0], "pageKey">,
@@ -390,6 +1081,7 @@ export const dextaAcademy1Manifest = {
           uiGroup: "Logo",
           uiOrder: 0,
         }),
+        ...t1ResponsiveLogoFields(),
         colorField("navLinkColor", "Nav link color", ".navbar", {
           target: "cssVariable",
           cssVariable: t1CssVar("shared", "navbar", "nav-link-color"),
@@ -466,6 +1158,9 @@ export const dextaAcademy1Manifest = {
               defaultBorderColor: "#0d6efd",
             }),
             ...t1TypographyFields({ selector: ".school-hero" }),
+            ...t1HeroResponsiveTextFields(),
+            ...t1HeroAnimatedLineFields(),
+            ...t1HeroCardBackgroundFields(),
             textareaField("headline", "Headline", ".school-hero__title", {
               type: "richText",
               target: "innerHTML",
@@ -523,6 +1218,7 @@ export const dextaAcademy1Manifest = {
             }),
             ...t1TypographyFields({ selector: ".landing-section--about" }),
             imageField("image", "Image", ".landing-about__media img"),
+            ...t1AboutPreviewImageBorderFields(),
             textareaField("eyebrow", "Eyebrow", ".landing-eyebrow", {
               type: "richText",
               target: "innerHTML",
@@ -547,14 +1243,6 @@ export const dextaAcademy1Manifest = {
               selector: ".landing-section--academics",
               defaultBackgroundColor: "#f8f9fa",
             }),
-            ...homeIconStyle({
-              sectionKey: "academics",
-              selector: ".landing-section--academics",
-              defaultIconColor: "#0d6efd",
-              defaultIconBgColor: "#e8f0fe",
-              defaultIconBgOpacity: 100,
-              defaultIconBorderColor: "#0d6efd",
-            }),
             ...t1TypographyFields({ selector: ".landing-section--academics" }),
             textareaField("eyebrow", "Eyebrow", ".landing-eyebrow", {
               type: "richText",
@@ -570,11 +1258,19 @@ export const dextaAcademy1Manifest = {
               "Card body",
               ".landing-academics__card p",
             ),
-            textField("iconClass", "Icon class", ".landing-academics__icon i", {
-              target: "attribute",
-              attribute: "class",
-              helpText: "Font Awesome icon class, e.g. fa fa-globe-africa",
-            }),
+            textField(
+              "iconClass",
+              "This card icon class",
+              ".landing-academics__card .landing-academics__icon i",
+              {
+                target: "attribute",
+                attribute: "class",
+                helpText:
+                  "Font Awesome icon class, e.g. fa-solid fa-book or fa fa-book.",
+              },
+            ),
+            ...t1AcademicsCardStyleFields(),
+            ...t1AcademicsPerformanceFields(),
           ],
           repeatable: {
             itemSelector: ".landing-academics__card",
@@ -601,6 +1297,7 @@ export const dextaAcademy1Manifest = {
               type: "richText",
               target: "innerHTML",
             }),
+            ...t1GalleryPaginationFields(),
             imageField("image", "Image", ".landing-gallery__item img"),
             textField(
               "captionTitle",
@@ -640,7 +1337,20 @@ export const dextaAcademy1Manifest = {
               type: "richText",
               target: "innerHTML",
             }),
-            textField("author", "Author", ".landing-testimonial strong"),
+            textField("author", "Name", ".landing-testimonial strong"),
+            selectField(
+              "relationship",
+              "Parent or guardian",
+              ".landing-testimonial__person span",
+              [
+                { label: "Parent", value: "Parent" },
+                { label: "Guardian", value: "Guardian" },
+              ],
+              {
+                uiGroup: "Testimonial content",
+                uiOrder: 360,
+              },
+            ),
           ],
           repeatable: {
             itemSelector: ".landing-testimonial",
@@ -670,13 +1380,23 @@ export const dextaAcademy1Manifest = {
               type: "richText",
               target: "innerHTML",
             }),
+            textareaField("eyebrow", "Eyebrow", ".landing-eyebrow", {
+              type: "richText",
+              target: "innerHTML",
+            }),
             textareaField("body", "Body", ".landing-copy", {
               type: "richText",
               target: "innerHTML",
             }),
+            ...t1AdmissionsStepFields(),
             textField("ctaText", "CTA text", ".btn, a.btn"),
             linkField("ctaHref", "CTA link", ".btn, a.btn"),
           ],
+          repeatable: {
+            itemSelector: ".landing-step",
+            labelSingular: "Admission step",
+            labelPlural: "Admission steps",
+          },
         },
         {
           id: "contact",
@@ -735,6 +1455,7 @@ export const dextaAcademy1Manifest = {
               "Email link",
               ".landing-contact__detail:nth-of-type(3)",
             ),
+            ...t1ContactInfoFields(),
             linkField(
               "socialInstagram",
               "Instagram link",
@@ -834,7 +1555,8 @@ export const dextaAcademy1Manifest = {
             textField("iconClass", "Icon class", ".about-page__panel-icon i", {
               target: "attribute",
               attribute: "class",
-              helpText: "Font Awesome icon class, e.g. fa fa-eye",
+              helpText:
+                "Font Awesome icon class, e.g. fa-solid fa-eye or fa fa-eye.",
             }),
           ],
           repeatable: {
@@ -881,7 +1603,8 @@ export const dextaAcademy1Manifest = {
             textField("iconClass", "Icon class", ".about-page__value-icon i", {
               target: "attribute",
               attribute: "class",
-              helpText: "Font Awesome icon class, e.g. fa fa-award",
+              helpText:
+                "Font Awesome icon class, e.g. fa-solid fa-award or fa fa-award.",
             }),
           ],
           repeatable: {

@@ -1302,6 +1302,21 @@ function FieldControl({
             </div>
           </div>
         </div>
+      ) : controlKind === "select" ? (
+        <select
+          value={displayStringValue}
+          onChange={(event) => onChange(event.target.value)}
+          className={cn(
+            "h-9 rounded-md border px-3 text-sm outline-none transition-colors focus:border-cyan-500/40",
+            commonInputClass,
+          )}
+        >
+          {(field.options ?? []).map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       ) : (
         <Input
           value={getStringValue(displayValue)}

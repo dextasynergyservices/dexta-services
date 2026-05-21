@@ -29,6 +29,9 @@ type PreviewNavigationContext = {
   currentPageSlug: string;
 };
 
+const FONT_AWESOME_SIX_CSS_URL =
+  "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css";
+
 function escapeScriptJson(value: unknown) {
   return JSON.stringify(value).replace(/</g, "\\u003c");
 }
@@ -53,6 +56,23 @@ function injectBeforeBodyClose(html: string, markup: string) {
   }
 
   return `${html}\n${markup}`;
+}
+
+function ensureTemplateOneFontAwesomeSix(html: string) {
+  const fontAwesomeLink = `<link href="${FONT_AWESOME_SIX_CSS_URL}" rel="stylesheet">`;
+
+  if (/font-awesome\/6\.[\d.]+\/css\/all\.min\.css/i.test(html)) {
+    return html;
+  }
+
+  if (/font-awesome\/5\.[\d.]+\/css\/all\.min\.css/i.test(html)) {
+    return html.replace(
+      /https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/font-awesome\/5\.[\d.]+\/css\/all\.min\.css/gi,
+      FONT_AWESOME_SIX_CSS_URL,
+    );
+  }
+
+  return injectIntoHead(html, fontAwesomeLink);
 }
 
 function injectAfterBodyOpen(html: string, markup: string) {
@@ -1066,6 +1086,124 @@ function renderDextaAcademyThreeLoaderFallback(
   );
 }
 
+const dextaAcademyOneHeroLineStyleMap = [
+  { className: "orange", token: "orange" },
+  { className: "sky", token: "sky" },
+  { className: "white", token: "white" },
+  { className: "blue", token: "green-blue" },
+  { className: "thin-white", token: "fine-accent" },
+] as const;
+
+type DextaAcademyOneHeroLineFallbacks = Record<
+  (typeof dextaAcademyOneHeroLineStyleMap)[number]["token"],
+  string
+>;
+
+const dextaAcademyOneHeroLineFallbacks: Record<
+  "desktop" | "mobile",
+  DextaAcademyOneHeroLineFallbacks
+> = {
+  desktop: {
+    orange: "#FF6B35",
+    sky: "#7fd0ff",
+    white: "#ffffff",
+    "green-blue": "#07801b",
+    "fine-accent": "#acb893",
+  },
+  mobile: {
+    orange: "#ea7c5f",
+    sky: "#7fd0ff",
+    white: "#f5f7ff",
+    "green-blue": "#3e69d2",
+    "fine-accent": "#ffffff",
+  },
+} as const;
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getDextaAcademyOneHeroLineStrokeRule(
+  className: string,
+  token: string,
+  fallback: string,
+) {
+  return `.${className} { stroke: color-mix(in srgb,var(--dexta-academy-1-home-hero-line-${token}-color,${fallback}) var(--dexta-academy-1-home-hero-line-${token}-opacity,100%),transparent); }`;
+}
+
+function prepareDextaAcademyOneHeroStreakSvg(
+  svg: string,
+  className: string,
+  fallbacks: DextaAcademyOneHeroLineFallbacks,
+) {
+  let output = svg
+    .replace(/\s*<title\b[\s\S]*?<\/title>\s*/i, "")
+    .replace(/\s*<desc\b[\s\S]*?<\/desc>\s*/i, "");
+
+  for (const item of dextaAcademyOneHeroLineStyleMap) {
+    output = output.replace(
+      new RegExp(
+        `\\.${escapeRegExp(item.className)}\\s*\\{\\s*stroke:\\s*[^;]+;\\s*\\}`,
+        "i",
+      ),
+      getDextaAcademyOneHeroLineStrokeRule(
+        item.className,
+        item.token,
+        fallbacks[item.token],
+      ),
+    );
+  }
+
+  return output.replace(/<svg\b([^>]*)>/i, (_match, rawAttributes) => {
+    const attributes = String(rawAttributes)
+      .replace(/\srole=(["'])[^"']*\1/gi, "")
+      .replace(/\saria-labelledby=(["'])[^"']*\1/gi, "")
+      .replace(/\sclass=(["'])[^"']*\1/gi, "")
+      .replace(/\saria-hidden=(["'])[^"']*\1/gi, "")
+      .replace(/\sfocusable=(["'])[^"']*\1/gi, "");
+
+    return `<svg${attributes} class="${className}" aria-hidden="true" focusable="false">`;
+  });
+}
+
+async function inlineDextaAcademyOneHeroStreaks(
+  html: string,
+  sourceDir: string,
+) {
+  try {
+    const [desktopSvg, mobileSvg] = await Promise.all([
+      readFile(
+        assertSafeTemplatePath(sourceDir, "school-hero-streaks.svg"),
+        "utf8",
+      ),
+      readFile(
+        assertSafeTemplatePath(sourceDir, "school-hero-streaks-mobile.svg"),
+        "utf8",
+      ),
+    ]);
+
+    return html
+      .replace(
+        /<img\b(?=[^>]*\bschool-hero__streaks--desktop\b)[^>]*>/i,
+        prepareDextaAcademyOneHeroStreakSvg(
+          desktopSvg,
+          "school-hero__streaks school-hero__streaks--desktop",
+          dextaAcademyOneHeroLineFallbacks.desktop,
+        ),
+      )
+      .replace(
+        /<img\b(?=[^>]*\bschool-hero__streaks--mobile\b)[^>]*>/i,
+        prepareDextaAcademyOneHeroStreakSvg(
+          mobileSvg,
+          "school-hero__streaks school-hero__streaks--mobile",
+          dextaAcademyOneHeroLineFallbacks.mobile,
+        ),
+      );
+  } catch {
+    return html;
+  }
+}
+
 function assertSafeTemplatePath(sourceDir: string, fileName: string) {
   const workspaceRoot = process.cwd();
   const publicRoot = path.resolve(workspaceRoot, "public");
@@ -2001,11 +2139,16 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	      }
 	    }
 
-		    if (field.target === "cssVariable" && field.cssVariable) {
-		      var cssValue = getCssVariableValue(value, field);
-		      node.style.setProperty(field.cssVariable, cssValue);
-		      applyAcademyThreeHeroColorField(node, field, cssValue);
-	      if (field.cssVariable === "--cap-center-x") node.style.left = cssValue;
+	    if (field.target === "cssVariable" && field.cssVariable) {
+	      var cssValue = getCssVariableValue(value, field);
+	      node.style.setProperty(field.cssVariable, cssValue);
+	      if (field.cssVariable === "--dexta-academy-1-home-academics-card-icon-image") {
+	        node.querySelectorAll("i").forEach(function (icon) {
+	          icon.style.opacity = cssValue && cssValue !== "none" ? "0" : "";
+	        });
+	      }
+	      applyAcademyThreeHeroColorField(node, field, cssValue);
+      if (field.cssVariable === "--cap-center-x") node.style.left = cssValue;
 	      if (field.cssVariable === "--cap-center-y") node.style.top = cssValue;
 	      return;
 		    }
@@ -2079,19 +2222,30 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	      var value = sectionContent.fields ? sectionContent.fields[field.key] : null;
       if (!shouldApplyField(value, field)) {
         // Hide social link anchors when their text label is cleared
-        if (
-          field.type === "text" &&
-          field.selector &&
-          field.selector.indexOf(".social-links a") !== -1
-        ) {
+	        if (
+	          field.type === "text" &&
+	          field.selector &&
+	          field.selector.indexOf(".social-links a") !== -1
+	        ) {
           roots.forEach(function (root) {
             queryWithin(root, field.selector).forEach(function (node) {
               node.style.display = isFilled(value) ? "" : "none";
             });
-          });
-        }
-        return;
-      }
+	          });
+	        }
+	        if (
+	          field.type === "link" &&
+	          field.selector &&
+	          field.selector.indexOf(".landing-contact__socials a") !== -1
+	        ) {
+	          roots.forEach(function (root) {
+	            queryWithin(root, field.selector).forEach(function (node) {
+	              node.style.display = isFilled(value) && String(value).trim() !== "#" ? "" : "none";
+	            });
+	          });
+	        }
+	        return;
+	      }
 
       if (field.target === "threeConfig") {
         return;
@@ -2103,11 +2257,22 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
       roots.forEach(function (root) {
 	        queryWithin(root, field.selector).forEach(function (node) {
 	          // Restore social links that were hidden
-	          if (field.selector && field.selector.indexOf(".social-links a") !== -1) {
-	            node.style.display = "";
-	          }
-	          applyField(node, field, value);
-	        });
+		          if (
+		            field.selector &&
+		            (field.selector.indexOf(".social-links a") !== -1 ||
+		              field.selector.indexOf(".landing-contact__socials a") !== -1)
+		          ) {
+		            node.style.display = "";
+		          }
+		          applyField(node, field, value);
+		          if (
+		            field.type === "link" &&
+		            field.selector &&
+		            field.selector.indexOf(".landing-contact__socials a") !== -1
+		          ) {
+		            node.style.display = isFilled(value) && String(value).trim() !== "#" ? "" : "none";
+		          }
+		        });
 	      });
 	    });
 
@@ -2601,61 +2766,91 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		  }
 		
 	  function getTemplateOverrideCss() {
-	    if (preview.content.templateSlug === "dexta-academy-1") {
-	      return [
-	        // ── Shared: Navbar ──
-	        '.navbar{background-color:color-mix(in srgb,var(--dexta-academy-1-shared-navbar-section-bg-color,#fff) var(--dexta-academy-1-shared-navbar-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-shared-navbar-section-bg-image,none)!important;background-position:var(--dexta-academy-1-shared-navbar-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-shared-navbar-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+		    if (preview.content.templateSlug === "dexta-academy-1") {
+		      var academyOneLogoWidth = (Number(preview.content.theme.logoWidth || 72)) + "px";
+		      var academyOneLogoHeight = (Number(preview.content.theme.logoHeight || 56)) + "px";
+		      function academyOneSectionBackground(selector, pageKey, sectionKey, defaultColor) {
+		        var prefix = "--dexta-academy-1-" + pageKey + "-" + sectionKey + "-";
+		        var overlay = "color-mix(in srgb,var(" + prefix + "section-bg-color," + defaultColor + ") var(" + prefix + "section-bg-opacity,100%),transparent)";
+		        return selector + "{background-color:" + overlay + "!important;background-image:linear-gradient(" + overlay + "," + overlay + "),var(" + prefix + "section-bg-image,none)!important;background-position:var(" + prefix + "section-bg-position,center center)!important;background-size:var(" + prefix + "section-bg-size,cover)!important;background-repeat:no-repeat!important;}";
+		      }
+		      return [
+		        // ── Shared: Navbar ──
+		        academyOneSectionBackground(".navbar", "shared", "navbar", "#fff"),
+	        '.navbar .navbar-brand img{width:var(--dexta-academy-1-shared-navbar-logo-width-desktop,' + academyOneLogoWidth + ')!important;height:var(--dexta-academy-1-shared-navbar-logo-height-desktop,' + academyOneLogoHeight + ')!important;max-width:var(--dexta-academy-1-shared-navbar-logo-width-desktop,' + academyOneLogoWidth + ')!important;}',
+	        '@media (min-width:768px) and (max-width:1199.98px){.navbar .navbar-brand img{width:var(--dexta-academy-1-shared-navbar-logo-width-tablet,' + academyOneLogoWidth + ')!important;height:var(--dexta-academy-1-shared-navbar-logo-height-tablet,' + academyOneLogoHeight + ')!important;max-width:var(--dexta-academy-1-shared-navbar-logo-width-tablet,' + academyOneLogoWidth + ')!important;}}',
+	        '@media (max-width:767.98px){.navbar .navbar-brand img{width:var(--dexta-academy-1-shared-navbar-logo-width-mobile,' + academyOneLogoWidth + ')!important;height:var(--dexta-academy-1-shared-navbar-logo-height-mobile,' + academyOneLogoHeight + ')!important;max-width:var(--dexta-academy-1-shared-navbar-logo-width-mobile,' + academyOneLogoWidth + ')!important;}}',
 	        '.navbar .btn-primary,.navbar .btn{background:color-mix(in srgb,var(--dexta-academy-1-shared-navbar-cta-button-bg-color,#0d6efd) var(--dexta-academy-1-shared-navbar-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-shared-navbar-cta-button-text-color,#fff)!important;border:var(--dexta-academy-1-shared-navbar-cta-button-border-width,0px) solid var(--dexta-academy-1-shared-navbar-cta-button-border-color,#0d6efd)!important;}',
 	        '.navbar-nav .nav-item.nav-link,.navbar-nav .nav-link,.navbar-nav a{color:var(--dexta-academy-1-shared-navbar-nav-link-color,#696969)!important;}',
-	        '.navbar-nav .nav-item.nav-link:hover,.navbar-nav .nav-link:hover,.navbar-nav a:hover,.navbar-nav .nav-item.nav-link.active,.navbar-nav .nav-link.active{color:var(--dexta-academy-1-shared-navbar-nav-link-hover-color,#0d6efd)!important;}',
-	        // ── Shared: Footer ──
-	        '.landing-footer{background-color:color-mix(in srgb,var(--dexta-academy-1-shared-footer-section-bg-color,#1a1a2e) var(--dexta-academy-1-shared-footer-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-shared-footer-section-bg-image,none)!important;background-position:var(--dexta-academy-1-shared-footer-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-shared-footer-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        // ── Shared: Admission Modal ──
-	        '.landing-admissions-modal{background-color:color-mix(in srgb,var(--dexta-academy-1-shared-admission-section-bg-color,#fff) var(--dexta-academy-1-shared-admission-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-shared-admission-section-bg-image,none)!important;background-position:var(--dexta-academy-1-shared-admission-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-shared-admission-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        // ── Home: Hero ──
-	        '.school-hero{background-color:color-mix(in srgb,var(--dexta-academy-1-home-hero-section-bg-color,#fff) var(--dexta-academy-1-home-hero-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-home-hero-section-bg-image,none)!important;background-position:var(--dexta-academy-1-home-hero-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-home-hero-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        '.school-hero .school-hero__btn--primary,.school-hero .school-hero__btn--secondary{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-button-bg-color,#0d6efd) var(--dexta-academy-1-home-hero-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-home-hero-button-text-color,#fff)!important;border:var(--dexta-academy-1-home-hero-button-border-width,0px) solid var(--dexta-academy-1-home-hero-button-border-color,#0d6efd)!important;}',
-	        // ── Home: About Preview ──
-	        '.landing-section--about{background-color:color-mix(in srgb,var(--dexta-academy-1-home-about-preview-section-bg-color,#fff) var(--dexta-academy-1-home-about-preview-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-home-about-preview-section-bg-image,none)!important;background-position:var(--dexta-academy-1-home-about-preview-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-home-about-preview-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        // ── Home: Academics ──
-	        '.landing-section--academics{background-color:color-mix(in srgb,var(--dexta-academy-1-home-academics-section-bg-color,#f8f9fa) var(--dexta-academy-1-home-academics-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-home-academics-section-bg-image,none)!important;background-position:var(--dexta-academy-1-home-academics-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-home-academics-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        '.landing-section--academics .landing-academics__icon,.landing-section--academics .landing-academics__icon i{color:var(--dexta-academy-1-home-academics-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-home-academics-icon-bg-color,#e8f0fe) var(--dexta-academy-1-home-academics-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-home-academics-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-home-academics-icon-border-width,0px) solid var(--dexta-academy-1-home-academics-icon-border-color,#0d6efd)!important;}',
-	        // ── Home: Gallery ──
-	        '.landing-section--gallery{background-color:color-mix(in srgb,var(--dexta-academy-1-home-gallery-section-bg-color,#fff) var(--dexta-academy-1-home-gallery-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-home-gallery-section-bg-image,none)!important;background-position:var(--dexta-academy-1-home-gallery-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-home-gallery-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        // ── Home: Testimonials ──
-	        '.landing-section--testimonials{background-color:color-mix(in srgb,var(--dexta-academy-1-home-testimonials-section-bg-color,#fff) var(--dexta-academy-1-home-testimonials-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-home-testimonials-section-bg-image,none)!important;background-position:var(--dexta-academy-1-home-testimonials-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-home-testimonials-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        // ── Home: Admissions ──
-	        '#admissions{background-color:color-mix(in srgb,var(--dexta-academy-1-home-admissions-section-bg-color,#fff) var(--dexta-academy-1-home-admissions-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-home-admissions-section-bg-image,none)!important;background-position:var(--dexta-academy-1-home-admissions-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-home-admissions-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        '#admissions .btn{background:color-mix(in srgb,var(--dexta-academy-1-home-admissions-button-bg-color,#0d6efd) var(--dexta-academy-1-home-admissions-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-home-admissions-button-text-color,#fff)!important;border:var(--dexta-academy-1-home-admissions-button-border-width,0px) solid var(--dexta-academy-1-home-admissions-button-border-color,#0d6efd)!important;}',
-	        // ── Home: Contact ──
-	        '#contact{background-color:color-mix(in srgb,var(--dexta-academy-1-home-contact-section-bg-color,#fff) var(--dexta-academy-1-home-contact-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-home-contact-section-bg-image,none)!important;background-position:var(--dexta-academy-1-home-contact-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-home-contact-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        '#contact .landing-contact__detail i{color:var(--dexta-academy-1-home-contact-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-home-contact-icon-bg-color,#fff) var(--dexta-academy-1-home-contact-icon-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-1-home-contact-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-home-contact-icon-border-width,0px) solid var(--dexta-academy-1-home-contact-icon-border-color,#0d6efd)!important;}',
-	        // ── About: Hero ──
-	        '.about-page__hero{background-color:color-mix(in srgb,var(--dexta-academy-1-about-hero-section-bg-color,#fff) var(--dexta-academy-1-about-hero-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-hero-section-bg-image,none)!important;background-position:var(--dexta-academy-1-about-hero-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-about-hero-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        // ── About: Vision ──
-	        '.about-page__section--vision{background-color:color-mix(in srgb,var(--dexta-academy-1-about-vision-section-bg-color,#fff) var(--dexta-academy-1-about-vision-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-vision-section-bg-image,none)!important;background-position:var(--dexta-academy-1-about-vision-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-about-vision-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        '.about-page__section--vision .about-page__panel-icon,.about-page__section--vision .about-page__panel-icon i{color:var(--dexta-academy-1-about-vision-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-about-vision-icon-bg-color,#e8f0fe) var(--dexta-academy-1-about-vision-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-vision-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-about-vision-icon-border-width,0px) solid var(--dexta-academy-1-about-vision-icon-border-color,#0d6efd)!important;}',
-	        // ── About: Values ──
-	        '.about-page__section--values{background-color:color-mix(in srgb,var(--dexta-academy-1-about-values-section-bg-color,#f8f9fa) var(--dexta-academy-1-about-values-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-values-section-bg-image,none)!important;background-position:var(--dexta-academy-1-about-values-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-about-values-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        '.about-page__section--values .about-page__value-icon,.about-page__section--values .about-page__value-icon i{color:var(--dexta-academy-1-about-values-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-about-values-icon-bg-color,#e8f0fe) var(--dexta-academy-1-about-values-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-values-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-about-values-icon-border-width,0px) solid var(--dexta-academy-1-about-values-icon-border-color,#0d6efd)!important;}',
-	        // ── About: Story ──
-	        '.about-page__section--story{background-color:color-mix(in srgb,var(--dexta-academy-1-about-story-section-bg-color,#fff) var(--dexta-academy-1-about-story-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-story-section-bg-image,none)!important;background-position:var(--dexta-academy-1-about-story-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-about-story-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        '.about-page__section--story #readMoreBtn,.about-page__section--story .btn{background:color-mix(in srgb,var(--dexta-academy-1-about-story-button-bg-color,#0d6efd) var(--dexta-academy-1-about-story-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-about-story-button-text-color,#fff)!important;border:var(--dexta-academy-1-about-story-button-border-width,0px) solid var(--dexta-academy-1-about-story-button-border-color,#0d6efd)!important;}',
-	        // ── About: Head Message ──
-	        '.about-page__message{background-color:color-mix(in srgb,var(--dexta-academy-1-about-head-message-section-bg-color,#fff) var(--dexta-academy-1-about-head-message-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-head-message-section-bg-image,none)!important;background-position:var(--dexta-academy-1-about-head-message-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-about-head-message-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        // ── About: Reasons ──
-	        '.about-page__section--reasons{background-color:color-mix(in srgb,var(--dexta-academy-1-about-reasons-section-bg-color,#f8f9fa) var(--dexta-academy-1-about-reasons-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-reasons-section-bg-image,none)!important;background-position:var(--dexta-academy-1-about-reasons-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-about-reasons-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        // ── About: CTA ──
-	        '.about-page__cta{background-color:color-mix(in srgb,var(--dexta-academy-1-about-cta-section-bg-color,#0d6efd) var(--dexta-academy-1-about-cta-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-cta-section-bg-image,none)!important;background-position:var(--dexta-academy-1-about-cta-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-about-cta-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        '.about-page__cta .about-page__button{background:color-mix(in srgb,var(--dexta-academy-1-about-cta-button-bg-color,#fff) var(--dexta-academy-1-about-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-about-cta-button-text-color,#0d6efd)!important;border:var(--dexta-academy-1-about-cta-button-border-width,0px) solid var(--dexta-academy-1-about-cta-button-border-color,#fff)!important;}',
-	        // ── Testimonials: Hero ──
-	        '.testimonials-page__hero{background-color:color-mix(in srgb,var(--dexta-academy-1-testimonials-hero-section-bg-color,#fff) var(--dexta-academy-1-testimonials-hero-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-testimonials-hero-section-bg-image,none)!important;background-position:var(--dexta-academy-1-testimonials-hero-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-testimonials-hero-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        // ── Testimonials: Success Story ──
-	        '.testimonials-page__section--story{background-color:color-mix(in srgb,var(--dexta-academy-1-testimonials-success-story-section-bg-color,#fff) var(--dexta-academy-1-testimonials-success-story-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-testimonials-success-story-section-bg-image,none)!important;background-position:var(--dexta-academy-1-testimonials-success-story-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-testimonials-success-story-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        // ── Testimonials: Wall ──
-	        '.testimonials-page__section--wall{background-color:color-mix(in srgb,var(--dexta-academy-1-testimonials-wall-section-bg-color,#f8f9fa) var(--dexta-academy-1-testimonials-wall-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-testimonials-wall-section-bg-image,none)!important;background-position:var(--dexta-academy-1-testimonials-wall-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-testimonials-wall-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
-	        // ── Testimonials: CTA ──
-	        '.testimonials-page__section--cta{background-color:color-mix(in srgb,var(--dexta-academy-1-testimonials-cta-section-bg-color,#0d6efd) var(--dexta-academy-1-testimonials-cta-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-testimonials-cta-section-bg-image,none)!important;background-position:var(--dexta-academy-1-testimonials-cta-section-bg-position,center center)!important;background-size:var(--dexta-academy-1-testimonials-cta-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+		        '.navbar-nav .nav-item.nav-link:hover,.navbar-nav .nav-link:hover,.navbar-nav a:hover,.navbar-nav .nav-item.nav-link.active,.navbar-nav .nav-link.active{color:var(--dexta-academy-1-shared-navbar-nav-link-hover-color,#0d6efd)!important;}',
+		        // ── Shared: Footer ──
+		        academyOneSectionBackground(".landing-footer", "shared", "footer", "#1a1a2e"),
+		        // ── Shared: Admission Modal ──
+		        academyOneSectionBackground(".landing-admissions-modal", "shared", "admission", "#fff"),
+		        // ── Home: Hero ──
+		        academyOneSectionBackground(".school-hero", "home", "hero", "#fff"),
+	        '.school-hero__card-bg--green{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-card-center-bg-color,#0a4d3c) var(--dexta-academy-1-home-hero-card-center-bg-opacity,100%),transparent)!important;}',
+	        '.school-hero__card-bg--orange{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-card-top-bg-color,#ff6b35) var(--dexta-academy-1-home-hero-card-top-bg-opacity,100%),transparent)!important;}',
+	        '.school-hero__card-bg--champagne{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-card-bottom-bg-color,#dce5c8) var(--dexta-academy-1-home-hero-card-bottom-bg-opacity,100%),transparent)!important;}',
+	        '@media (min-width:768px) and (max-width:1199.98px){.school-hero .school-hero__title,.school-hero .school-hero__title *{font-size:var(--dexta-academy-1-home-hero-headline-tablet-font-size,clamp(3.6rem,5vw,5.8rem))!important;}.school-hero .school-hero__text,.school-hero .school-hero__text *{font-size:var(--dexta-academy-1-home-hero-body-tablet-font-size,1.35rem)!important;}}',
+	        '@media (max-width:767.98px){.school-hero .school-hero__title,.school-hero .school-hero__title *{font-size:var(--dexta-academy-1-home-hero-headline-mobile-font-size,clamp(2.6rem,10vw,3.7rem))!important;}.school-hero .school-hero__text,.school-hero .school-hero__text *{font-size:var(--dexta-academy-1-home-hero-body-mobile-font-size,1.1rem)!important;}}',
+		        '.school-hero .school-hero__btn--primary,.school-hero .school-hero__btn--secondary{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-button-bg-color,#0d6efd) var(--dexta-academy-1-home-hero-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-home-hero-button-text-color,#fff)!important;border:var(--dexta-academy-1-home-hero-button-border-width,0px) solid var(--dexta-academy-1-home-hero-button-border-color,#0d6efd)!important;}',
+		        // ── Home: About Preview ──
+		        academyOneSectionBackground(".landing-section--about", "home", "about-preview", "#fff"),
+		        '.landing-section--about .landing-about__shape{border:var(--dexta-academy-1-home-about-preview-image-border-width,0px) var(--dexta-academy-1-home-about-preview-image-border-style,solid) var(--dexta-academy-1-home-about-preview-image-border-color,#0a4d3c)!important;}',
+		        // ── Home: Academics ──
+		        academyOneSectionBackground(".landing-section--academics", "home", "academics", "#f8f9fa"),
+		        '.landing-section--academics .landing-academics__card{background:var(--dexta-academy-1-home-academics-card-bg-color,#fff)!important;}',
+		        '.landing-section--academics .landing-academics__icon{color:var(--dexta-academy-1-home-academics-card-icon-color,#0d6efd)!important;background-color:var(--dexta-academy-1-home-academics-card-icon-bg-color,rgba(10,77,60,.08))!important;background-image:var(--dexta-academy-1-home-academics-card-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;}',
+		        '.landing-section--academics .landing-academics__icon i{color:inherit!important;background:transparent!important;}',
+		        '.landing-section--academics .landing-performance{background:var(--dexta-academy-1-home-academics-performance-bg-color,linear-gradient(180deg,#ffffff 0%,#fffaf1 100%))!important;}',
+		        '.landing-section--academics .landing-performance__chart{background:var(--dexta-academy-1-home-academics-performance-chart-bg-color,rgba(10,77,60,.04))!important;}',
+		        '.landing-section--academics .landing-performance__bar--green span{height:var(--dexta-academy-1-home-academics-performance-bar-green-height,82%)!important;background:var(--dexta-academy-1-home-academics-performance-bar-green-color,#0a4d3c)!important;}',
+		        '.landing-section--academics .landing-performance__bar--orange span{height:var(--dexta-academy-1-home-academics-performance-bar-orange-height,72%)!important;background:var(--dexta-academy-1-home-academics-performance-bar-orange-color,#ff6b35)!important;}',
+		        '.landing-section--academics .landing-performance__bar--champagne span{height:var(--dexta-academy-1-home-academics-performance-bar-champagne-height,64%)!important;background:var(--dexta-academy-1-home-academics-performance-bar-champagne-color,#e9d7b1)!important;}',
+		        // ── Home: Gallery ──
+		        academyOneSectionBackground(".landing-section--gallery", "home", "gallery", "#fff"),
+		        '.landing-section--gallery .landing-gallery__page{background:var(--dexta-academy-1-home-gallery-pagination-bg-color,#fff)!important;color:var(--dexta-academy-1-home-gallery-pagination-text-color,rgba(30,30,46,.7))!important;}',
+		        '.landing-section--gallery .landing-gallery__page.is-active{background:var(--dexta-academy-1-home-gallery-pagination-active-bg-color,#0a4d3c)!important;border-color:var(--dexta-academy-1-home-gallery-pagination-active-bg-color,#0a4d3c)!important;color:var(--dexta-academy-1-home-gallery-pagination-active-text-color,#fff)!important;}',
+		        // ── Home: Testimonials ──
+		        academyOneSectionBackground(".landing-section--testimonials", "home", "testimonials", "#fff"),
+		        // ── Home: Admissions ──
+		        academyOneSectionBackground("#admissions", "home", "admissions", "#fff"),
+		        '#admissions .landing-step{background:var(--dexta-academy-1-home-admissions-step-card-bg-color,#fff)!important;}',
+		        '#admissions .landing-step .landing-step__number{color:var(--dexta-academy-1-home-admissions-step-number-color,rgba(10,77,60,.42))!important;}#admissions .landing-step h3{color:var(--dexta-academy-1-home-admissions-step-title-color,#1e1e2e)!important;}#admissions .landing-step p{color:var(--dexta-academy-1-home-admissions-step-body-color,rgba(30,30,46,.72))!important;}',
+		        '#admissions .btn{background:color-mix(in srgb,var(--dexta-academy-1-home-admissions-button-bg-color,#0d6efd) var(--dexta-academy-1-home-admissions-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-home-admissions-button-text-color,#fff)!important;border:var(--dexta-academy-1-home-admissions-button-border-width,0px) solid var(--dexta-academy-1-home-admissions-button-border-color,#0d6efd)!important;}',
+		        // ── Home: Contact ──
+		        academyOneSectionBackground("#contact", "home", "contact", "#fff"),
+		        '#contact .landing-contact__detail i{color:var(--dexta-academy-1-home-contact-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-home-contact-icon-bg-color,#fff) var(--dexta-academy-1-home-contact-icon-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-1-home-contact-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-home-contact-icon-border-width,0px) solid var(--dexta-academy-1-home-contact-icon-border-color,#0d6efd)!important;}',
+		        '#contact .landing-contact__detail:nth-of-type(1){background:var(--dexta-academy-1-home-contact-address-card-bg-color,rgba(255,255,255,.92))!important;}#contact .landing-contact__detail:nth-of-type(1) i{color:var(--dexta-academy-1-home-contact-address-icon-color,#0d6efd)!important;}',
+		        '#contact .landing-contact__detail:nth-of-type(2){background:var(--dexta-academy-1-home-contact-phone-card-bg-color,rgba(255,255,255,.92))!important;}#contact .landing-contact__detail:nth-of-type(2) i{color:var(--dexta-academy-1-home-contact-phone-icon-color,#0d6efd)!important;}',
+		        '#contact .landing-contact__detail:nth-of-type(3){background:var(--dexta-academy-1-home-contact-email-card-bg-color,rgba(255,255,255,.92))!important;}#contact .landing-contact__detail:nth-of-type(3) i{color:var(--dexta-academy-1-home-contact-email-icon-color,#0d6efd)!important;}',
+		        // ── About: Hero ──
+		        academyOneSectionBackground(".about-page__hero", "about", "hero", "#fff"),
+		        // ── About: Vision ──
+		        academyOneSectionBackground(".about-page__section--vision", "about", "vision", "#fff"),
+		        '.about-page__section--vision .about-page__panel-icon,.about-page__section--vision .about-page__panel-icon i{color:var(--dexta-academy-1-about-vision-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-about-vision-icon-bg-color,#e8f0fe) var(--dexta-academy-1-about-vision-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-vision-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-about-vision-icon-border-width,0px) solid var(--dexta-academy-1-about-vision-icon-border-color,#0d6efd)!important;}',
+		        // ── About: Values ──
+		        academyOneSectionBackground(".about-page__section--values", "about", "values", "#f8f9fa"),
+		        '.about-page__section--values .about-page__value-icon,.about-page__section--values .about-page__value-icon i{color:var(--dexta-academy-1-about-values-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-about-values-icon-bg-color,#e8f0fe) var(--dexta-academy-1-about-values-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-values-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-about-values-icon-border-width,0px) solid var(--dexta-academy-1-about-values-icon-border-color,#0d6efd)!important;}',
+		        // ── About: Story ──
+		        academyOneSectionBackground(".about-page__section--story", "about", "story", "#fff"),
+		        '.about-page__section--story #readMoreBtn,.about-page__section--story .btn{background:color-mix(in srgb,var(--dexta-academy-1-about-story-button-bg-color,#0d6efd) var(--dexta-academy-1-about-story-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-about-story-button-text-color,#fff)!important;border:var(--dexta-academy-1-about-story-button-border-width,0px) solid var(--dexta-academy-1-about-story-button-border-color,#0d6efd)!important;}',
+		        // ── About: Head Message ──
+		        academyOneSectionBackground(".about-page__message", "about", "head-message", "#fff"),
+		        // ── About: Reasons ──
+		        academyOneSectionBackground(".about-page__section--reasons", "about", "reasons", "#f8f9fa"),
+		        // ── About: CTA ──
+		        academyOneSectionBackground(".about-page__cta", "about", "cta", "#0d6efd"),
+		        '.about-page__cta .about-page__button{background:color-mix(in srgb,var(--dexta-academy-1-about-cta-button-bg-color,#fff) var(--dexta-academy-1-about-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-about-cta-button-text-color,#0d6efd)!important;border:var(--dexta-academy-1-about-cta-button-border-width,0px) solid var(--dexta-academy-1-about-cta-button-border-color,#fff)!important;}',
+		        // ── Testimonials: Hero ──
+		        academyOneSectionBackground(".testimonials-page__hero", "testimonials", "hero", "#fff"),
+		        // ── Testimonials: Success Story ──
+		        academyOneSectionBackground(".testimonials-page__section--story", "testimonials", "success-story", "#fff"),
+		        // ── Testimonials: Wall ──
+		        academyOneSectionBackground(".testimonials-page__section--wall", "testimonials", "wall", "#f8f9fa"),
+		        // ── Testimonials: CTA ──
+		        academyOneSectionBackground(".testimonials-page__section--cta", "testimonials", "cta", "#0d6efd"),
 	        '.testimonials-page__section--cta .btn-primary{background:color-mix(in srgb,var(--dexta-academy-1-testimonials-cta-button-bg-color,#fff) var(--dexta-academy-1-testimonials-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-testimonials-cta-button-text-color,#0d6efd)!important;border:var(--dexta-academy-1-testimonials-cta-button-border-width,0px) solid var(--dexta-academy-1-testimonials-cta-button-border-color,#fff)!important;}',
 	        '.testimonials-page__cta{background:var(--dexta-academy-1-testimonials-cta-card-bg-color,#0d6efd)!important;}'
 	      ].join("");
@@ -3941,7 +4136,21 @@ export async function renderSchoolTemplatePreview({
     );
   }
 
-  // Blank template img src values to prevent the browser from pre-fetching
+	  if (
+	    renderSourceSnapshot.templateSlug === "dexta-academy-1" &&
+	    page.slug === "home"
+	  ) {
+	    sourceHtml = await inlineDextaAcademyOneHeroStreaks(
+	      sourceHtml,
+	      renderSourceSnapshot.sourceDir,
+	    );
+	  }
+
+  if (renderSourceSnapshot.templateSlug === "dexta-academy-1") {
+    sourceHtml = ensureTemplateOneFontAwesomeSix(sourceHtml);
+  }
+
+	  // Blank template img src values to prevent the browser from pre-fetching
   // default images before the runtime JS applies admin-configured images.
   if (renderSourceSnapshot.templateSlug !== "dexta-academy-3") {
     sourceHtml = sourceHtml.replace(

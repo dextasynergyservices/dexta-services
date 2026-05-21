@@ -113,6 +113,7 @@ export type SchoolTemplateProjectFieldSnapshot = {
   min?: number;
   max?: number;
   step?: number;
+  options?: SchoolTemplateField["options"];
 };
 
 export type SchoolTemplateProjectSectionSnapshot = {
@@ -1730,6 +1731,8 @@ function getDefaultFieldValue(field: SchoolTemplateField) {
       return null;
     case "color":
       return "#000000";
+    case "select":
+      return "";
     case "image":
     case "link":
     case "model3d":
@@ -1890,6 +1893,7 @@ function buildFieldSnapshot(
     ...(field.min !== undefined ? { min: field.min } : {}),
     ...(field.max !== undefined ? { max: field.max } : {}),
     ...(field.step !== undefined ? { step: field.step } : {}),
+    ...(field.options ? { options: field.options } : {}),
   };
 }
 

@@ -6,7 +6,8 @@ export type SchoolTemplateFieldType =
   | "model3d"
   | "link"
   | "color"
-  | "number";
+  | "number"
+  | "select";
 
 export type SchoolTemplateFieldTarget =
   | "textContent"
@@ -43,6 +44,10 @@ export type SchoolTemplateField = {
   min?: number;
   max?: number;
   step?: number;
+  options?: Array<{
+    label: string;
+    value: string;
+  }>;
 };
 
 export type SchoolTemplateRepeatableSection = {
@@ -214,6 +219,24 @@ export function numberField(
     selector,
     type: "number",
     target: "inlineStyle",
+    ...overrides,
+  };
+}
+
+export function selectField(
+  key: string,
+  label: string,
+  selector: string,
+  options: Array<{ label: string; value: string }>,
+  overrides: Partial<SchoolTemplateField> = {},
+): SchoolTemplateField {
+  return {
+    key,
+    label,
+    selector,
+    type: "select",
+    target: "textContent",
+    options,
     ...overrides,
   };
 }
