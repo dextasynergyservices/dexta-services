@@ -1,21 +1,25 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin-auth";
 import {
+  buildSchoolTemplateSourceSnapshot,
   isSchoolTemplateSourceSnapshot,
   parseSchoolTemplateProjectContent,
   sanitizeSchoolTemplateProjectContent,
   syncSchoolTemplateProjectContentWithManifest,
   validateSchoolTemplateProjectContentReferences,
 } from "@/lib/school-template-project-content";
+import { getSchoolTemplateManifest } from "@/lib/school-template-manifests";
 import { renderSchoolTemplatePreview } from "@/lib/school-template-preview-renderer";
 import { weBrandSchoolsPrisma } from "@/lib/we-brand-schools-prisma";
 
 export async function renderAdminSchoolWebsiteProjectPreview({
   projectId,
   pageSlug,
+  previewSearch,
 }: {
   projectId: string;
   pageSlug: string;
+  previewSearch?: string;
 }) {
   try {
     await requireAdminSession();
@@ -26,12 +30,13 @@ export async function renderAdminSchoolWebsiteProjectPreview({
   const project = await weBrandSchoolsPrisma.schoolWebsiteProject.findUnique({
     where: { id: projectId },
     select: {
+      templateSlug: true,
       contentJson: true,
       sourceSnapshot: true,
     },
   });
 
-  if (!project || !isSchoolTemplateSourceSnapshot(project.sourceSnapshot)) {
+  if (!project) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
@@ -40,19 +45,25 @@ export async function renderAdminSchoolWebsiteProjectPreview({
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
+  const manifest =
+    getSchoolTemplateManifest(project.templateSlug) ??
+    getSchoolTemplateManifest(parsedContent.data.templateSlug);
+  const sourceSnapshot = isSchoolTemplateSourceSnapshot(project.sourceSnapshot)
+    ? project.sourceSnapshot
+    : manifest
+      ? buildSchoolTemplateSourceSnapshot(manifest)
+      : null;
+
+  if (!sourceSnapshot) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
   const syncedProjectContent = syncSchoolTemplateProjectContentWithManifest({
     content: parsedContent.data,
-    sourceSnapshot: project.sourceSnapshot,
+    sourceSnapshot,
     rawContent: project.contentJson,
+    templateSlug: project.templateSlug,
   });
-
-  const rawReferenceIssues = validateSchoolTemplateProjectContentReferences(
-    syncedProjectContent.contentJson,
-    syncedProjectContent.sourceSnapshot,
-  );
-  if (rawReferenceIssues.length > 0) {
-    return NextResponse.json({ error: rawReferenceIssues[0] }, { status: 400 });
-  }
 
   const content = sanitizeSchoolTemplateProjectContent(
     syncedProjectContent.contentJson,
@@ -72,6 +83,10 @@ export async function renderAdminSchoolWebsiteProjectPreview({
       content,
       sourceSnapshot: syncedProjectContent.sourceSnapshot,
       pageSlug,
+      previewRouteBase: `/admin/we-brand-schools/projects/${encodeURIComponent(
+        projectId,
+      )}/preview`,
+      previewSearch,
     });
 
     if (!html) {

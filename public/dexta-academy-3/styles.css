@@ -72,7 +72,11 @@
   width: 100%;
   padding: 56px 0 0 clamp(34px, 6.9vw, 88px);
   overflow: hidden;
-  background: #061f44;
+  background-color: color-mix(in srgb, var(--dexta-academy-3-contact-hero-section-bg-color, #061f44) var(--dexta-academy-3-contact-hero-section-bg-opacity, 100%), transparent);
+  background-image: var(--dexta-academy-3-contact-hero-section-bg-image, none);
+  background-position: var(--dexta-academy-3-contact-hero-section-bg-position, center center);
+  background-size: var(--dexta-academy-3-contact-hero-section-bg-size, cover);
+  background-repeat: no-repeat;
 }
 
 .contact-hero::before {
@@ -103,23 +107,23 @@
   font-size: clamp(3rem, 5.2vw, 4.4rem);
   line-height: 0.95;
   letter-spacing: -0.07em;
-  color: #fff;
+  color: var(--dexta-academy-3-contact-hero-title-text-color, #fff);
 }
 
 .contact-hero h1 span {
-  color: #ffc43d;
+  color: var(--dexta-academy-3-contact-hero-accent-text-color, #ffc43d);
 }
 
 .contact-hero__copy > p:not(.contact-eyebrow) {
   max-width: 405px;
   margin: 20px 0 0;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--dexta-academy-3-contact-hero-body-text-color, rgba(255, 255, 255, 0.82));
   font-size: 1.03rem;
   line-height: 1.65;
 }
 
 .contact-hero .contact-eyebrow {
-  color: #ffc43d;
+  color: var(--dexta-academy-3-contact-hero-eyebrow-text-color, #ffc43d);
 }
 
 .contact-hero__actions {
@@ -149,15 +153,22 @@
   fill: currentColor;
 }
 
+.contact-button__label {
+  display: inline-flex;
+}
+
 .contact-button--dark {
-  background: #ffc43d;
-  color: #061a3a;
+  background: color-mix(in srgb, var(--dexta-academy-3-contact-hero-primary-button-bg-color, #ffc43d) var(--dexta-academy-3-contact-hero-primary-button-bg-opacity, 100%), transparent);
+  color: var(--dexta-academy-3-contact-hero-primary-button-text-color, #061a3a);
+  border-color: var(--dexta-academy-3-contact-hero-primary-button-border-color, rgba(6, 31, 68, 0.12));
+  border-width: var(--dexta-academy-3-contact-hero-primary-button-border-width, 1px);
 }
 
 .contact-button--light {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--dexta-academy-3-contact-hero-secondary-button-bg-color, rgba(255, 255, 255, 0.1)) var(--dexta-academy-3-contact-hero-secondary-button-bg-opacity, 100%), transparent);
+  color: var(--dexta-academy-3-contact-hero-secondary-button-text-color, #fff);
+  border-color: var(--dexta-academy-3-contact-hero-secondary-button-border-color, rgba(255, 255, 255, 0.2));
+  border-width: var(--dexta-academy-3-contact-hero-secondary-button-border-width, 1px);
 }
 
 .contact-hero__art {
@@ -186,7 +197,7 @@
 
 .contact-intro > p:first-child {
   margin-bottom: 12px;
-  color: #f5ae00;
+  color: var(--dexta-academy-3-contact-intro-eyebrow-text-color, #f5ae00);
 }
 
 .contact-intro h2,
@@ -194,7 +205,7 @@
 .contact-message-card h2 {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
-  color: #061a3a;
+  color: var(--dexta-academy-3-contact-intro-title-text-color, #061a3a);
   letter-spacing: -0.04em;
 }
 
@@ -207,12 +218,12 @@
   width: 30px;
   height: 2px;
   margin: 12px auto 14px;
-  background: #f4b31d;
+  background: var(--dexta-academy-3-contact-intro-divider-color, #f4b31d);
 }
 
 .contact-intro p:last-child {
   margin: 0;
-  color: #1b2c4b;
+  color: var(--dexta-academy-3-contact-intro-body-text-color, #1b2c4b);
   line-height: 1.6;
 }
 
@@ -233,6 +244,28 @@
   border-radius: 9px;
   background: #fff;
   box-shadow: 0 8px 22px rgba(6, 26, 58, 0.03);
+}
+
+.contact-info-card {
+  border: var(--dexta-academy-3-contact-info-card-card-border-width, 1px) solid var(--dexta-academy-3-contact-info-card-card-border-color, rgba(6, 26, 58, 0.12));
+  border-radius: var(--dexta-academy-3-contact-info-card-card-border-radius, 9px);
+  background-color: color-mix(in srgb, var(--dexta-academy-3-contact-info-card-card-bg-color, #fff) var(--dexta-academy-3-contact-info-card-card-bg-opacity, 100%), transparent);
+  background-image: var(--dexta-academy-3-contact-info-card-section-bg-image, none);
+  background-position: var(--dexta-academy-3-contact-info-card-section-bg-position, center center);
+  background-size: var(--dexta-academy-3-contact-info-card-section-bg-size, cover);
+  background-repeat: no-repeat;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--dexta-academy-3-contact-info-card-card-shadow-color, #061a3a) var(--dexta-academy-3-contact-info-card-card-shadow-opacity, 3%), transparent);
+}
+
+.contact-message-card {
+  border: var(--dexta-academy-3-contact-message-card-border-width, 1px) solid var(--dexta-academy-3-contact-message-card-border-color, rgba(6, 26, 58, 0.12));
+  border-radius: var(--dexta-academy-3-contact-message-card-border-radius, 9px);
+  background-color: color-mix(in srgb, var(--dexta-academy-3-contact-message-card-bg-color, #fff) var(--dexta-academy-3-contact-message-card-bg-opacity, 100%), transparent);
+  background-image: var(--dexta-academy-3-contact-form-section-bg-image, none);
+  background-position: var(--dexta-academy-3-contact-form-section-bg-position, center center);
+  background-size: var(--dexta-academy-3-contact-form-section-bg-size, cover);
+  background-repeat: no-repeat;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--dexta-academy-3-contact-message-card-shadow-color, #061a3a) var(--dexta-academy-3-contact-message-card-shadow-opacity, 3%), transparent);
 }
 
 .contact-info-card h2,
@@ -259,16 +292,20 @@
   justify-content: center;
   width: 54px;
   height: 54px;
-  border: 1px solid rgba(6, 26, 58, 0.1);
+  border: var(--dexta-academy-3-contact-info-icon-icon-border-width, 1px) solid var(--dexta-academy-3-contact-info-icon-icon-border-color, rgba(6, 26, 58, 0.1));
   border-radius: 50%;
-  background: #fffaf1;
-  color: #f1ad16;
+  background-color: color-mix(in srgb, var(--dexta-academy-3-contact-info-icon-icon-bg-color, #fffaf1) var(--dexta-academy-3-contact-info-icon-icon-bg-opacity, 100%), transparent);
+  background-image: var(--dexta-academy-3-contact-info-icon-icon-image, none);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  color: var(--dexta-academy-3-contact-info-icon-icon-color, #f1ad16);
   font-size: 1.45rem;
 }
 
 .contact-info-list p {
   margin: 0;
-  color: #142340;
+  color: var(--dexta-academy-3-contact-info-card-item-text-color, #142340);
   font-size: 0.88rem;
   line-height: 1.55;
 }
@@ -276,7 +313,7 @@
 .contact-info-list strong {
   display: block;
   margin-bottom: 2px;
-  color: #061a3a;
+  color: var(--dexta-academy-3-contact-info-card-item-title-color, #061a3a);
   font-weight: 800;
 }
 
@@ -294,9 +331,9 @@
   justify-content: center;
   width: 26px;
   height: 26px;
-  border: 1px solid rgba(6, 26, 58, 0.18);
+  border: 1px solid var(--dexta-academy-3-contact-info-card-social-icon-border-color, rgba(6, 26, 58, 0.18));
   border-radius: 50%;
-  color: #061a3a;
+  color: var(--dexta-academy-3-contact-info-card-social-icon-color, #061a3a);
   font-size: 0.78rem;
   font-weight: 800;
 }
@@ -376,29 +413,29 @@
   gap: 8px;
   margin-bottom: 18px;
   padding-bottom: 18px;
-  border-bottom: 1px solid rgba(6, 26, 58, 0.1);
+  border-bottom: 1px solid var(--dexta-academy-3-contact-message-divider-color, rgba(6, 26, 58, 0.1));
 }
 
 .contact-form-card__header h2 {
   margin: 0;
+  color: var(--dexta-academy-3-contact-message-title-text-color, #061a3a);
 }
 
 .contact-form-card__header p {
   max-width: 33rem;
   margin: 0;
-  color: #4b5873;
+  color: var(--dexta-academy-3-contact-message-body-text-color, #4b5873);
   font-size: 0.94rem;
   line-height: 1.65;
 }
 
 .contact-form-embed {
   overflow: auto;
-  border: 1px solid rgba(6, 26, 58, 0.12);
-  border-radius: 12px;
+  border: 1px solid var(--dexta-academy-3-contact-message-form-frame-border-color, rgba(6, 26, 58, 0.12));
+  border-radius: var(--dexta-academy-3-contact-message-form-frame-border-radius, 12px);
   background:
-    linear-gradient(#fff, #fff) padding-box,
-    linear-gradient(135deg, rgba(255, 196, 61, 0.45), rgba(6, 31, 68, 0.16))
-      border-box;
+    linear-gradient(var(--dexta-academy-3-contact-message-form-frame-bg-color, #fff), var(--dexta-academy-3-contact-message-form-frame-bg-color, #fff)) padding-box,
+    linear-gradient(135deg, rgba(255, 196, 61, 0.45), rgba(6, 31, 68, 0.16)) border-box;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
     0 14px 32px rgba(6, 26, 58, 0.06);
@@ -444,10 +481,10 @@ body.is-admission-modal-open {
   width: min(100%, 1040px);
   max-height: min(92vh, 860px);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 30px 90px rgba(1, 9, 24, 0.38);
+  border: var(--dexta-academy-3-contact-admission-panel-card-border-width, 1px) solid var(--dexta-academy-3-contact-admission-panel-card-border-color, rgba(255, 255, 255, 0.16));
+  border-radius: var(--dexta-academy-3-contact-admission-panel-card-border-radius, 18px);
+  background-color: color-mix(in srgb, var(--dexta-academy-3-contact-admission-panel-card-bg-color, #fff) var(--dexta-academy-3-contact-admission-panel-card-bg-opacity, 100%), transparent);
+  box-shadow: 0 30px 90px color-mix(in srgb, var(--dexta-academy-3-contact-admission-panel-card-shadow-color, #010918) var(--dexta-academy-3-contact-admission-panel-card-shadow-opacity, 38%), transparent);
 }
 
 .admission-modal__header {
@@ -456,13 +493,13 @@ body.is-admission-modal-open {
   justify-content: space-between;
   gap: 18px;
   padding: 20px clamp(18px, 3vw, 28px);
-  background: linear-gradient(135deg, #061f44 0%, #0b2f63 100%);
-  color: #fff;
+  background: var(--dexta-academy-3-contact-admission-header-bg-color, #061f44);
+  color: var(--dexta-academy-3-contact-admission-title-text-color, #fff);
 }
 
 .admission-modal__eyebrow {
   margin: 0 0 6px;
-  color: #ffc43d;
+  color: var(--dexta-academy-3-contact-admission-eyebrow-text-color, #ffc43d);
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -471,7 +508,7 @@ body.is-admission-modal-open {
 
 .admission-modal__header h2 {
   margin: 0;
-  color: #fff;
+  color: var(--dexta-academy-3-contact-admission-title-text-color, #fff);
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.55rem, 3vw, 2.25rem);
   line-height: 1;
@@ -511,15 +548,10 @@ body.is-admission-modal-open {
   grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.28fr);
   gap: 16px;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: clamp(10px, 2vw, 16px);
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255, 196, 61, 0.12),
-      rgba(255, 255, 255, 0) 180px
-    ),
-    #fff8ed;
+  background: var(--dexta-academy-3-contact-admission-body-bg-color, #fff8ed);
 }
 
 .admission-modal__guide {
@@ -527,14 +559,15 @@ body.is-admission-modal-open {
   align-content: start;
   gap: 14px;
   padding: 18px;
-  border: 1px solid rgba(6, 31, 68, 0.1);
-  border-radius: 14px;
-  background: #fff;
+  border: var(--dexta-academy-3-contact-admission-guide-card-border-width, 1px) solid var(--dexta-academy-3-contact-admission-guide-card-border-color, rgba(6, 31, 68, 0.1));
+  border-radius: var(--dexta-academy-3-contact-admission-guide-card-border-radius, 14px);
+  background-color: color-mix(in srgb, var(--dexta-academy-3-contact-admission-guide-card-bg-color, #fff) var(--dexta-academy-3-contact-admission-guide-card-bg-opacity, 100%), transparent);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--dexta-academy-3-contact-admission-guide-card-shadow-color, #061a3a) var(--dexta-academy-3-contact-admission-guide-card-shadow-opacity, 0%), transparent);
 }
 
 .admission-modal__guide-kicker {
   margin: 0;
-  color: #e0a91f;
+  color: var(--dexta-academy-3-contact-admission-eyebrow-text-color, #e0a91f);
   font-size: 0.74rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -543,7 +576,7 @@ body.is-admission-modal-open {
 
 .admission-modal__guide h3 {
   margin: 0;
-  color: #061a3a;
+  color: var(--dexta-academy-3-contact-admission-guide-title-color, #061a3a);
   font-family: Georgia, "Times New Roman", serif;
   font-size: 1.55rem;
   line-height: 1;
@@ -561,7 +594,7 @@ body.is-admission-modal-open {
 .admission-modal__guide li {
   position: relative;
   padding-left: 20px;
-  color: #33425f;
+  color: var(--dexta-academy-3-contact-admission-guide-text-color, #33425f);
   font-size: 0.92rem;
   line-height: 1.5;
 }
@@ -574,7 +607,7 @@ body.is-admission-modal-open {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #ffc43d;
+  background: var(--dexta-academy-3-contact-admission-guide-bullet-color, #ffc43d);
 }
 
 .admission-modal__page-link {
@@ -586,14 +619,15 @@ body.is-admission-modal-open {
   margin-top: 4px;
   padding: 12px 16px;
   border-radius: 999px;
-  background: #061f44;
-  color: #fff;
+  background: color-mix(in srgb, var(--dexta-academy-3-contact-admission-guide-link-button-bg-color, #061f44) var(--dexta-academy-3-contact-admission-guide-link-button-bg-opacity, 100%), transparent);
+  color: var(--dexta-academy-3-contact-admission-guide-link-button-text-color, #fff);
+  border: var(--dexta-academy-3-contact-admission-guide-link-button-border-width, 0px) solid var(--dexta-academy-3-contact-admission-guide-link-button-border-color, #061f44);
   font-weight: 800;
 }
 
 .admission-modal__form {
   min-height: 0;
-  overflow: auto;
+  overflow: visible;
   border: 1px solid rgba(6, 31, 68, 0.1);
   border-radius: 14px;
   background: #fff;
@@ -614,9 +648,14 @@ body.is-admission-modal-open {
   width: min(100% - 44px, 1092px);
   margin: 34px auto 36px;
   overflow: hidden;
-  border-radius: 12px;
-  background: #fffdfb;
-  box-shadow: 0 14px 35px rgba(6, 26, 58, 0.04);
+  border: var(--dexta-academy-3-contact-benefits-wrap-card-border-width, 0px) solid var(--dexta-academy-3-contact-benefits-wrap-card-border-color, transparent);
+  border-radius: var(--dexta-academy-3-contact-benefits-wrap-card-border-radius, 12px);
+  background-color: color-mix(in srgb, var(--dexta-academy-3-contact-benefits-wrap-card-bg-color, #fffdfb) var(--dexta-academy-3-contact-benefits-wrap-card-bg-opacity, 100%), transparent);
+  background-image: var(--dexta-academy-3-contact-benefits-section-bg-image, none);
+  background-position: var(--dexta-academy-3-contact-benefits-section-bg-position, center center);
+  background-size: var(--dexta-academy-3-contact-benefits-section-bg-size, cover);
+  background-repeat: no-repeat;
+  box-shadow: 0 14px 35px color-mix(in srgb, var(--dexta-academy-3-contact-benefits-wrap-card-shadow-color, #061a3a) var(--dexta-academy-3-contact-benefits-wrap-card-shadow-opacity, 4%), transparent);
 }
 
 .contact-benefits article {
@@ -624,22 +663,29 @@ body.is-admission-modal-open {
   grid-template-columns: 43px 1fr;
   gap: 14px;
   padding: 30px 28px;
-  border-right: 1px solid rgba(6, 26, 58, 0.08);
+  border-right: var(--dexta-academy-3-contact-benefits-card-border-width, 1px) solid var(--dexta-academy-3-contact-benefits-card-border-color, rgba(6, 26, 58, 0.08));
+  background-color: color-mix(in srgb, var(--dexta-academy-3-contact-benefits-card-bg-color, transparent) var(--dexta-academy-3-contact-benefits-card-bg-opacity, 0%), transparent);
 }
 
 .contact-benefits article:last-child {
   border-right: 0;
 }
 
-.contact-benefits span {
-  color: #061a3a;
+.contact-benefit-icon {
+  color: var(--dexta-academy-3-contact-benefits-icon-icon-color, #061a3a);
+  background-color: color-mix(in srgb, var(--dexta-academy-3-contact-benefits-icon-icon-bg-color, transparent) var(--dexta-academy-3-contact-benefits-icon-icon-bg-opacity, 0%), transparent);
+  background-image: var(--dexta-academy-3-contact-benefits-icon-icon-image, none);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  border: var(--dexta-academy-3-contact-benefits-icon-icon-border-width, 0px) solid var(--dexta-academy-3-contact-benefits-icon-icon-border-color, transparent);
   font-size: 2rem;
   line-height: 1;
 }
 
 .contact-benefits p {
   margin: 0;
-  color: #1d2d49;
+  color: var(--dexta-academy-3-contact-benefits-body-text-color, #1d2d49);
   font-size: 0.82rem;
   line-height: 1.45;
 }
@@ -647,13 +693,13 @@ body.is-admission-modal-open {
 .contact-benefits strong {
   display: block;
   margin-bottom: 4px;
-  color: #061a3a;
+  color: var(--dexta-academy-3-contact-benefits-title-text-color, #061a3a);
 }
 
 .contact-footer {
   padding: 34px clamp(28px, 7.5vw, 98px) 24px;
-  background: #061f3f;
-  color: #fff;
+  background-color: color-mix(in srgb, var(--dexta-academy-3-shared-footer-section-bg-color, var(--dexta-academy-3-contact-footer-section-bg-color, #061f3f)) var(--dexta-academy-3-shared-footer-section-bg-opacity, var(--dexta-academy-3-contact-footer-section-bg-opacity, 100%)), transparent);
+  color: var(--dexta-academy-3-shared-footer-text-color, var(--dexta-academy-3-contact-footer-body-text-color, #fff));
 }
 
 .contact-footer__grid {
@@ -665,7 +711,7 @@ body.is-admission-modal-open {
 }
 
 .contact-brand--footer {
-  color: #fff;
+  color: var(--dexta-academy-3-contact-footer-brand-text-color, #fff);
 }
 
 .contact-brand--footer img {
@@ -683,15 +729,20 @@ body.is-admission-modal-open {
 
 .contact-footer h3 {
   margin: 0 0 18px;
-  color: #ffc43d;
+  color: var(--dexta-academy-3-contact-footer-heading-color, #ffc43d);
   font-size: 0.98rem;
 }
 
 .contact-footer p,
 .contact-footer a {
-  color: #fff;
+  color: var(--dexta-academy-3-shared-footer-link-color, var(--dexta-academy-3-contact-footer-link-color, #fff));
   font-size: 0.9rem;
   line-height: 1.7;
+}
+
+.contact-footer a:hover,
+.contact-footer a:focus-visible {
+  color: var(--dexta-academy-3-shared-footer-link-hover-color, #fff);
 }
 
 .contact-footer section > a {
@@ -699,9 +750,17 @@ body.is-admission-modal-open {
   margin-bottom: 4px;
 }
 
+.contact-footer a:empty {
+  display: none;
+}
+
 .contact-footer__brand p {
   max-width: 235px;
   margin: 22px 0;
+}
+
+.contact-brand--footer small {
+  color: var(--dexta-academy-3-contact-footer-tagline-text-color, #fff);
 }
 
 .contact-footer__socials a {
@@ -719,11 +778,12 @@ body.is-admission-modal-open {
   max-width: 1080px;
   margin: 34px auto 0;
   padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid var(--dexta-academy-3-contact-footer-divider-color, rgba(255, 255, 255, 0.2));
 }
 
 .contact-footer__bottom p {
   margin: 0;
+  color: var(--dexta-academy-3-shared-footer-text-color, var(--dexta-academy-3-contact-footer-bottom-text-color, #fff));
 }
 
 .contact-footer__bottom nav {
@@ -835,12 +895,13 @@ body.is-admission-modal-open {
 
   .admission-modal__body {
     grid-template-columns: 1fr;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .admission-modal__form {
     order: 1;
-    height: min(58vh, 520px);
+    height: auto;
   }
 
   .admission-modal__guide {
@@ -4691,7 +4752,20 @@ input {
 
 .home-apply {
   padding-block: clamp(58px, 8vw, 104px);
-  background: linear-gradient(180deg, #fff8ed 0%, #ffffff 100%);
+  background-color: color-mix(in srgb, var(--dexta-academy-3-home-how-to-apply-section-bg-color, #fff8ed) var(--dexta-academy-3-home-how-to-apply-section-bg-opacity, 100%), transparent);
+  background-image: var(--dexta-academy-3-home-how-to-apply-section-bg-image, linear-gradient(180deg, #fff8ed 0%, #ffffff 100%));
+  background-position: var(--dexta-academy-3-home-how-to-apply-section-bg-position, center center);
+  background-size: var(--dexta-academy-3-home-how-to-apply-section-bg-size, cover);
+  background-repeat: no-repeat;
+}
+
+.contact-info-card h2 {
+  color: var(--dexta-academy-3-contact-info-card-title-text-color, #061a3a);
+}
+
+.contact-info-text,
+.contact-benefit-text {
+  display: inline;
 }
 
 .home-apply__inner {
@@ -4708,9 +4782,13 @@ input {
   gap: 18px;
 }
 
+.home-apply__copy .eyebrow {
+  color: var(--dexta-academy-3-home-how-to-apply-eyebrow-text-color, #c8971b);
+}
+
 .home-apply__copy h2 {
   margin: 0;
-  color: var(--navy-deep);
+  color: var(--dexta-academy-3-home-how-to-apply-title-text-color, var(--navy-deep));
   font-family: "Fraunces", Georgia, serif;
   font-size: clamp(2.7rem, 5vw, 5rem);
   line-height: 0.92;
@@ -4720,7 +4798,7 @@ input {
 .home-apply__copy p {
   max-width: 40rem;
   margin: 0;
-  color: var(--ink-soft);
+  color: var(--dexta-academy-3-home-how-to-apply-body-text-color, var(--ink-soft));
   font-size: 1rem;
   line-height: 1.78;
 }
@@ -4749,10 +4827,10 @@ input {
   gap: 12px;
   min-height: 224px;
   padding: 24px;
-  border: 1px solid rgba(17, 34, 70, 0.09);
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 16px 38px rgba(13, 28, 64, 0.06);
+  border: var(--dexta-academy-3-home-how-to-apply-step-card-border-width, 1px) solid var(--dexta-academy-3-home-how-to-apply-step-card-border-color, rgba(17, 34, 70, 0.09));
+  border-radius: var(--dexta-academy-3-home-how-to-apply-step-card-border-radius, 18px);
+  background-color: color-mix(in srgb, var(--dexta-academy-3-home-how-to-apply-step-card-bg-color, #fff) var(--dexta-academy-3-home-how-to-apply-step-card-bg-opacity, 100%), transparent);
+  box-shadow: 0 16px 38px color-mix(in srgb, var(--dexta-academy-3-home-how-to-apply-step-card-shadow-color, #0d1c40) var(--dexta-academy-3-home-how-to-apply-step-card-shadow-opacity, 6%), transparent);
 }
 
 .home-apply-step__number {
@@ -4761,8 +4839,9 @@ input {
   width: 46px;
   height: 46px;
   border-radius: 50%;
-  background: #fff2c9;
-  color: var(--navy-deep);
+  border: var(--dexta-academy-3-home-how-to-apply-icon-border-width, 0px) solid var(--dexta-academy-3-home-how-to-apply-icon-border-color, transparent);
+  background-color: color-mix(in srgb, var(--dexta-academy-3-home-how-to-apply-icon-bg-color, #fff2c9) var(--dexta-academy-3-home-how-to-apply-icon-bg-opacity, 100%), transparent);
+  color: var(--dexta-academy-3-home-how-to-apply-icon-color, var(--navy-deep));
   font-weight: 900;
 }
 
@@ -4773,12 +4852,12 @@ input {
 }
 
 .home-apply-step h3 {
-  color: var(--navy-deep);
+  color: var(--dexta-academy-3-home-how-to-apply-step-card-title-color, var(--navy-deep));
   font-size: 1.04rem;
 }
 
 .home-apply-step p {
-  color: var(--ink-soft);
+  color: var(--dexta-academy-3-home-how-to-apply-step-card-body-color, var(--ink-soft));
   line-height: 1.7;
 }
 
@@ -4786,13 +4865,14 @@ input {
   display: grid;
   gap: 16px;
   padding: clamp(24px, 4vw, 34px);
-  border-radius: 20px;
-  background: #061f44;
-  color: #fff;
+  border: var(--dexta-academy-3-home-how-to-apply-note-border-width, 0px) solid var(--dexta-academy-3-home-how-to-apply-note-border-color, transparent);
+  border-radius: var(--dexta-academy-3-home-how-to-apply-note-border-radius, 20px);
+  background-color: color-mix(in srgb, var(--dexta-academy-3-home-how-to-apply-note-bg-color, #061f44) var(--dexta-academy-3-home-how-to-apply-note-bg-opacity, 100%), transparent);
+  color: var(--dexta-academy-3-home-how-to-apply-note-text-color, #fff);
 }
 
 .home-apply__note h3 {
-  color: #fff;
+  color: var(--dexta-academy-3-home-how-to-apply-note-title-color, #fff);
   font-family: "Fraunces", Georgia, serif;
   font-size: clamp(1.8rem, 3vw, 2.6rem);
   line-height: 1;
@@ -4810,7 +4890,7 @@ input {
 .home-apply__note li {
   position: relative;
   padding-left: 24px;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--dexta-academy-3-home-how-to-apply-note-text-color, rgba(255, 255, 255, 0.82));
   line-height: 1.62;
 }
 
@@ -4822,7 +4902,7 @@ input {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #ffc43d;
+  background: var(--dexta-academy-3-home-how-to-apply-note-bullet-color, #ffc43d);
 }
 
 .programmes-showcase {
@@ -4871,12 +4951,26 @@ input {
   position: absolute;
   inset: auto 0 0;
   z-index: -1;
-  height: 76%;
+  height: var(--dexta-academy-3-home-programmes-card-overlay-height, 76%);
   background: linear-gradient(
     180deg,
-    rgba(5, 14, 33, 0) 0%,
-    rgba(5, 14, 33, 0.68) 42%,
-    rgba(5, 14, 33, 0.96) 100%
+    color-mix(
+      in srgb,
+      var(--dexta-academy-3-home-programmes-card-overlay-color, #050e21) 0%,
+      transparent
+    ) 0%,
+    color-mix(
+      in srgb,
+      var(--dexta-academy-3-home-programmes-card-overlay-color, #050e21)
+        var(--dexta-academy-3-home-programmes-card-overlay-opacity, 96%),
+      transparent
+    ) 42%,
+    color-mix(
+      in srgb,
+      var(--dexta-academy-3-home-programmes-card-overlay-color, #050e21)
+        var(--dexta-academy-3-home-programmes-card-overlay-opacity, 96%),
+      transparent
+    ) 100%
   );
 }
 
@@ -4914,9 +5008,20 @@ input {
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  border: 1px solid rgba(243, 191, 53, 0.34);
-  background: rgba(6, 18, 42, 0.58);
-  color: var(--gold);
+  border: var(--dexta-academy-3-home-programmes-icon-icon-border-width, 1px)
+    solid
+    var(--dexta-academy-3-home-programmes-icon-icon-border-color, rgba(243, 191, 53, 0.34));
+  background-color: color-mix(
+    in srgb,
+    var(--dexta-academy-3-home-programmes-icon-icon-bg-color, rgba(6, 18, 42, 0.58))
+      var(--dexta-academy-3-home-programmes-icon-icon-bg-opacity, 100%),
+    transparent
+  );
+  background-image: var(--dexta-academy-3-home-programmes-icon-icon-image, none);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  color: var(--dexta-academy-3-home-programmes-icon-icon-color, var(--gold));
   font-family: "Fraunces", Georgia, serif;
   font-size: 0.98rem;
   font-weight: 800;
@@ -5305,7 +5410,7 @@ input {
   padding: 34px 28px 24px;
   border-radius: 0 0 32px 32px;
   background: #07162f;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--dexta-academy-3-shared-footer-text-color, rgba(255, 255, 255, 0.8));
 }
 
 .footer-main {
@@ -5344,7 +5449,7 @@ input {
 .footer-column p {
   display: block;
   margin: 0 0 10px;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--dexta-academy-3-shared-footer-link-color, rgba(255, 255, 255, 0.72));
   font-size: 0.88rem;
   line-height: 1.65;
 }
@@ -5353,7 +5458,7 @@ input {
 .footer-column a:focus-visible,
 .footer-legal a:hover,
 .footer-legal a:focus-visible {
-  color: #fff;
+  color: var(--dexta-academy-3-shared-footer-link-hover-color, #fff);
 }
 
 .footer-socials {
@@ -5398,8 +5503,17 @@ input {
 }
 
 .footer-legal a {
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--dexta-academy-3-shared-footer-link-color, rgba(255, 255, 255, 0.72));
   font-size: 0.86rem;
+}
+
+.site-footer .footer-column a:empty,
+.site-footer .footer-legal a:empty {
+  display: none;
+}
+
+.site-footer .footer-explore-links a[data-footer-link-visible="0"] {
+  display: none;
 }
 
 @media (max-width: 1180px) {

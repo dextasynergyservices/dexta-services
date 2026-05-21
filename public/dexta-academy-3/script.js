@@ -59,6 +59,19 @@ function createPageLoader() {
 }
 
 const body = document.body;
+
+function keepHeaderFixedToViewport() {
+  const existingHeader = document.querySelector(".site-header");
+
+  if (!body || !existingHeader || existingHeader.parentElement === body) {
+    return;
+  }
+
+  body.insertBefore(existingHeader, body.firstChild);
+}
+
+keepHeaderFixedToViewport();
+
 const isHomePage = body?.classList.contains("home-page");
 const header = document.querySelector(".site-header");
 const navToggle = document.querySelector(".nav-toggle");

@@ -124,4 +124,94 @@ describe("school template preview renderer", () => {
     );
     assert.match(html, /normalized\.indexOf\("plus jakarta sans"\) !== -1/);
   });
+
+  it("covers direct hero background images in the preview runtime", async () => {
+    const manifest = schoolTemplateManifests.find(
+      (item) => item.templateSlug === "dexta-academy-5",
+    );
+
+    assert.ok(manifest, "Expected Template 5 manifest.");
+
+    const content = buildSchoolTemplateProjectContent(manifest);
+    const sourceSnapshot = buildSchoolTemplateSourceSnapshot(manifest);
+
+    const html = await renderSchoolTemplatePreview({
+      content,
+      sourceSnapshot,
+      pageSlug: "home",
+    });
+
+    assert.ok(html, "Expected Template 5 home preview HTML.");
+    assert.match(html, /function shouldCoverBackgroundImage/);
+    assert.match(html, /node\.style\.backgroundSize = "cover"/);
+    assert.match(html, /node\.style\.backgroundPosition = "center center"/);
+    assert.match(html, /node\.style\.backgroundRepeat = "no-repeat"/);
+  });
+
+  it("renders Template 3 hero art through the main sky image layer", async () => {
+    const manifest = schoolTemplateManifests.find(
+      (item) => item.templateSlug === "dexta-academy-3",
+    );
+
+    assert.ok(manifest, "Expected Template 3 manifest.");
+    const heroFields = manifest.pages
+      .find((page) => page.slug === "home")
+      ?.sections.find((section) => section.id === "hero")?.fields;
+
+    assert.ok(heroFields, "Expected Template 3 home hero fields.");
+    assert.ok(
+      heroFields.some((field) => field.key === "skyImage"),
+      "Expected Template 3 hero to expose the main sky image control.",
+    );
+    assert.ok(
+      heroFields.every((field) => field.key !== "sectionBgImage"),
+      "Template 3 hero should not expose a competing generic background image.",
+    );
+
+    const content = buildSchoolTemplateProjectContent(manifest);
+    const sourceSnapshot = buildSchoolTemplateSourceSnapshot(manifest);
+
+    const html = await renderSchoolTemplatePreview({
+      content,
+      sourceSnapshot,
+      pageSlug: "home",
+    });
+
+    assert.ok(html, "Expected Template 3 home preview HTML.");
+    assert.match(
+      html,
+      /\.hero__sky-image\{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center top!important;opacity:\.94!important;transform:scale\(1\.12\);transform-origin:center top!important;\}/,
+    );
+    assert.match(
+      html,
+      /@media \(max-width:560px\)\{\.hero__sky-layer\{top:0!important;right:0!important;bottom:0!important;left:0!important;height:auto!important;max-height:none!important;background(?:-color)?:[^}]+!important;background-image:none!important;\}\.hero__sky-image\{object-position:center 14%!important;\}\}/,
+    );
+    assert.match(
+      html,
+      /function applyAcademyThreeHeroBackgroundImage/,
+    );
+    assert.match(
+      html,
+      /skyLayer\.style\.setProperty\("background-image", "none", "important"\)/,
+    );
+    assert.match(
+      html,
+      /\.programme-tile::before\{height:var\(--dexta-academy-3-home-programmes-card-overlay-height,76%\)!important;background:linear-gradient/,
+    );
+    assert.match(
+      html,
+      /--dexta-academy-3-home-programmes-card-overlay-opacity,96%/,
+    );
+    assert.match(html, /function promoteInlineRichTextColorStyles/);
+    assert.match(html, /function hasRichTextColorStyle/);
+    assert.match(html, /!hasRichTextColorStyle\(value\)/);
+    assert.match(
+      html,
+      /node\.style\.setProperty\("color", color, "important"\)/,
+    );
+    assert.match(
+      html,
+      /node\.style\.setProperty\("background-color", backgroundColor, "important"\)/,
+    );
+  });
 });

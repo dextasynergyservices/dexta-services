@@ -59,6 +59,12 @@ const FONT_SIZE_FORMATS = [
   "48px",
   "56px",
   "64px",
+  "72px",
+  "80px",
+  "96px",
+  "112px",
+  "128px",
+  "144px",
 ].join(" ");
 
 const BLOCK_FORMATS =

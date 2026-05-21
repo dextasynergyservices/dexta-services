@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import {
+  buildSchoolTemplateSourceSnapshot,
   isSchoolTemplateSourceSnapshot,
   parseSchoolTemplateProjectContent,
   sanitizeSchoolTemplateProjectContent,
   syncSchoolTemplateProjectContentWithManifest,
   validateSchoolTemplateProjectContentReferences,
 } from "@/lib/school-template-project-content";
+import { getSchoolTemplateManifest } from "@/lib/school-template-manifests";
 import { isValidSchoolWebsiteProjectPreviewToken } from "@/lib/school-template-preview-links";
 import { renderSchoolTemplatePreview } from "@/lib/school-template-preview-renderer";
 import { weBrandSchoolsPrisma } from "@/lib/we-brand-schools-prisma";
@@ -17,7 +19,8 @@ export async function GET(
   { params }: { params: Promise<{ projectId: string; pageSlug: string }> },
 ) {
   const { projectId, pageSlug } = await params;
-  const token = new URL(request.url).searchParams.get("token");
+  const url = new URL(request.url);
+  const token = url.searchParams.get("token");
 
   if (!isValidSchoolWebsiteProjectPreviewToken({ projectId, token })) {
     return NextResponse.json(
@@ -29,12 +32,13 @@ export async function GET(
   const project = await weBrandSchoolsPrisma.schoolWebsiteProject.findUnique({
     where: { id: projectId },
     select: {
+      templateSlug: true,
       contentJson: true,
       sourceSnapshot: true,
     },
   });
 
-  if (!project || !isSchoolTemplateSourceSnapshot(project.sourceSnapshot)) {
+  if (!project) {
     return NextResponse.json({ error: "Preview not found" }, { status: 404 });
   }
 
@@ -43,19 +47,25 @@ export async function GET(
     return NextResponse.json({ error: "Preview not found" }, { status: 404 });
   }
 
+  const manifest =
+    getSchoolTemplateManifest(project.templateSlug) ??
+    getSchoolTemplateManifest(parsedContent.data.templateSlug);
+  const sourceSnapshot = isSchoolTemplateSourceSnapshot(project.sourceSnapshot)
+    ? project.sourceSnapshot
+    : manifest
+      ? buildSchoolTemplateSourceSnapshot(manifest)
+      : null;
+
+  if (!sourceSnapshot) {
+    return NextResponse.json({ error: "Preview not found" }, { status: 404 });
+  }
+
   const syncedProjectContent = syncSchoolTemplateProjectContentWithManifest({
     content: parsedContent.data,
-    sourceSnapshot: project.sourceSnapshot,
+    sourceSnapshot,
     rawContent: project.contentJson,
+    templateSlug: project.templateSlug,
   });
-
-  const rawReferenceIssues = validateSchoolTemplateProjectContentReferences(
-    syncedProjectContent.contentJson,
-    syncedProjectContent.sourceSnapshot,
-  );
-  if (rawReferenceIssues.length > 0) {
-    return NextResponse.json({ error: rawReferenceIssues[0] }, { status: 400 });
-  }
 
   const content = sanitizeSchoolTemplateProjectContent(
     syncedProjectContent.contentJson,
@@ -75,6 +85,10 @@ export async function GET(
       content,
       sourceSnapshot: syncedProjectContent.sourceSnapshot,
       pageSlug,
+      previewRouteBase: `/webrandschools/project-preview/${encodeURIComponent(
+        projectId,
+      )}`,
+      previewSearch: url.search,
     });
 
     if (!html) {
