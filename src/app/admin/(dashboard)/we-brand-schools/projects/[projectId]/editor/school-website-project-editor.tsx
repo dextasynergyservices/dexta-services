@@ -182,10 +182,10 @@ const ORIGINAL_THEME_COLORS: Record<
   Partial<Record<keyof SchoolTemplateProjectContent["theme"], string>>
 > = {
   "dexta-academy-5": {
-	    brandNameColor: "#2b2b2b",
-	    brandTaglineColor: "#d4a437",
-	    logoBorderColor: "#d4a437",
-	    logoBackgroundColor: "transparent",
+    brandNameColor: "#2b2b2b",
+    brandTaglineColor: "#d4a437",
+    logoBorderColor: "#d4a437",
+    logoBackgroundColor: "transparent",
     primaryColor: "#31401c",
     secondaryColor: "#d4a437",
     loadingBackgroundColor: "#ffffff",
@@ -193,17 +193,17 @@ const ORIGINAL_THEME_COLORS: Record<
     navBarColor: "#ffffff",
   },
   "dexta-academy-4": {
-	    brandNameColor: "#ffffff",
-	    brandTaglineColor: "#dbeafe",
-	    logoBorderColor: "#d1d5db",
-	    logoBackgroundColor: "transparent",
+    brandNameColor: "#ffffff",
+    brandTaglineColor: "#dbeafe",
+    logoBorderColor: "#d1d5db",
+    logoBackgroundColor: "transparent",
     primaryColor: "#4a8fff",
     secondaryColor: "#6aaeff",
     loadingBackgroundColor: "#ffffff",
     loadingTextColor: "#111827",
     navBarColor: "#ffffff",
   },
-	  "dexta-academy-3": {
+  "dexta-academy-3": {
     brandNameColor: "#061a40",
     brandTaglineColor: "#061a40",
     logoBorderColor: "#ffc43d",
@@ -221,10 +221,10 @@ const ORIGINAL_THEME_COLORS: Record<
     buttonOverlayColor: "#ffffff",
   },
   "dexta-academy-2": {
-	    brandNameColor: "#ffffff",
-	    brandTaglineColor: "#facc15",
-	    logoBorderColor: "#ffc433",
-	    logoBackgroundColor: "transparent",
+    brandNameColor: "#ffffff",
+    brandTaglineColor: "#facc15",
+    logoBorderColor: "#ffc433",
+    logoBackgroundColor: "transparent",
     primaryColor: "#081827",
     secondaryColor: "#facc15",
     loadingBackgroundColor: "#081827",
@@ -232,10 +232,10 @@ const ORIGINAL_THEME_COLORS: Record<
     navBarColor: "#081827",
   },
   "dexta-academy-1": {
-	    brandNameColor: "#0f172a",
-	    brandTaglineColor: "#64748b",
-	    logoBorderColor: "#0f766e",
-	    logoBackgroundColor: "transparent",
+    brandNameColor: "#0f172a",
+    brandTaglineColor: "#64748b",
+    logoBorderColor: "#0f766e",
+    logoBackgroundColor: "transparent",
     primaryColor: "#0f766e",
     secondaryColor: "#f97316",
     loadingBackgroundColor: "#ffffff",
@@ -243,10 +243,10 @@ const ORIGINAL_THEME_COLORS: Record<
     navBarColor: "#ffffff",
   },
   default: {
-	    brandNameColor: "#111827",
-	    brandTaglineColor: "#6b7280",
-	    logoBorderColor: "#d1d5db",
-	    logoBackgroundColor: "transparent",
+    brandNameColor: "#111827",
+    brandTaglineColor: "#6b7280",
+    logoBorderColor: "#d1d5db",
+    logoBackgroundColor: "transparent",
     primaryColor: "#0f766e",
     secondaryColor: "#facc15",
     loadingBackgroundColor: "#ffffff",
@@ -1302,6 +1302,21 @@ function FieldControl({
             </div>
           </div>
         </div>
+      ) : controlKind === "select" ? (
+        <select
+          value={displayStringValue}
+          onChange={(event) => onChange(event.target.value)}
+          className={cn(
+            "h-9 rounded-md border px-3 text-sm outline-none transition-colors focus:border-cyan-500/40",
+            commonInputClass,
+          )}
+        >
+          {(field.options ?? []).map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       ) : (
         <Input
           value={getStringValue(displayValue)}
@@ -1568,7 +1583,7 @@ export function SchoolWebsiteProjectEditor({
 
       const groupName = mergeContactPageGroups
         ? "Contact page"
-        : field.uiGroup ?? "Content";
+        : (field.uiGroup ?? "Content");
       groups.set(groupName, [...(groups.get(groupName) ?? []), field]);
     }
 
@@ -2902,19 +2917,19 @@ export function SchoolWebsiteProjectEditor({
                     : "text-[#888] hover:bg-[#171717] hover:text-white",
                 )}
               >
-	                <span className="truncate">{page.title}</span>
-	                <span className="text-[11px] text-[#555]">
-	                  {isDextaAcademy3Template && page.slug === "contact"
-	                    ? page.sections.filter(
-	                        (section) =>
-	                          !DEXTA_ACADEMY_3_FOOTER_PAGE_SECTION_IDS.has(
-	                            section.id,
-	                          ),
-	                      ).length
-	                    : page.sections.length}
-	                </span>
-	              </button>
-	            ))}
+                <span className="truncate">{page.title}</span>
+                <span className="text-[11px] text-[#555]">
+                  {isDextaAcademy3Template && page.slug === "contact"
+                    ? page.sections.filter(
+                        (section) =>
+                          !DEXTA_ACADEMY_3_FOOTER_PAGE_SECTION_IDS.has(
+                            section.id,
+                          ),
+                      ).length
+                    : page.sections.length}
+                </span>
+              </button>
+            ))}
 
             {visibleSharedSections.length ? (
               <button
@@ -3015,13 +3030,13 @@ export function SchoolWebsiteProjectEditor({
                 field={{
                   key: "fontFamily",
                   label: "Font",
-	                  type: "text",
-	                  selector: "body",
-	                  target: "inlineStyle",
+                  type: "text",
+                  selector: "body",
+                  target: "inlineStyle",
                   placeholder: "Poppins",
                   helpText:
                     "Enter a Google Font family name such as Poppins, Inter, or Nunito Sans. Template 3 will load it automatically.",
-	                }}
+                }}
                 value={draft.theme.fontFamily}
                 onChange={(value) =>
                   updateTheme("fontFamily", getStringValue(value))
@@ -3297,10 +3312,10 @@ export function SchoolWebsiteProjectEditor({
                         deletePreviousOnReplace={false}
                       />
                     </div>
-	                    <div className="grid gap-4 sm:grid-cols-2">
-	                      <FieldControl
-	                        field={{
-	                          key: "logoWidth",
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FieldControl
+                        field={{
+                          key: "logoWidth",
                           label: "Logo width",
                           type: "number",
                           selector: "nav",
@@ -3329,31 +3344,31 @@ export function SchoolWebsiteProjectEditor({
                         }}
                         value={draft.theme.logoHeight}
                         onChange={(value) =>
-	                          updateTheme("logoHeight", getNumberValue(value))
-	                        }
-	                      />
-	                    </div>
-	                    <FieldControl
-	                      field={{
-	                        key: "logoBackgroundColor",
-	                        label: "Logo background",
-	                        type: "color",
-	                        selector: "nav",
-	                        target: "inlineStyle",
-	                      }}
-	                      value={draft.theme.logoBackgroundColor}
-	                      originalValue={getOriginalThemeColorValue(
-	                        "logoBackgroundColor",
-	                      )}
-	                      onChange={(value) =>
-	                        updateTheme(
-	                          "logoBackgroundColor",
-	                          getStringValue(value),
-	                        )
-	                      }
-	                    />
-	                  </div>
-	                </div>
+                          updateTheme("logoHeight", getNumberValue(value))
+                        }
+                      />
+                    </div>
+                    <FieldControl
+                      field={{
+                        key: "logoBackgroundColor",
+                        label: "Logo background",
+                        type: "color",
+                        selector: "nav",
+                        target: "inlineStyle",
+                      }}
+                      value={draft.theme.logoBackgroundColor}
+                      originalValue={getOriginalThemeColorValue(
+                        "logoBackgroundColor",
+                      )}
+                      onChange={(value) =>
+                        updateTheme(
+                          "logoBackgroundColor",
+                          getStringValue(value),
+                        )
+                      }
+                    />
+                  </div>
+                </div>
 
                 <div className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4">
                   <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
@@ -3546,22 +3561,22 @@ export function SchoolWebsiteProjectEditor({
                     Navigation links
                   </p>
                   <div className="space-y-4">
-	                    <FieldControl
-	                      field={{
-	                        key: "navLinkFontFamily",
+                    <FieldControl
+                      field={{
+                        key: "navLinkFontFamily",
                         label: "Link font",
                         type: "text",
                         selector: "nav a",
                         target: "inlineStyle",
                         placeholder: draft.theme.fontFamily,
-                      helpText:
-                        "Enter a Google Font family name such as Montserrat, Poppins, or Nunito Sans. Template 3 will load it automatically.",
+                        helpText:
+                          "Enter a Google Font family name such as Montserrat, Poppins, or Nunito Sans. Template 3 will load it automatically.",
                       }}
                       value={draft.theme.navLinkFontFamily}
-	                      onChange={(value) =>
-	                        updateTheme("navLinkFontFamily", getStringValue(value))
-	                      }
-	                    />
+                      onChange={(value) =>
+                        updateTheme("navLinkFontFamily", getStringValue(value))
+                      }
+                    />
                     <FieldControl
                       field={{
                         key: "navLinkColor",
@@ -3576,13 +3591,14 @@ export function SchoolWebsiteProjectEditor({
                         updateTheme("navLinkColor", getStringValue(value))
                       }
                     />
-	                    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#222] bg-[#0d0d0d] p-3">
+                    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#222] bg-[#0d0d0d] p-3">
                       <div>
                         <p className="text-sm font-medium text-white">
                           Show hover effect
                         </p>
                         <p className="text-xs text-[#666]">
-                          Turn off to remove the navbar underline and hover color.
+                          Turn off to remove the navbar underline and hover
+                          color.
                         </p>
                       </div>
                       <Switch
@@ -3601,7 +3617,9 @@ export function SchoolWebsiteProjectEditor({
                         target: "inlineStyle",
                       }}
                       value={draft.theme.navHoverColor}
-                      originalValue={getOriginalThemeColorValue("navHoverColor")}
+                      originalValue={getOriginalThemeColorValue(
+                        "navHoverColor",
+                      )}
                       onChange={(value) =>
                         updateTheme("navHoverColor", getStringValue(value))
                       }
@@ -3620,7 +3638,8 @@ export function SchoolWebsiteProjectEditor({
                           Show overlay on buttons
                         </p>
                         <p className="text-xs text-[#666]">
-                          Applies the hover overlay to every button in this template.
+                          Applies the hover overlay to every button in this
+                          template.
                         </p>
                       </div>
                       <Switch
@@ -3693,7 +3712,8 @@ export function SchoolWebsiteProjectEditor({
                           Transparent navbar
                         </p>
                         <p className="text-xs text-[#666]">
-                          Turn on to use navbar opacity. Turn off for the full selected color.
+                          Turn on to use navbar opacity. Turn off for the full
+                          selected color.
                         </p>
                       </div>
                       <Switch

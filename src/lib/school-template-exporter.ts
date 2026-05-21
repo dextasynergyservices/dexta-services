@@ -4947,7 +4947,8 @@ export async function buildSchoolWebsiteProjectExportZip({
   content: SchoolTemplateProjectContent;
   sourceSnapshot: SchoolTemplateSourceSnapshot;
 }) {
-  const renderContent = prepareDextaAcademyThreeContactRenderingContent(content);
+  const renderContent =
+    prepareDextaAcademyThreeContactRenderingContent(content);
   const files = await copyTemplateAssets(sourceSnapshot);
   const renderedPages = await Promise.all(
     renderContent.pages.map((page) =>

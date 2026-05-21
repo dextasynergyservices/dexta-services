@@ -113,6 +113,7 @@ export type SchoolTemplateProjectFieldSnapshot = {
   min?: number;
   max?: number;
   step?: number;
+  options?: SchoolTemplateField["options"];
 };
 
 export type SchoolTemplateProjectSectionSnapshot = {
@@ -1262,8 +1263,7 @@ function sanitizeSectionContent(
                 const field = fieldMap.get(`${section.id}:${key}`);
                 const sanitized = isIframeEmbedField(field)
                   ? sanitizeIframeEmbedValue(value)
-                  : field?.type === "richText" ||
-                      field?.target === "innerHTML"
+                  : field?.type === "richText" || field?.target === "innerHTML"
                     ? sanitizeRichText(value)
                     : sanitizePlainText(value);
 
@@ -1319,7 +1319,9 @@ export function sanitizeSchoolTemplateProjectContent(
       logoBorderRadius: Number(content.theme.logoBorderRadius ?? 18),
       primaryColor: sanitizePlainText(content.theme.primaryColor),
       secondaryColor: sanitizePlainText(content.theme.secondaryColor),
-      tertiaryColor: sanitizePlainText(content.theme.tertiaryColor ?? "#dc422e"),
+      tertiaryColor: sanitizePlainText(
+        content.theme.tertiaryColor ?? "#dc422e",
+      ),
       fontFamily: sanitizePlainText(content.theme.fontFamily),
       navLinkFontFamily: sanitizePlainText(
         content.theme.navLinkFontFamily || content.theme.fontFamily,
@@ -1350,10 +1352,10 @@ export function sanitizeSchoolTemplateProjectContent(
       ),
       navBarTransparent: Boolean(content.theme.navBarTransparent),
       navHoverEnabled: Boolean(content.theme.navHoverEnabled ?? true),
-      navHoverColor: sanitizePlainText(content.theme.navHoverColor ?? "#facc15"),
-      buttonOverlayEnabled: Boolean(
-        content.theme.buttonOverlayEnabled ?? true,
+      navHoverColor: sanitizePlainText(
+        content.theme.navHoverColor ?? "#facc15",
       ),
+      buttonOverlayEnabled: Boolean(content.theme.buttonOverlayEnabled ?? true),
       buttonOverlayColor: sanitizePlainText(
         content.theme.buttonOverlayColor ?? "#ffffff",
       ),
@@ -1730,6 +1732,8 @@ function getDefaultFieldValue(field: SchoolTemplateField) {
       return null;
     case "color":
       return "#000000";
+    case "select":
+      return "";
     case "image":
     case "link":
     case "model3d":
@@ -1890,6 +1894,7 @@ function buildFieldSnapshot(
     ...(field.min !== undefined ? { min: field.min } : {}),
     ...(field.max !== undefined ? { max: field.max } : {}),
     ...(field.step !== undefined ? { step: field.step } : {}),
+    ...(field.options ? { options: field.options } : {}),
   };
 }
 
@@ -2068,7 +2073,10 @@ function mergeSectionContent(
   const valuesLegacyTitle = existingSection?.fields.title;
   const isDextaAcademyThreeFooter =
     freshSection.id === "site-footer" &&
-    Object.prototype.hasOwnProperty.call(freshSection.fields, "footerLinkLabel");
+    Object.prototype.hasOwnProperty.call(
+      freshSection.fields,
+      "footerLinkLabel",
+    );
   const legacyFooterContactItems = isDextaAcademyThreeFooter
     ? getDextaAcademyThreeLegacyFooterContactItems(existingSection)
     : {};
@@ -2096,10 +2104,10 @@ function mergeSectionContent(
     const normalizedExistingValue =
       normalizeFieldValue(key, existingValue) ?? null;
 
-	    if (freshSection.id === "values" && key === "introTitle") {
-	      if (
-	        hasProjectFieldValue(normalizedExistingValue) &&
-	        !projectFieldTextMatches(normalizedExistingValue, valuesIntroBody)
+    if (freshSection.id === "values" && key === "introTitle") {
+      if (
+        hasProjectFieldValue(normalizedExistingValue) &&
+        !projectFieldTextMatches(normalizedExistingValue, valuesIntroBody)
       ) {
         return normalizedExistingValue;
       }
@@ -2110,21 +2118,33 @@ function mergeSectionContent(
       ) {
         return valuesLegacyTitle;
       }
-	
-	      return normalizedFreshValue;
-	    }
+
+      return normalizedFreshValue;
+    }
 
     if (isDextaAcademyThreeFooter) {
-      if (key === "footerPhone" && hasProjectFieldValue(legacyFooterContactItems.phoneText)) {
+      if (
+        key === "footerPhone" &&
+        hasProjectFieldValue(legacyFooterContactItems.phoneText)
+      ) {
         return legacyFooterContactItems.phoneText;
       }
-      if (key === "footerPhoneHref" && hasProjectFieldValue(legacyFooterContactItems.phoneHref)) {
+      if (
+        key === "footerPhoneHref" &&
+        hasProjectFieldValue(legacyFooterContactItems.phoneHref)
+      ) {
         return legacyFooterContactItems.phoneHref;
       }
-      if (key === "footerEmail" && hasProjectFieldValue(legacyFooterContactItems.emailText)) {
+      if (
+        key === "footerEmail" &&
+        hasProjectFieldValue(legacyFooterContactItems.emailText)
+      ) {
         return legacyFooterContactItems.emailText;
       }
-      if (key === "footerEmailHref" && hasProjectFieldValue(legacyFooterContactItems.emailHref)) {
+      if (
+        key === "footerEmailHref" &&
+        hasProjectFieldValue(legacyFooterContactItems.emailHref)
+      ) {
         return legacyFooterContactItems.emailHref;
       }
     }
@@ -2158,7 +2178,7 @@ function mergeSectionContent(
     ? (existingSection?.repeatable?.items ?? []).filter(
         (item) => !isDextaAcademyThreeLegacyFooterContactLink(item),
       )
-    : existingSection?.repeatable?.items ?? [];
+    : (existingSection?.repeatable?.items ?? []);
   const itemCount = Math.max(freshItems.length, existingItems.length);
 
   return {

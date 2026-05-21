@@ -148,6 +148,223 @@ describe("school template preview renderer", () => {
     assert.match(html, /node\.style\.backgroundRepeat = "no-repeat"/);
   });
 
+  it("exposes Template 1 preview controls without using shared template paths", async () => {
+    const manifest = schoolTemplateManifests.find(
+      (item) => item.templateSlug === "dexta-academy-1",
+    );
+
+    assert.ok(manifest, "Expected Template 1 manifest.");
+
+    const headerFields =
+      manifest.sharedSections.find((section) => section.id === "site-header")
+        ?.fields ?? [];
+    const heroFields =
+      manifest.pages
+        .find((page) => page.slug === "home")
+        ?.sections.find((section) => section.id === "hero")?.fields ?? [];
+    const aboutPreviewFields =
+      manifest.pages
+        .find((page) => page.slug === "home")
+        ?.sections.find((section) => section.id === "about-preview")?.fields ??
+      [];
+    const academicsFields =
+      manifest.pages
+        .find((page) => page.slug === "home")
+        ?.sections.find((section) => section.id === "academics")?.fields ?? [];
+    const homeSections =
+      manifest.pages.find((page) => page.slug === "home")?.sections ?? [];
+    const galleryFields =
+      homeSections.find((section) => section.id === "gallery")?.fields ?? [];
+    const testimonialsFields =
+      homeSections.find((section) => section.id === "testimonials")?.fields ??
+      [];
+    const admissionsSection = homeSections.find(
+      (section) => section.id === "admissions",
+    );
+    const admissionsFields = admissionsSection?.fields ?? [];
+    const contactFields =
+      homeSections.find((section) => section.id === "contact")?.fields ?? [];
+
+    assert.ok(
+      headerFields.some((field) => field.key === "logoWidthMobile"),
+      "Expected Template 1 navbar to expose mobile logo sizing.",
+    );
+    assert.ok(
+      heroFields.some((field) => field.key === "headlineTabletFontSize"),
+      "Expected Template 1 hero to expose tablet headline sizing.",
+    );
+    assert.ok(
+      heroFields.some((field) => field.key === "lineOrangeOpacity"),
+      "Expected Template 1 hero to expose animated line opacity.",
+    );
+    assert.ok(
+      heroFields.some((field) => field.key === "headlineMobileFontSize"),
+      "Expected Template 1 hero to expose mobile headline sizing.",
+    );
+    assert.ok(
+      heroFields.some((field) => field.key === "bodyMobileFontSize"),
+      "Expected Template 1 hero to expose mobile body sizing.",
+    );
+    assert.ok(
+      heroFields.some((field) => field.key === "cardCenterBgColor"),
+      "Expected Template 1 hero to expose image card background colors.",
+    );
+    assert.ok(
+      aboutPreviewFields.some(
+        (field) =>
+          field.key === "imageBorderStyle" &&
+          field.type === "select" &&
+          field.options?.some((option) => option.value === "dotted"),
+      ),
+      "Expected Template 1 about preview image border pattern dropdown.",
+    );
+    assert.ok(
+      academicsFields.some(
+        (field) =>
+          field.key === "cardIconColor" &&
+          field.selector.includes(".landing-academics__card"),
+      ),
+      "Expected Template 1 academics cards to expose per-card icon colors.",
+    );
+    assert.ok(
+      academicsFields.some(
+        (field) =>
+          field.key === "cardBgColor" &&
+          field.selector === ".landing-academics__card",
+      ),
+      "Expected Template 1 academics cards to expose per-card background colors.",
+    );
+    assert.ok(
+      academicsFields.some(
+        (field) =>
+          field.key === "iconClass" &&
+          field.selector.includes(".landing-academics__card"),
+      ),
+      "Expected Template 1 academics icon class to be editable per card.",
+    );
+    assert.ok(
+      academicsFields.every((field) => field.uiGroup !== "Icon style"),
+      "Template 1 academics should not expose the shared section-level Icon style group.",
+    );
+    assert.ok(
+      academicsFields.some(
+        (field) =>
+          field.key === "cardIconImage" &&
+          field.type === "image" &&
+          field.selector.includes(".landing-academics__card"),
+      ),
+      "Expected Template 1 academics card icon images to be editable per card.",
+    );
+    assert.ok(
+      academicsFields.some((field) => field.key === "performanceChartBgColor"),
+      "Expected Template 1 Academic Performance to expose inner background color.",
+    );
+    assert.ok(
+      academicsFields.some((field) => field.key === "performanceBarGreenLabel"),
+      "Expected Template 1 Academic Performance chart labels to be editable.",
+    );
+    assert.ok(
+      academicsFields.some(
+        (field) => field.key === "performanceBarGreenHeight",
+      ),
+      "Expected Template 1 Academic Performance chart heights to be editable.",
+    );
+    assert.ok(
+      galleryFields.some((field) => field.key === "paginationBgColor") &&
+        galleryFields.some((field) => field.key === "paginationTextColor"),
+      "Expected Template 1 gallery pagination button colors to be editable.",
+    );
+    assert.ok(
+      testimonialsFields.some(
+        (field) =>
+          field.key === "relationship" &&
+          field.type === "select" &&
+          field.options?.some((option) => option.value === "Guardian"),
+      ),
+      "Expected Template 1 testimonials to expose Parent/Guardian dropdown.",
+    );
+    assert.equal(
+      admissionsSection && "repeatable" in admissionsSection
+        ? admissionsSection.repeatable?.itemSelector
+        : undefined,
+      ".landing-step",
+      "Expected Template 1 admissions steps to be editable as cards.",
+    );
+    assert.ok(
+      admissionsFields.some((field) => field.key === "stepNumber") &&
+        admissionsFields.some((field) => field.key === "stepCardBgColor") &&
+        admissionsFields.some((field) => field.key === "stepNumberColor") &&
+        admissionsFields.some((field) => field.key === "stepTitleColor") &&
+        admissionsFields.some((field) => field.key === "stepBodyColor"),
+      "Expected Template 1 admissions cards to expose number/text, text color, and card color controls.",
+    );
+    assert.ok(
+      contactFields.some((field) => field.key === "addressIconClass") &&
+        contactFields.some((field) => field.key === "addressCardBgColor"),
+      "Expected Template 1 contact info icons and card backgrounds to be editable.",
+    );
+
+    const content = buildSchoolTemplateProjectContent(manifest);
+    const sourceSnapshot = buildSchoolTemplateSourceSnapshot(manifest);
+
+    const html = await renderSchoolTemplatePreview({
+      content,
+      sourceSnapshot,
+      pageSlug: "home",
+    });
+
+    assert.ok(html, "Expected Template 1 home preview HTML.");
+    assert.match(html, /font-awesome\/6\.5\.2\/css\/all\.min\.css/);
+    assert.doesNotMatch(html, /font-awesome\/5\.10\.0\/css\/all\.min\.css/);
+    assert.match(html, /function academyOneSectionBackground/);
+    assert.ok(
+      html.includes(
+        'background-image:linear-gradient(" + overlay + "," + overlay + "),var(" + prefix + "section-bg-image,none)!important',
+      ),
+      "Expected Template 1 section background color to overlay the background image.",
+    );
+    assert.match(
+      html,
+      /academyOneSectionBackground\("\.school-hero", "home", "hero", "#fff"\)/,
+    );
+    assert.match(
+      html,
+      /academyOneSectionBackground\("\.landing-section--gallery", "home", "gallery", "#fff"\)/,
+    );
+    assert.match(
+      html,
+      /class="school-hero__streaks school-hero__streaks--desktop"/,
+    );
+    assert.match(html, /--dexta-academy-1-home-hero-line-orange-opacity/);
+    assert.match(html, /--dexta-academy-1-home-hero-headline-mobile-font-size/);
+    assert.match(html, /--dexta-academy-1-home-hero-card-center-bg-color/);
+    assert.match(
+      html,
+      /--dexta-academy-1-home-about-preview-image-border-style/,
+    );
+    assert.match(html, /--dexta-academy-1-home-academics-card-icon-color/);
+    assert.match(html, /--dexta-academy-1-home-academics-card-icon-image/);
+    assert.match(html, /node\.querySelectorAll\("i"\)\.forEach/);
+    assert.match(html, /--dexta-academy-1-home-academics-card-bg-color/);
+    assert.match(
+      html,
+      /--dexta-academy-1-home-academics-performance-chart-bg-color/,
+    );
+    assert.match(
+      html,
+      /--dexta-academy-1-home-academics-performance-bar-green-height/,
+    );
+    assert.match(html, /--dexta-academy-1-home-gallery-pagination-bg-color/);
+    assert.match(html, /--dexta-academy-1-home-admissions-step-card-bg-color/);
+    assert.match(html, /--dexta-academy-1-home-admissions-step-number-color/);
+    assert.match(html, /--dexta-academy-1-home-admissions-step-title-color/);
+    assert.match(html, /--dexta-academy-1-home-admissions-step-body-color/);
+    assert.match(html, /--dexta-academy-1-home-contact-address-card-bg-color/);
+    assert.match(html, /landing-contact__socials a/);
+    assert.match(html, /String\(value\)\.trim\(\) !== "#"/);
+    assert.match(html, /--dexta-academy-1-shared-navbar-logo-width-mobile/);
+  });
+
   it("renders Template 3 hero art through the main sky image layer", async () => {
     const manifest = schoolTemplateManifests.find(
       (item) => item.templateSlug === "dexta-academy-3",
@@ -186,10 +403,7 @@ describe("school template preview renderer", () => {
       html,
       /@media \(max-width:560px\)\{\.hero__sky-layer\{top:0!important;right:0!important;bottom:0!important;left:0!important;height:auto!important;max-height:none!important;background(?:-color)?:[^}]+!important;background-image:none!important;\}\.hero__sky-image\{object-position:center 14%!important;\}\}/,
     );
-    assert.match(
-      html,
-      /function applyAcademyThreeHeroBackgroundImage/,
-    );
+    assert.match(html, /function applyAcademyThreeHeroBackgroundImage/);
     assert.match(
       html,
       /skyLayer\.style\.setProperty\("background-image", "none", "important"\)/,

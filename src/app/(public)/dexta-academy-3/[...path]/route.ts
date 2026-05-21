@@ -31,7 +31,10 @@ function injectBaseHref(html: string) {
 
   const baseMarkup = '<base href="/dexta-academy-3/">';
   if (/<head[^>]*>/i.test(html)) {
-    return html.replace(/<head[^>]*>/i, (match) => `${match}\n    ${baseMarkup}`);
+    return html.replace(
+      /<head[^>]*>/i,
+      (match) => `${match}\n    ${baseMarkup}`,
+    );
   }
 
   return `${baseMarkup}\n${html}`;

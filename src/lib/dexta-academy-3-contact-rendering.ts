@@ -96,7 +96,9 @@ function stripRepeatedContactTitle(
     `^\\s*(?:<[^>]+>\\s*)*${escapeRegExp(title)}(?:\\s|<[^>]+>|&nbsp;|<br\\s*\\/?>)*`,
     "i",
   );
-  return String(contentValue ?? "").replace(pattern, "").trim();
+  return String(contentValue ?? "")
+    .replace(pattern, "")
+    .trim();
 }
 
 export function prepareDextaAcademyThreeContactRenderingContent(
