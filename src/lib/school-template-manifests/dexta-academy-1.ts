@@ -332,11 +332,7 @@ function t1HeroResponsiveTextFields(): SchoolTemplateField[] {
       ".school-hero",
       {
         ...fieldBase,
-        cssVariable: t1CssVar(
-          "home",
-          "hero",
-          "headline-tablet-font-size",
-        ),
+        cssVariable: t1CssVar("home", "hero", "headline-tablet-font-size"),
         defaultValue: 58,
         min: 24,
         max: 120,
@@ -349,30 +345,21 @@ function t1HeroResponsiveTextFields(): SchoolTemplateField[] {
       ".school-hero",
       {
         ...fieldBase,
-        cssVariable: t1CssVar(
-          "home",
-          "hero",
-          "headline-mobile-font-size",
-        ),
+        cssVariable: t1CssVar("home", "hero", "headline-mobile-font-size"),
         defaultValue: 42,
         min: 22,
         max: 88,
         uiOrder: 221,
       },
     ),
-    numberField(
-      "bodyTabletFontSize",
-      "Hero body tablet size",
-      ".school-hero",
-      {
-        ...fieldBase,
-        cssVariable: t1CssVar("home", "hero", "body-tablet-font-size"),
-        defaultValue: 22,
-        min: 12,
-        max: 48,
-        uiOrder: 222,
-      },
-    ),
+    numberField("bodyTabletFontSize", "Hero body tablet size", ".school-hero", {
+      ...fieldBase,
+      cssVariable: t1CssVar("home", "hero", "body-tablet-font-size"),
+      defaultValue: 22,
+      min: 12,
+      max: 48,
+      uiOrder: 222,
+    }),
     numberField("bodyMobileFontSize", "Hero body mobile size", ".school-hero", {
       ...fieldBase,
       cssVariable: t1CssVar("home", "hero", "body-mobile-font-size"),
@@ -495,17 +482,27 @@ function t1HeroCardBackgroundFields(): SchoolTemplateField[] {
   };
 
   return [
-    colorField("cardCenterBgColor", "Center image card background", ".school-hero", {
-      ...colorBase,
-      cssVariable: t1CssVar("home", "hero", "card-center-bg-color"),
-      defaultValue: "#0a4d3c",
-      uiOrder: 180,
-    }),
-    numberField("cardCenterBgOpacity", "Center image card opacity", ".school-hero", {
-      ...opacityBase,
-      cssVariable: t1CssVar("home", "hero", "card-center-bg-opacity"),
-      uiOrder: 181,
-    }),
+    colorField(
+      "cardCenterBgColor",
+      "Center image card background",
+      ".school-hero",
+      {
+        ...colorBase,
+        cssVariable: t1CssVar("home", "hero", "card-center-bg-color"),
+        defaultValue: "#0a4d3c",
+        uiOrder: 180,
+      },
+    ),
+    numberField(
+      "cardCenterBgOpacity",
+      "Center image card opacity",
+      ".school-hero",
+      {
+        ...opacityBase,
+        cssVariable: t1CssVar("home", "hero", "card-center-bg-opacity"),
+        uiOrder: 181,
+      },
+    ),
     colorField("cardTopBgColor", "Top image card background", ".school-hero", {
       ...colorBase,
       cssVariable: t1CssVar("home", "hero", "card-top-bg-color"),
@@ -517,17 +514,27 @@ function t1HeroCardBackgroundFields(): SchoolTemplateField[] {
       cssVariable: t1CssVar("home", "hero", "card-top-bg-opacity"),
       uiOrder: 183,
     }),
-    colorField("cardBottomBgColor", "Bottom image card background", ".school-hero", {
-      ...colorBase,
-      cssVariable: t1CssVar("home", "hero", "card-bottom-bg-color"),
-      defaultValue: "#dce5c8",
-      uiOrder: 184,
-    }),
-    numberField("cardBottomBgOpacity", "Bottom image card opacity", ".school-hero", {
-      ...opacityBase,
-      cssVariable: t1CssVar("home", "hero", "card-bottom-bg-opacity"),
-      uiOrder: 185,
-    }),
+    colorField(
+      "cardBottomBgColor",
+      "Bottom image card background",
+      ".school-hero",
+      {
+        ...colorBase,
+        cssVariable: t1CssVar("home", "hero", "card-bottom-bg-color"),
+        defaultValue: "#dce5c8",
+        uiOrder: 184,
+      },
+    ),
+    numberField(
+      "cardBottomBgOpacity",
+      "Bottom image card opacity",
+      ".school-hero",
+      {
+        ...opacityBase,
+        cssVariable: t1CssVar("home", "hero", "card-bottom-bg-opacity"),
+        uiOrder: 185,
+      },
+    ),
   ];
 }
 
@@ -640,7 +647,11 @@ function t1AcademicsPerformanceFields(): SchoolTemplateField[] {
       ".landing-performance__chart",
       {
         target: "cssVariable",
-        cssVariable: t1CssVar("home", "academics", "performance-chart-bg-color"),
+        cssVariable: t1CssVar(
+          "home",
+          "academics",
+          "performance-chart-bg-color",
+        ),
         defaultValue: "",
         uiGroup: "Academic Performance card",
         uiOrder: 431,
@@ -688,7 +699,11 @@ function t1AcademicsPerformanceFields(): SchoolTemplateField[] {
       ".landing-performance__bar--green span",
       {
         target: "cssVariable",
-        cssVariable: t1CssVar("home", "academics", "performance-bar-green-color"),
+        cssVariable: t1CssVar(
+          "home",
+          "academics",
+          "performance-bar-green-color",
+        ),
         defaultValue: "#0a4d3c",
         uiGroup: "Academic Performance chart",
         uiOrder: 441,
@@ -700,7 +715,11 @@ function t1AcademicsPerformanceFields(): SchoolTemplateField[] {
       ".landing-performance__bar--green span",
       {
         target: "cssVariable",
-        cssVariable: t1CssVar("home", "academics", "performance-bar-green-height"),
+        cssVariable: t1CssVar(
+          "home",
+          "academics",
+          "performance-bar-green-height",
+        ),
         defaultValue: 82,
         min: 8,
         max: 100,
@@ -814,13 +833,18 @@ function t1GalleryPaginationFields(): SchoolTemplateField[] {
       uiGroup: "Gallery pagination buttons",
       uiOrder: 420,
     }),
-    colorField("paginationTextColor", "Pagination button text color", selector, {
-      target: "cssVariable",
-      cssVariable: t1CssVar("home", "gallery", "pagination-text-color"),
-      defaultValue: "rgba(30,30,46,.7)",
-      uiGroup: "Gallery pagination buttons",
-      uiOrder: 421,
-    }),
+    colorField(
+      "paginationTextColor",
+      "Pagination button text color",
+      selector,
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar("home", "gallery", "pagination-text-color"),
+        defaultValue: "rgba(30,30,46,.7)",
+        uiGroup: "Gallery pagination buttons",
+        uiOrder: 421,
+      },
+    ),
     colorField(
       "paginationActiveBgColor",
       "Active pagination button background",
@@ -889,10 +913,15 @@ function t1AdmissionsStepFields(): SchoolTemplateField[] {
       uiGroup: "Admission step text colors",
       uiOrder: 363,
     }),
-    textField("stepNumber", "Step number", ".landing-step .landing-step__number", {
-      uiGroup: "Admission step content",
-      uiOrder: 370,
-    }),
+    textField(
+      "stepNumber",
+      "Step number",
+      ".landing-step .landing-step__number",
+      {
+        uiGroup: "Admission step content",
+        uiOrder: 370,
+      },
+    ),
     textField("stepTitle", "Step title", ".landing-step h3", {
       uiGroup: "Admission step content",
       uiOrder: 371,

@@ -264,7 +264,9 @@ describe("school template preview renderer", () => {
       "Expected Template 1 Academic Performance chart labels to be editable.",
     );
     assert.ok(
-      academicsFields.some((field) => field.key === "performanceBarGreenHeight"),
+      academicsFields.some(
+        (field) => field.key === "performanceBarGreenHeight",
+      ),
       "Expected Template 1 Academic Performance chart heights to be editable.",
     );
     assert.ok(
@@ -401,10 +403,7 @@ describe("school template preview renderer", () => {
       html,
       /@media \(max-width:560px\)\{\.hero__sky-layer\{top:0!important;right:0!important;bottom:0!important;left:0!important;height:auto!important;max-height:none!important;background(?:-color)?:[^}]+!important;background-image:none!important;\}\.hero__sky-image\{object-position:center 14%!important;\}\}/,
     );
-    assert.match(
-      html,
-      /function applyAcademyThreeHeroBackgroundImage/,
-    );
+    assert.match(html, /function applyAcademyThreeHeroBackgroundImage/);
     assert.match(
       html,
       /skyLayer\.style\.setProperty\("background-image", "none", "important"\)/,
