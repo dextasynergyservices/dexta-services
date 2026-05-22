@@ -283,7 +283,6 @@ function getGoogleFontStylesheetUrl(value: unknown) {
 }
 
 function getGoogleFontPreloadMarkup(content: SchoolTemplateProjectContent) {
-  if (content.templateSlug !== "dexta-academy-3") return "";
   const urls = Array.from(
     new Set(
       [content.theme.fontFamily, content.theme.navLinkFontFamily]
@@ -1216,7 +1215,7 @@ function getDextaAcademyThreeNavbarMarkup(
       <div class="header-actions">
         ${
           hasPortalLink
-            ? `<a class="portal-link button" href="${escapeHtmlAttribute(
+            ? `<a class="portal-link" href="${escapeHtmlAttribute(
                 getDextaAcademyThreePreviewHref(
                   content,
                   portalHref,
@@ -1672,6 +1671,39 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 	    });
 	  }
 
+	  function applySectionFontOverrides() {
+	    var styleId = "dexta-section-font-overrides";
+	    var existing = document.getElementById(styleId);
+	    if (existing) existing.remove();
+
+	    var nodes = document.querySelectorAll("[data-dexta-font-stylesheet]");
+	    for (var i = 0; i < nodes.length; i++) {
+	      var node = nodes[i];
+	      var url = node.getAttribute("data-dexta-font-stylesheet");
+	      if (!url || url === "true") continue;
+	      var match = url.match(/[?&]family=([^:&]+)/);
+	      if (!match) continue;
+	      var family;
+	      try { family = decodeURIComponent(match[1].replace(/\\+/g, " ")).trim(); } catch (e) { continue; }
+	      if (!family) continue;
+	      var stack = JSON.stringify(family) + ', "Segoe UI", sans-serif';
+	      node.style.setProperty("font-family", stack, "important");
+	      // Clear stale inline font-family from descendants (e.g. set by applyFontFamily)
+	      // so the CSS inherit rule can take effect. Skip nested section roots.
+	      var stale = node.querySelectorAll('[style*="font-family"]');
+	      for (var j = 0; j < stale.length; j++) {
+	        var child = stale[j];
+	        if (child.hasAttribute("data-dexta-font-stylesheet") && child.getAttribute("data-dexta-font-stylesheet") !== "true") continue;
+	        child.style.removeProperty("font-family");
+	      }
+	    }
+
+	    var style = document.createElement("style");
+	    style.id = styleId;
+	    style.textContent = '[data-dexta-font-stylesheet]:not([data-dexta-font-stylesheet="true"]) *{font-family:inherit!important;}';
+	    document.head.appendChild(style);
+	  }
+
 ${getSchoolTemplateAssetResolverBrowserScript()}
 
 	  function resolveAsset(value, field) {
@@ -1878,12 +1910,19 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	      urls.push(text);
 	    }
 
+	    // Always load the admin's chosen theme fonts (all templates)
+	    addValue(getGoogleFontStylesheetUrl(preview.content.theme.fontFamily));
+	    addValue(getGoogleFontStylesheetUrl(preview.content.theme.navLinkFontFamily));
+
+	    // Also load template defaults as fallback
+	    if (preview.content.templateSlug === "dexta-academy-1" || preview.content.templateSlug === "dexta-academy-5") {
+	      addValue("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+	    }
 	    if (preview.content.templateSlug === "dexta-academy-2") {
 	      addValue("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
 	    }
-	    if (preview.content.templateSlug === "dexta-academy-3") {
-	      addValue(getGoogleFontStylesheetUrl(preview.content.theme.fontFamily));
-	      addValue(getGoogleFontStylesheetUrl(preview.content.theme.navLinkFontFamily));
+	    if (preview.content.templateSlug === "dexta-academy-4") {
+	      addValue("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap");
 	    }
 
 	    function scanSection(section) {
@@ -2590,6 +2629,8 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	  }
 
 	  function injectTheme() {
+	    var existing = document.querySelector('style[data-dexta-preview-theme]');
+	    if (existing) existing.remove();
 	    var style = document.createElement("style");
 	    style.setAttribute("data-dexta-preview-theme", "true");
 	    style.textContent = getThemeCss();
@@ -2801,10 +2842,18 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	
 		  function getTemplateBodyFont() {
 		    var font = String(preview.content.theme.fontFamily || "").trim();
-		    if (preview.content.templateSlug !== "dexta-academy-2") return font;
-		    var normalized = font.replace(/["']/g, "").toLowerCase();
-		    var isLegacyDefault = normalized.indexOf("plus jakarta sans") !== -1 || normalized.indexOf("manrope") !== -1;
-		    return !font || isLegacyDefault ? "Montserrat" : font;
+		    if (preview.content.templateSlug === "dexta-academy-2") {
+		      var normalized = font.replace(/["']/g, "").toLowerCase();
+		      var isLegacyDefault = normalized.indexOf("plus jakarta sans") !== -1 || normalized.indexOf("manrope") !== -1;
+		      return !font || isLegacyDefault ? "Montserrat" : font;
+		    }
+		    if (preview.content.templateSlug === "dexta-academy-1" || preview.content.templateSlug === "dexta-academy-5") {
+		      return font || "Manrope";
+		    }
+		    if (preview.content.templateSlug === "dexta-academy-4") {
+		      return font || "Poppins";
+		    }
+		    return font;
 		  }
 
 		  function getThemeCss() {
@@ -2819,19 +2868,23 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		  function getTemplateBodyFontCss() {
 		    var bodyFont = getTemplateBodyFont();
 			    if (!bodyFont) return "";
-			    if (preview.content.templateSlug === "dexta-academy-3") {
-			      return "body,.page-shell,.hero,.welcome,.programmes-showcase,.home-apply,.home-gallery,.site-footer,.about-page,.gallery-page,.contact-page,h1,h2,h3,h4,h5,h6,p,li,a,span,label,input,textarea,button{font-family:" + JSON.stringify(bodyFont) + ', "Segoe UI", sans-serif!important;}';
-			    }
-		    return "body{font-family:" + JSON.stringify(bodyFont) + ", var(--font-family, inherit);}";
+		    return "body,h1,h2,h3,h4,h5,h6,p,li,a,span,label,input,textarea,select,button{font-family:" + JSON.stringify(bodyFont) + ', "Segoe UI", sans-serif!important;}';
 		  }
 
 		  function getTemplateChromeFont() {
 		    var font = String(preview.content.theme.navLinkFontFamily || preview.content.theme.fontFamily || "").trim();
-		    if (preview.content.templateSlug !== "dexta-academy-2") return font;
-
-		    var normalized = font.replace(/["']/g, "").toLowerCase();
-		    var isLegacyDefault = normalized.indexOf("plus jakarta sans") !== -1 || normalized.indexOf("manrope") !== -1;
-		    return !font || isLegacyDefault ? "Montserrat" : font;
+		    if (preview.content.templateSlug === "dexta-academy-2") {
+		      var normalized = font.replace(/["']/g, "").toLowerCase();
+		      var isLegacyDefault = normalized.indexOf("plus jakarta sans") !== -1 || normalized.indexOf("manrope") !== -1;
+		      return !font || isLegacyDefault ? "Montserrat" : font;
+		    }
+		    if (preview.content.templateSlug === "dexta-academy-1" || preview.content.templateSlug === "dexta-academy-5") {
+		      return font || "Manrope";
+		    }
+		    if (preview.content.templateSlug === "dexta-academy-4") {
+		      return font || "Poppins";
+		    }
+		    return font;
 		  }
 
 		  function getNavLinkFontCss() {
@@ -2867,9 +2920,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      ]);
 		    }
 
-	    var fallback = preview.content.templateSlug === "dexta-academy-3"
-	      ? ', "Segoe UI", sans-serif'
-	      : ", var(--font-family, inherit)";
+	    var fallback = ', "Segoe UI", sans-serif';
 	    return selectors.join(",") + "{font-family:" + JSON.stringify(navLinkFont) + fallback + "!important;}";
 	  }
 
@@ -4207,6 +4258,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    applyAdmissionForm();
 	    rewritePreviewInternalLinks();
 	    injectPreviewFontStylesheets();
+	    applySectionFontOverrides();
 		    refreshTemplateTwoIcons();
 		    applyAcademyThreeHeroBackgroundImage();
 		    initGalleryLightbox();
@@ -4260,6 +4312,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	  window.setTimeout(applyAdmissionForm, 350);
 	  window.setTimeout(rewritePreviewInternalLinks, 350);
 	  window.setTimeout(injectPreviewFontStylesheets, 350);
+	  window.setTimeout(applySectionFontOverrides, 350);
 	  window.setTimeout(refreshTemplateTwoIcons, 350);
 		  window.setTimeout(initGalleryLightbox, 350);
 		  window.setTimeout(applyThemeIdentity, 1000);
@@ -4271,6 +4324,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	  window.setTimeout(applyAdmissionForm, 1000);
 	  window.setTimeout(rewritePreviewInternalLinks, 1000);
 	  window.setTimeout(injectPreviewFontStylesheets, 1000);
+	  window.setTimeout(applySectionFontOverrides, 1000);
 	  window.setTimeout(refreshTemplateTwoIcons, 1000);
 	})();
 	</script>`;
@@ -4285,6 +4339,50 @@ function getServerSideAnimationFixStyle(
 function getServerSideFontOverrideStyle(
   content: SchoolTemplateProjectContent,
 ): string {
+  if (content.templateSlug === "dexta-academy-1") {
+    const bodyFont = (content.theme.fontFamily ?? "").trim() || "Manrope";
+    const navFont =
+      (
+        content.theme.navLinkFontFamily ||
+        content.theme.fontFamily ||
+        ""
+      ).trim() || "Manrope";
+    return `<style data-dexta-font-override="true">
+body,h1,h2,h3,h4,h5,h6,p,li,a,span,label,input,textarea,select,button{font-family:${JSON.stringify(bodyFont)},sans-serif!important;}
+.navbar-nav .nav-link,.navbar-nav a,.site-nav a,.site-nav__link,.mobile-nav a,.mobile-nav__link,.site-header__nav a,.site-header__links a,.main-nav a,.site-footer,.site-footer a,.footer__links a,.footer__contact,.footer__bottom{font-family:${JSON.stringify(navFont)},sans-serif!important;}
+</style>`;
+  }
+
+  if (content.templateSlug === "dexta-academy-3") {
+    const bodyFont = (content.theme.fontFamily ?? "").trim();
+    const navFont = (
+      content.theme.navLinkFontFamily ||
+      content.theme.fontFamily ||
+      ""
+    ).trim();
+    if (!bodyFont && !navFont) return "";
+    const effectiveBodyFont = bodyFont || navFont;
+    const effectiveNavFont = navFont || bodyFont;
+    return `<style data-dexta-font-override="true">
+body,.page-shell,.hero,.welcome,.programmes-showcase,.home-apply,.home-gallery,.site-footer,.about-page,.gallery-page,.contact-page,h1,h2,h3,h4,h5,h6,p,li,a,span,label,input,textarea,select,button{font-family:${JSON.stringify(effectiveBodyFont)},"Segoe UI",sans-serif!important;}
+.site-nav a,.site-nav__link,.mobile-nav a,.mobile-nav__link,.site-header__nav a,.site-header__links a,.main-nav a,.site-footer,.site-footer a,.footer__links a,.footer__contact,.footer__bottom{font-family:${JSON.stringify(effectiveNavFont)},"Segoe UI",sans-serif!important;}
+</style>`;
+  }
+
+  if (content.templateSlug === "dexta-academy-4") {
+    const bodyFont = (content.theme.fontFamily ?? "").trim() || "Poppins";
+    const navFont =
+      (
+        content.theme.navLinkFontFamily ||
+        content.theme.fontFamily ||
+        ""
+      ).trim() || "Poppins";
+    return `<style data-dexta-font-override="true">
+body,h1,h2,h3,h4,h5,h6,p,li,a,span,label,input,textarea,select,button{font-family:${JSON.stringify(bodyFont)},"Segoe UI",sans-serif!important;}
+.site-nav a,.site-nav__link,.mobile-nav a,.mobile-nav__link,.site-header__nav a,.site-header__links a,.main-nav a,.site-footer,.site-footer a,.footer__links a,.footer__contact,.footer__bottom{font-family:${JSON.stringify(navFont)},"Segoe UI",sans-serif!important;}
+</style>`;
+  }
+
   if (content.templateSlug === "dexta-academy-5") {
     const bodyFont = (content.theme.fontFamily ?? "").trim() || "Manrope";
     const navFont =

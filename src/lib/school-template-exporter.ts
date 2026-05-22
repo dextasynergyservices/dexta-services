@@ -415,6 +415,25 @@ function removeStyleDeclaration(node: ElementNode, property: string) {
   }
 }
 
+function applySectionFontOverrides(root: ElementNode) {
+  const nodes = queryAll(root, "[data-dexta-font-stylesheet]");
+  for (const node of nodes) {
+    const url = getAttr(node, "data-dexta-font-stylesheet") ?? "";
+    if (!url || url === "true") continue;
+    const match = url.match(/[?&]family=([^:&]+)/);
+    if (!match) continue;
+    let family: string;
+    try {
+      family = decodeURIComponent(match[1].replace(/\+/g, " ")).trim();
+    } catch {
+      continue;
+    }
+    if (!family) continue;
+    const stack = `${JSON.stringify(family)}, "Segoe UI", sans-serif !important`;
+    setStyleDeclaration(node, "font-family", stack);
+  }
+}
+
 function setTextContent(node: ElementNode, value: string) {
   node.children = [{ type: "text", content: escapeHtml(value), parent: node }];
 }
@@ -3557,17 +3576,53 @@ function isSafeFontStylesheetUrl(value: string) {
 
 function collectFontStylesheetUrls(content: SchoolTemplateProjectContent) {
   const urls = new Set<string>();
-  if (content.templateSlug === "dexta-academy-1") {
+
+  // Helper to build a Google Fonts URL from a font family name
+  const addGoogleFont = (value: string | undefined | null) => {
+    const text = String(value ?? "")
+      .trim()
+      .replace(/^["']|["']$/g, "");
+    if (!text) return;
+    const family =
+      text
+        .split(",")[0]
+        ?.trim()
+        .replace(/^["']|["']$/g, "") ?? "";
+    if (
+      !family ||
+      /^(inherit|initial|unset|serif|sans-serif|monospace|cursive|fantasy|system-ui)$/i.test(
+        family,
+      )
+    ) {
+      return;
+    }
+    const encoded = encodeURIComponent(family).replace(/%20/g, "+");
+    urls.add(
+      `https://fonts.googleapis.com/css2?family=${encoded}:ital,wght@0,100..900;1,100..900&display=swap`,
+    );
+  };
+
+  // Always load admin's chosen theme fonts (all templates)
+  addGoogleFont(content.theme.fontFamily);
+  addGoogleFont(content.theme.navLinkFontFamily);
+
+  // Also load template defaults as fallback
+  if (
+    content.templateSlug === "dexta-academy-1" ||
+    content.templateSlug === "dexta-academy-5"
+  ) {
     urls.add(
       "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap",
     );
-  } else if (content.templateSlug === "dexta-academy-2") {
+  }
+  if (content.templateSlug === "dexta-academy-2") {
     urls.add(
       "https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap",
     );
-  } else if (content.templateSlug === "dexta-academy-5") {
+  }
+  if (content.templateSlug === "dexta-academy-4") {
     urls.add(
-      "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap",
+      "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap",
     );
   }
   const scanFields = (fields: Record<string, unknown>) => {
@@ -3654,23 +3709,39 @@ function getNavLinkFontCss(content: SchoolTemplateProjectContent) {
 }
 
 function getBodyFont(content: SchoolTemplateProjectContent) {
-  const rawFont = content.theme.fontFamily;
-  if (content.templateSlug !== "dexta-academy-2") return rawFont;
-  const normalized = rawFont.replace(/["']/g, "").toLowerCase();
-  const isLegacyDefault =
-    normalized.includes("plus jakarta sans") || normalized.includes("manrope");
-  return !rawFont || isLegacyDefault ? "Montserrat" : rawFont;
+  const rawFont = (content.theme.fontFamily ?? "").trim();
+  if (content.templateSlug === "dexta-academy-2") {
+    const normalized = rawFont.replace(/["']/g, "").toLowerCase();
+    const isLegacyDefault =
+      normalized.includes("plus jakarta sans") ||
+      normalized.includes("manrope");
+    return !rawFont || isLegacyDefault ? "Montserrat" : rawFont;
+  }
+  if (
+    content.templateSlug === "dexta-academy-1" ||
+    content.templateSlug === "dexta-academy-5"
+  ) {
+    return rawFont || "Manrope";
+  }
+  if (content.templateSlug === "dexta-academy-4") {
+    return rawFont || "Poppins";
+  }
+  return rawFont;
 }
 
 function getThemeMarkup(content: SchoolTemplateProjectContent) {
   const fontMarkup = getFontStylesheetMarkup(content);
+  const bodyFont = getBodyFont(content);
 
   return `${fontMarkup ? `${fontMarkup}\n` : ""}<style data-dexta-export-theme="true">
 ${THEME_SCOPE_SELECTOR} {
 ${getThemeVariableDeclarations(content)}
 }
-body {
-  font-family: ${JSON.stringify(getBodyFont(content))}, "Segoe UI", sans-serif !important;
+body, h1, h2, h3, h4, h5, h6, p, li, a, span, label, input, textarea, select, button {
+  font-family: ${JSON.stringify(bodyFont)}, "Segoe UI", sans-serif !important;
+}
+[data-dexta-font-stylesheet]:not([data-dexta-font-stylesheet="true"]) * {
+  font-family: inherit !important;
 }
 ${getNavLinkFontCss(content)}
 ${getGlobalAppearanceCss(content)}
@@ -4681,6 +4752,8 @@ async function renderPage({
 	      );
     }
   }
+
+  applySectionFontOverrides(root);
 
   // Template 3 home page: preserve original dark gradient unless school customized
   if (content.templateSlug === "dexta-academy-3") {
