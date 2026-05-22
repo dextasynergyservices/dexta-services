@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/admin-auth";
 import {
+  applySchoolNameFallbackToProjectContent,
   buildSchoolTemplateSourceSnapshot,
   isSchoolTemplateSourceSnapshot,
   parseSchoolTemplateProjectContent,
@@ -30,6 +31,7 @@ export async function renderAdminSchoolWebsiteProjectPreview({
   const project = await weBrandSchoolsPrisma.schoolWebsiteProject.findUnique({
     where: { id: projectId },
     select: {
+      schoolName: true,
       templateSlug: true,
       contentJson: true,
       sourceSnapshot: true,
@@ -65,9 +67,12 @@ export async function renderAdminSchoolWebsiteProjectPreview({
     templateSlug: project.templateSlug,
   });
 
-  const content = sanitizeSchoolTemplateProjectContent(
-    syncedProjectContent.contentJson,
-    syncedProjectContent.sourceSnapshot,
+  const content = applySchoolNameFallbackToProjectContent(
+    sanitizeSchoolTemplateProjectContent(
+      syncedProjectContent.contentJson,
+      syncedProjectContent.sourceSnapshot,
+    ),
+    project.schoolName,
   );
   const referenceIssues = validateSchoolTemplateProjectContentReferences(
     content,

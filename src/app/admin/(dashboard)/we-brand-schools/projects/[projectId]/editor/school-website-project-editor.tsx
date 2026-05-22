@@ -14,6 +14,7 @@ import {
   Save,
   Smartphone,
   Tablet,
+  Trash2,
   Redo2,
   Undo2,
 } from "lucide-react";
@@ -1602,6 +1603,12 @@ export function SchoolWebsiteProjectEditor({
     ? getRepeatableItemFields(activeSection)
     : [];
   const hasActiveRepeatableFields = activeRepeatableItemFields.length > 0;
+  const canDeleteActiveRepeatableItems =
+    draft.templateSlug === DEXTA_ACADEMY_1_SLUG &&
+    ((selectedPage?.slug === "home" &&
+      activeSection?.content.id === "testimonials") ||
+      (selectedPage?.slug === "about" &&
+        activeSection?.content.id === "values"));
   const activeImportTargets = useMemo<CopyImportTarget[]>(() => {
     if (!activeSection) return [];
 
@@ -2177,6 +2184,24 @@ export function SchoolWebsiteProjectEditor({
   const addRepeatableItem = (sectionId: string) => {
     recordSectionHistory(sectionId);
 
+    const createRepeatableItem = (
+      section: SchoolTemplateProjectSectionContent,
+    ): Record<string, EditableFieldValue> => {
+      if (
+        draftRef.current.templateSlug === DEXTA_ACADEMY_1_SLUG &&
+        selectedPage?.slug === "about" &&
+        section.id === "values"
+      ) {
+        return {
+          valueTitle: "New core value",
+          valueBody: "Describe this core value.",
+          iconClass: "fa fa-star",
+        };
+      }
+
+      return {};
+    };
+
     const updateSection = (
       section: SchoolTemplateProjectSectionContent,
     ): SchoolTemplateProjectSectionContent =>
@@ -2184,7 +2209,59 @@ export function SchoolWebsiteProjectEditor({
         ? {
             ...section,
             repeatable: {
-              items: [...(section.repeatable?.items ?? []), {}],
+              items: [
+                ...(section.repeatable?.items ?? []),
+                createRepeatableItem(section),
+              ],
+            },
+          }
+        : section;
+
+    if (selectedScope === "shared") {
+      updateDraft((currentDraft) => ({
+        ...currentDraft,
+        sharedSections: currentDraft.sharedSections.map(updateSection),
+      }));
+      return;
+    }
+
+    updateDraft((currentDraft) => ({
+      ...currentDraft,
+      pages: currentDraft.pages.map((page) =>
+        page.slug === selectedPageSlug
+          ? {
+              ...page,
+              sections: page.sections.map(updateSection),
+            }
+          : page,
+      ),
+    }));
+  };
+
+  const removeRepeatableItem = (sectionId: string, itemIndex: number) => {
+    const currentSection = getDraftSection({
+      draft: draftRef.current,
+      scope: selectedScope,
+      pageSlug: selectedPage?.slug ?? selectedPageSlug,
+      sectionId,
+    });
+
+    if (!currentSection?.repeatable?.items[itemIndex]) {
+      return;
+    }
+
+    recordSectionHistory(sectionId);
+
+    const updateSection = (
+      section: SchoolTemplateProjectSectionContent,
+    ): SchoolTemplateProjectSectionContent =>
+      section.id === sectionId
+        ? {
+            ...section,
+            repeatable: {
+              items: (section.repeatable?.items ?? []).filter(
+                (_item, index) => index !== itemIndex,
+              ),
             },
           }
         : section;
@@ -3223,6 +3300,22 @@ export function SchoolWebsiteProjectEditor({
                   </div>
                 </>
               ) : null}
+              <FieldControl
+                field={{
+                  key: "documentTitle",
+                  label: "Website title",
+                  type: "text",
+                  selector: "head title",
+                  target: "textContent",
+                  placeholder: draft.theme.brandName || "School name",
+                  helpText:
+                    "Used in the browser tab. Home shows only this title; other pages add | page name.",
+                }}
+                value={draft.theme.documentTitle}
+                onChange={(value) =>
+                  updateTheme("documentTitle", getStringValue(value))
+                }
+              />
             </div>
           </div>
         </aside>
@@ -3395,7 +3488,7 @@ export function SchoolWebsiteProjectEditor({
                       <FieldControl
                         field={{
                           key: "brandName",
-                          label: "Name line 1",
+                          label: "School name",
                           type: "text",
                           selector: "nav",
                           target: "textContent",
@@ -3408,7 +3501,7 @@ export function SchoolWebsiteProjectEditor({
                       <FieldControl
                         field={{
                           key: "brandTagline",
-                          label: "Name line 2",
+                          label: "Tagline",
                           type: "text",
                           selector: "nav",
                           target: "textContent",
@@ -4008,11 +4101,34 @@ export function SchoolWebsiteProjectEditor({
                                 key={`${activeSection.content.id}:item:${itemIndex}`}
                                 className="rounded-xl border border-[#1f1f1f] bg-[#090909] p-4"
                               >
-                                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
-                                  {activeSection.snapshot?.repeatable
-                                    ?.labelSingular ?? "Item"}{" "}
-                                  {itemIndex + 1}
-                                </p>
+                                <div className="mb-4 flex items-center justify-between gap-3">
+                                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                                    {activeSection.snapshot?.repeatable
+                                      ?.labelSingular ?? "Item"}{" "}
+                                    {itemIndex + 1}
+                                  </p>
+                                  {canDeleteActiveRepeatableItems ? (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        removeRepeatableItem(
+                                          activeSection.content.id,
+                                          itemIndex,
+                                        )
+                                      }
+                                      className="h-8 border-red-500/30 px-2 text-red-300 hover:bg-red-500/10 hover:text-red-200"
+                                      aria-label={`Delete ${
+                                        activeSection.snapshot?.repeatable
+                                          ?.labelSingular ?? "item"
+                                      } ${itemIndex + 1}`}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                      Delete
+                                    </Button>
+                                  ) : null}
+                                </div>
                                 <div className="grid gap-4 xl:grid-cols-2">
                                   {activeRepeatableItemFields.map((field) => {
                                     const modelValidationKey = `${activeSection.content.id}:${itemIndex}:${field.key}:model-preview`;
