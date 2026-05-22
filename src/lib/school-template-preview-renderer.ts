@@ -491,9 +491,7 @@ function applyPreviewDocumentIdentity(
 
   if (logoUrl) {
     if (
-      /<link\b(?=[^>]*\brel=["'][^"']*\bicon\b[^"']*["'])[^>]*>/i.test(
-        output,
-      )
+      /<link\b(?=[^>]*\brel=["'][^"']*\bicon\b[^"']*["'])[^>]*>/i.test(output)
     ) {
       output = output.replace(
         /<link\b(?=[^>]*\brel=["'][^"']*\bicon\b[^"']*["'])[^>]*>/i,
@@ -4160,7 +4158,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		    });
 		  }
 
-			  function applyThemeIdentity() {
+		  function applyThemeIdentity() {
 			    var logoUrl = getThemeLogoUrl() || getSharedHeaderLogoUrl();
 			    var headerBrandName = String(getSharedSectionField("site-header", "brandName") || "").trim();
 			    var headerBrandTagline = String(getSharedSectionField("site-header", "brandTagline") || "").trim();
@@ -4225,6 +4223,106 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 				    }
 	  }
 
+	  function getTemplateOneVideoEmbed(value) {
+	    var raw = String(value || "").trim();
+	    if (!raw || !/^https?:\\/\\//i.test(raw)) return null;
+	    try {
+	      var url = new URL(raw);
+	      var host = url.hostname.replace(/^www\\./, "").toLowerCase();
+	      var videoMatch = url.pathname.match(/\\.(mp4|webm|ogg)(?:$|\\?)/i);
+	      if (videoMatch) return { type: "video", src: url.href };
+	      if (host === "youtu.be") {
+	        var shortId = url.pathname.split("/").filter(Boolean)[0];
+	        if (shortId) return { type: "iframe", src: "https://www.youtube.com/embed/" + shortId + "?autoplay=1" };
+	      }
+	      if (host === "youtube.com" || host === "m.youtube.com") {
+	        var watchId = url.searchParams.get("v");
+	        var parts = url.pathname.split("/").filter(Boolean);
+	        var embedId = watchId || ((parts[0] === "shorts" || parts[0] === "embed") ? parts[1] : "");
+	        if (embedId) return { type: "iframe", src: "https://www.youtube.com/embed/" + embedId + "?autoplay=1" };
+	      }
+	      if (host === "vimeo.com" || host === "player.vimeo.com") {
+	        var vimeoParts = url.pathname.split("/").filter(Boolean);
+	        var vimeoId = vimeoParts[vimeoParts.length - 1];
+	        if (/^\\d+$/.test(vimeoId)) return { type: "iframe", src: "https://player.vimeo.com/video/" + vimeoId + "?autoplay=1" };
+	      }
+	      return { type: "iframe", src: url.href };
+	    } catch (error) {
+	      return null;
+	    }
+	  }
+
+	  function ensureTemplateOneVideoModal() {
+	    var modal = document.getElementById("dexta-template1-video-modal");
+	    if (modal) return modal;
+	    var style = document.createElement("style");
+	    style.setAttribute("data-dexta-template1-video-modal", "true");
+	    style.textContent = ".dexta-template1-video-modal{position:fixed;inset:0;z-index:100000;display:none;place-items:center;padding:24px;background:rgba(3,7,18,.72);backdrop-filter:blur(10px)}.dexta-template1-video-modal.is-open{display:grid}.dexta-template1-video-modal__dialog{position:relative;width:min(960px,92vw);overflow:hidden;border-radius:22px;background:#070b12;box-shadow:0 28px 90px rgba(0,0,0,.48);border:1px solid rgba(255,255,255,.16)}.dexta-template1-video-modal__frame{aspect-ratio:16/9;background:#000}.dexta-template1-video-modal__frame iframe,.dexta-template1-video-modal__frame video{display:block;width:100%;height:100%;border:0}.dexta-template1-video-modal__close{position:absolute;top:12px;right:12px;z-index:2;width:42px;height:42px;border-radius:999px;border:1px solid rgba(255,255,255,.22);background:rgba(15,23,42,.82);color:#fff;font-size:28px;line-height:1;display:grid;place-items:center;cursor:pointer}.testimonials-page__video-card[data-video-url]{cursor:pointer}.testimonials-page__video-card[data-video-url]:focus{outline:3px solid rgba(249,115,22,.55);outline-offset:4px}";
+	    document.head.appendChild(style);
+	    modal = document.createElement("div");
+	    modal.id = "dexta-template1-video-modal";
+	    modal.className = "dexta-template1-video-modal";
+	    modal.setAttribute("aria-hidden", "true");
+	    modal.innerHTML = '<div class="dexta-template1-video-modal__dialog" role="dialog" aria-modal="true" aria-label="Featured success story video"><button class="dexta-template1-video-modal__close" type="button" aria-label="Close video">&times;</button><div class="dexta-template1-video-modal__frame"></div></div>';
+	    document.body.appendChild(modal);
+	    modal.addEventListener("click", function (event) {
+	      if (event.target === modal || event.target.classList.contains("dexta-template1-video-modal__close")) {
+	        closeTemplateOneVideoModal();
+	      }
+	    });
+	    document.addEventListener("keydown", function (event) {
+	      if (event.key === "Escape" && modal.classList.contains("is-open")) closeTemplateOneVideoModal();
+	    });
+	    return modal;
+	  }
+
+	  function closeTemplateOneVideoModal() {
+	    var modal = document.getElementById("dexta-template1-video-modal");
+	    if (!modal) return;
+	    modal.classList.remove("is-open");
+	    modal.setAttribute("aria-hidden", "true");
+	    var frame = modal.querySelector(".dexta-template1-video-modal__frame");
+	    if (frame) frame.innerHTML = "";
+	  }
+
+	  function openTemplateOneVideoModal(value) {
+	    var media = getTemplateOneVideoEmbed(value);
+	    if (!media) return;
+	    var modal = ensureTemplateOneVideoModal();
+	    var frame = modal.querySelector(".dexta-template1-video-modal__frame");
+	    if (!frame) return;
+	    if (media.type === "video") {
+	      frame.innerHTML = '<video src="' + media.src.replace(/"/g, "&quot;") + '" controls autoplay playsinline></video>';
+	    } else {
+	      frame.innerHTML = '<iframe src="' + media.src.replace(/"/g, "&quot;") + '" title="Featured success story video" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
+	    }
+	    modal.classList.add("is-open");
+	    modal.setAttribute("aria-hidden", "false");
+	    var closeButton = modal.querySelector(".dexta-template1-video-modal__close");
+	    if (closeButton) closeButton.focus();
+	  }
+
+	  function applyTemplateOneSuccessStoryVideo() {
+	    if (preview.content.templateSlug !== "dexta-academy-1") return;
+	    document.querySelectorAll(".testimonials-page__video-card").forEach(function (card) {
+	      var videoUrl = String(card.getAttribute("data-video-url") || "").trim();
+	      if (!videoUrl) return;
+	      card.setAttribute("role", "button");
+	      card.setAttribute("tabindex", "0");
+	      if (card.getAttribute("data-dexta-video-bound") === "true") return;
+	      card.setAttribute("data-dexta-video-bound", "true");
+	      card.addEventListener("click", function () {
+	        openTemplateOneVideoModal(card.getAttribute("data-video-url"));
+	      });
+	      card.addEventListener("keydown", function (event) {
+	        if (event.key === "Enter" || event.key === " ") {
+	          event.preventDefault();
+	          openTemplateOneVideoModal(card.getAttribute("data-video-url"));
+	        }
+	      });
+	    });
+	  }
+
   function applyPreviewContent() {
     var page = preview.content.pages.find(function (item) { return item.slug === preview.pageSlug; });
     var pageSnapshot = preview.sourceSnapshot.pages.find(function (item) { return item.slug === preview.pageSlug; });
@@ -4255,8 +4353,9 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 			    applyTemplateFourPortalButton();
 		    applyTemplateTwoFooterVisibility();
 	    applyTemplateTwoAdmissionForm();
-	    applyAdmissionForm();
-	    rewritePreviewInternalLinks();
+		    applyAdmissionForm();
+		    applyTemplateOneSuccessStoryVideo();
+		    rewritePreviewInternalLinks();
 	    injectPreviewFontStylesheets();
 	    applySectionFontOverrides();
 		    refreshTemplateTwoIcons();

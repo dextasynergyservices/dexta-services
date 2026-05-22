@@ -1050,22 +1050,32 @@ function t1AboutCardStyleFields({
       uiGroup: "Card style",
       uiOrder: 342,
     }),
-    colorField("cardIconBgColor", `${titlePrefix} icon background`, iconSelector, {
-      target: "cssVariable",
-      cssVariable: t1CssVar("about", sectionKey, "card-icon-bg-color"),
-      defaultValue: defaultIconBgColor,
-      uiGroup: "Card style",
-      uiOrder: 343,
-    }),
-    backgroundImageField("cardIconImage", `${titlePrefix} icon image`, iconSelector, {
-      target: "cssVariable",
-      cssVariable: t1CssVar("about", sectionKey, "card-icon-image"),
-      defaultValue: "",
-      uiGroup: "Card style",
-      uiOrder: 344,
-      helpText:
-        "Upload an image to replace this card icon. Leave blank to keep the font icon.",
-    }),
+    colorField(
+      "cardIconBgColor",
+      `${titlePrefix} icon background`,
+      iconSelector,
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar("about", sectionKey, "card-icon-bg-color"),
+        defaultValue: defaultIconBgColor,
+        uiGroup: "Card style",
+        uiOrder: 343,
+      },
+    ),
+    backgroundImageField(
+      "cardIconImage",
+      `${titlePrefix} icon image`,
+      iconSelector,
+      {
+        target: "cssVariable",
+        cssVariable: t1CssVar("about", sectionKey, "card-icon-image"),
+        defaultValue: "",
+        uiGroup: "Card style",
+        uiOrder: 344,
+        helpText:
+          "Upload an image to replace this card icon. Leave blank to keep the font icon.",
+      },
+    ),
   ];
 }
 function testimonialsSectionStyle(
@@ -1875,13 +1885,18 @@ export const dextaAcademy1Manifest = {
               selector: ".about-page__cta",
               defaultBackgroundColor: "#0d6efd",
             }),
-            colorField("cardBgColor", "Card background", ".about-page__cta-card", {
-              target: "cssVariable",
-              cssVariable: t1CssVar("about", "cta", "card-bg-color"),
-              defaultValue: "#0d6efd",
-              uiGroup: "Card style",
-              uiOrder: 120,
-            }),
+            colorField(
+              "cardBgColor",
+              "Card background",
+              ".about-page__cta-card",
+              {
+                target: "cssVariable",
+                cssVariable: t1CssVar("about", "cta", "card-bg-color"),
+                defaultValue: "#0d6efd",
+                uiGroup: "Card style",
+                uiOrder: 120,
+              },
+            ),
             ...aboutButtonStyle({
               sectionKey: "cta",
               selector: ".about-page__cta",
@@ -1962,6 +1977,16 @@ export const dextaAcademy1Manifest = {
               selector: ".testimonials-page__section--story",
             }),
             imageField("image", "Image", ".testimonials-page__video-card img"),
+            linkField(
+              "videoUrl",
+              "Video link",
+              ".testimonials-page__video-card",
+              {
+                attribute: "data-video-url",
+                helpText:
+                  "Paste a YouTube, Vimeo, or direct video link. The image and play icon will open it in a modal.",
+              },
+            ),
             textField(
               "duration",
               "Duration label",

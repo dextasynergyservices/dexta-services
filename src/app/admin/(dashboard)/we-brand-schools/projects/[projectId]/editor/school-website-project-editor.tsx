@@ -1607,7 +1607,8 @@ export function SchoolWebsiteProjectEditor({
     draft.templateSlug === DEXTA_ACADEMY_1_SLUG &&
     ((selectedPage?.slug === "home" &&
       activeSection?.content.id === "testimonials") ||
-      (selectedPage?.slug === "about" && activeSection?.content.id === "values"));
+      (selectedPage?.slug === "about" &&
+        activeSection?.content.id === "values"));
   const activeImportTargets = useMemo<CopyImportTarget[]>(() => {
     if (!activeSection) return [];
 
@@ -3211,9 +3212,9 @@ export function SchoolWebsiteProjectEditor({
                   }
                 />
               </div>
-	              {isDextaAcademy3Template ? (
-	                <>
-	                  <div className="grid gap-3 sm:grid-cols-2">
+              {isDextaAcademy3Template ? (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <FieldControl
                       field={{
                         key: "loadingCardBorderColor",
@@ -3296,28 +3297,28 @@ export function SchoolWebsiteProjectEditor({
                         )
                       }
                     />
-	                  </div>
-	                </>
-	              ) : null}
-	              <FieldControl
-	                field={{
-	                  key: "documentTitle",
-	                  label: "Website title",
-	                  type: "text",
-	                  selector: "head title",
-	                  target: "textContent",
-	                  placeholder: draft.theme.brandName || "School name",
-	                  helpText:
-	                    "Used in the browser tab. Home shows only this title; other pages add | page name.",
-	                }}
-	                value={draft.theme.documentTitle}
-	                onChange={(value) =>
-	                  updateTheme("documentTitle", getStringValue(value))
-	                }
-	              />
-	            </div>
-	          </div>
-	        </aside>
+                  </div>
+                </>
+              ) : null}
+              <FieldControl
+                field={{
+                  key: "documentTitle",
+                  label: "Website title",
+                  type: "text",
+                  selector: "head title",
+                  target: "textContent",
+                  placeholder: draft.theme.brandName || "School name",
+                  helpText:
+                    "Used in the browser tab. Home shows only this title; other pages add | page name.",
+                }}
+                value={draft.theme.documentTitle}
+                onChange={(value) =>
+                  updateTheme("documentTitle", getStringValue(value))
+                }
+              />
+            </div>
+          </div>
+        </aside>
 
         <main className="min-h-[560px] overflow-y-auto bg-[#050505] p-4">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

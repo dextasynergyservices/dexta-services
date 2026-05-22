@@ -287,12 +287,20 @@ describe("school template preview renderer", () => {
       manifest.pages.find((page) => page.slug === "about")?.sections ?? [];
     const visionFields =
       aboutSections.find((section) => section.id === "vision")?.fields ?? [];
-    const valuesSection = aboutSections.find((section) => section.id === "values");
+    const valuesSection = aboutSections.find(
+      (section) => section.id === "values",
+    );
     const valuesFields = valuesSection?.fields ?? [];
     const aboutCtaFields =
       aboutSections.find((section) => section.id === "about-cta")?.fields ?? [];
     const storyFields =
       aboutSections.find((section) => section.id === "story")?.fields ?? [];
+    const testimonialPageSections =
+      manifest.pages.find((page) => page.slug === "testimonials")?.sections ??
+      [];
+    const successStoryFields =
+      testimonialPageSections.find((section) => section.id === "success-story")
+        ?.fields ?? [];
 
     assert.ok(
       headerFields.some((field) => field.key === "logoWidthMobile"),
@@ -453,6 +461,16 @@ describe("school template preview renderer", () => {
       ),
       "Expected Template 1 about CTA to expose a separate card background color.",
     );
+    assert.ok(
+      successStoryFields.some(
+        (field) =>
+          field.key === "videoUrl" &&
+          field.type === "link" &&
+          field.selector === ".testimonials-page__video-card" &&
+          field.attribute === "data-video-url",
+      ),
+      "Expected Template 1 featured success story to expose a video link control.",
+    );
 
     const content = buildSchoolTemplateProjectContent(manifest);
     const sourceSnapshot = buildSchoolTemplateSourceSnapshot(manifest);
@@ -583,9 +601,43 @@ describe("school template preview renderer", () => {
     assert.match(aboutHtml, /fa fa-star/);
     assert.match(aboutHtml, /--dexta-academy-1-about-vision-card-bg-color/);
     assert.match(aboutHtml, /--dexta-academy-1-about-values-card-bg-color/);
-    assert.match(aboutHtml, /--dexta-academy-1-about-values-card-icon-bg-color/);
+    assert.match(
+      aboutHtml,
+      /--dexta-academy-1-about-values-card-icon-bg-color/,
+    );
     assert.match(aboutHtml, /--dexta-academy-1-about-cta-card-bg-color/);
     assert.match(aboutHtml, /itemRoot\.removeAttribute\("data-reveal"\)/);
+
+    const successStorySection = content.pages
+      .find((page) => page.slug === "testimonials")
+      ?.sections.find((section) => section.id === "success-story");
+    assert.ok(
+      successStorySection,
+      "Expected Template 1 success story content.",
+    );
+    successStorySection.fields.videoUrl = "https://youtu.be/dQw4w9WgXcQ";
+
+    const testimonialsHtml = await renderSchoolTemplatePreview({
+      content,
+      sourceSnapshot,
+      pageSlug: "testimonials",
+    });
+
+    assert.ok(
+      testimonialsHtml,
+      "Expected Template 1 testimonials preview HTML.",
+    );
+    assert.ok(
+      testimonialsHtml.includes('"videoUrl":"https://youtu.be/dQw4w9WgXcQ"'),
+      "Expected Template 1 testimonials preview payload to include the admin video link.",
+    );
+    assert.match(
+      testimonialsHtml,
+      /function applyTemplateOneSuccessStoryVideo/,
+    );
+    assert.match(testimonialsHtml, /\^https\?:\\\/\\\//);
+    assert.match(testimonialsHtml, /dexta-template1-video-modal/);
+    assert.match(testimonialsHtml, /youtube\.com\/embed/);
   });
 
   it("renders Template 3 hero art through the main sky image layer", async () => {

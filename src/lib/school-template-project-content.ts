@@ -1754,7 +1754,9 @@ export function applySchoolNameFallbackToProjectContent(
   const resolvedBrandName = shouldUseSchoolName
     ? resolvedSchoolName
     : String(content.theme.brandName ?? "").trim();
-  const syncSharedBrandName = (section: SchoolTemplateProjectSectionContent) => {
+  const syncSharedBrandName = (
+    section: SchoolTemplateProjectSectionContent,
+  ) => {
     if (!Object.prototype.hasOwnProperty.call(section.fields, "brandName")) {
       return section;
     }
