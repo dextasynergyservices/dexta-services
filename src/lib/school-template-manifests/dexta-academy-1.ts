@@ -1009,6 +1009,65 @@ function aboutIconStyle(
 ) {
   return t1IconStyleFields({ pageKey: "about", ...opts });
 }
+function t1AboutCardStyleFields({
+  sectionKey,
+  cardSelector,
+  iconSelector,
+  titlePrefix,
+  defaultCardBgColor = "#ffffff",
+  defaultTextColor = "#1e1e2e",
+  defaultIconColor = "#0d6efd",
+  defaultIconBgColor = "#e8f0fe",
+}: {
+  sectionKey: string;
+  cardSelector: string;
+  iconSelector: string;
+  titlePrefix: string;
+  defaultCardBgColor?: string;
+  defaultTextColor?: string;
+  defaultIconColor?: string;
+  defaultIconBgColor?: string;
+}): SchoolTemplateField[] {
+  return [
+    colorField("cardBgColor", `${titlePrefix} card background`, cardSelector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("about", sectionKey, "card-bg-color"),
+      defaultValue: defaultCardBgColor,
+      uiGroup: "Card style",
+      uiOrder: 340,
+    }),
+    colorField("cardTextColor", `${titlePrefix} card text`, cardSelector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("about", sectionKey, "card-text-color"),
+      defaultValue: defaultTextColor,
+      uiGroup: "Card style",
+      uiOrder: 341,
+    }),
+    colorField("cardIconColor", `${titlePrefix} icon color`, iconSelector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("about", sectionKey, "card-icon-color"),
+      defaultValue: defaultIconColor,
+      uiGroup: "Card style",
+      uiOrder: 342,
+    }),
+    colorField("cardIconBgColor", `${titlePrefix} icon background`, iconSelector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("about", sectionKey, "card-icon-bg-color"),
+      defaultValue: defaultIconBgColor,
+      uiGroup: "Card style",
+      uiOrder: 343,
+    }),
+    backgroundImageField("cardIconImage", `${titlePrefix} icon image`, iconSelector, {
+      target: "cssVariable",
+      cssVariable: t1CssVar("about", sectionKey, "card-icon-image"),
+      defaultValue: "",
+      uiGroup: "Card style",
+      uiOrder: 344,
+      helpText:
+        "Upload an image to replace this card icon. Leave blank to keep the font icon.",
+    }),
+  ];
+}
 function testimonialsSectionStyle(
   opts: Omit<Parameters<typeof t1SectionStyleFields>[0], "pageKey">,
 ) {
@@ -1576,6 +1635,12 @@ export const dextaAcademy1Manifest = {
             ...t1TypographyFields({
               selector: ".about-page__section--vision",
             }),
+            ...t1AboutCardStyleFields({
+              sectionKey: "vision",
+              cardSelector: ".about-page__panel",
+              iconSelector: ".about-page__panel-icon",
+              titlePrefix: "Panel",
+            }),
             textField("panelTitle", "Panel title", "h3"),
             textareaField("panelBody", "Panel body", "p", {
               type: "richText",
@@ -1627,6 +1692,13 @@ export const dextaAcademy1Manifest = {
               ".about-page__section-intro .about-page__heading",
               { type: "richText", target: "innerHTML" },
             ),
+            ...t1AboutCardStyleFields({
+              sectionKey: "values",
+              cardSelector: ".about-page__value",
+              iconSelector: ".about-page__value-icon",
+              titlePrefix: "Value",
+              defaultCardBgColor: "#ffffff",
+            }),
             textField("valueTitle", "Value title", "h3"),
             textareaField("valueBody", "Value body", "p"),
             textField("iconClass", "Icon class", ".about-page__value-icon i", {
@@ -1666,10 +1738,15 @@ export const dextaAcademy1Manifest = {
               type: "richText",
               target: "innerHTML",
             }),
-            textareaField("title", "Title", "h2", {
-              type: "richText",
-              target: "innerHTML",
-            }),
+            textareaField(
+              "title",
+              "Title",
+              ".about-page__story-copy > .about-page__heading",
+              {
+                type: "richText",
+                target: "innerHTML",
+              },
+            ),
             textareaField(
               "body1",
               "Preview paragraph 1",
@@ -1797,6 +1874,13 @@ export const dextaAcademy1Manifest = {
               sectionKey: "cta",
               selector: ".about-page__cta",
               defaultBackgroundColor: "#0d6efd",
+            }),
+            colorField("cardBgColor", "Card background", ".about-page__cta-card", {
+              target: "cssVariable",
+              cssVariable: t1CssVar("about", "cta", "card-bg-color"),
+              defaultValue: "#0d6efd",
+              uiGroup: "Card style",
+              uiOrder: 120,
             }),
             ...aboutButtonStyle({
               sectionKey: "cta",

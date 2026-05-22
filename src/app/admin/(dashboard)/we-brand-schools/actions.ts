@@ -14,6 +14,7 @@ import { buildRegularEmailHtml, sendEmail } from "@/lib/email";
 import { buildSchoolWebsiteProjectExportZip } from "@/lib/school-template-exporter";
 import { getSchoolWebsiteProjectPreviewHref } from "@/lib/school-template-preview-links";
 import {
+  applySchoolNameFallbackToProjectContent,
   buildSchoolTemplateProjectContent,
   buildSchoolTemplateSourceSnapshot,
   isSchoolTemplateSourceSnapshot,
@@ -2953,7 +2954,10 @@ export async function startSchoolWebsiteProject(
       };
     }
 
-    const contentJson = buildSchoolTemplateProjectContent(manifest);
+    const contentJson = applySchoolNameFallbackToProjectContent(
+      buildSchoolTemplateProjectContent(manifest),
+      application.schoolName,
+    );
     const sourceSnapshot = buildSchoolTemplateSourceSnapshot(manifest);
 
     const project = await weBrandSchoolsPrisma.$transaction(async (tx) => {
@@ -3063,13 +3067,18 @@ export async function getSchoolWebsiteProject(
     });
     if (!safeProjectContent.success) return safeProjectContent;
 
+    const contentJson = applySchoolNameFallbackToProjectContent(
+      safeProjectContent.contentJson,
+      project.schoolName,
+    );
+
     return {
       success: true,
       message: "Project loaded successfully.",
       project: {
         ...project,
         status: project.status as SchoolWebsiteProjectStatusRow,
-        contentJson: safeProjectContent.contentJson,
+        contentJson,
         sourceSnapshot: safeProjectContent.sourceSnapshot,
       },
     };
@@ -3563,14 +3572,19 @@ export async function exportSchoolWebsiteProject(
       return safeProjectContent;
     }
 
+    const contentJson = applySchoolNameFallbackToProjectContent(
+      safeProjectContent.contentJson,
+      project.schoolName,
+    );
+
     await createSchoolWebsiteProjectRevisionRecord({
       projectId: project.id,
-      contentJson: safeProjectContent.contentJson,
+      contentJson,
       note: "Before export.",
     });
 
     const exportZip = await buildSchoolWebsiteProjectExportZip({
-      content: safeProjectContent.contentJson,
+      content: contentJson,
       sourceSnapshot: safeProjectContent.sourceSnapshot,
     });
     const exportFileName = `${slugifyExportFileName(project.schoolName)}-website.zip`;

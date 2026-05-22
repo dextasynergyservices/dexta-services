@@ -18,6 +18,7 @@ export type SchoolTemplateProjectTheme = {
   logoHeight: number;
   logoBackgroundColor: string;
   loadingText: string;
+  documentTitle: string;
   loadingTextColor: string;
   loadingLogoWidth: number;
   loadingLogoHeight: number;
@@ -233,6 +234,7 @@ export const schoolTemplateProjectContentSchema = z.object({
     logoHeight: z.number().default(56),
     logoBackgroundColor: z.string().default("transparent"),
     loadingText: z.string().default("Loading school website"),
+    documentTitle: z.string().default(""),
     loadingTextColor: z.string().default("#111827"),
     loadingLogoWidth: z.number().default(64),
     loadingLogoHeight: z.number().default(64),
@@ -1296,6 +1298,7 @@ export function sanitizeSchoolTemplateProjectContent(
       loadingText: sanitizePlainText(
         content.theme.loadingText ?? "Loading school website",
       ),
+      documentTitle: sanitizePlainText(content.theme.documentTitle ?? ""),
       loadingTextColor: sanitizePlainText(
         content.theme.loadingTextColor ?? "#111827",
       ),
@@ -1484,6 +1487,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoHeight: 56,
         logoBackgroundColor: "transparent",
         loadingText: "Loading DXT Academy",
+        documentTitle: "",
         loadingTextColor: "#2b2b2b",
         loadingLogoWidth: 64,
         loadingLogoHeight: 72,
@@ -1525,6 +1529,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoHeight: 48,
         logoBackgroundColor: "transparent",
         loadingText: "Preparing School B",
+        documentTitle: "",
         loadingTextColor: "#111827",
         loadingLogoWidth: 260,
         loadingLogoHeight: 112,
@@ -1565,6 +1570,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoHeight: 46,
         logoBackgroundColor: "#ffffff",
         loadingText: "Preparing DXT Academy",
+        documentTitle: "",
         loadingTextColor: "#061a40",
         loadingLogoWidth: 88,
         loadingLogoHeight: 88,
@@ -1605,6 +1611,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoHeight: 48,
         logoBackgroundColor: "transparent",
         loadingText: "Loading DXT Academy",
+        documentTitle: "",
         loadingTextColor: "#ffffff",
         loadingLogoWidth: 48,
         loadingLogoHeight: 48,
@@ -1646,6 +1653,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoHeight: 56,
         logoBackgroundColor: "transparent",
         loadingText: "Loading DXT Grade",
+        documentTitle: "",
         loadingTextColor: "#0f172a",
         loadingLogoWidth: 72,
         loadingLogoHeight: 56,
@@ -1686,6 +1694,7 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         logoHeight: 56,
         logoBackgroundColor: "transparent",
         loadingText: "Loading school website",
+        documentTitle: "",
         loadingTextColor: "#111827",
         loadingLogoWidth: 64,
         loadingLogoHeight: 64,
@@ -1720,6 +1729,68 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         buttonOverlayColor: "#ffffff",
       };
   }
+}
+
+function normalizeIdentityValue(value: unknown) {
+  return String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+export function applySchoolNameFallbackToProjectContent(
+  content: SchoolTemplateProjectContent,
+  schoolName: string | null | undefined,
+): SchoolTemplateProjectContent {
+  const resolvedSchoolName = String(schoolName ?? "").trim();
+  if (!resolvedSchoolName) return content;
+
+  const defaultTheme = getDefaultTheme(content.templateSlug);
+  const currentBrandName = normalizeIdentityValue(content.theme.brandName);
+  const defaultBrandName = normalizeIdentityValue(defaultTheme.brandName);
+  const shouldUseSchoolName =
+    !currentBrandName ||
+    (Boolean(defaultBrandName) && currentBrandName === defaultBrandName);
+  const resolvedBrandName = shouldUseSchoolName
+    ? resolvedSchoolName
+    : String(content.theme.brandName ?? "").trim();
+  const syncSharedBrandName = (section: SchoolTemplateProjectSectionContent) => {
+    if (!Object.prototype.hasOwnProperty.call(section.fields, "brandName")) {
+      return section;
+    }
+
+    const fieldBrandName = normalizeIdentityValue(section.fields.brandName);
+    if (
+      !resolvedBrandName ||
+      (fieldBrandName &&
+        (!defaultBrandName || fieldBrandName !== defaultBrandName))
+    ) {
+      return section;
+    }
+
+    return {
+      ...section,
+      fields: {
+        ...section.fields,
+        brandName: resolvedBrandName,
+      },
+    };
+  };
+  const sharedSections = content.sharedSections.map(syncSharedBrandName);
+  const sharedSectionsChanged = sharedSections.some(
+    (section, index) => section !== content.sharedSections[index],
+  );
+
+  if (!shouldUseSchoolName && !sharedSectionsChanged) return content;
+
+  return {
+    ...content,
+    sharedSections,
+    theme: {
+      ...content.theme,
+      ...(shouldUseSchoolName ? { brandName: resolvedSchoolName } : {}),
+    },
+  };
 }
 
 function getDefaultFieldValue(field: SchoolTemplateField) {

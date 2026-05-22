@@ -114,6 +114,10 @@ function getPreviewBootMarkup(templateSlug?: string) {
     return "";
   }
 
+  if (templateSlug === "dexta-academy-1") {
+    return `<script>document.documentElement.setAttribute("data-dexta-project-preview","loading");window.setTimeout(function(){if(document.documentElement.getAttribute("data-dexta-project-preview")==="loading"){document.documentElement.setAttribute("data-dexta-project-preview","ready");}},30000);</script><style>html[data-dexta-project-preview="loading"] body{opacity:1!important;}html[data-dexta-project-preview="loading"] #spinner{display:flex!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;transition:opacity .55s ease-out,visibility 0s linear .55s!important;}html[data-dexta-project-preview="loading"] #spinner,html[data-dexta-project-preview="loading"] #spinner *{animation-play-state:running!important;}html[data-dexta-project-preview="ready"] body{opacity:1!important;}html[data-dexta-project-preview="ready"] #spinner.dexta-template-one-loader{display:flex!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;transition:opacity .55s ease-out,visibility 0s linear .55s!important;}html[data-dexta-project-preview="ready"] #spinner.dexta-template-one-loader>*{opacity:1!important;visibility:visible!important;}</style>`;
+  }
+
   return `<script>document.documentElement.setAttribute("data-dexta-project-preview","loading");window.setTimeout(function(){if(document.documentElement.getAttribute("data-dexta-project-preview")==="loading"){document.documentElement.setAttribute("data-dexta-project-preview","ready");}},2500);</script><style>html[data-dexta-project-preview="loading"] body{opacity:0!important;}html[data-dexta-project-preview="loading"] *{animation-play-state:paused!important;}html[data-dexta-project-preview="ready"] body{opacity:1!important;transition:opacity .16s ease;}</style>`;
 }
 
@@ -448,6 +452,77 @@ function getResolvedPreviewThemeLogoUrl(content: SchoolTemplateProjectContent) {
   });
 }
 
+function getPreviewDocumentTitle(
+  content: SchoolTemplateProjectContent,
+  page?: SchoolTemplateProjectPageContent,
+) {
+  const schoolName =
+    content.theme.documentTitle?.trim() ||
+    content.theme.brandName?.trim() ||
+    content.templateName ||
+    "School";
+  const pageName = page?.title?.trim() || page?.slug?.trim() || "";
+
+  if (!pageName || page?.isHome || page?.slug === "home") {
+    return schoolName;
+  }
+
+  return `${schoolName} | ${pageName}`;
+}
+
+function applyPreviewDocumentIdentity(
+  html: string,
+  content: SchoolTemplateProjectContent,
+  page?: SchoolTemplateProjectPageContent,
+) {
+  const title = getPreviewDocumentTitle(content, page);
+  const logoUrl = getResolvedPreviewThemeLogoUrl(content);
+  let output = html;
+
+  if (title) {
+    if (/<title\b[^>]*>/i.test(output)) {
+      output = output.replace(
+        /<title\b[^>]*>[\s\S]*?<\/title>/i,
+        `<title>${escapeHtml(title)}</title>`,
+      );
+    } else {
+      output = injectIntoHead(output, `<title>${escapeHtml(title)}</title>`);
+    }
+  }
+
+  if (logoUrl) {
+    if (
+      /<link\b(?=[^>]*\brel=["'][^"']*\bicon\b[^"']*["'])[^>]*>/i.test(
+        output,
+      )
+    ) {
+      output = output.replace(
+        /<link\b(?=[^>]*\brel=["'][^"']*\bicon\b[^"']*["'])[^>]*>/i,
+        (match) => {
+          if (/\bhref\s*=/i.test(match)) {
+            return match.replace(
+              /\bhref\s*=\s*(["'])(.*?)\1/i,
+              `href="${escapeHtmlAttribute(logoUrl)}"`,
+            );
+          }
+
+          return match.replace(
+            /\/?>$/,
+            ` href="${escapeHtmlAttribute(logoUrl)}">`,
+          );
+        },
+      );
+    } else {
+      output = injectIntoHead(
+        output,
+        `<link rel="icon" href="${escapeHtmlAttribute(logoUrl)}">`,
+      );
+    }
+  }
+
+  return output;
+}
+
 function getDextaAcademyThreeLogoMarkup(
   content?: SchoolTemplateProjectContent,
   className = "brand__crest",
@@ -510,6 +585,87 @@ function getDextaAcademyThreePageLoaderMarkup(
         </div>
       </div>
     </div>`;
+}
+
+function renderDextaAcademyOneLoaderFallback(
+  html: string,
+  content: SchoolTemplateProjectContent,
+) {
+  if (!/<div\b[^>]*\bid=["']spinner["'][^>]*>/i.test(html)) return html;
+
+  const logoUrl = getResolvedPreviewThemeLogoUrl(content);
+  const loadingText = content.theme.loadingText?.trim() ?? "";
+  let output = html.replace(
+    /<div\b([^>]*\bid=["']spinner["'][^>]*)>/i,
+    (match, attrs: string) => {
+      if (/\bdexta-template-one-loader\b/.test(match)) return match;
+      if (/\bclass\s*=/i.test(attrs)) {
+        return match.replace(
+          /\bclass\s*=\s*(["'])(.*?)\1/i,
+          (_classMatch, quote: string, className: string) =>
+            `class=${quote}${className} dexta-template-one-loader${quote}`,
+        );
+      }
+
+      return `<div${attrs} class="dexta-template-one-loader">`;
+    },
+  );
+
+  if (logoUrl && !/\bdexta-loading-logo\b/.test(output)) {
+    output = output.replace(
+      /(<div\b(?=[^>]*\bclass=["'][^"']*\bspinner-border\b)[^>]*>)/i,
+      `<span class="dexta-loading-logo" aria-hidden="true"><img src="${escapeHtmlAttribute(logoUrl)}" alt="School logo"></span>\n$1`,
+    );
+  }
+
+  if (loadingText && !/\bdexta-loading-text\b/.test(output)) {
+    output = output.replace(
+      /(<div\b(?=[^>]*\bclass=["'][^"']*\bspinner-border\b)[^>]*>[\s\S]*?<\/div>)/i,
+      `$1\n<span class="dexta-loading-text">${escapeHtml(loadingText)}</span>`,
+    );
+  }
+
+  return output;
+}
+
+function getDextaAcademyOneStaticLoaderCss(
+  content: SchoolTemplateProjectContent,
+) {
+  const loadingBackground = escapeCssValue(
+    content.theme.loadingBackgroundColor,
+    "#ffffff",
+  );
+  const loadingTextColor = escapeCssValue(
+    content.theme.loadingTextColor,
+    "#0f172a",
+  );
+  const loadingLogoWidth = getCssLength(
+    content.theme.loadingLogoWidth || content.theme.logoWidth,
+    72,
+  );
+  const loadingLogoHeight = getCssLength(
+    content.theme.loadingLogoHeight || content.theme.logoHeight,
+    56,
+  );
+  const logoBackground = escapeCssValue(
+    content.theme.logoBackgroundColor,
+    "transparent",
+  );
+  const logoRadius = getCssLength(content.theme.logoBorderRadius, 0);
+  const loadingBarColor = escapeCssValue(content.theme.loadingBarColor);
+  const css = [
+    `#spinner.dexta-template-one-loader,#spinner.dexta-template-one-loader.show{background:${loadingBackground}!important;background-color:${loadingBackground}!important;color:${loadingTextColor}!important;}`,
+    `#spinner.dexta-template-one-loader{flex-direction:column!important;gap:14px!important;}`,
+    `#spinner.dexta-template-one-loader .dexta-loading-logo{display:grid!important;place-items:center!important;width:${loadingLogoWidth}!important;height:${loadingLogoHeight}!important;max-width:${loadingLogoWidth}!important;background:${logoBackground}!important;border-radius:${logoRadius}!important;overflow:hidden!important;}`,
+    `#spinner.dexta-template-one-loader .dexta-loading-logo img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;}`,
+    `#spinner.dexta-template-one-loader .spinner-border{width:3rem!important;height:3rem!important;}`,
+    loadingBarColor
+      ? `#spinner.dexta-template-one-loader .spinner-border{color:${loadingBarColor}!important;}`
+      : "",
+    `#spinner.dexta-template-one-loader .dexta-loading-text{color:${loadingTextColor}!important;font-size:.95rem!important;font-weight:700!important;line-height:1.4!important;}`,
+  ].filter(Boolean);
+
+  return `<style data-dexta-template1-loader="true">${css.join("")}</style>`;
 }
 
 function getDextaAcademyThreeStaticPreviewCss(
@@ -2178,10 +2334,13 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    if (field.target === "cssVariable" && field.cssVariable) {
 	      var cssValue = getCssVariableValue(value, field);
 	      node.style.setProperty(field.cssVariable, cssValue);
-	      if (field.cssVariable === "--dexta-academy-1-home-academics-card-icon-image") {
-	        node.querySelectorAll("i").forEach(function (icon) {
-	          icon.style.opacity = cssValue && cssValue !== "none" ? "0" : "";
-	        });
+		      if (
+		        preview.content.templateSlug === "dexta-academy-1" &&
+		        String(field.cssVariable).indexOf("-icon-image") !== -1
+		      ) {
+		        node.querySelectorAll("i").forEach(function (icon) {
+		          icon.style.opacity = cssValue && cssValue !== "none" ? "0" : "";
+		        });
 	      }
 	      applyAcademyThreeHeroColorField(node, field, cssValue);
       if (field.cssVariable === "--cap-center-x") node.style.left = cssValue;
@@ -2314,11 +2473,26 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 
 	    if (!isRepeatableSection) return;
 	    var itemContents = sectionContent.repeatable.items || [];
-	    if (!itemContents.length) return;
+	    var shouldHideEmptyRepeatable =
+	      preview.content.templateSlug === "dexta-academy-1" &&
+	      sectionContent.id === "testimonials";
+	    if (!itemContents.length && !shouldHideEmptyRepeatable) return;
 
 	    roots.forEach(function (root) {
 	      var existingItems = queryWithin(root, sectionSnapshot.repeatable.itemSelector);
 	      if (!existingItems.length) return;
+
+	      if (!itemContents.length) {
+	        existingItems.forEach(function (itemRoot) {
+	          var hideTarget = itemRoot;
+	          if (hideTarget.parentElement && hideTarget.parentElement !== root &&
+	              hideTarget.parentElement.children.length === 1) {
+	            hideTarget = hideTarget.parentElement;
+	          }
+	          hideTarget.style.setProperty("display", "none", "important");
+	        });
+	        return;
+	      }
 
 	      // Only clone additional items if data has more items than the template
 	      if (itemContents.length > existingItems.length) {
@@ -2351,12 +2525,39 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	        hideTarget.style.setProperty("display", "none", "important");
 	      }
 
-	      finalItems.forEach(function (itemRoot, itemIndex) {
-	        var itemContent = itemContents[itemIndex];
-	        if (!itemContent) return;
+		      finalItems.forEach(function (itemRoot, itemIndex) {
+		        var itemContent = itemContents[itemIndex];
+		        if (!itemContent) return;
+		        var activeItemDisplayTarget = itemRoot;
+		        if (activeItemDisplayTarget.parentElement && activeItemDisplayTarget.parentElement !== root &&
+		            activeItemDisplayTarget.parentElement.children.length === 1) {
+		          activeItemDisplayTarget = activeItemDisplayTarget.parentElement;
+		        }
+		        activeItemDisplayTarget.style.removeProperty("display");
 
-	        // Auto-sync: if image is set but imageHref is not, copy image → imageHref
-	        if (itemContent["image"] && !itemContent["imageHref"]) {
+		        if (
+		          preview.content.templateSlug === "dexta-academy-1" &&
+		          sectionContent.id === "values"
+		        ) {
+		          if (!isFilled(itemContent["valueTitle"])) {
+		            itemContent["valueTitle"] = "New core value";
+		          }
+		          if (!isFilled(itemContent["valueBody"])) {
+		            itemContent["valueBody"] = "Describe this core value.";
+		          }
+			          if (!isFilled(itemContent["iconClass"])) {
+			            itemContent["iconClass"] = "fa fa-star";
+			          }
+			          itemRoot.removeAttribute("data-reveal");
+			          itemRoot.removeAttribute("data-reveal-delay");
+			          itemRoot.classList.remove("wow", "fadeInUp", "fadeInLeft", "fadeInRight");
+			          itemRoot.style.setProperty("opacity", "1", "important");
+			          itemRoot.style.setProperty("visibility", "visible", "important");
+			          itemRoot.style.setProperty("transform", "none", "important");
+			        }
+	
+		        // Auto-sync: if image is set but imageHref is not, copy image → imageHref
+		        if (itemContent["image"] && !itemContent["imageHref"]) {
 	          itemContent["imageHref"] = itemContent["image"];
 	        }
 
@@ -2675,6 +2876,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	  function getGlobalAppearanceCss() {
 		    var loadingBackground = preview.content.theme.loadingBackgroundColor || "#ffffff";
 		    var loadingTextColor = preview.content.theme.loadingTextColor || "currentColor";
+		    var isTemplateOne = preview.content.templateSlug === "dexta-academy-1";
 		    var isTemplateTwo = preview.content.templateSlug === "dexta-academy-2";
 		    var isTemplateThree = preview.content.templateSlug === "dexta-academy-3";
 		    var navbarOpacity = Math.max(0, Math.min(100, Number(preview.content.theme.navBarOpacity == null ? 100 : preview.content.theme.navBarOpacity)));
@@ -2761,17 +2963,24 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 				      css.push(".brand__crest img,.page-loader__crest img{display:block;width:100%;height:100%;object-fit:contain;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;}");
 				    }
 
-				    if (!isTemplateThree) {
-				      css.push("#spinner{flex-direction:column!important;gap:14px!important;}");
-				      css.push("#spinner .dexta-loading-logo,#spinner .spinner-border,.site-loader__mark,.page-loader__crest,.dexta-generated-loader__logo{display:grid!important;place-items:center!important;width:" + loadingLogoWidth + "!important;height:" + loadingLogoHeight + "!important;max-width:" + loadingLogoWidth + "!important;object-fit:contain!important;}");
-				      css.push(".site-preloader-logo{display:block!important;width:" + loadingLogoWidth + "!important;height:" + loadingLogoHeight + "!important;max-width:" + loadingLogoWidth + "!important;object-fit:contain!important;}");
-				      css.push("#spinner .dexta-loading-logo img,.site-loader__mark img,.page-loader__crest img,.site-preloader-logo,.dexta-generated-loader__logo img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;}");
-				      css.push("#spinner .dexta-loading-text,.site-loader__text,.page-loader__copy,.site-preloader-content [data-dexta-loading-text],.dexta-generated-loader__text{color:" + loadingTextColor + "!important;font-size:.95rem;font-weight:700;line-height:1.4;}");
-				    }
-			    var loadingBarColor = preview.content.theme.loadingBarColor || "";
-			    if (loadingBarColor) {
-			      css.push(".site-loader__bar::after,.page-loader__bar{background:" + loadingBarColor + "!important;}");
+			    if (isTemplateOne) {
+			      css.push("#spinner.dexta-template-one-loader{flex-direction:column!important;gap:14px!important;}");
+			      css.push("#spinner.dexta-template-one-loader .dexta-loading-logo{display:grid!important;place-items:center!important;width:" + loadingLogoWidth + "!important;height:" + loadingLogoHeight + "!important;max-width:" + loadingLogoWidth + "!important;background:" + logoBackground + "!important;border-radius:" + logoRadius + "!important;overflow:hidden!important;}");
+			      css.push("#spinner.dexta-template-one-loader .dexta-loading-logo img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;}");
+			      css.push("#spinner.dexta-template-one-loader .spinner-border{width:3rem!important;height:3rem!important;}");
+			      css.push("#spinner.dexta-template-one-loader .dexta-loading-text{color:" + loadingTextColor + "!important;font-size:.95rem!important;font-weight:700!important;line-height:1.4!important;}");
+			    } else if (!isTemplateThree) {
+			      css.push("#spinner{flex-direction:column!important;gap:14px!important;}");
+			      css.push("#spinner .dexta-loading-logo,#spinner .spinner-border,.site-loader__mark,.page-loader__crest,.dexta-generated-loader__logo{display:grid!important;place-items:center!important;width:" + loadingLogoWidth + "!important;height:" + loadingLogoHeight + "!important;max-width:" + loadingLogoWidth + "!important;object-fit:contain!important;}");
+			      css.push(".site-preloader-logo{display:block!important;width:" + loadingLogoWidth + "!important;height:" + loadingLogoHeight + "!important;max-width:" + loadingLogoWidth + "!important;object-fit:contain!important;}");
+			      css.push("#spinner .dexta-loading-logo img,.site-loader__mark img,.page-loader__crest img,.site-preloader-logo,.dexta-generated-loader__logo img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;}");
+			      css.push("#spinner .dexta-loading-text,.site-loader__text,.page-loader__copy,.site-preloader-content [data-dexta-loading-text],.dexta-generated-loader__text{color:" + loadingTextColor + "!important;font-size:.95rem;font-weight:700;line-height:1.4;}");
 			    }
+		    var loadingBarColor = preview.content.theme.loadingBarColor || "";
+		    if (loadingBarColor) {
+		      css.push("#spinner.dexta-template-one-loader .spinner-border{color:" + loadingBarColor + "!important;}");
+		      css.push(".site-loader__bar::after,.page-loader__bar{background:" + loadingBarColor + "!important;}");
+		    }
 
 				    if (isTemplateThree) {
 				      css.push(".page-loader,.js body .page-loader{background:" + loadingBackground + "!important;background-color:" + loadingBackground + "!important;color:" + loadingTextColor + "!important;}");
@@ -2863,12 +3072,20 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		        '#contact .landing-contact__detail:nth-of-type(3){background:var(--dexta-academy-1-home-contact-email-card-bg-color,rgba(255,255,255,.92))!important;}#contact .landing-contact__detail:nth-of-type(3) i{color:var(--dexta-academy-1-home-contact-email-icon-color,#0d6efd)!important;}',
 		        // ── About: Hero ──
 		        academyOneSectionBackground(".about-page__hero", "about", "hero", "#fff"),
-		        // ── About: Vision ──
-		        academyOneSectionBackground(".about-page__section--vision", "about", "vision", "#fff"),
-		        '.about-page__section--vision .about-page__panel-icon,.about-page__section--vision .about-page__panel-icon i{color:var(--dexta-academy-1-about-vision-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-about-vision-icon-bg-color,#e8f0fe) var(--dexta-academy-1-about-vision-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-vision-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-about-vision-icon-border-width,0px) solid var(--dexta-academy-1-about-vision-icon-border-color,#0d6efd)!important;}',
-		        // ── About: Values ──
-		        academyOneSectionBackground(".about-page__section--values", "about", "values", "#f8f9fa"),
-		        '.about-page__section--values .about-page__value-icon,.about-page__section--values .about-page__value-icon i{color:var(--dexta-academy-1-about-values-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-about-values-icon-bg-color,#e8f0fe) var(--dexta-academy-1-about-values-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-values-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-about-values-icon-border-width,0px) solid var(--dexta-academy-1-about-values-icon-border-color,#0d6efd)!important;}',
+			        // ── About: Vision ──
+			        academyOneSectionBackground(".about-page__section--vision", "about", "vision", "#fff"),
+			        '.about-page__section--vision .about-page__panel{background:var(--dexta-academy-1-about-vision-card-bg-color,#fff)!important;color:var(--dexta-academy-1-about-vision-card-text-color,#1e1e2e)!important;}',
+			        '.about-page__section--vision .about-page__panel h3,.about-page__section--vision .about-page__panel p{color:inherit!important;}',
+			        '.about-page__section--vision .about-page__panel-icon,.about-page__section--vision .about-page__panel-icon i{color:var(--dexta-academy-1-about-vision-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-about-vision-icon-bg-color,#e8f0fe) var(--dexta-academy-1-about-vision-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-vision-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-about-vision-icon-border-width,0px) solid var(--dexta-academy-1-about-vision-icon-border-color,#0d6efd)!important;}',
+			        '.about-page__section--vision .about-page__panel-icon{color:var(--dexta-academy-1-about-vision-card-icon-color,var(--dexta-academy-1-about-vision-icon-color,#0d6efd))!important;background-color:var(--dexta-academy-1-about-vision-card-icon-bg-color,#e8f0fe)!important;background-image:var(--dexta-academy-1-about-vision-card-icon-image,var(--dexta-academy-1-about-vision-icon-image,none))!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;}',
+			        '.about-page__section--vision .about-page__panel-icon i{color:inherit!important;background:transparent!important;}',
+			        // ── About: Values ──
+			        academyOneSectionBackground(".about-page__section--values", "about", "values", "#f8f9fa"),
+			        '.about-page__section--values .about-page__value{background:var(--dexta-academy-1-about-values-card-bg-color,#fff)!important;color:var(--dexta-academy-1-about-values-card-text-color,#1e1e2e)!important;}',
+			        '.about-page__section--values .about-page__value h3,.about-page__section--values .about-page__value p{color:inherit!important;}',
+			        '.about-page__section--values .about-page__value-icon,.about-page__section--values .about-page__value-icon i{color:var(--dexta-academy-1-about-values-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-about-values-icon-bg-color,#e8f0fe) var(--dexta-academy-1-about-values-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-values-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-about-values-icon-border-width,0px) solid var(--dexta-academy-1-about-values-icon-border-color,#0d6efd)!important;}',
+			        '.about-page__section--values .about-page__value-icon{color:var(--dexta-academy-1-about-values-card-icon-color,var(--dexta-academy-1-about-values-icon-color,#0d6efd))!important;background-color:var(--dexta-academy-1-about-values-card-icon-bg-color,#e8f0fe)!important;background-image:var(--dexta-academy-1-about-values-card-icon-image,var(--dexta-academy-1-about-values-icon-image,none))!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;}',
+			        '.about-page__section--values .about-page__value-icon i{color:inherit!important;background:transparent!important;}',
 		        // ── About: Story ──
 		        academyOneSectionBackground(".about-page__section--story", "about", "story", "#fff"),
 		        '.about-page__section--story #readMoreBtn,.about-page__section--story .btn{background:color-mix(in srgb,var(--dexta-academy-1-about-story-button-bg-color,#0d6efd) var(--dexta-academy-1-about-story-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-about-story-button-text-color,#fff)!important;border:var(--dexta-academy-1-about-story-button-border-width,0px) solid var(--dexta-academy-1-about-story-button-border-color,#0d6efd)!important;}',
@@ -2876,9 +3093,10 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		        academyOneSectionBackground(".about-page__message", "about", "head-message", "#fff"),
 		        // ── About: Reasons ──
 		        academyOneSectionBackground(".about-page__section--reasons", "about", "reasons", "#f8f9fa"),
-		        // ── About: CTA ──
-		        academyOneSectionBackground(".about-page__cta", "about", "cta", "#0d6efd"),
-		        '.about-page__cta .about-page__button{background:color-mix(in srgb,var(--dexta-academy-1-about-cta-button-bg-color,#fff) var(--dexta-academy-1-about-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-about-cta-button-text-color,#0d6efd)!important;border:var(--dexta-academy-1-about-cta-button-border-width,0px) solid var(--dexta-academy-1-about-cta-button-border-color,#fff)!important;}',
+			        // ── About: CTA ──
+			        academyOneSectionBackground(".about-page__cta", "about", "cta", "#0d6efd"),
+			        '.about-page__cta .about-page__cta-card{background:var(--dexta-academy-1-about-cta-card-bg-color,#0d6efd)!important;}',
+			        '.about-page__cta .about-page__button{background:color-mix(in srgb,var(--dexta-academy-1-about-cta-button-bg-color,#fff) var(--dexta-academy-1-about-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-about-cta-button-text-color,#0d6efd)!important;border:var(--dexta-academy-1-about-cta-button-border-width,0px) solid var(--dexta-academy-1-about-cta-button-border-color,#fff)!important;}',
 		        // ── Testimonials: Hero ──
 		        academyOneSectionBackground(".testimonials-page__hero", "testimonials", "hero", "#fff"),
 		        // ── Testimonials: Success Story ──
@@ -3893,10 +4111,10 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 
 			  function applyThemeIdentity() {
 			    var logoUrl = getThemeLogoUrl() || getSharedHeaderLogoUrl();
-		    var headerBrandName = String(getSharedSectionField("site-header", "brandName") || "").trim();
-		    var headerBrandTagline = String(getSharedSectionField("site-header", "brandTagline") || "").trim();
-		    var brandName = headerBrandName || String(preview.content.theme.brandName || "").trim();
-		    var brandTagline = headerBrandTagline || String(preview.content.theme.brandTagline || "").trim();
+			    var headerBrandName = String(getSharedSectionField("site-header", "brandName") || "").trim();
+			    var headerBrandTagline = String(getSharedSectionField("site-header", "brandTagline") || "").trim();
+			    var brandName = String(preview.content.theme.brandName || "").trim() || headerBrandName;
+			    var brandTagline = String(preview.content.theme.brandTagline || "").trim() || headerBrandTagline;
 		    var showText = Boolean(preview.content.theme.brandTextVisible);
 		    var fullLoaderName = [brandName, brandTagline].filter(Boolean).join(" ");
 		    var isTemplateTwo = preview.content.templateSlug === "dexta-academy-2";
@@ -3927,19 +4145,34 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 				    if (isTemplateTwo && brandName) {
 				      setText(".site-loader__name", brandName);
 				    }
-			    applyLoadingIdentity(logoUrl, fullLoaderName);
+				    applyLoadingIdentity(logoUrl, fullLoaderName);
 
-	    document.querySelectorAll(".brand, .contact-brand, .hero-brand").forEach(function (brand) {
-	      var label = fullLoaderName || brandName || "School";
-	      brand.setAttribute("aria-label", label + " home");
-	    });
+				    document.querySelectorAll(".brand, .contact-brand, .hero-brand").forEach(function (brand) {
+				      var label = fullLoaderName || brandName || "School";
+				      brand.setAttribute("aria-label", label + " home");
+				    });
 
-	    if (logoUrl) {
-      document.querySelectorAll("link[rel~='icon']").forEach(function (link) {
-        link.setAttribute("href", logoUrl);
-      });
-    }
-  }
+				    if (brandName || preview.content.theme.documentTitle) {
+				      var currentTitlePage = preview.content.pages.find(function (item) { return item.slug === preview.pageSlug; });
+				      var websiteTitle = String(preview.content.theme.documentTitle || "").trim() || brandName;
+				      var pageTitle = currentTitlePage ? String(currentTitlePage.title || currentTitlePage.slug || "").trim() : "";
+				      var isHomeTitle = currentTitlePage && (currentTitlePage.isHome || currentTitlePage.slug === "home");
+				      document.title = pageTitle && !isHomeTitle ? websiteTitle + " | " + pageTitle : websiteTitle;
+				    }
+
+				    if (logoUrl) {
+				      var iconLinks = document.querySelectorAll("link[rel~='icon']");
+				      if (!iconLinks.length) {
+				        var iconLink = document.createElement("link");
+				        iconLink.setAttribute("rel", "icon");
+				        document.head.appendChild(iconLink);
+				        iconLinks = document.querySelectorAll("link[rel~='icon']");
+				      }
+				      iconLinks.forEach(function (link) {
+				        link.setAttribute("href", logoUrl);
+				      });
+				    }
+	  }
 
   function applyPreviewContent() {
     var page = preview.content.pages.find(function (item) { return item.slug === preview.pageSlug; });
@@ -4195,6 +4428,10 @@ export async function renderSchoolTemplatePreview({
     );
   }
 
+  if (renderSourceSnapshot.templateSlug === "dexta-academy-1") {
+    sourceHtml = renderDextaAcademyOneLoaderFallback(sourceHtml, renderContent);
+  }
+
   const usesHero3d =
     renderSourceSnapshot.templateSlug === "dexta-academy-4" &&
     pageSnapshot.fileName === "index.html";
@@ -4217,8 +4454,14 @@ export async function renderSchoolTemplatePreview({
   const noIndexMarkup =
     '<meta name="robots" content="noindex,nofollow"><meta name="dexta-preview" content="true">';
 
-  const withHeadMarkup = injectIntoHead(
+  const withDocumentIdentity = applyPreviewDocumentIdentity(
     sourceHtml,
+    renderContent,
+    page,
+  );
+
+  const withHeadMarkup = injectIntoHead(
+    withDocumentIdentity,
     `${baseMarkup}\n${noIndexMarkup}\n${getPreviewBootMarkup(renderSourceSnapshot.templateSlug)}`,
   );
 
@@ -4229,6 +4472,10 @@ export async function renderSchoolTemplatePreview({
     )}${getServerSideFontOverrideStyle(renderContent)}${getLogoPreloadMarkup(
       renderContent,
     )}${
+      renderSourceSnapshot.templateSlug === "dexta-academy-1"
+        ? getDextaAcademyOneStaticLoaderCss(renderContent)
+        : ""
+    }${
       renderSourceSnapshot.templateSlug === "dexta-academy-3"
         ? getDextaAcademyThreeStaticPreviewCss(renderContent)
         : ""
