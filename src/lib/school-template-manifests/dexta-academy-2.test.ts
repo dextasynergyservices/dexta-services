@@ -274,6 +274,39 @@ describe("Dexta Academy 2 manifest", () => {
     assert.equal(programBody?.target, "innerHTML");
   });
 
+  it("exposes the Template 2 four-color palette as saved theme values", async () => {
+    const content = buildSchoolTemplateProjectContent(dextaAcademy2Manifest);
+    const sourceSnapshot = buildSchoolTemplateSourceSnapshot(
+      dextaAcademy2Manifest,
+    );
+
+    assert.equal(content.theme.templateGreenColor, "#378F00");
+    assert.equal(content.theme.templateLightGreenColor, "#91B900");
+    assert.equal(content.theme.templateYellowColor, "#E6AE00");
+    assert.equal(content.theme.templateOrangeColor, "#D98100");
+
+    content.theme.templateGreenColor = "#378F01";
+    content.theme.templateLightGreenColor = "#91B901";
+    content.theme.templateYellowColor = "#E6AE01";
+    content.theme.templateOrangeColor = "#D98101";
+
+    const html = await renderSchoolTemplatePreview({
+      content,
+      sourceSnapshot,
+      pageSlug: "home",
+    });
+
+    assert.ok(html, "Expected home preview HTML.");
+    assert.match(html, /--dexta-academy-2-green/);
+    assert.match(html, /--dexta-academy-2-light-green/);
+    assert.match(html, /--dexta-academy-2-yellow/);
+    assert.match(html, /--dexta-academy-2-orange/);
+    assert.match(html, /#378F01/);
+    assert.match(html, /#91B901/);
+    assert.match(html, /#E6AE01/);
+    assert.match(html, /#D98101/);
+  });
+
   it("migrates legacy Values Strip intro fields without repeatable key collisions", () => {
     const content = buildSchoolTemplateProjectContent(dextaAcademy2Manifest);
     const sourceSnapshot = buildSchoolTemplateSourceSnapshot(

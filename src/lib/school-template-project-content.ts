@@ -35,6 +35,10 @@ export type SchoolTemplateProjectTheme = {
   primaryColor: string;
   secondaryColor: string;
   tertiaryColor: string;
+  templateGreenColor: string;
+  templateLightGreenColor: string;
+  templateYellowColor: string;
+  templateOrangeColor: string;
   fontFamily: string;
   navLinkFontFamily: string;
   navLinkColor: string;
@@ -251,6 +255,10 @@ export const schoolTemplateProjectContentSchema = z.object({
     primaryColor: z.string().min(1),
     secondaryColor: z.string().min(1),
     tertiaryColor: z.string().default("#dc422e"),
+    templateGreenColor: z.string().default("#378F00"),
+    templateLightGreenColor: z.string().default("#91B900"),
+    templateYellowColor: z.string().default("#E6AE00"),
+    templateOrangeColor: z.string().default("#D98100"),
     fontFamily: z.string().min(1),
     navLinkFontFamily: z.string().default(""),
     navLinkColor: z.string().default(""),
@@ -440,6 +448,22 @@ function decodeHtmlAttributeEntities(value: string) {
     .replace(/&apos;|&#39;/gi, "'")
     .replace(/&#x2f;|&#47;/gi, "/")
     .replace(/&#x3a;|&#58;/gi, ":");
+}
+
+function unwrapQuotedValue(value: string) {
+  const trimmed = value.trim();
+  const first = trimmed[0];
+  const last = trimmed[trimmed.length - 1];
+
+  return (
+    (first === `"` && last === `"`) || (first === `'` && last === `'`)
+      ? trimmed.slice(1, -1)
+      : trimmed
+  ).trim();
+}
+
+function normalizeAssetReferenceValue(value: string) {
+  return unwrapQuotedValue(decodeHtmlAttributeEntities(value));
 }
 
 function parseIframeAttributes(rawAttributes: string) {
@@ -994,11 +1018,13 @@ function queryAll(
 
 function extractBackgroundImageUrl(value: string | null | undefined) {
   if (!value) return "";
-  return (
+  const url = (
     value.match(/background(?:-image)?\s*:\s*url\((["']?)(.*?)\1\)/i)?.[2] ??
     value.match(/url\((["']?)(.*?)\1\)/i)?.[2] ??
     ""
   ).trim();
+
+  return normalizeAssetReferenceValue(url);
 }
 
 function getFieldValueFromNode(
@@ -1246,9 +1272,11 @@ function sanitizeSectionContent(
         const field = fieldMap.get(`${section.id}:${key}`);
         const sanitized = isIframeEmbedField(field)
           ? sanitizeIframeEmbedValue(value)
-          : field?.type === "richText" || field?.target === "innerHTML"
-            ? sanitizeRichText(value)
-            : sanitizePlainText(value);
+          : field?.type === "image" || field?.type === "model3d"
+            ? normalizeAssetReferenceValue(sanitizePlainText(value))
+            : field?.type === "richText" || field?.target === "innerHTML"
+              ? sanitizeRichText(value)
+              : sanitizePlainText(value);
 
         return [key, sanitized];
       }),
@@ -1265,9 +1293,12 @@ function sanitizeSectionContent(
                 const field = fieldMap.get(`${section.id}:${key}`);
                 const sanitized = isIframeEmbedField(field)
                   ? sanitizeIframeEmbedValue(value)
-                  : field?.type === "richText" || field?.target === "innerHTML"
-                    ? sanitizeRichText(value)
-                    : sanitizePlainText(value);
+                  : field?.type === "image" || field?.type === "model3d"
+                    ? normalizeAssetReferenceValue(sanitizePlainText(value))
+                    : field?.type === "richText" ||
+                        field?.target === "innerHTML"
+                      ? sanitizeRichText(value)
+                      : sanitizePlainText(value);
 
                 return [key, sanitized];
               }),
@@ -1324,6 +1355,18 @@ export function sanitizeSchoolTemplateProjectContent(
       secondaryColor: sanitizePlainText(content.theme.secondaryColor),
       tertiaryColor: sanitizePlainText(
         content.theme.tertiaryColor ?? "#dc422e",
+      ),
+      templateGreenColor: sanitizePlainText(
+        content.theme.templateGreenColor ?? "#378F00",
+      ),
+      templateLightGreenColor: sanitizePlainText(
+        content.theme.templateLightGreenColor ?? "#91B900",
+      ),
+      templateYellowColor: sanitizePlainText(
+        content.theme.templateYellowColor ?? "#E6AE00",
+      ),
+      templateOrangeColor: sanitizePlainText(
+        content.theme.templateOrangeColor ?? "#D98100",
       ),
       fontFamily: sanitizePlainText(content.theme.fontFamily),
       navLinkFontFamily: sanitizePlainText(
@@ -1504,6 +1547,10 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         primaryColor: "#31401c",
         secondaryColor: "#d4a437",
         tertiaryColor: "#d4a437",
+        templateGreenColor: "#31401c",
+        templateLightGreenColor: "#556b2f",
+        templateYellowColor: "#d4a437",
+        templateOrangeColor: "#d4a437",
         fontFamily: "Manrope",
         navLinkFontFamily: "Manrope",
         navLinkColor: "#2b2b2b",
@@ -1546,6 +1593,10 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         primaryColor: "#4a8fff",
         secondaryColor: "#6aaeff",
         tertiaryColor: "#6aaeff",
+        templateGreenColor: "#4a8fff",
+        templateLightGreenColor: "#6aaeff",
+        templateYellowColor: "#6aaeff",
+        templateOrangeColor: "#6aaeff",
         fontFamily: "Manrope",
         navLinkFontFamily: "Manrope",
         navLinkColor: "#ffffff",
@@ -1587,6 +1638,10 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         primaryColor: "#061a40",
         secondaryColor: "#f5b82e",
         tertiaryColor: "#dc422e",
+        templateGreenColor: "#061a40",
+        templateLightGreenColor: "#f5b82e",
+        templateYellowColor: "#f5b82e",
+        templateOrangeColor: "#dc422e",
         fontFamily: "Sora",
         navLinkFontFamily: "Sora",
         navLinkColor: "#ffffff",
@@ -1628,6 +1683,10 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         primaryColor: "#081827",
         secondaryColor: "#facc15",
         tertiaryColor: "#facc15",
+        templateGreenColor: "#378F00",
+        templateLightGreenColor: "#91B900",
+        templateYellowColor: "#E6AE00",
+        templateOrangeColor: "#D98100",
         fontFamily: "Montserrat",
         navLinkFontFamily: "Montserrat",
         navLinkColor: "#ffffff",
@@ -1670,6 +1729,10 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         primaryColor: "#0f766e",
         secondaryColor: "#f97316",
         tertiaryColor: "#f97316",
+        templateGreenColor: "#0f766e",
+        templateLightGreenColor: "#14b8a6",
+        templateYellowColor: "#facc15",
+        templateOrangeColor: "#f97316",
         fontFamily: "Manrope",
         navLinkFontFamily: "Manrope",
         navLinkColor: "#0f172a",
@@ -1711,6 +1774,10 @@ function getDefaultTheme(templateSlug: string): SchoolTemplateProjectTheme {
         primaryColor: "#0f766e",
         secondaryColor: "#facc15",
         tertiaryColor: "#facc15",
+        templateGreenColor: "#0f766e",
+        templateLightGreenColor: "#14b8a6",
+        templateYellowColor: "#facc15",
+        templateOrangeColor: "#f97316",
         fontFamily: "Inter",
         navLinkFontFamily: "Inter",
         navLinkColor: "#111827",
@@ -2497,6 +2564,23 @@ export function syncSchoolTemplateProjectContentWithManifest({
 
   if (wasThemeFieldMissing("tertiaryColor")) {
     syncedTheme.tertiaryColor = freshContent.theme.tertiaryColor;
+  }
+
+  if (wasThemeFieldMissing("templateGreenColor")) {
+    syncedTheme.templateGreenColor = freshContent.theme.templateGreenColor;
+  }
+
+  if (wasThemeFieldMissing("templateLightGreenColor")) {
+    syncedTheme.templateLightGreenColor =
+      freshContent.theme.templateLightGreenColor;
+  }
+
+  if (wasThemeFieldMissing("templateYellowColor")) {
+    syncedTheme.templateYellowColor = freshContent.theme.templateYellowColor;
+  }
+
+  if (wasThemeFieldMissing("templateOrangeColor")) {
+    syncedTheme.templateOrangeColor = freshContent.theme.templateOrangeColor;
   }
 
   if (wasThemeFieldMissing("navLinkColor")) {

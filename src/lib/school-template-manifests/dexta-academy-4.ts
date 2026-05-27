@@ -5,6 +5,7 @@ import {
   linkField,
   model3dField,
   numberField,
+  selectField,
   textField,
   textareaField,
   type SchoolTemplateField,
@@ -277,6 +278,23 @@ function homeButtonStyle(
 function homeTypography(opts: { selector: string }) {
   return t4TypographyFields(opts);
 }
+function homeEyebrowColorField({
+  sectionKey,
+  selector,
+  defaultValue = "#0f766e",
+}: {
+  sectionKey: string;
+  selector: string;
+  defaultValue?: string;
+}) {
+  return colorField("eyebrowTextColor", "Eyebrow color", selector, {
+    target: "cssVariable",
+    cssVariable: t4CssVar("home", sectionKey, "eyebrow-text-color"),
+    defaultValue,
+    uiGroup: "Section text style",
+    uiOrder: 18,
+  });
+}
 function _homeIconStyle(
   opts: Omit<Parameters<typeof t4IconStyleFields>[0], "pageKey">,
 ) {
@@ -536,6 +554,18 @@ export const dextaAcademy4Manifest = {
           fields: [
             richTextField("eyebrow", "Eyebrow", ".hero-eyebrow"),
             richTextField("headline", "Headline", ".hero-display"),
+            colorField(
+              "eyebrowDashColor",
+              "Eyebrow dash color",
+              ".school-hero",
+              {
+                target: "cssVariable",
+                cssVariable: "--dexta-academy-4-home-hero-eyebrow-dash-color",
+                defaultValue: "#ffffff",
+                uiGroup: "Hero text style",
+                uiOrder: 18,
+              },
+            ),
             textField(
               "primaryCtaText",
               "Primary CTA text",
@@ -610,7 +640,7 @@ export const dextaAcademy4Manifest = {
           label: "Hero 3D Model",
           selector: "#hero-3d-stage",
           description:
-            "Controls the homepage 3D model source, material colors, scale, scene offset, and responsive stage placement.",
+            "Controls the homepage 3D model source, size, rotation, scene offset, and responsive stage placement.",
           fields: [
             model3dField("modelUrl", "3D model file", "#hero-3d-stage", {
               configPath: "model.url",
@@ -618,46 +648,31 @@ export const dextaAcademy4Manifest = {
               helpText:
                 "Upload an optimized .glb file. The original template uses assets/3d/gr.glb.",
             }),
-            colorField("capBodyColor", "Cap body color", "#hero-3d-stage", {
-              target: "threeConfig",
-              configPath: "materials.capBodyColor",
-              defaultValue: "#060d1e",
-            }),
-            colorField(
-              "capBodyEmissiveColor",
-              "Cap body glow color",
-              "#hero-3d-stage",
-              {
-                target: "threeConfig",
-                configPath: "materials.capBodyEmissiveColor",
-                defaultValue: "#010408",
-              },
-            ),
-            colorField(
-              "tasselCordColor",
-              "Tassel cord color",
-              "#hero-3d-stage",
-              {
-                target: "threeConfig",
-                configPath: "materials.tasselCordColor",
-                defaultValue: "#2a5fc0",
-              },
-            ),
-            colorField("tasselTipColor", "Tassel tip color", "#hero-3d-stage", {
-              target: "threeConfig",
-              configPath: "materials.tasselTipColor",
-              defaultValue: "#1a3d8a",
-            }),
-            numberField("modelScale", "Model scale", "#hero-3d-stage", {
+            numberField("modelScale", "Model size", "#hero-3d-stage", {
               target: "threeConfig",
               configPath: "transform.scale",
               defaultValue: 4.5,
-              min: 0.5,
-              max: 10,
+              min: 0.2,
+              max: 16,
               step: 0.1,
               helpText:
-                "Maps to the Three.js model scale target used after the model is centered.",
+                "Increase to make the model bigger, or decrease to make it smaller.",
             }),
+            numberField(
+              "mobileModelScale",
+              "Mobile model size",
+              "#hero-3d-stage",
+              {
+                target: "threeConfig",
+                configPath: "transform.mobile.scale",
+                defaultValue: 4.5,
+                min: 0.2,
+                max: 16,
+                step: 0.1,
+                helpText:
+                  "Controls the 3D model size on mobile only. Desktop size is unchanged.",
+              },
+            ),
             numberField(
               "modelOffsetX",
               "Model horizontal offset",
@@ -688,7 +703,7 @@ export const dextaAcademy4Manifest = {
                   "Moves the model inside the 3D scene after centering. Negative values move down.",
               },
             ),
-            numberField("rotationX", "Rotation X", "#hero-3d-stage", {
+            numberField("rotationX", "Rotate X / tilt", "#hero-3d-stage", {
               target: "threeConfig",
               configPath: "transform.rotation.x",
               defaultValue: -0.2,
@@ -696,8 +711,9 @@ export const dextaAcademy4Manifest = {
               max: 3.14,
               step: 0.01,
               unit: "rad",
+              helpText: "Tilts the model forward or backward.",
             }),
-            numberField("rotationY", "Rotation Y", "#hero-3d-stage", {
+            numberField("rotationY", "Rotate Y / turn", "#hero-3d-stage", {
               target: "threeConfig",
               configPath: "transform.rotation.y",
               defaultValue: -0.21,
@@ -705,8 +721,31 @@ export const dextaAcademy4Manifest = {
               max: 3.14,
               step: 0.01,
               unit: "rad",
+              helpText: "Sets the model's final left/right facing angle.",
             }),
-            numberField("rotationZ", "Rotation Z", "#hero-3d-stage", {
+            numberField("spinRotationX", "Spin X / tilt", "#hero-3d-stage", {
+              target: "threeConfig",
+              configPath: "transform.spinRotation.x",
+              defaultValue: -0.2,
+              min: -3.14,
+              max: 3.14,
+              step: 0.01,
+              unit: "rad",
+              helpText:
+                "Controls the X tilt used by the intro spin animation without moving the model's final position.",
+            }),
+            numberField("spinRotationY", "Spin Y / turn", "#hero-3d-stage", {
+              target: "threeConfig",
+              configPath: "transform.spinRotation.y",
+              defaultValue: -0.21,
+              min: -3.14,
+              max: 3.14,
+              step: 0.01,
+              unit: "rad",
+              helpText:
+                "Controls the Y turn used by the intro spin animation without changing Rotate Y / turn.",
+            }),
+            numberField("rotationZ", "Sideways tilt / roll", "#hero-3d-stage", {
               target: "threeConfig",
               configPath: "transform.rotation.z",
               defaultValue: 0.2,
@@ -714,7 +753,98 @@ export const dextaAcademy4Manifest = {
               max: 3.14,
               step: 0.01,
               unit: "rad",
+              helpText:
+                "Rolls the model clockwise or counter-clockwise on desktop and mobile.",
             }),
+            selectField(
+              "modelVisibility",
+              "3D logo visibility",
+              "#hero-3d-stage",
+              [
+                { label: "Show 3D logo", value: "show" },
+                { label: "Hide 3D logo", value: "hide" },
+              ],
+              {
+                target: "threeConfig",
+                configPath: "visibility.mode",
+                defaultValue: "show",
+                helpText:
+                  "Hide the 3D logo without changing the headline or other hero content.",
+              },
+            ),
+            selectField(
+              "mobileLayerOrder",
+              "Mobile text/3D layer",
+              "#hero-3d-stage",
+              [
+                { label: "3D logo in front", value: "modelFront" },
+                { label: "Text in front", value: "textFront" },
+              ],
+              {
+                target: "threeConfig",
+                configPath: "responsive.mobile.layer",
+                defaultValue: "modelFront",
+                helpText:
+                  "Mobile only. Choose whether the headline text appears in front of the 3D logo.",
+              },
+            ),
+            selectField(
+              "modelLightingMode",
+              "Model color mode",
+              "#hero-3d-stage",
+              [
+                { label: "Flat original color", value: "flatColor" },
+                { label: "True color", value: "trueColor" },
+                { label: "Stylized blue highlight", value: "stylized" },
+              ],
+              {
+                target: "threeConfig",
+                configPath: "lighting.mode",
+                defaultValue: "flatColor",
+                helpText:
+                  "Use flat original color to match simple Blender material colors most closely.",
+              },
+            ),
+            numberField(
+              "modelBrightness",
+              "Model brightness",
+              "#hero-3d-stage",
+              {
+                target: "threeConfig",
+                configPath: "lighting.brightness",
+                defaultValue: 0.65,
+                min: 0.05,
+                max: 2,
+                step: 0.05,
+                helpText:
+                  "Controls the strength of the lights on the 3D model.",
+              },
+            ),
+            numberField("modelExposure", "Model exposure", "#hero-3d-stage", {
+              target: "threeConfig",
+              configPath: "lighting.exposure",
+              defaultValue: 0.9,
+              min: 0.1,
+              max: 1.8,
+              step: 0.05,
+              helpText:
+                "Lower this if the model looks washed out or too bright.",
+            }),
+            numberField(
+              "modelEnvironmentStrength",
+              "Environment reflection strength",
+              "#hero-3d-stage",
+              {
+                target: "threeConfig",
+                configPath: "lighting.environmentIntensity",
+                defaultValue: 0.45,
+                min: 0,
+                max: 1.5,
+                step: 0.05,
+                helpText:
+                  "Controls reflective room lighting. Lower values keep original colors stronger.",
+              },
+            ),
             numberField(
               "desktopStageX",
               "Desktop horizontal position",
@@ -849,8 +979,8 @@ export const dextaAcademy4Manifest = {
             textField("ctaText", "CTA text", ".btn-primary"),
             linkField("ctaHref", "CTA link", ".btn-primary"),
             // Per-item stat card fields
-            textField("statValue", "Stat value", "strong"),
-            textField("statLabel", "Stat label", "span"),
+            richTextField("statValue", "Stat value", ".stat-card > strong"),
+            richTextField("statLabel", "Stat label", ".stat-card > span"),
             // Section-level styling
             ...homeSectionStyle({
               sectionKey: "about-preview",
@@ -858,6 +988,10 @@ export const dextaAcademy4Manifest = {
               defaultBackgroundColor: "#ffffff",
             }),
             ...homeTypography({ selector: ".school-about-preview" }),
+            homeEyebrowColorField({
+              sectionKey: "about-preview",
+              selector: ".school-about-preview",
+            }),
             ...homeButtonStyle({
               sectionKey: "about-preview",
               selector: ".school-about-preview",
@@ -905,6 +1039,10 @@ export const dextaAcademy4Manifest = {
               defaultBackgroundColor: "#e8f4f1",
             }),
             ...homeTypography({ selector: ".school-programs" }),
+            homeEyebrowColorField({
+              sectionKey: "programs",
+              selector: ".school-programs",
+            }),
             ...homeButtonStyle({
               sectionKey: "programs",
               selector: ".school-programs",
@@ -945,6 +1083,10 @@ export const dextaAcademy4Manifest = {
               defaultBackgroundColor: "#f7fafc",
             }),
             ...homeTypography({ selector: ".homepage-gallery-preview" }),
+            homeEyebrowColorField({
+              sectionKey: "gallery-preview",
+              selector: ".homepage-gallery-preview",
+            }),
             ...homeButtonStyle({
               sectionKey: "gallery-preview",
               selector: ".homepage-gallery-preview",

@@ -228,6 +228,11 @@ const ORIGINAL_THEME_COLORS: Record<
     logoBackgroundColor: "transparent",
     primaryColor: "#081827",
     secondaryColor: "#facc15",
+    tertiaryColor: "#facc15",
+    templateGreenColor: "#378F00",
+    templateLightGreenColor: "#91B900",
+    templateYellowColor: "#E6AE00",
+    templateOrangeColor: "#D98100",
     loadingBackgroundColor: "#081827",
     loadingTextColor: "#ffffff",
     navBarColor: "#081827",
@@ -1142,6 +1147,7 @@ function FieldControl({
   field,
   value,
   originalValue,
+  defaultFontFamily,
   onChange,
   onValidateModel,
   isValidatingModel = false,
@@ -1150,6 +1156,7 @@ function FieldControl({
   field: SchoolTemplateProjectFieldSnapshot;
   value: EditableFieldValue;
   originalValue?: EditableFieldValue;
+  defaultFontFamily?: string;
   onChange: (value: EditableFieldValue) => void;
   onValidateModel?: (value: EditableFieldValue) => Promise<void> | void;
   isValidatingModel?: boolean;
@@ -1175,6 +1182,7 @@ function FieldControl({
 
       {controlKind === "richText" ? (
         <RichTextEditor
+          defaultFontFamily={defaultFontFamily}
           minHeight={320}
           placeholder={field.placeholder ?? ""}
           tone="light"
@@ -3087,6 +3095,88 @@ export function SchoolWebsiteProjectEditor({
                   updateTheme("secondaryColor", getStringValue(value))
                 }
               />
+              {draft.templateSlug === DEXTA_ACADEMY_2_SLUG ? (
+                <div className="rounded-lg border border-[#222] bg-[#0d0d0d] p-3">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#666]">
+                    Template palette
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <FieldControl
+                      field={{
+                        key: "templateGreenColor",
+                        label: "Green",
+                        type: "color",
+                        selector: ":root",
+                        target: "cssVariable",
+                      }}
+                      value={draft.theme.templateGreenColor}
+                      originalValue={getOriginalThemeColorValue(
+                        "templateGreenColor",
+                      )}
+                      onChange={(value) =>
+                        updateTheme("templateGreenColor", getStringValue(value))
+                      }
+                    />
+                    <FieldControl
+                      field={{
+                        key: "templateLightGreenColor",
+                        label: "Light green",
+                        type: "color",
+                        selector: ":root",
+                        target: "cssVariable",
+                      }}
+                      value={draft.theme.templateLightGreenColor}
+                      originalValue={getOriginalThemeColorValue(
+                        "templateLightGreenColor",
+                      )}
+                      onChange={(value) =>
+                        updateTheme(
+                          "templateLightGreenColor",
+                          getStringValue(value),
+                        )
+                      }
+                    />
+                    <FieldControl
+                      field={{
+                        key: "templateYellowColor",
+                        label: "Yellow",
+                        type: "color",
+                        selector: ":root",
+                        target: "cssVariable",
+                      }}
+                      value={draft.theme.templateYellowColor}
+                      originalValue={getOriginalThemeColorValue(
+                        "templateYellowColor",
+                      )}
+                      onChange={(value) =>
+                        updateTheme(
+                          "templateYellowColor",
+                          getStringValue(value),
+                        )
+                      }
+                    />
+                    <FieldControl
+                      field={{
+                        key: "templateOrangeColor",
+                        label: "Orange",
+                        type: "color",
+                        selector: ":root",
+                        target: "cssVariable",
+                      }}
+                      value={draft.theme.templateOrangeColor}
+                      originalValue={getOriginalThemeColorValue(
+                        "templateOrangeColor",
+                      )}
+                      onChange={(value) =>
+                        updateTheme(
+                          "templateOrangeColor",
+                          getStringValue(value),
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+              ) : null}
               {draft.templateSlug === "dexta-academy-3" ? (
                 <FieldControl
                   field={{
@@ -4031,6 +4121,7 @@ export function SchoolWebsiteProjectEditor({
                                     activeSection.content.fields[field.key] ??
                                     null
                                   }
+                                  defaultFontFamily={draft.theme.fontFamily}
                                   originalValue={getOriginalSectionFieldValue(
                                     activeSection.content.id,
                                     field,
@@ -4138,6 +4229,9 @@ export function SchoolWebsiteProjectEditor({
                                         key={`${activeSection.content.id}:${itemIndex}:${field.key}`}
                                         field={field}
                                         value={item[field.key] ?? null}
+                                        defaultFontFamily={
+                                          draft.theme.fontFamily
+                                        }
                                         originalValue={getOriginalRepeatableItemFieldValue(
                                           activeSection.content.id,
                                           itemIndex,
