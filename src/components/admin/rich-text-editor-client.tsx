@@ -18,6 +18,7 @@ import "tinymce/themes/silver";
 import { Editor } from "@tinymce/tinymce-react";
 
 export type RichTextEditorClientProps = {
+  defaultFontFamily?: string;
   disabled?: boolean;
   minHeight?: number;
   onChange: (value: string) => void;
@@ -71,6 +72,7 @@ const BLOCK_FORMATS =
   "Paragraph=p;Heading 2=h2;Heading 3=h3;Heading 4=h4;Quote=blockquote";
 
 export function RichTextEditorClient({
+  defaultFontFamily = "Montserrat",
   disabled = false,
   minHeight = 220,
   onChange,
@@ -79,6 +81,20 @@ export function RichTextEditorClient({
   value,
 }: RichTextEditorClientProps) {
   const isLightTone = tone === "light";
+  const normalizedDefaultFont =
+    defaultFontFamily.trim().replace(/^["']|["']$/g, "") || "Montserrat";
+  const defaultFontFormatValue = /\s/.test(normalizedDefaultFont)
+    ? `'${normalizedDefaultFont}'`
+    : normalizedDefaultFont;
+  const defaultFontStack = `${JSON.stringify(normalizedDefaultFont)}, system-ui, sans-serif`;
+  const fontFamilyFormats = [
+    `${normalizedDefaultFont}=${defaultFontFormatValue},system-ui,sans-serif`,
+    FONT_FAMILY_FORMATS,
+  ]
+    .join(";")
+    .split(";")
+    .filter((item, index, items) => items.indexOf(item) === index)
+    .join(";");
   const editorPalette = isLightTone
     ? {
         background: "#ffffff",
@@ -120,7 +136,7 @@ export function RichTextEditorClient({
             body {
               background: ${editorPalette.background};
               color: ${editorPalette.bodyText};
-              font-family: Montserrat, system-ui, sans-serif;
+              font-family: ${defaultFontStack};
               font-size: 16px;
               margin: 0;
               padding: 16px;
@@ -151,7 +167,7 @@ export function RichTextEditorClient({
             }
           `,
           block_formats: BLOCK_FORMATS,
-          font_family_formats: FONT_FAMILY_FORMATS,
+          font_family_formats: fontFamilyFormats,
           font_size_formats: FONT_SIZE_FORMATS,
           menubar: false,
           min_height: minHeight,

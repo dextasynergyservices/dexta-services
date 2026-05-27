@@ -282,10 +282,52 @@ function getGoogleFontStylesheetUrl(value: unknown) {
   return `https://fonts.googleapis.com/css2?family=${encodedFamily}:ital,wght@0,100..900;1,100..900&display=swap`;
 }
 
+function collectRichTextFontFamilies(value: unknown) {
+  const text = String(value ?? "");
+  if (!text || !/font-family\s*:/i.test(text)) return [];
+
+  const families = new Set<string>();
+  const pattern = /font-family\s*:\s*([^;"']*(?:"[^"]*"|'[^']*')?[^;]*)/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text))) {
+    const family = getGoogleFontFamilyName(match[1]);
+    if (family) families.add(family);
+  }
+
+  return Array.from(families);
+}
+
+function collectContentRichTextFontFamilies(
+  content: SchoolTemplateProjectContent,
+) {
+  const families = new Set<string>();
+  const scanFields = (fields: Record<string, unknown>) => {
+    Object.values(fields).forEach((value) => {
+      collectRichTextFontFamilies(value).forEach((family) =>
+        families.add(family),
+      );
+    });
+  };
+  const scanSection = (section: SchoolTemplateProjectSectionContent) => {
+    scanFields(section.fields);
+    section.repeatable?.items.forEach(scanFields);
+  };
+
+  content.sharedSections.forEach(scanSection);
+  content.pages.forEach((page) => page.sections.forEach(scanSection));
+
+  return Array.from(families);
+}
+
 function getGoogleFontPreloadMarkup(content: SchoolTemplateProjectContent) {
   const urls = Array.from(
     new Set(
-      [content.theme.fontFamily, content.theme.navLinkFontFamily]
+      [
+        content.theme.fontFamily,
+        content.theme.navLinkFontFamily,
+        ...collectContentRichTextFontFamilies(content),
+      ]
         .map(getGoogleFontStylesheetUrl)
         .filter(Boolean),
     ),
@@ -1412,7 +1454,7 @@ function assertSafeTemplatePath(sourceDir: string, fileName: string) {
 }
 
 function getPreviewHero3dModuleMarkup() {
-  return '<script type="module" src="js/hero-3d.js?dextaPreview=3d-config-v2" data-dexta-preview-hero-3d="external"></script>';
+  return '<script type="module" src="js/hero-3d.js?dextaPreview=3d-config-v17" data-dexta-preview-hero-3d="external"></script>';
 }
 
 function isFilled(value: unknown) {
@@ -1559,6 +1601,25 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 	    });
 	  }
 
+	  function hasRichTextFontStyle(value) {
+	    var node = document.createElement("div");
+	    node.innerHTML = toText(value);
+	    if (node.querySelector("strong,b,em,i,u,s,strike,del")) return true;
+	    return Array.from(node.querySelectorAll("[style]")).some(function (item) {
+	      if (!item.style) return false;
+	      return Boolean(
+	        item.style.fontFamily ||
+	        item.style.fontSize ||
+	        item.style.fontStyle ||
+	        item.style.fontWeight ||
+	        item.style.textAlign ||
+	        item.style.textDecoration ||
+	        item.style.textTransform ||
+	        item.style.letterSpacing
+	      );
+	    });
+	  }
+
 	  function serializeHtmlNode(node) {
 	    var wrapper = document.createElement("div");
 	    wrapper.appendChild(node.cloneNode(true));
@@ -1613,15 +1674,24 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 	      styledNodes.push(root);
 	    }
 	    styledNodes = styledNodes.concat(Array.from(root.querySelectorAll("[style]")));
+	    var promotedProperties = [
+	      "color",
+	      "background-color",
+	      "font-family",
+	      "font-size",
+	      "font-style",
+	      "font-weight",
+	      "text-align",
+	      "text-decoration",
+	      "text-transform",
+	      "letter-spacing"
+	    ];
 	    styledNodes.forEach(function (node) {
-	      var color = node.style && node.style.color;
-	      if (color) {
-	        node.style.setProperty("color", color, "important");
-	      }
-	      var backgroundColor = node.style && node.style.backgroundColor;
-	      if (backgroundColor) {
-	        node.style.setProperty("background-color", backgroundColor, "important");
-	      }
+	      if (!node.style) return;
+	      promotedProperties.forEach(function (property) {
+	        var value = node.style.getPropertyValue(property);
+	        if (value) node.style.setProperty(property, value, "important");
+	      });
 	    });
 	  }
 
@@ -1644,6 +1714,19 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 	    var family = getGoogleFontFamilyName(value);
 	    if (!family) return "";
 	    return "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(family).replace(/%20/g, "+") + ":ital,wght@0,100..900;1,100..900&display=swap";
+	  }
+
+	  function collectRichTextFontFamilies(value) {
+	    var text = String(value || "");
+	    if (!text || !/font-family\\s*:/i.test(text)) return [];
+	    var families = [];
+	    var pattern = /font-family\\s*:\\s*([^;"']*(?:"[^"]*"|'[^']*')?[^;]*)/gi;
+	    var match;
+	    while ((match = pattern.exec(text))) {
+	      var family = getGoogleFontFamilyName(match[1]);
+	      if (family && families.indexOf(family) < 0) families.push(family);
+	    }
+	    return families;
 	  }
 
 	  function applyFontFamily(node, value) {
@@ -1686,14 +1769,6 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 	      if (!family) continue;
 	      var stack = JSON.stringify(family) + ', "Segoe UI", sans-serif';
 	      node.style.setProperty("font-family", stack, "important");
-	      // Clear stale inline font-family from descendants (e.g. set by applyFontFamily)
-	      // so the CSS inherit rule can take effect. Skip nested section roots.
-	      var stale = node.querySelectorAll('[style*="font-family"]');
-	      for (var j = 0; j < stale.length; j++) {
-	        var child = stale[j];
-	        if (child.hasAttribute("data-dexta-font-stylesheet") && child.getAttribute("data-dexta-font-stylesheet") !== "true") continue;
-	        child.style.removeProperty("font-family");
-	      }
 	    }
 
 	    var style = document.createElement("style");
@@ -1761,17 +1836,29 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    return "";
 	  }
 		
-		  function getCssVariableValue(value, field) {
-		    if (field.type === "image" || field.type === "model3d") {
-		      var asset = resolveAsset(value, field).replace(/"/g, "&quot;");
-		      return asset ? 'url("' + asset + '")' : "none";
-		    }
-		    var themeColor = getTemplateThreeThemeColorForDefault(value, field);
-		    if (themeColor) return themeColor;
-		    return withUnit(value, field.unit);
-		  }
+			  function getCssVariableValue(value, field) {
+			    if (field.type === "image" || field.type === "model3d") {
+			      var asset = resolveAsset(value, field).replace(/"/g, "&quot;");
+			      return asset ? 'url("' + asset + '")' : "none";
+			    }
+			    var themeColor = getTemplateThreeThemeColorForDefault(value, field);
+			    if (themeColor) return themeColor;
+			    return withUnit(value, field.unit);
+			  }
 
-		  function shouldCoverBackgroundImage(field) {
+			  function isResponsiveScopeActive(field) {
+			    var scope = field && field.scope ? String(field.scope) : "";
+			    if (!scope || scope === "base") return true;
+			    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+			      return scope === "desktop";
+			    }
+			    if (scope === "desktop") return window.matchMedia("(min-width: 992px)").matches;
+			    if (scope === "tablet") return window.matchMedia("(min-width: 768px) and (max-width: 991.98px)").matches;
+			    if (scope === "mobile") return window.matchMedia("(max-width: 767.98px)").matches;
+			    return true;
+			  }
+
+			  function shouldCoverBackgroundImage(field) {
 		    var key = String(field.key || "").toLowerCase();
 		    var selector = String(field.selector || "").toLowerCase();
 
@@ -1920,7 +2007,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	      addValue("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
 	    }
 	    if (preview.content.templateSlug === "dexta-academy-4") {
-	      addValue("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap");
+	      addValue("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap");
 	    }
 
 	    function scanSection(section) {
@@ -1932,6 +2019,9 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		        if (normalizedKey === "fontfamily" || normalizedKey.indexOf("fontfamily") >= 0) {
 		          addValue(getGoogleFontStylesheetUrl(section.fields[key]));
 		        }
+		        collectRichTextFontFamilies(section.fields[key]).forEach(function (family) {
+		          addValue(getGoogleFontStylesheetUrl(family));
+		        });
 	      });
 	      if (!section.repeatable || !section.repeatable.items) return;
 	      section.repeatable.items.forEach(function (item) {
@@ -1943,6 +2033,9 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		          if (normalizedKey === "fontfamily" || normalizedKey.indexOf("fontfamily") >= 0) {
 		            addValue(getGoogleFontStylesheetUrl(item[key]));
 		          }
+		          collectRichTextFontFamilies(item[key]).forEach(function (family) {
+		            addValue(getGoogleFontStylesheetUrl(family));
+		          });
 	        });
 	      });
 	    }
@@ -2170,17 +2263,271 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    };
 	  }
 
-	  function splitAtFirstWord(value) {
-	    var parts = normalizeAcademyThreeHeroLine(value).split(/\\s+/).filter(Boolean);
-	    if (!parts.length) return { first: "", after: "" };
-	    if (parts.length === 1) return { first: parts[0], after: "" };
-	    return {
-	      first: parts[0],
-	      after: " " + parts.slice(1).join(" ")
-	    };
-	  }
+		  function splitAtFirstWord(value) {
+		    var parts = normalizeAcademyThreeHeroLine(value).split(/\\s+/).filter(Boolean);
+		    if (!parts.length) return { first: "", after: "" };
+		    if (parts.length === 1) return { first: parts[0], after: "" };
+		    return {
+		      first: parts[0],
+		      after: " " + parts.slice(1).join(" ")
+		    };
+		  }
 
-		  function sanitizeAcademyThreeHeroFontSize(value) {
+		  function getAcademyFourHeroHeadlineLines(value) {
+		    var container = document.createElement("div");
+		    container.innerHTML = toText(value);
+		    container.querySelectorAll("br").forEach(function (breakNode) {
+		      breakNode.replaceWith(document.createTextNode("\\n"));
+		    });
+
+		    var directSpanLines = Array.from(container.children)
+		      .filter(function (node) {
+		        return String(node.tagName || "").toLowerCase() === "span";
+		      })
+		      .map(function (node) {
+		        return normalizeAcademyThreeHeroLine(node.textContent || "");
+		      })
+		      .filter(Boolean);
+		    if (directSpanLines.length >= 2) {
+		      return [directSpanLines[0], directSpanLines.slice(1).join(" ")];
+		    }
+
+		    var blockNodes = Array.from(container.children).filter(function (node) {
+		      return isTextBlockElement(node);
+		    });
+		    var lines = blockNodes.length
+		      ? blockNodes.map(function (node) {
+		          return normalizeAcademyThreeHeroLine(node.textContent || "");
+		        })
+		      : String(container.textContent || "")
+		          .split(/\\n+/)
+		          .map(normalizeAcademyThreeHeroLine);
+
+		    lines = lines.filter(Boolean);
+		    if (lines.length >= 2) {
+		      return [lines[0], lines.slice(1).join(" ")];
+		    }
+
+		    var words = normalizeAcademyThreeHeroLine(lines[0] || "")
+		      .split(/\\s+/)
+		      .filter(Boolean);
+		    if (words.length <= 1) return [words[0] || "", ""];
+
+		    var bestIndex = 1;
+		    var bestScore = Infinity;
+		    for (var index = 1; index < words.length; index += 1) {
+		      var first = words.slice(0, index).join(" ");
+		      var second = words.slice(index).join(" ");
+		      var score = Math.abs(first.length - second.length);
+		      if (score < bestScore) {
+		        bestScore = score;
+		        bestIndex = index;
+		      }
+		    }
+
+		    return [
+		      words.slice(0, bestIndex).join(" "),
+		      words.slice(bestIndex).join(" ")
+		    ];
+		  }
+
+		  function getAcademyFourHeroTextStyles(value) {
+		    var container = document.createElement("div");
+		    container.innerHTML = toText(value);
+		    var styledNodes = Array.from(container.querySelectorAll("[style]"));
+		    var styles = [];
+		    var richTextProperties = [
+		        "font-family",
+		        "font-size",
+		        "font-style",
+		        "font-weight",
+		        "text-decoration",
+		        "text-transform",
+		        "text-align",
+		        "letter-spacing",
+		        "color",
+		        "background-color"
+		      ];
+
+		    richTextProperties.forEach(function (property) {
+		      for (var index = 0; index < styledNodes.length; index += 1) {
+		        var node = styledNodes[index];
+		        var value = node.style && node.style.getPropertyValue(property);
+		        if (value) {
+		          styles.push({ property: property, value: value });
+		          break;
+		        }
+		      }
+		    });
+
+		    if (container.querySelector("strong,b")) {
+		      styles.push({ property: "font-weight", value: "700" });
+		    }
+		    if (container.querySelector("em,i")) {
+		      styles.push({ property: "font-style", value: "italic" });
+		    }
+		    if (container.querySelector("u")) {
+		      styles.push({ property: "text-decoration", value: "underline" });
+		    }
+		    if (container.querySelector("s,strike,del")) {
+		      styles.push({ property: "text-decoration", value: "line-through" });
+		    }
+
+		    return styles.filter(function (item, index, items) {
+		      return items.findIndex(function (candidate) {
+		        return candidate.property === item.property;
+		      }) === index;
+		    });
+		  }
+
+		  function getAcademyFourHeroLineTextStyles(value, lines) {
+		    var container = document.createElement("div");
+		    container.innerHTML = toText(value);
+		    var styledNodes = Array.from(container.querySelectorAll("[style]"));
+		    var richTextProperties = [
+		        "font-family",
+		        "font-size",
+		        "font-style",
+		        "font-weight",
+		        "text-decoration",
+		        "text-transform",
+		        "text-align",
+		        "letter-spacing",
+		        "color",
+		        "background-color"
+		      ];
+		    var semanticSelectors = [
+		      { selector: "strong,b", property: "font-weight", value: "700" },
+		      { selector: "em,i", property: "font-style", value: "italic" },
+		      { selector: "u", property: "text-decoration", value: "underline" },
+		      { selector: "s,strike,del", property: "text-decoration", value: "line-through" }
+		    ];
+
+		    function normalizeText(text) {
+		      return String(text || "").replace(/\\s+/g, " ").trim();
+		    }
+
+		    function nodeMatchesLine(node, line) {
+		      var nodeText = normalizeText(node.textContent || "");
+		      var lineText = normalizeText(line);
+		      return Boolean(lineText && (nodeText === lineText || nodeText.indexOf(lineText) >= 0));
+		    }
+
+		    function getBestStyledNode(property, line) {
+		      return styledNodes
+		        .filter(function (node) {
+		          return nodeMatchesLine(node, line) && node.style && node.style.getPropertyValue(property);
+		        })
+		        .sort(function (a, b) {
+		          var aText = normalizeText(a.textContent || "");
+		          var bText = normalizeText(b.textContent || "");
+		          var lineText = normalizeText(line);
+		          var aExact = aText === lineText ? 0 : 1;
+		          var bExact = bText === lineText ? 0 : 1;
+		          if (aExact !== bExact) return aExact - bExact;
+		          return aText.length - bText.length;
+		        })[0];
+		    }
+
+		    return lines.map(function (line) {
+		      var styles = [];
+		      richTextProperties.forEach(function (property) {
+		        var node = getBestStyledNode(property, line);
+		        var value = node && node.style && node.style.getPropertyValue(property);
+		        if (value) styles.push({ property: property, value: value });
+		      });
+
+		      semanticSelectors.forEach(function (item) {
+		        var node = Array.from(container.querySelectorAll(item.selector)).find(function (candidate) {
+		          return nodeMatchesLine(candidate, line);
+		        });
+		        if (node) styles.push({ property: item.property, value: item.value });
+		      });
+
+		      return styles.filter(function (item, index, items) {
+		        return items.findIndex(function (candidate) {
+		          return candidate.property === item.property;
+		        }) === index;
+		      });
+		    });
+		  }
+
+		  function applyAcademyFourHeroTextStyles(node, value) {
+		    var styles = getAcademyFourHeroTextStyles(value);
+		    if (!styles.length) return;
+
+		    var targets = [node].concat(Array.from(node.querySelectorAll(":scope > span")));
+		    targets.forEach(function (target) {
+		      styles.forEach(function (item) {
+		        target.style.setProperty(item.property, item.value, "important");
+		      });
+		    });
+		  }
+
+		  function applyAcademyFourHeroLineTextStyles(node, value, lines) {
+		    var lineStyles = getAcademyFourHeroLineTextStyles(value, lines);
+		    Array.from(node.querySelectorAll(":scope > span")).forEach(function (target, index) {
+		      (lineStyles[index] || []).forEach(function (item) {
+		        target.style.setProperty(item.property, item.value, "important");
+		      });
+		    });
+		  }
+
+		  function applyAcademyFourHeroDisplay(node, value) {
+		    if (
+		      preview.content.templateSlug !== "dexta-academy-4" ||
+		      !node.classList ||
+		      !node.classList.contains("hero-display")
+		    ) {
+		      return false;
+		    }
+
+		    var lines = getAcademyFourHeroHeadlineLines(value);
+		    if (!lines[0] && !lines[1]) return false;
+
+		    if (
+		      node.querySelectorAll(":scope > span").length >= 2 &&
+		      toComparableText(value) === toComparableText(node.innerHTML) &&
+		      !hasRichTextColorStyle(value) &&
+		      !hasRichTextFontStyle(value)
+		    ) {
+		      return true;
+		    }
+
+		    node.innerHTML = lines
+		      .slice(0, 2)
+		      .map(function (line) {
+		        return "<span>" + escapeHtmlText(line) + "</span>";
+		      })
+		      .join("");
+		    applyAcademyFourHeroTextStyles(node, value);
+		    applyAcademyFourHeroLineTextStyles(node, value, lines.slice(0, 2));
+		    return true;
+		  }
+
+		  function applyAcademyFourHeroEyebrow(node, value) {
+		    if (
+		      preview.content.templateSlug !== "dexta-academy-4" ||
+		      !node.classList ||
+		      !node.classList.contains("hero-eyebrow")
+		    ) {
+		      return false;
+		    }
+
+		    var container = document.createElement("div");
+		    container.innerHTML = toText(value);
+		    var text = normalizeAcademyThreeHeroLine(container.textContent || value);
+		    if (!text) return false;
+
+		    node.innerHTML =
+		      '<span aria-hidden="true"></span>' +
+		      escapeHtmlText(text) +
+		      '<span aria-hidden="true"></span>';
+		    applyAcademyFourHeroTextStyles(node, value);
+		    return true;
+		  }
+
+			  function sanitizeAcademyThreeHeroFontSize(value) {
 		    var text = String(value || "").trim();
 		    return /^\\d+(?:\\.\\d+)?(?:px|rem|em|%)$/i.test(text) ? text : "";
 		  }
@@ -2362,15 +2709,17 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		        !isAcademyThreeHeroHeadline &&
 		        field.target === "innerHTML" &&
 		        !hasRichTextColorStyle(value) &&
+		        !hasRichTextFontStyle(value) &&
 		        toComparableText(value) === toComparableText(node.innerHTML)
 		      ) {
 	        return;
 	      }
 	    }
 
-	    if (field.target === "cssVariable" && field.cssVariable) {
-	      var cssValue = getCssVariableValue(value, field);
-	      node.style.setProperty(field.cssVariable, cssValue);
+		    if (field.target === "cssVariable" && field.cssVariable) {
+		      if (!isResponsiveScopeActive(field)) return;
+		      var cssValue = getCssVariableValue(value, field);
+		      node.style.setProperty(field.cssVariable, cssValue);
 		      if (
 		        preview.content.templateSlug === "dexta-academy-1" &&
 		        String(field.cssVariable).indexOf("-icon-image") !== -1
@@ -2385,10 +2734,16 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	      return;
 		    }
 
-    if (field.target === "innerHTML") {
-      if (field.key === "headline" && applyAcademyThreeHeroTitle(node, value)) {
-        return;
-      }
+	    if (field.target === "innerHTML") {
+	      if (field.key === "headline" && applyAcademyFourHeroDisplay(node, value)) {
+	        return;
+	      }
+	      if (field.key === "eyebrow" && applyAcademyFourHeroEyebrow(node, value)) {
+	        return;
+	      }
+	      if (field.key === "headline" && applyAcademyThreeHeroTitle(node, value)) {
+	        return;
+	      }
       setElementHtml(node, value);
       return;
     }
@@ -2662,6 +3017,10 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    var primary = preview.content.theme.primaryColor;
 	    var secondary = preview.content.theme.secondaryColor;
 	    var tertiary = preview.content.theme.tertiaryColor || "#dc422e";
+	    var templateGreen = preview.content.theme.templateGreenColor || "#378F00";
+	    var templateLightGreen = preview.content.theme.templateLightGreenColor || "#91B900";
+	    var templateYellow = preview.content.theme.templateYellowColor || "#E6AE00";
+	    var templateOrange = preview.content.theme.templateOrangeColor || "#D98100";
 	    var primaryDark = mix(primary, 78, "#000");
 	    var primarySoft = mix(primary, 16, "#fff");
 	    var secondaryDark = mix(secondary, 82, "#000");
@@ -2671,6 +3030,10 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	      "--dexta-school-primary:" + primary + ";" +
 	      "--dexta-school-secondary:" + secondary + ";" +
 	      "--dexta-school-tertiary:" + tertiary + ";" +
+	      "--dexta-school-green:" + templateGreen + ";" +
+	      "--dexta-school-light-green:" + templateLightGreen + ";" +
+	      "--dexta-school-yellow:" + templateYellow + ";" +
+	      "--dexta-school-orange:" + templateOrange + ";" +
 	      "--bs-primary:" + primary + ";" +
 	      "--bs-secondary:" + secondary + ";";
 	
@@ -2697,7 +3060,11 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	        "--bg-deep:" + primaryDark + ";" +
 	        "--accent:" + secondary + ";" +
 	        "--accent-deep:" + secondaryDark + ";" +
-	        "--accent-2:" + secondarySoft + ";";
+	        "--accent-2:" + secondarySoft + ";" +
+	        "--dexta-academy-2-green:" + templateGreen + ";" +
+	        "--dexta-academy-2-light-green:" + templateLightGreen + ";" +
+	        "--dexta-academy-2-yellow:" + templateYellow + ";" +
+	        "--dexta-academy-2-orange:" + templateOrange + ";";
 	    }
 	
 	    if (preview.content.templateSlug === "dexta-academy-3") {
@@ -2849,7 +3216,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      return font || "Manrope";
 		    }
 		    if (preview.content.templateSlug === "dexta-academy-4") {
-		      return font || "Poppins";
+		      return font || "Manrope";
 		    }
 		    return font;
 		  }
@@ -2880,7 +3247,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      return font || "Manrope";
 		    }
 		    if (preview.content.templateSlug === "dexta-academy-4") {
-		      return font || "Poppins";
+		      return font || "Manrope";
 		    }
 		    return font;
 		  }
@@ -4469,13 +4836,13 @@ body,.page-shell,.hero,.welcome,.programmes-showcase,.home-apply,.home-gallery,.
   }
 
   if (content.templateSlug === "dexta-academy-4") {
-    const bodyFont = (content.theme.fontFamily ?? "").trim() || "Poppins";
+    const bodyFont = (content.theme.fontFamily ?? "").trim() || "Manrope";
     const navFont =
       (
         content.theme.navLinkFontFamily ||
         content.theme.fontFamily ||
         ""
-      ).trim() || "Poppins";
+      ).trim() || "Manrope";
     return `<style data-dexta-font-override="true">
 body,h1,h2,h3,h4,h5,h6,p,li,a,span,label,input,textarea,select,button{font-family:${JSON.stringify(bodyFont)},"Segoe UI",sans-serif!important;}
 .site-nav a,.site-nav__link,.mobile-nav a,.mobile-nav__link,.site-header__nav a,.site-header__links a,.main-nav a,.site-footer,.site-footer a,.footer__links a,.footer__contact,.footer__bottom{font-family:${JSON.stringify(navFont)},"Segoe UI",sans-serif!important;}

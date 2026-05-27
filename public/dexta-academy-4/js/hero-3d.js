@@ -12,28 +12,133 @@ const headlineLines = heroSection
   ? Array.from(heroSection.querySelectorAll(".hero-display span"))
   : [];
 
-if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
+if (!heroSection || !stage || !canvas || !status) {
   // Exit quietly if hero markup is absent on another page.
   document.body.classList.remove("is-preloading");
   document.body.classList.add("is-ready");
   if (pagePreloader) pagePreloader.classList.add("is-hidden");
 } else {
-  const MODEL_URL = new URL("../assets/3d/gr.glb", import.meta.url).href;
+  const HERO_3D_CONFIG = window.schoolHero3dConfig || {};
+  const TRANSFORM_CONFIG = HERO_3D_CONFIG.transform || {};
+  const LIGHTING_CONFIG = HERO_3D_CONFIG.lighting || {};
+  const VISIBILITY_CONFIG = HERO_3D_CONFIG.visibility || {};
+  const RESPONSIVE_CONFIG = HERO_3D_CONFIG.responsive || {};
+  const MOBILE_TRANSFORM_CONFIG = TRANSFORM_CONFIG.mobile || {};
+  const MOBILE_RESPONSIVE_CONFIG = RESPONSIVE_CONFIG.mobile || {};
+
+  function numberFromConfig(value, fallback) {
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) ? numberValue : fallback;
+  }
+
+  function clampedNumberFromConfig(value, fallback, min, max) {
+    return Math.min(Math.max(numberFromConfig(value, fallback), min), max);
+  }
+
+  function stringFromConfig(value, fallback) {
+    return typeof value === "string" && value.trim() ? value.trim() : fallback;
+  }
+
+  function resolveModelUrl(value) {
+    const fallback = new URL("../assets/3d/gr.glb", import.meta.url).href;
+    const source = typeof value === "string" ? value.trim() : "";
+
+    if (!source) return fallback;
+    if (/^(https?:|data:|blob:)/i.test(source) || source.startsWith("/")) {
+      return source;
+    }
+
+    return new URL(`../${source.replace(/^\.\//, "")}`, import.meta.url).href;
+  }
+
+  const MODEL_URL = resolveModelUrl(HERO_3D_CONFIG.model?.url);
   const HERO_IMAGE_URL =
     "https://res.cloudinary.com/dxoorukfj/image/upload/v1777041124/ChatGPT_Image_Apr_24_2026_03_31_43_PM_ssnnin.png";
   const PRELOAD_TIMEOUT_MS = 10000;
+  const IS_MOBILE_VIEW =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(max-width: 767.98px)").matches;
+  const MODEL_VISIBLE =
+    stringFromConfig(VISIBILITY_CONFIG.mode, "show") !== "hide";
+  const MOBILE_LAYER_ORDER = stringFromConfig(
+    MOBILE_RESPONSIVE_CONFIG.layer,
+    "modelFront",
+  );
 
   // ── Cap orientation ─────────────────────────────────────────
   // X: negative = tip top face toward viewer (show the board properly)
   // Y: slight yaw so it reads as 3-D
   // Z: ZERO — no sideways lean (was the main visual bug before)
-  const BASE_ROTATION_X = -0.2;
-  const BASE_ROTATION_Y = -0.21;
-  const BASE_ROTATION_Z = 0.2;
+  const ORIGINAL_ROTATION_X = -0.2;
+  const ORIGINAL_ROTATION_Y = -0.21;
+  const ORIGINAL_ROTATION_Z = 0.2;
+  const MODEL_ROTATION_X = numberFromConfig(
+    TRANSFORM_CONFIG.rotation?.x,
+    ORIGINAL_ROTATION_X,
+  );
+  const MODEL_ROTATION_Y = numberFromConfig(
+    TRANSFORM_CONFIG.rotation?.y,
+    ORIGINAL_ROTATION_Y,
+  );
+  const MODEL_ROTATION_Z = numberFromConfig(
+    TRANSFORM_CONFIG.rotation?.z,
+    ORIGINAL_ROTATION_Z,
+  );
+  const BASE_ROTATION_X = numberFromConfig(
+    TRANSFORM_CONFIG.spinRotation?.x,
+    ORIGINAL_ROTATION_X,
+  );
+  const BASE_ROTATION_Y = numberFromConfig(
+    TRANSFORM_CONFIG.spinRotation?.y,
+    ORIGINAL_ROTATION_Y,
+  );
+  const BASE_ROTATION_Z = ORIGINAL_ROTATION_Z;
 
-  const MODEL_SCALE_TARGET = 4.5;
+  const DESKTOP_MODEL_SCALE_TARGET = numberFromConfig(
+    TRANSFORM_CONFIG.scale,
+    4.5,
+  );
+  const MODEL_SCALE_TARGET = numberFromConfig(
+    IS_MOBILE_VIEW ? MOBILE_TRANSFORM_CONFIG.scale : DESKTOP_MODEL_SCALE_TARGET,
+    DESKTOP_MODEL_SCALE_TARGET,
+  );
+  const MODEL_FRAME_REFERENCE_SIZE = 4.5;
+  const MODEL_VISIBLE_SCALE_LIMIT = 1.45;
+  const MODEL_FRAME_PADDING = 1.22;
+  const MODEL_OFFSET_X = numberFromConfig(TRANSFORM_CONFIG.offset?.x, 0.1);
+  const MODEL_OFFSET_Y = numberFromConfig(TRANSFORM_CONFIG.offset?.y, -0.18);
+  const MODEL_BRIGHTNESS = clampedNumberFromConfig(
+    LIGHTING_CONFIG.brightness,
+    0.65,
+    0.05,
+    2,
+  );
+  const MODEL_EXPOSURE = clampedNumberFromConfig(
+    LIGHTING_CONFIG.exposure,
+    0.9,
+    0.1,
+    1.8,
+  );
+  const MODEL_ENVIRONMENT_INTENSITY = clampedNumberFromConfig(
+    LIGHTING_CONFIG.environmentIntensity,
+    0.45,
+    0,
+    1.5,
+  );
+  const MODEL_LIGHTING_MODE = stringFromConfig(
+    LIGHTING_CONFIG.mode,
+    "flatColor",
+  );
+  const USE_FLAT_COLOR_LIGHTING = MODEL_LIGHTING_MODE === "flatColor";
+  const USE_TRUE_COLOR_LIGHTING = MODEL_LIGHTING_MODE !== "stylized";
   const SCROLL_ROTATION_RANGE = Math.PI * 0.04;
   const ROTATION_DAMPING = 0.06;
+
+  heroSection.classList.toggle("hero-3d-hidden", !MODEL_VISIBLE);
+  heroSection.classList.toggle(
+    "hero-mobile-text-front",
+    MOBILE_LAYER_ORDER === "textFront",
+  );
 
   // Intro timings
   const CAP_DROP_DURATION_MS = 1280;
@@ -42,12 +147,6 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
   const WOBBLE_DELAY_MS = 40;
   const SPIN_DURATION_MS = 1680;
   const WOBBLE_DURATION_MS = 2860;
-
-  // ── Cap colours (deep navy, blue sheen) ──────────────────────
-  const CAP_BODY_COLOR = new THREE.Color(0x060d1e); // deep navy-black
-  const CAP_BODY_EMISSIVE = new THREE.Color(0x010408);
-  const TASSEL_CORD_COLOR = new THREE.Color(0x2a5fc0); // blue tassel
-  const TASSEL_TIP_COLOR = new THREE.Color(0x1a3d8a);
 
   const reduceMotionQuery = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
@@ -58,6 +157,11 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
   let pageRevealed = false;
   let preloadTimeoutId = null;
   let startIntro = () => revealHeroImmediately();
+
+  if (!MODEL_VISIBLE) {
+    modelReadyForReveal = true;
+    modelUnavailable = true;
+  }
 
   if (window.schoolHeroPreloaderFallback) {
     window.clearTimeout(window.schoolHeroPreloaderFallback);
@@ -164,8 +268,12 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
 
   if (renderer) {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.28;
+    renderer.toneMapping = USE_FLAT_COLOR_LIGHTING
+      ? THREE.NoToneMapping
+      : USE_TRUE_COLOR_LIGHTING
+        ? THREE.NeutralToneMapping
+        : THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = MODEL_EXPOSURE;
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
@@ -173,60 +281,106 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
     const pmremGen = new THREE.PMREMGenerator(renderer);
     const envTarget = pmremGen.fromScene(new RoomEnvironment(), 0.04);
     scene.environment = envTarget.texture;
+    if ("environmentIntensity" in scene) {
+      scene.environmentIntensity = MODEL_ENVIRONMENT_INTENSITY;
+    }
 
-    // ── Model pivot hierarchy ──────────────────────────────────
+    // ── Model hierarchy ────────────────────────────────────────
     const modelPivot = new THREE.Group();
+    const spinAxis = new THREE.Group();
+    const spinMotion = new THREE.Group();
+    const spinCounter = new THREE.Group();
     const modelAnchor = new THREE.Group();
+    const spinAxisQuaternion = new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(BASE_ROTATION_X, BASE_ROTATION_Y, BASE_ROTATION_Z),
+    );
+    const inverseSpinAxisQuaternion = spinAxisQuaternion.clone().invert();
     let modelRoot = null;
     let modelLoaded = false;
+    let neutralModelBounds = null;
 
     scene.add(modelPivot);
-    modelPivot.add(modelAnchor);
-    modelPivot.rotation.x = BASE_ROTATION_X;
-    modelPivot.rotation.y = BASE_ROTATION_Y;
-    modelPivot.rotation.z = BASE_ROTATION_Z;
+    modelPivot.add(spinAxis);
+    spinAxis.add(spinMotion);
+    spinMotion.add(spinCounter);
+    spinCounter.add(modelAnchor);
+    spinAxis.quaternion.copy(spinAxisQuaternion);
+    spinCounter.quaternion.copy(inverseSpinAxisQuaternion);
+    modelAnchor.rotation.set(
+      MODEL_ROTATION_X,
+      MODEL_ROTATION_Y,
+      MODEL_ROTATION_Z,
+    );
 
     // ── Lighting ─────────────────────────────────────────────
     // Hemisphere: sky = cool blue-white / ground = deep navy
-    const hemiLight = new THREE.HemisphereLight(0xd0e4ff, 0x020a18, 1.8);
+    const hemiLight = new THREE.HemisphereLight(
+      USE_TRUE_COLOR_LIGHTING ? 0xffffff : 0xd0e4ff,
+      USE_TRUE_COLOR_LIGHTING ? 0x2a2a2a : 0x020a18,
+      (USE_TRUE_COLOR_LIGHTING ? 0.8 : 1.8) * MODEL_BRIGHTNESS,
+    );
     scene.add(hemiLight);
 
     // Key light — slightly warm white from upper-left front
-    const keyLight = new THREE.DirectionalLight(0xffffff, 5.2);
+    const keyLight = new THREE.DirectionalLight(
+      0xffffff,
+      (USE_TRUE_COLOR_LIGHTING ? 2.6 : 5.2) * MODEL_BRIGHTNESS,
+    );
     keyLight.position.set(4.8, 7.0, 6.5);
     scene.add(keyLight);
     scene.add(keyLight.target);
 
     // Fill light — cool blue from the right
-    const fillLight = new THREE.DirectionalLight(0x8ab8ff, 2.2);
+    const fillLight = new THREE.DirectionalLight(
+      USE_TRUE_COLOR_LIGHTING ? 0xffffff : 0x8ab8ff,
+      (USE_TRUE_COLOR_LIGHTING ? 0.65 : 2.2) * MODEL_BRIGHTNESS,
+    );
     fillLight.position.set(-5.0, 3.0, 4.0);
     scene.add(fillLight);
     scene.add(fillLight.target);
 
     // Top light — pure white overhead sheen (makes the board face pop)
-    const topLight = new THREE.DirectionalLight(0xffffff, 1.8);
+    const topLight = new THREE.DirectionalLight(
+      0xffffff,
+      (USE_TRUE_COLOR_LIGHTING ? 0.55 : 1.8) * MODEL_BRIGHTNESS,
+    );
     topLight.position.set(0.4, 9.0, 2.0);
     scene.add(topLight);
     scene.add(topLight.target);
 
     // Rim light — electric-blue edge wrap from behind-left
-    const rimLight = new THREE.PointLight(0x3a7fff, 3.2, 22, 2);
+    const rimLight = new THREE.PointLight(
+      USE_TRUE_COLOR_LIGHTING ? 0xffffff : 0x3a7fff,
+      (USE_TRUE_COLOR_LIGHTING ? 0.25 : 3.2) * MODEL_BRIGHTNESS,
+      22,
+      2,
+    );
     rimLight.position.set(-2.0, 2.8, -3.0);
     scene.add(rimLight);
 
     // Bounce light — subtle blue-cool from below-front
-    const bounceLight = new THREE.PointLight(0x2255cc, 1.4, 14, 2);
+    const bounceLight = new THREE.PointLight(
+      USE_TRUE_COLOR_LIGHTING ? 0xffffff : 0x2255cc,
+      (USE_TRUE_COLOR_LIGHTING ? 0.15 : 1.4) * MODEL_BRIGHTNESS,
+      14,
+      2,
+    );
     bounceLight.position.set(0, -1.2, 2.6);
     scene.add(bounceLight);
 
     // Subtle front-fill so the visor-edge never goes pure-black
-    const frontFill = new THREE.PointLight(0xc8d8ff, 0.7, 18, 2);
+    const frontFill = new THREE.PointLight(
+      USE_TRUE_COLOR_LIGHTING ? 0xffffff : 0xc8d8ff,
+      (USE_TRUE_COLOR_LIGHTING ? 0.35 : 0.7) * MODEL_BRIGHTNESS,
+      18,
+      2,
+    );
     frontFill.position.set(0, 0.5, 5.5);
     scene.add(frontFill);
 
     // ── State vars ───────────────────────────────────────────
-    let targetRotationY = BASE_ROTATION_Y;
-    let currentRotationY = BASE_ROTATION_Y;
+    let targetScrollRotationY = 0;
+    let currentScrollRotationY = 0;
     let animationFrameId = null;
 
     // Gentle idle float
@@ -266,56 +420,14 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
           child.frustumCulled = false;
           child.geometry.computeBoundingBox();
 
-          const bb = child.geometry.boundingBox;
-          const sz = bb ? bb.getSize(new THREE.Vector3()) : new THREE.Vector3();
-          const isTassel = sz.z > Math.max(sz.x, sz.y) * 2;
-
-          const mats = Array.isArray(child.material)
-            ? child.material
-            : [child.material];
-
-          mats.forEach((mat) => {
-            if (!mat) return;
-
-            // Environment map intensity
-            if ("envMapIntensity" in mat)
-              mat.envMapIntensity = mat.map ? 1.3 : 2.1;
-
-            // Surface finish — matte-satin cap board
-            if ("roughness" in mat) mat.roughness = mat.map ? 0.68 : 0.4;
-            if ("metalness" in mat) mat.metalness = mat.map ? 0.06 : 0.14;
-
-            // Colour assignment
-            const isWarm =
-              mat.color &&
-              mat.color.r > 0.4 &&
-              mat.color.g > 0.12 &&
-              mat.color.g < 0.5 &&
-              mat.color.b < 0.14;
-
-            if (isTassel && isWarm) {
-              // Tassel → school blue
-              if (mat.color) mat.color.copy(TASSEL_CORD_COLOR);
-              if (mat.emissive) {
-                mat.emissive.set(0x071428);
-                mat.emissiveIntensity = 0.1;
-              }
-            } else {
-              // Cap body → deep navy-black
-              if (mat.color) mat.color.copy(CAP_BODY_COLOR);
-              if (mat.emissive) {
-                mat.emissive.copy(CAP_BODY_EMISSIVE);
-                mat.emissiveIntensity = mat.map ? 0.07 : 0.09;
-              }
-            }
-
-            mat.needsUpdate = true;
-          });
+          if (USE_FLAT_COLOR_LIGHTING) {
+            child.material = cloneFlatOriginalMaterial(child.material);
+          }
         });
 
+        neutralModelBounds = centerAndScaleModel(modelRoot);
         modelAnchor.add(modelRoot);
-        centerAndScaleModel(modelRoot);
-        positionCameraToFit(modelPivot);
+        positionCameraToFit(neutralModelBounds);
 
         modelLoaded = true;
         setStatus("3D cap ready.", "ready");
@@ -334,7 +446,9 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
       typeof ResizeObserver === "function"
         ? new ResizeObserver(() => {
             updateRendererSize();
-            if (modelLoaded) positionCameraToFit(modelPivot);
+            if (modelLoaded && neutralModelBounds) {
+              positionCameraToFit(neutralModelBounds);
+            }
           })
         : null;
 
@@ -344,7 +458,9 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
         "resize",
         () => {
           updateRendererSize();
-          if (modelLoaded) positionCameraToFit(modelPivot);
+          if (modelLoaded && neutralModelBounds) {
+            positionCameraToFit(neutralModelBounds);
+          }
         },
         { passive: true },
       );
@@ -372,12 +488,12 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
       const floatY = Math.sin(floatTime) * FLOAT_AMP_Y;
       const floatX = Math.sin(floatTime * 0.67 + 1) * FLOAT_AMP_X;
 
-      currentRotationY +=
-        (targetRotationY - currentRotationY) * ROTATION_DAMPING;
-
-      modelPivot.rotation.x = BASE_ROTATION_X + intro.x + floatX;
-      modelPivot.rotation.y = currentRotationY + intro.y;
-      modelPivot.rotation.z = BASE_ROTATION_Z + intro.z;
+      currentScrollRotationY +=
+        (targetScrollRotationY - currentScrollRotationY) * ROTATION_DAMPING;
+      modelAnchor.rotation.x = MODEL_ROTATION_X + floatX;
+      modelAnchor.rotation.y = MODEL_ROTATION_Y + currentScrollRotationY;
+      modelAnchor.rotation.z = MODEL_ROTATION_Z;
+      spinMotion.rotation.set(intro.x, intro.y, intro.z);
 
       renderer.render(scene, camera);
     }
@@ -387,7 +503,7 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
     function handleScroll() {
       const heroH = Math.max(heroSection.offsetHeight, window.innerHeight, 1);
       const progress = THREE.MathUtils.clamp(scrollY / (heroH * 1.2), 0, 1);
-      targetRotationY = BASE_ROTATION_Y + progress * SCROLL_ROTATION_RANGE;
+      targetScrollRotationY = progress * SCROLL_ROTATION_RANGE;
     }
 
     // ── Renderer sizing ──────────────────────────────────────
@@ -402,23 +518,33 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
     }
 
     // ── Camera fit ───────────────────────────────────────────
-    function positionCameraToFit(object) {
-      const bb = new THREE.Box3().setFromObject(object);
-      const size = bb.getSize(new THREE.Vector3());
-      const center = bb.getCenter(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const fov = THREE.MathUtils.degToRad(camera.fov);
-      const dist = (maxDim / (2 * Math.tan(fov / 2))) * 1.05;
+    function positionCameraToFit(bounds) {
+      const size = bounds.getSize(new THREE.Vector3());
+      const center = bounds.getCenter(new THREE.Vector3());
+      const modelOffset = modelPivot.position;
+      const actualMaxDim = Math.max(size.x, size.y, size.z) || 1;
+      const frameMaxDim = Math.max(
+        MODEL_FRAME_REFERENCE_SIZE,
+        actualMaxDim / MODEL_VISIBLE_SCALE_LIMIT,
+      );
+      const frameScale = frameMaxDim / actualMaxDim;
+      const frameSize = size.clone().multiplyScalar(frameScale);
+      frameSize.x += Math.abs(modelOffset.x) * 2;
+      frameSize.y += Math.abs(modelOffset.y) * 2;
+      const verticalFov = THREE.MathUtils.degToRad(camera.fov);
+      const horizontalFov =
+        2 * Math.atan(Math.tan(verticalFov / 2) * camera.aspect);
+      const fitHeightDist = frameSize.y / (2 * Math.tan(verticalFov / 2));
+      const fitWidthDist = frameSize.x / (2 * Math.tan(horizontalFov / 2));
+      const fitDepthDist = frameMaxDim / (2 * Math.tan(verticalFov / 2));
+      const dist =
+        Math.max(fitHeightDist, fitWidthDist, fitDepthDist) *
+        MODEL_FRAME_PADDING;
 
       camera.near = Math.max(dist / 100, 0.01);
-      camera.far = dist * 20;
+      camera.far = Math.max(dist * 20, dist + size.z * 4);
 
-      // Slightly elevated, centered — no extreme side-angle
-      camera.position.set(
-        dist * 0.1, // just a hint of left-right
-        dist * 0.48, // elevated to see the top face
-        dist * 0.75, // pulled back enough to frame it
-      );
+      camera.position.set(dist * 0.1, dist * 0.48, dist * 0.75);
       camera.lookAt(
         center.x + size.x * 0.04,
         center.y - size.y * 0.08,
@@ -426,7 +552,6 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
       );
       camera.updateProjectionMatrix();
 
-      // Point lights track the cap center
       keyLight.target.position.copy(center);
       fillLight.target.position.copy(center);
       topLight.target.position.copy(center);
@@ -448,8 +573,39 @@ if (!heroSection || !stage || !canvas || !status || headlineLines.length < 2) {
       const sz2 = bb2.getSize(new THREE.Vector3());
       const ctr2 = bb2.getCenter(new THREE.Vector3());
       obj.position.sub(ctr2);
-      obj.position.x += sz2.x * 0.1;
-      obj.position.y -= sz2.y * 0.18;
+      modelPivot.position.set(
+        sz2.x * MODEL_OFFSET_X,
+        sz2.y * MODEL_OFFSET_Y,
+        0,
+      );
+
+      return new THREE.Box3().setFromObject(obj);
+    }
+
+    function cloneFlatOriginalMaterial(material) {
+      if (Array.isArray(material)) {
+        return material.map(cloneFlatOriginalMaterial);
+      }
+
+      if (!material) {
+        return material;
+      }
+
+      const flatMaterial = new THREE.MeshBasicMaterial({
+        color: material.color
+          ? material.color.clone()
+          : new THREE.Color(1, 1, 1),
+        map: material.map || null,
+        alphaMap: material.alphaMap || null,
+        transparent: Boolean(material.transparent),
+        opacity: Number.isFinite(material.opacity) ? material.opacity : 1,
+        side: material.side,
+        vertexColors: Boolean(material.vertexColors),
+      });
+
+      flatMaterial.name = material.name || "";
+      flatMaterial.needsUpdate = true;
+      return flatMaterial;
     }
 
     // ── Intro orchestration ──────────────────────────────────

@@ -30,6 +30,14 @@ interface ImageUploadProps {
 const MAX_UPLOAD_FILE_SIZE_BYTES = 10_000_000;
 const IMAGE_COMPRESSION_THRESHOLD_BYTES = 9_000_000;
 const IMAGE_COMPRESSION_TARGET_BYTES = 7_000_000;
+const GLB_SAFE_OPTIMIZATION_THRESHOLD_BYTES = 10_000_000;
+const GLB_SAFE_OPTIMIZATION_MAX_INPUT_BYTES = 25_000_000;
+const GLB_HEADER_BYTES = 12;
+const GLB_CHUNK_HEADER_BYTES = 8;
+const GLB_MAGIC = 0x46546c67;
+const GLB_VERSION = 2;
+const GLB_JSON_CHUNK_TYPE = 0x4e4f534a;
+const GLB_BIN_CHUNK_TYPE = 0x004e4942;
 const COMPRESSIBLE_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -157,6 +165,156 @@ async function compressImageToTarget(file: globalThis.File) {
   );
 }
 
+function getFileExtension(fileName: string) {
+  return fileName.toLowerCase().match(/\.[^.]+$/)?.[0] ?? "";
+}
+
+function isGlbFile(file: globalThis.File) {
+  return getFileExtension(file.name) === ".glb";
+}
+
+function getPaddedByteLength(byteLength: number) {
+  return Math.ceil(byteLength / 4) * 4;
+}
+
+function writePaddedBytes(
+  target: Uint8Array,
+  offset: number,
+  source: Uint8Array,
+  paddedLength: number,
+  paddingByte: number,
+) {
+  target.set(source, offset);
+  target.fill(paddingByte, offset + source.byteLength, offset + paddedLength);
+}
+
+async function safelyOptimizeGlb(file: globalThis.File) {
+  if (file.size <= GLB_SAFE_OPTIMIZATION_THRESHOLD_BYTES) {
+    return file;
+  }
+
+  if (!isGlbFile(file)) {
+    throw new Error("Model files over 10 MB must be .glb files.");
+  }
+
+  if (file.size > GLB_SAFE_OPTIMIZATION_MAX_INPUT_BYTES) {
+    throw new Error(
+      `This GLB is ${formatMegabytes(file.size)}. To protect model quality, automatic optimization only accepts files up to ${formatMegabytes(GLB_SAFE_OPTIMIZATION_MAX_INPUT_BYTES)}.`,
+    );
+  }
+
+  const sourceBuffer = await file.arrayBuffer();
+  const sourceView = new DataView(sourceBuffer);
+
+  if (
+    sourceBuffer.byteLength < GLB_HEADER_BYTES ||
+    sourceView.getUint32(0, true) !== GLB_MAGIC ||
+    sourceView.getUint32(4, true) !== GLB_VERSION
+  ) {
+    throw new Error("This file is not a valid GLB model.");
+  }
+
+  const declaredLength = sourceView.getUint32(8, true);
+  if (declaredLength > sourceBuffer.byteLength) {
+    throw new Error("This GLB file appears to be incomplete or damaged.");
+  }
+
+  let offset = GLB_HEADER_BYTES;
+  let jsonBytes: Uint8Array | null = null;
+  const chunks: Array<{ type: number; bytes: Uint8Array }> = [];
+
+  while (offset + GLB_CHUNK_HEADER_BYTES <= declaredLength) {
+    const chunkLength = sourceView.getUint32(offset, true);
+    const chunkType = sourceView.getUint32(offset + 4, true);
+    const chunkStart = offset + GLB_CHUNK_HEADER_BYTES;
+    const chunkEnd = chunkStart + chunkLength;
+
+    if (chunkEnd > declaredLength) {
+      throw new Error("This GLB file appears to be incomplete or damaged.");
+    }
+
+    const chunkBytes = new Uint8Array(sourceBuffer, chunkStart, chunkLength);
+    if (chunkType === GLB_JSON_CHUNK_TYPE) {
+      if (jsonBytes) {
+        throw new Error("This GLB file contains more than one JSON chunk.");
+      }
+
+      const jsonText = new globalThis.TextDecoder().decode(chunkBytes).trim();
+      jsonBytes = new globalThis.TextEncoder().encode(
+        JSON.stringify(JSON.parse(jsonText)),
+      );
+    } else if (chunkType === GLB_BIN_CHUNK_TYPE && jsonBytes) {
+      const json = JSON.parse(
+        new globalThis.TextDecoder().decode(jsonBytes),
+      ) as {
+        buffers?: Array<{ byteLength?: number }>;
+      };
+      const bufferByteLength = json.buffers?.[0]?.byteLength;
+      const safeLength =
+        typeof bufferByteLength === "number" &&
+        bufferByteLength > 0 &&
+        bufferByteLength <= chunkBytes.byteLength
+          ? bufferByteLength
+          : chunkBytes.byteLength;
+      chunks.push({ type: chunkType, bytes: chunkBytes.slice(0, safeLength) });
+    } else {
+      chunks.push({ type: chunkType, bytes: chunkBytes.slice() });
+    }
+
+    offset = chunkEnd;
+  }
+
+  if (!jsonBytes) {
+    throw new Error("This GLB file does not contain a JSON chunk.");
+  }
+
+  chunks.unshift({ type: GLB_JSON_CHUNK_TYPE, bytes: jsonBytes });
+
+  const totalLength = chunks.reduce(
+    (length, chunk) =>
+      length + GLB_CHUNK_HEADER_BYTES + getPaddedByteLength(chunk.bytes.length),
+    GLB_HEADER_BYTES,
+  );
+
+  const optimizedBytes = new Uint8Array(totalLength);
+  const optimizedView = new DataView(optimizedBytes.buffer);
+  optimizedView.setUint32(0, GLB_MAGIC, true);
+  optimizedView.setUint32(4, GLB_VERSION, true);
+  optimizedView.setUint32(8, totalLength, true);
+
+  let writeOffset = GLB_HEADER_BYTES;
+  for (const chunk of chunks) {
+    const paddedLength = getPaddedByteLength(chunk.bytes.length);
+    optimizedView.setUint32(writeOffset, paddedLength, true);
+    optimizedView.setUint32(writeOffset + 4, chunk.type, true);
+    writePaddedBytes(
+      optimizedBytes,
+      writeOffset + GLB_CHUNK_HEADER_BYTES,
+      chunk.bytes,
+      paddedLength,
+      chunk.type === GLB_JSON_CHUNK_TYPE ? 0x20 : 0,
+    );
+    writeOffset += GLB_CHUNK_HEADER_BYTES + paddedLength;
+  }
+
+  const optimizedBlob = new globalThis.Blob([optimizedBytes], {
+    type: "model/gltf-binary",
+  });
+
+  if (optimizedBlob.size < file.size) {
+    return new globalThis.File(
+      [optimizedBlob],
+      `${file.name.replace(/\.glb$/i, "") || "optimized-model"}.glb`,
+      {
+        type: "model/gltf-binary",
+        lastModified: Date.now(),
+      },
+    );
+  }
+
+  return file;
+}
+
 function getPreviewSrc(
   value?: string,
   resourceType: "image" | "video" | "raw" = "image",
@@ -200,6 +358,11 @@ export function ImageUpload({
   const previewSrc = getPreviewSrc(value, resourceType);
   const isImageUpload = resourceType === "image";
   const isVideoUpload = resourceType === "video";
+  const isRawModelUpload = resourceType === "raw";
+  const usesLocalPreprocessedUpload = isImageUpload || isRawModelUpload;
+  const effectiveMaxFileSize = isRawModelUpload
+    ? GLB_SAFE_OPTIMIZATION_MAX_INPUT_BYTES
+    : maxFileSize;
   const UploadIcon = isImageUpload ? ImagePlus : FileText;
 
   const handleDelete = async () => {
@@ -255,7 +418,24 @@ export function ImageUpload({
     oldPublicIdRef.current = null;
   };
 
-  const uploadLocalImage = async (file: globalThis.File) => {
+  const uploadLocalFile = async (file: globalThis.File) => {
+    if (isRawModelUpload) {
+      const formData = new FormData();
+      formData.set("file", file);
+
+      const uploadResponse = await fetch("/api/r2/models", {
+        method: "POST",
+        body: formData,
+      });
+      const uploadData = await uploadResponse.json();
+
+      if (!uploadResponse.ok || !uploadData.url) {
+        throw new Error(uploadData.error ?? "GLB model upload failed.");
+      }
+
+      return String(uploadData.url);
+    }
+
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const apiKey = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
 
@@ -272,7 +452,7 @@ export function ImageUpload({
     const signatureData = await signatureResponse.json();
 
     if (!signatureResponse.ok || !signatureData.signature) {
-      throw new Error(signatureData.error ?? "Could not prepare image upload.");
+      throw new Error(signatureData.error ?? "Could not prepare file upload.");
     }
 
     const formData = new FormData();
@@ -282,7 +462,7 @@ export function ImageUpload({
     formData.set("signature", String(signatureData.signature));
 
     const uploadResponse = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
       {
         method: "POST",
         body: formData,
@@ -291,13 +471,17 @@ export function ImageUpload({
     const uploadData = await uploadResponse.json();
 
     if (!uploadResponse.ok || !uploadData.public_id) {
-      throw new Error(uploadData.error?.message ?? "Image upload failed.");
+      throw new Error(uploadData.error?.message ?? "File upload failed.");
     }
 
-    return String(uploadData.secure_url ?? uploadData.public_id);
+    return String(
+      isImageUpload
+        ? (uploadData.secure_url ?? uploadData.public_id)
+        : uploadData.public_id,
+    );
   };
 
-  const handleLocalImageChange = async (
+  const handleLocalFileChange = async (
     event: ChangeEvent<globalThis.HTMLInputElement>,
   ) => {
     const file = event.target.files?.[0];
@@ -307,9 +491,12 @@ export function ImageUpload({
       return;
     }
 
-    if (file.size > maxFileSize) {
+    const canPreprocessOverLimit =
+      isImageUpload || (isRawModelUpload && isGlbFile(file));
+
+    if (file.size > effectiveMaxFileSize && !canPreprocessOverLimit) {
       toast.error(
-        `File is ${formatMegabytes(file.size)}. Maximum upload size is ${formatMegabytes(maxFileSize)}.`,
+        `File is ${formatMegabytes(file.size)}. Maximum upload size is ${formatMegabytes(effectiveMaxFileSize)}.`,
       );
       return;
     }
@@ -318,20 +505,36 @@ export function ImageUpload({
     setUploading(true);
 
     try {
-      const fileToUpload = await compressImageToTarget(file);
-      const newPublicId = await uploadLocalImage(fileToUpload);
+      const fileToUpload = isRawModelUpload
+        ? await safelyOptimizeGlb(file)
+        : await compressImageToTarget(file);
+
+      if (fileToUpload.size > effectiveMaxFileSize) {
+        throw new Error(
+          isRawModelUpload
+            ? `GLB is ${formatMegabytes(fileToUpload.size)} after safe optimization. Maximum upload size is ${formatMegabytes(effectiveMaxFileSize)}.`
+            : `File is ${formatMegabytes(fileToUpload.size)} after compression. Maximum upload size is ${formatMegabytes(effectiveMaxFileSize)}.`,
+        );
+      }
+
+      const newPublicId = await uploadLocalFile(fileToUpload);
 
       await deleteReplacedFile(newPublicId);
       onChange(newPublicId);
       toast.success(
-        file.size > IMAGE_COMPRESSION_THRESHOLD_BYTES
-          ? `Image compressed to ${formatMegabytes(fileToUpload.size)} and uploaded successfully`
-          : (successMessage ?? "Image uploaded successfully"),
+        isRawModelUpload && file.size > GLB_SAFE_OPTIMIZATION_THRESHOLD_BYTES
+          ? `GLB safely optimized to ${formatMegabytes(fileToUpload.size)} and uploaded successfully`
+          : file.size > IMAGE_COMPRESSION_THRESHOLD_BYTES
+            ? `Image compressed to ${formatMegabytes(fileToUpload.size)} and uploaded successfully`
+            : (successMessage ??
+              (isImageUpload
+                ? "Image uploaded successfully"
+                : "File uploaded successfully")),
       );
     } catch (error) {
       oldPublicIdRef.current = null;
       toast.error(
-        error instanceof Error ? error.message : "Image upload failed.",
+        error instanceof Error ? error.message : "File upload failed.",
       );
     } finally {
       setUploading(false);
@@ -416,7 +619,7 @@ export function ImageUpload({
         const openUploadWidget = (event: MouseEvent<HTMLButtonElement>) => {
           event.preventDefault();
           event.stopPropagation();
-          if (isImageUpload) {
+          if (usesLocalPreprocessedUpload) {
             fileInputRef.current?.click();
             return;
           }
@@ -425,13 +628,13 @@ export function ImageUpload({
 
         return (
           <div>
-            {isImageUpload ? (
+            {usesLocalPreprocessedUpload ? (
               <input
                 ref={fileInputRef}
                 type="file"
                 accept={allowedFormats.map((format) => `.${format}`).join(",")}
                 className="sr-only"
-                onChange={handleLocalImageChange}
+                onChange={handleLocalFileChange}
               />
             ) : null}
             {value ? (

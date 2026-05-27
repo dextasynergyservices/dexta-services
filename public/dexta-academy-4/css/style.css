@@ -13359,6 +13359,21 @@ textarea.form-control {
   color: rgba(255, 255, 255, 0.75);
 }
 
+.school-about-preview .section-kicker {
+  color: var(--dexta-academy-4-home-about-preview-eyebrow-text-color, #0f766e);
+}
+
+.school-programs .section-kicker {
+  color: var(--dexta-academy-4-home-programs-eyebrow-text-color, #0f766e);
+}
+
+.homepage-gallery-preview .section-kicker {
+  color: var(
+    --dexta-academy-4-home-gallery-preview-eyebrow-text-color,
+    #0f766e
+  );
+}
+
 .school-homepage h1,
 .school-homepage h2,
 .school-homepage h3 {

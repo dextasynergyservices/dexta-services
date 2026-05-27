@@ -163,6 +163,12 @@ function getCssVariableValue(
   return withUnit(value, field.unit);
 }
 
+function shouldApplyStaticResponsiveScope(
+  field: SchoolTemplateProjectSectionSnapshot["fields"][number],
+) {
+  return !field.scope || field.scope === "base" || field.scope === "desktop";
+}
+
 function normalizeZipPath(filePath: string) {
   return filePath.replace(/\\/g, "/").replace(/^\/+/, "");
 }
@@ -499,7 +505,15 @@ function promoteRichTextColorStyles(node: ElementNode) {
 
       if (
         normalizedProperty === "color" ||
-        normalizedProperty === "background-color"
+        normalizedProperty === "background-color" ||
+        normalizedProperty === "font-family" ||
+        normalizedProperty === "font-size" ||
+        normalizedProperty === "font-style" ||
+        normalizedProperty === "font-weight" ||
+        normalizedProperty === "text-align" ||
+        normalizedProperty === "text-decoration" ||
+        normalizedProperty === "text-transform" ||
+        normalizedProperty === "letter-spacing"
       ) {
         return `${property}: ${withImportantStyleValue(value)}`;
       }
@@ -524,6 +538,271 @@ function setRichTextHtml(node: ElementNode, value: string) {
     isInlineRichTextTarget(node) ? toInlineHtml(value) : value,
   );
   promoteRichTextColorStyles(node);
+}
+
+function getPlainTextFromHtml(value: string) {
+  const fragment = parseHtml(value);
+  const collectText = (node: HtmlNode): string => {
+    if (node.type === "text") return node.content;
+    if (node.type === "raw") return "";
+    return node.children.map(collectText).join(" ");
+  };
+
+  return fragment.children
+    .map(collectText)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getTextFromHtmlNode(node: HtmlNode): string {
+  if (node.type === "text") return node.content;
+  if (node.type === "raw") return "";
+  return node.children.map(getTextFromHtmlNode).join(" ");
+}
+
+function normalizeHeroLineText(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function getDextaAcademy4HeroHeadlineLines(value: string) {
+  const fragment = parseHtml(value);
+  const elementChildren = fragment.children.filter(
+    (child): child is ElementNode => child.type === "element",
+  );
+
+  const directSpanLines = elementChildren
+    .filter((child) => child.tagName === "span")
+    .map((child) => normalizeHeroLineText(getTextFromHtmlNode(child)))
+    .filter(Boolean);
+  if (directSpanLines.length >= 2) {
+    return [directSpanLines[0], directSpanLines.slice(1).join(" ")];
+  }
+
+  const blockLines = elementChildren
+    .filter((child) => /^(p|div|h[1-6]|blockquote)$/.test(child.tagName))
+    .map((child) => normalizeHeroLineText(getTextFromHtmlNode(child)))
+    .filter(Boolean);
+  if (blockLines.length >= 2) {
+    return [blockLines[0], blockLines.slice(1).join(" ")];
+  }
+
+  const lines = getPlainTextFromHtml(value)
+    .split(/\n+/)
+    .map(normalizeHeroLineText)
+    .filter(Boolean);
+  if (lines.length >= 2) return [lines[0], lines.slice(1).join(" ")];
+
+  const words = normalizeHeroLineText(lines[0] ?? "")
+    .split(/\s+/)
+    .filter(Boolean);
+  if (words.length <= 1) return [words[0] ?? "", ""];
+
+  let bestIndex = 1;
+  let bestScore = Number.POSITIVE_INFINITY;
+  for (let index = 1; index < words.length; index += 1) {
+    const first = words.slice(0, index).join(" ");
+    const second = words.slice(index).join(" ");
+    const score = Math.abs(first.length - second.length);
+    if (score < bestScore) {
+      bestScore = score;
+      bestIndex = index;
+    }
+  }
+
+  return [
+    words.slice(0, bestIndex).join(" "),
+    words.slice(bestIndex).join(" "),
+  ];
+}
+
+function getDextaAcademy4HeroStyle(value: string, lineText = "") {
+  const fragment = parseHtml(value);
+  const normalizedLineText = normalizeHeroLineText(lineText);
+  const allowedProperties = [
+    "font-family",
+    "font-size",
+    "font-style",
+    "font-weight",
+    "text-decoration",
+    "text-transform",
+    "text-align",
+    "letter-spacing",
+    "color",
+    "background-color",
+  ];
+  const allowedPropertySet = new Set(allowedProperties);
+  const collectedStyles = new Map<
+    string,
+    { property: string; value: string }
+  >();
+  const styledCandidates: Array<{
+    text: string;
+    declarations: Map<string, { property: string; value: string }>;
+  }> = [];
+  const collectStyles = (node: HtmlNode) => {
+    if (node.type !== "element") return;
+    const style = getAttr(node, "style") ?? "";
+    const declarations = new Map<string, { property: string; value: string }>();
+    style
+      .split(";")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .forEach((item) => {
+        const separatorIndex = item.indexOf(":");
+        if (separatorIndex < 0) return;
+        const property = item.slice(0, separatorIndex).trim();
+        const normalizedProperty = property.toLowerCase();
+        const propertyIndex = allowedProperties.indexOf(normalizedProperty);
+        const value = item.slice(separatorIndex + 1).trim();
+        if (
+          propertyIndex < 0 ||
+          !allowedPropertySet.has(normalizedProperty) ||
+          !value
+        ) {
+          return;
+        }
+        declarations.set(normalizedProperty, { property, value });
+      });
+    if (declarations.size) {
+      styledCandidates.push({
+        text: normalizeHeroLineText(getTextFromHtmlNode(node)),
+        declarations,
+      });
+    }
+    node.children.forEach(collectStyles);
+  };
+
+  collectStyles(fragment);
+
+  const matchingStyledCandidates = normalizedLineText
+    ? styledCandidates
+        .filter(
+          (item) =>
+            item.text === normalizedLineText ||
+            item.text.includes(normalizedLineText),
+        )
+        .sort((a, b) => {
+          const aExact = a.text === normalizedLineText ? 0 : 1;
+          const bExact = b.text === normalizedLineText ? 0 : 1;
+          if (aExact !== bExact) return aExact - bExact;
+          return a.text.length - b.text.length;
+        })
+    : styledCandidates;
+
+  allowedProperties.forEach((property) => {
+    const candidate = matchingStyledCandidates.find((item) =>
+      item.declarations.has(property),
+    );
+    const declaration = candidate?.declarations.get(property);
+    if (declaration && !collectedStyles.has(property)) {
+      collectedStyles.set(property, declaration);
+    }
+  });
+
+  const declarations = allowedProperties
+    .map((property) => collectedStyles.get(property))
+    .filter((item): item is { property: string; value: string } =>
+      Boolean(item),
+    )
+    .map((item) => `${item.property}: ${withImportantStyleValue(item.value)}`)
+    .join("; ");
+
+  const semanticDeclarations: string[] = [];
+  const hasSemanticTag = (tags: string[]) => {
+    let matched = false;
+    const visit = (node: HtmlNode) => {
+      if (matched || node.type !== "element") return;
+      const tagName = node.tagName.toLowerCase();
+      const text = normalizeHeroLineText(getTextFromHtmlNode(node));
+      if (
+        tags.includes(tagName) &&
+        (!normalizedLineText ||
+          text === normalizedLineText ||
+          text.includes(normalizedLineText))
+      ) {
+        matched = true;
+        return;
+      }
+      node.children.forEach(visit);
+    };
+    visit(fragment);
+    return matched;
+  };
+
+  if (hasSemanticTag(["strong", "b"]) && !collectedStyles.has("font-weight")) {
+    semanticDeclarations.push("font-weight: 700 !important");
+  }
+  if (hasSemanticTag(["em", "i"]) && !collectedStyles.has("font-style")) {
+    semanticDeclarations.push("font-style: italic !important");
+  }
+  if (hasSemanticTag(["u"]) && !collectedStyles.has("text-decoration")) {
+    semanticDeclarations.push("text-decoration: underline !important");
+  }
+  if (
+    hasSemanticTag(["s", "strike", "del"]) &&
+    !collectedStyles.has("text-decoration")
+  ) {
+    semanticDeclarations.push("text-decoration: line-through !important");
+  }
+
+  return [declarations, ...semanticDeclarations].filter(Boolean).join("; ");
+}
+
+function setDextaAcademy4HeroDisplayHtml(
+  node: ElementNode,
+  fieldKey: string,
+  value: string,
+) {
+  if (fieldKey !== "headline" || !getClassList(node).includes("hero-display")) {
+    return false;
+  }
+
+  const lines = getDextaAcademy4HeroHeadlineLines(value);
+  if (!lines[0] && !lines[1]) return false;
+
+  setInnerHtml(
+    node,
+    lines
+      .slice(0, 2)
+      .map((line) => `<span>${escapeHtml(line)}</span>`)
+      .join(""),
+  );
+
+  const style = getDextaAcademy4HeroStyle(value);
+  if (style) {
+    setAttr(node, "style", style);
+    node.children.forEach((child, index) => {
+      if (child.type !== "element") return;
+      const lineStyle = getDextaAcademy4HeroStyle(value, lines[index] ?? "");
+      setAttr(child, "style", [style, lineStyle].filter(Boolean).join("; "));
+    });
+  }
+
+  return true;
+}
+
+function setDextaAcademy4EyebrowHtml(
+  node: ElementNode,
+  fieldKey: string,
+  value: string,
+) {
+  if (fieldKey !== "eyebrow" || !getClassList(node).includes("hero-eyebrow")) {
+    return false;
+  }
+
+  const text = getPlainTextFromHtml(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return false;
+
+  setInnerHtml(
+    node,
+    `<span aria-hidden="true"></span>${escapeHtml(text)}<span aria-hidden="true"></span>`,
+  );
+  const style = getDextaAcademy4HeroStyle(value);
+  if (style) setAttr(node, "style", style);
+  return true;
 }
 
 function createElementNode(
@@ -1050,6 +1329,18 @@ function applySection(
     for (const sectionRoot of roots) {
       for (const node of queryAll(sectionRoot, field.selector)) {
         if (field.target === "innerHTML") {
+          if (
+            templateSlug === "dexta-academy-4" &&
+            setDextaAcademy4HeroDisplayHtml(node, field.key, toText(value))
+          ) {
+            continue;
+          }
+          if (
+            templateSlug === "dexta-academy-4" &&
+            setDextaAcademy4EyebrowHtml(node, field.key, toText(value))
+          ) {
+            continue;
+          }
           setRichTextHtml(node, toText(value));
         } else if (field.target === "attribute") {
           const attribute =
@@ -1070,6 +1361,9 @@ function applySection(
             asset ? `url("${asset}")` : "none",
           );
         } else if (field.target === "cssVariable" && field.cssVariable) {
+          if (!shouldApplyStaticResponsiveScope(field)) {
+            continue;
+          }
           setStyleDeclaration(
             node,
             field.cssVariable,
@@ -1224,6 +1518,9 @@ function applySection(
               asset ? `url("${asset}")` : "none",
             );
           } else if (field.target === "cssVariable" && field.cssVariable) {
+            if (!shouldApplyStaticResponsiveScope(field)) {
+              continue;
+            }
             setStyleDeclaration(
               node,
               field.cssVariable,
@@ -1385,6 +1682,10 @@ function applyDocumentIdentity(
 function getThemeVariableDeclarations(content: SchoolTemplateProjectContent) {
   const primary = content.theme.primaryColor;
   const secondary = content.theme.secondaryColor;
+  const templateGreen = content.theme.templateGreenColor || "#378F00";
+  const templateLightGreen = content.theme.templateLightGreenColor || "#91B900";
+  const templateYellow = content.theme.templateYellowColor || "#E6AE00";
+  const templateOrange = content.theme.templateOrangeColor || "#D98100";
   const primaryDark = `color-mix(in srgb, ${primary} 78%, #000)`;
   const primarySoft = `color-mix(in srgb, ${primary} 16%, #fff)`;
   const secondaryDark = `color-mix(in srgb, ${secondary} 82%, #000)`;
@@ -1393,6 +1694,10 @@ function getThemeVariableDeclarations(content: SchoolTemplateProjectContent) {
   const common = `
   --dexta-school-primary: ${primary};
   --dexta-school-secondary: ${secondary};
+  --dexta-school-green: ${templateGreen};
+  --dexta-school-light-green: ${templateLightGreen};
+  --dexta-school-yellow: ${templateYellow};
+  --dexta-school-orange: ${templateOrange};
   --bs-primary: ${primary};
   --bs-secondary: ${secondary};`;
 
@@ -1418,7 +1723,11 @@ function getThemeVariableDeclarations(content: SchoolTemplateProjectContent) {
   --bg-deep: ${primaryDark};
   --accent: ${secondary};
   --accent-deep: ${secondaryDark};
-  --accent-2: ${secondarySoft};`;
+  --accent-2: ${secondarySoft};
+  --dexta-academy-2-green: ${templateGreen};
+  --dexta-academy-2-light-green: ${templateLightGreen};
+  --dexta-academy-2-yellow: ${templateYellow};
+  --dexta-academy-2-orange: ${templateOrange};`;
     case "dexta-academy-3":
       return `${common}
   --navy: ${primary};
@@ -3577,28 +3886,51 @@ function isSafeFontStylesheetUrl(value: string) {
   }
 }
 
+function getGoogleFontFamilyName(value: unknown) {
+  const text = String(value ?? "")
+    .trim()
+    .replace(/^["']|["']$/g, "");
+  if (!text) return "";
+  const family =
+    text
+      .split(",")[0]
+      ?.trim()
+      .replace(/^["']|["']$/g, "") ?? "";
+  if (
+    !family ||
+    /^(inherit|initial|unset|serif|sans-serif|monospace|cursive|fantasy|system-ui)$/i.test(
+      family,
+    )
+  ) {
+    return "";
+  }
+
+  return family;
+}
+
+function collectRichTextFontFamilies(value: unknown) {
+  const text = String(value ?? "");
+  if (!text || !/font-family\s*:/i.test(text)) return [];
+
+  const families = new Set<string>();
+  const pattern = /font-family\s*:\s*([^;"']*(?:"[^"]*"|'[^']*')?[^;]*)/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text))) {
+    const family = getGoogleFontFamilyName(match[1]);
+    if (family) families.add(family);
+  }
+
+  return Array.from(families);
+}
+
 function collectFontStylesheetUrls(content: SchoolTemplateProjectContent) {
   const urls = new Set<string>();
 
   // Helper to build a Google Fonts URL from a font family name
   const addGoogleFont = (value: string | undefined | null) => {
-    const text = String(value ?? "")
-      .trim()
-      .replace(/^["']|["']$/g, "");
-    if (!text) return;
-    const family =
-      text
-        .split(",")[0]
-        ?.trim()
-        .replace(/^["']|["']$/g, "") ?? "";
-    if (
-      !family ||
-      /^(inherit|initial|unset|serif|sans-serif|monospace|cursive|fantasy|system-ui)$/i.test(
-        family,
-      )
-    ) {
-      return;
-    }
+    const family = getGoogleFontFamilyName(value);
+    if (!family) return;
     const encoded = encodeURIComponent(family).replace(/%20/g, "+");
     urls.add(
       `https://fonts.googleapis.com/css2?family=${encoded}:ital,wght@0,100..900;1,100..900&display=swap`,
@@ -3625,11 +3957,13 @@ function collectFontStylesheetUrls(content: SchoolTemplateProjectContent) {
   }
   if (content.templateSlug === "dexta-academy-4") {
     urls.add(
-      "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap",
+      "https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap",
     );
   }
   const scanFields = (fields: Record<string, unknown>) => {
     for (const [key, value] of Object.entries(fields)) {
+      collectRichTextFontFamilies(value).forEach(addGoogleFont);
+
       const normalizedKey = key.toLowerCase();
       if (
         !normalizedKey.includes("fontstylesheeturl") &&
@@ -3727,7 +4061,7 @@ function getBodyFont(content: SchoolTemplateProjectContent) {
     return rawFont || "Manrope";
   }
   if (content.templateSlug === "dexta-academy-4") {
-    return rawFont || "Poppins";
+    return rawFont || "Manrope";
   }
   return rawFont;
 }
@@ -4114,15 +4448,274 @@ function getThemeRuntimeMarkup(
     node.innerHTML = /^(h[1-6]|p)$/.test(tagName) ? toInlineHtmlExport(value) : toText(value);
   }
 
+  function escapeHtmlTextExport(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function normalizeAcademyFourHeroLineExport(value) {
+    return String(value || "").replace(/\\s+/g, " ").trim();
+  }
+
+  function getAcademyFourHeroHeadlineLinesExport(value) {
+    var container = document.createElement("div");
+    container.innerHTML = toText(value);
+    container.querySelectorAll("br").forEach(function (breakNode) {
+      breakNode.replaceWith(document.createTextNode("\\n"));
+    });
+
+    var directSpanLines = Array.from(container.children)
+      .filter(function (node) {
+        return String(node.tagName || "").toLowerCase() === "span";
+      })
+      .map(function (node) {
+        return normalizeAcademyFourHeroLineExport(node.textContent || "");
+      })
+      .filter(Boolean);
+    if (directSpanLines.length >= 2) {
+      return [directSpanLines[0], directSpanLines.slice(1).join(" ")];
+    }
+
+    var blockNodes = Array.from(container.children).filter(function (node) {
+      return /^(p|div|h[1-6]|blockquote)$/i.test(node.tagName || "");
+    });
+    var lines = blockNodes.length
+      ? blockNodes.map(function (node) {
+          return normalizeAcademyFourHeroLineExport(node.textContent || "");
+        })
+      : String(container.textContent || "")
+          .split(/\\n+/)
+          .map(normalizeAcademyFourHeroLineExport);
+
+    lines = lines.filter(Boolean);
+    if (lines.length >= 2) {
+      return [lines[0], lines.slice(1).join(" ")];
+    }
+
+    var words = normalizeAcademyFourHeroLineExport(lines[0] || "")
+      .split(/\\s+/)
+      .filter(Boolean);
+    if (words.length <= 1) return [words[0] || "", ""];
+
+    var bestIndex = 1;
+    var bestScore = Infinity;
+    for (var index = 1; index < words.length; index += 1) {
+      var first = words.slice(0, index).join(" ");
+      var second = words.slice(index).join(" ");
+      var score = Math.abs(first.length - second.length);
+      if (score < bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    }
+
+    return [
+      words.slice(0, bestIndex).join(" "),
+      words.slice(bestIndex).join(" ")
+    ];
+  }
+
+  function getAcademyFourHeroTextStylesExport(value) {
+    var container = document.createElement("div");
+    container.innerHTML = toText(value);
+    var styledNodes = Array.from(container.querySelectorAll("[style]"));
+    var styles = [];
+    var richTextProperties = [
+        "font-family",
+        "font-size",
+        "font-style",
+        "font-weight",
+        "text-decoration",
+        "text-transform",
+        "text-align",
+        "letter-spacing",
+        "color",
+        "background-color"
+      ];
+
+    richTextProperties.forEach(function (property) {
+      for (var index = 0; index < styledNodes.length; index += 1) {
+        var node = styledNodes[index];
+        var value = node.style && node.style.getPropertyValue(property);
+        if (value) {
+          styles.push({ property: property, value: value });
+          break;
+        }
+      }
+    });
+
+    if (container.querySelector("strong,b")) {
+      styles.push({ property: "font-weight", value: "700" });
+    }
+    if (container.querySelector("em,i")) {
+      styles.push({ property: "font-style", value: "italic" });
+    }
+    if (container.querySelector("u")) {
+      styles.push({ property: "text-decoration", value: "underline" });
+    }
+    if (container.querySelector("s,strike,del")) {
+      styles.push({ property: "text-decoration", value: "line-through" });
+    }
+
+    return styles.filter(function (item, index, items) {
+      return items.findIndex(function (candidate) {
+        return candidate.property === item.property;
+      }) === index;
+    });
+  }
+
+  function getAcademyFourHeroLineTextStylesExport(value, lines) {
+    var container = document.createElement("div");
+    container.innerHTML = toText(value);
+    var styledNodes = Array.from(container.querySelectorAll("[style]"));
+    var richTextProperties = [
+        "font-family",
+        "font-size",
+        "font-style",
+        "font-weight",
+        "text-decoration",
+        "text-transform",
+        "text-align",
+        "letter-spacing",
+        "color",
+        "background-color"
+      ];
+    var semanticSelectors = [
+      { selector: "strong,b", property: "font-weight", value: "700" },
+      { selector: "em,i", property: "font-style", value: "italic" },
+      { selector: "u", property: "text-decoration", value: "underline" },
+      { selector: "s,strike,del", property: "text-decoration", value: "line-through" }
+    ];
+
+    function normalizeText(text) {
+      return String(text || "").replace(/\\s+/g, " ").trim();
+    }
+
+    function nodeMatchesLine(node, line) {
+      var nodeText = normalizeText(node.textContent || "");
+      var lineText = normalizeText(line);
+      return Boolean(lineText && (nodeText === lineText || nodeText.indexOf(lineText) >= 0));
+    }
+
+    function getBestStyledNode(property, line) {
+      return styledNodes
+        .filter(function (node) {
+          return nodeMatchesLine(node, line) && node.style && node.style.getPropertyValue(property);
+        })
+        .sort(function (a, b) {
+          var aText = normalizeText(a.textContent || "");
+          var bText = normalizeText(b.textContent || "");
+          var lineText = normalizeText(line);
+          var aExact = aText === lineText ? 0 : 1;
+          var bExact = bText === lineText ? 0 : 1;
+          if (aExact !== bExact) return aExact - bExact;
+          return aText.length - bText.length;
+        })[0];
+    }
+
+    return lines.map(function (line) {
+      var styles = [];
+      richTextProperties.forEach(function (property) {
+        var node = getBestStyledNode(property, line);
+        var value = node && node.style && node.style.getPropertyValue(property);
+        if (value) styles.push({ property: property, value: value });
+      });
+
+      semanticSelectors.forEach(function (item) {
+        var node = Array.from(container.querySelectorAll(item.selector)).find(function (candidate) {
+          return nodeMatchesLine(candidate, line);
+        });
+        if (node) styles.push({ property: item.property, value: item.value });
+      });
+
+      return styles.filter(function (item, index, items) {
+        return items.findIndex(function (candidate) {
+          return candidate.property === item.property;
+        }) === index;
+      });
+    });
+  }
+
+  function applyAcademyFourHeroDisplayExport(node, field, value) {
+    if (
+      ${escapeScriptJson(content.templateSlug !== "dexta-academy-4")} ||
+      !field ||
+      field.key !== "headline" ||
+      !node.classList ||
+      !node.classList.contains("hero-display")
+    ) {
+      return false;
+    }
+
+    var lines = getAcademyFourHeroHeadlineLinesExport(value);
+    if (!lines[0] && !lines[1]) return false;
+
+    node.innerHTML = lines
+      .slice(0, 2)
+      .map(function (line) {
+        return "<span>" + escapeHtmlTextExport(line) + "</span>";
+      })
+      .join("");
+
+    var styles = getAcademyFourHeroTextStylesExport(value);
+    if (styles.length) {
+      [node].concat(Array.from(node.querySelectorAll(":scope > span"))).forEach(function (target) {
+        styles.forEach(function (item) {
+          target.style.setProperty(item.property, item.value, "important");
+        });
+      });
+    }
+    var lineStyles = getAcademyFourHeroLineTextStylesExport(value, lines.slice(0, 2));
+    Array.from(node.querySelectorAll(":scope > span")).forEach(function (target, index) {
+      (lineStyles[index] || []).forEach(function (item) {
+        target.style.setProperty(item.property, item.value, "important");
+      });
+    });
+
+    return true;
+  }
+
+  function applyAcademyFourHeroEyebrowExport(node, field, value) {
+    if (
+      ${escapeScriptJson(content.templateSlug !== "dexta-academy-4")} ||
+      !field ||
+      field.key !== "eyebrow" ||
+      !node.classList ||
+      !node.classList.contains("hero-eyebrow")
+    ) {
+      return false;
+    }
+
+    var container = document.createElement("div");
+    container.innerHTML = toText(value);
+    var text = String(container.textContent || value || "").replace(/\\s+/g, " ").trim();
+    if (!text) return false;
+    node.innerHTML =
+      '<span aria-hidden="true"></span>' +
+      escapeHtmlTextExport(text) +
+      '<span aria-hidden="true"></span>';
+    var styles = getAcademyFourHeroTextStylesExport(value);
+    if (styles.length) {
+      styles.forEach(function (item) {
+        node.style.setProperty(item.property, item.value, "important");
+      });
+    }
+    return true;
+  }
+
   function isIframeEmbedFieldExport(field) {
     return field && field.type === "textarea" && field.target === "attribute" && (
       field.key === "formIframe" || field.key === "formEmbedCode" || field.key === "iframeEmbedCode"
     );
   }
 
-  function parseIframeEmbedExport(value) {
-    var text = toText(value).trim();
-    if (!text) return null;
+	  function parseIframeEmbedExport(value) {
+	    var text = toText(value).trim();
+	    if (!text) return null;
     if (text.toLowerCase().indexOf("<iframe") === -1) {
       return { src: text, attrs: {} };
     }
@@ -4135,14 +4728,27 @@ function getThemeRuntimeMarkup(
       var v = iframe.getAttribute(name);
       if (v !== null && v !== "") attrs[name] = v;
     });
-    return { src: iframe.getAttribute("src") || "", attrs: attrs };
-  }
+	    return { src: iframe.getAttribute("src") || "", attrs: attrs };
+	  }
 
-  function applyExportField(node, field, value) {
-    if (field.target === "threeConfig") return;
+	  function isResponsiveScopeActiveExport(field) {
+	    var scope = field && field.scope ? String(field.scope) : "";
+	    if (!scope || scope === "base") return true;
+	    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+	      return scope === "desktop";
+	    }
+	    if (scope === "desktop") return window.matchMedia("(min-width: 992px)").matches;
+	    if (scope === "tablet") return window.matchMedia("(min-width: 768px) and (max-width: 991.98px)").matches;
+	    if (scope === "mobile") return window.matchMedia("(max-width: 767.98px)").matches;
+	    return true;
+	  }
 
-    if (field.target === "cssVariable" && field.cssVariable) {
-      var cssValue;
+	  function applyExportField(node, field, value) {
+	    if (field.target === "threeConfig") return;
+
+	    if (field.target === "cssVariable" && field.cssVariable) {
+	      if (!isResponsiveScopeActiveExport(field)) return;
+	      var cssValue;
       if (field.type === "image" || field.type === "model3d") {
         var asset = toText(value).replace(/"/g, "&quot;");
         cssValue = asset ? 'url("' + asset + '")' : "none";
@@ -4162,6 +4768,8 @@ function getThemeRuntimeMarkup(
 	    }
 
     if (field.target === "innerHTML") {
+      if (applyAcademyFourHeroDisplayExport(node, field, value)) return;
+      if (applyAcademyFourHeroEyebrowExport(node, field, value)) return;
       setElementHtmlExport(node, value);
       return;
     }
@@ -5022,22 +5630,6 @@ function patchHero3dScript(value: string) {
     .replace(
       /const MODEL_SCALE_TARGET\s*=\s*[\d.]+;/,
       "const MODEL_SCALE_TARGET = window.schoolHero3dConfig?.transform?.scale ?? 4.5;",
-    )
-    .replace(
-      /const CAP_BODY_COLOR\s*=\s*new THREE\.Color\(0x[0-9a-fA-F]+\);/,
-      "const CAP_BODY_COLOR = new THREE.Color(window.schoolHero3dConfig?.materials?.capBodyColor || 0x060d1e);",
-    )
-    .replace(
-      /const CAP_BODY_EMISSIVE\s*=\s*new THREE\.Color\(0x[0-9a-fA-F]+\);/,
-      "const CAP_BODY_EMISSIVE = new THREE.Color(window.schoolHero3dConfig?.materials?.capBodyEmissiveColor || 0x010408);",
-    )
-    .replace(
-      /const TASSEL_CORD_COLOR\s*=\s*new THREE\.Color\(0x[0-9a-fA-F]+\);/,
-      "const TASSEL_CORD_COLOR = new THREE.Color(window.schoolHero3dConfig?.materials?.tasselCordColor || 0x2a5fc0);",
-    )
-    .replace(
-      /const TASSEL_TIP_COLOR\s*=\s*new THREE\.Color\(0x[0-9a-fA-F]+\);/,
-      "const TASSEL_TIP_COLOR = new THREE.Color(window.schoolHero3dConfig?.materials?.tasselTipColor || 0x1a3d8a);",
     )
     .replace(
       /obj\.position\.x \+= sz2\.x \* 0\.10;/,

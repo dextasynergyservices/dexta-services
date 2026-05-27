@@ -5,7 +5,18 @@ export type TransformOptions = Record<
   TransformValue | null | undefined
 >;
 
-const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/`;
+const CLOUDINARY_IMAGE_UPLOAD_URL_PATTERN =
+  /^https:\/\/res\.cloudinary\.com\/([^/]+)\/image\/upload\//i;
+
+function getConfiguredCloudinaryCloudName() {
+  return process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim() ?? "";
+}
+
+function getCloudinaryImageUploadBaseUrl(
+  cloudName = getConfiguredCloudinaryCloudName(),
+) {
+  return `https://res.cloudinary.com/${cloudName}/image/upload/`;
+}
 
 function serializeTransforms(options?: TransformOptions) {
   if (!options) {
@@ -29,11 +40,11 @@ export function getCloudinaryUrl(publicId: string, options?: TransformOptions) {
     ...options,
   };
 
-  return `${CLOUDINARY_BASE_URL}${serializeTransforms(defaultOptions)}${publicId}`;
+  return `${getCloudinaryImageUploadBaseUrl()}${serializeTransforms(defaultOptions)}${publicId}`;
 }
 
 export function isCloudinaryUrl(src: string) {
-  return src.startsWith(CLOUDINARY_BASE_URL);
+  return CLOUDINARY_IMAGE_UPLOAD_URL_PATTERN.test(src);
 }
 
 export function getCloudinaryPublicId(value: string) {
@@ -41,7 +52,13 @@ export function getCloudinaryPublicId(value: string) {
     return null;
   }
 
-  if (!isCloudinaryUrl(value)) {
+  const match = value.match(CLOUDINARY_IMAGE_UPLOAD_URL_PATTERN);
+  if (!match) {
+    return value;
+  }
+
+  const configuredCloudName = getConfiguredCloudinaryCloudName();
+  if (!configuredCloudName || match[1] !== configuredCloudName) {
     return value;
   }
 
