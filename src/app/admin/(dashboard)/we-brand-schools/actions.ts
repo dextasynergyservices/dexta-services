@@ -3587,7 +3587,10 @@ export async function exportSchoolWebsiteProject(
       content: contentJson,
       sourceSnapshot: safeProjectContent.sourceSnapshot,
     });
-    const exportFileName = `${slugifyExportFileName(project.schoolName)}-website.zip`;
+    const exportFileName =
+      project.templateSlug === "dexta-academy-3"
+        ? `${slugifyExportFileName(project.schoolName)}-website-${Date.now()}.zip`
+        : `${slugifyExportFileName(project.schoolName)}-website.zip`;
     let exportZipUrl: string;
 
     try {

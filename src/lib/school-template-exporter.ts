@@ -3,7 +3,9 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { prepareDextaAcademyThreeContactRenderingContent } from "@/lib/dexta-academy-3-contact-rendering";
 import { resolveSchoolTemplateAsset } from "@/lib/school-template-assets";
+import { getSchoolTemplateManifest } from "@/lib/school-template-manifests";
 import {
+  buildSchoolTemplateSourceSnapshot,
   type SchoolTemplateProjectContent,
   type SchoolTemplateProjectFieldValue,
   type SchoolTemplateProjectPageContent,
@@ -421,6 +423,26 @@ function removeStyleDeclaration(node: ElementNode, property: string) {
   }
 }
 
+function applyDextaAcademyThreeInlineFontFamily(
+  node: ElementNode,
+  value: unknown,
+) {
+  const family = getGoogleFontFamilyName(value);
+  if (!family) return;
+
+  const stack = `${JSON.stringify(family)}, "Segoe UI", sans-serif !important`;
+  const applyToNodeAndChildren = (target: ElementNode) => {
+    setStyleDeclaration(target, "font-family", stack);
+    for (const child of target.children) {
+      if (child.type === "element") {
+        applyToNodeAndChildren(child);
+      }
+    }
+  };
+
+  applyToNodeAndChildren(node);
+}
+
 function applySectionFontOverrides(root: ElementNode) {
   const nodes = queryAll(root, "[data-dexta-font-stylesheet]");
   for (const node of nodes) {
@@ -747,6 +769,123 @@ function getDextaAcademy4HeroStyle(value: string, lineText = "") {
   }
 
   return [declarations, ...semanticDeclarations].filter(Boolean).join("; ");
+}
+
+function normalizeDextaAcademyThreeHeroLine(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function splitDextaAcademyThreeHeroText(value: string) {
+  const words = normalizeDextaAcademyThreeHeroLine(value)
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!words.length) return [];
+  if (words.length <= 4) return words;
+
+  const lines: string[] = [];
+  const remaining = words.slice();
+  for (let index = 0; index < 4; index += 1) {
+    const remainingSlots = 4 - index;
+    const take = Math.max(1, Math.ceil(remaining.length / remainingSlots));
+    lines.push(remaining.splice(0, take).join(" "));
+  }
+  return lines;
+}
+
+function getDextaAcademyThreeHeroLines(value: string) {
+  const lineToken = "DEXTA_TEMPLATE_THREE_HERO_LINE";
+  const htmlWithLineBreaks = value
+    .replace(/<br\s*\/?>/gi, ` ${lineToken} `)
+    .replace(/<\/(?:p|div|h[1-6])>/gi, ` ${lineToken} `);
+  const plainText = getPlainTextFromHtml(htmlWithLineBreaks).trim();
+  const lines = plainText
+    .split(lineToken)
+    .map(normalizeDextaAcademyThreeHeroLine)
+    .filter(Boolean);
+
+  if (lines.length > 1) return lines;
+  return splitDextaAcademyThreeHeroText(lines[0] ?? "");
+}
+
+function splitAtLastWord(value: string) {
+  const parts = normalizeDextaAcademyThreeHeroLine(value)
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!parts.length) return { before: "", last: "" };
+  if (parts.length === 1) return { before: "", last: parts[0] };
+  return {
+    before: `${parts.slice(0, -1).join(" ")} `,
+    last: parts[parts.length - 1],
+  };
+}
+
+function splitAtFirstWord(value: string) {
+  const parts = normalizeDextaAcademyThreeHeroLine(value)
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!parts.length) return { first: "", after: "" };
+  if (parts.length === 1) return { first: parts[0], after: "" };
+  return {
+    first: parts[0],
+    after: ` ${parts.slice(1).join(" ")}`,
+  };
+}
+
+function sanitizeDextaAcademyThreeHeroFontSize(value: string | undefined) {
+  const text = String(value ?? "").trim();
+  return /^\d+(?:\.\d+)?(?:px|rem|em|%)$/i.test(text) ? text : "";
+}
+
+function getDextaAcademyThreeHeroFontSize(value: string) {
+  const styleMatch = value.match(/font-size\s*:\s*([^;"]+)/i);
+  return sanitizeDextaAcademyThreeHeroFontSize(styleMatch?.[1]);
+}
+
+function getResponsiveDextaAcademyThreeHeroFontSize(value: string) {
+  const size = getDextaAcademyThreeHeroFontSize(value);
+  const pxMatch = size.match(/^(\d+(?:\.\d+)?)px$/i);
+  if (!pxMatch) return size;
+
+  const pixels = Number(pxMatch[1]);
+  if (!Number.isFinite(pixels) || pixels <= 52) return size;
+  return `clamp(2.85rem, 10vw, ${size})`;
+}
+
+function setDextaAcademyThreeHeroTitleHtml(
+  node: ElementNode,
+  fieldKey: string,
+  value: string,
+) {
+  if (fieldKey !== "headline" || !getClassList(node).includes("hero__title")) {
+    return false;
+  }
+
+  const lines = getDextaAcademyThreeHeroLines(value);
+  if (!lines.length) return false;
+
+  const lineOne = lines[0] || "";
+  const lineTwo = splitAtLastWord(lines[1] || "");
+  const lineThree = splitAtFirstWord(lines[2] || "");
+  const lineFour = lines.slice(3).join(" ");
+
+  setInnerHtml(
+    node,
+    [
+      `<span class="hero__line"><span class="hero__segment hero__segment--drop-top hero__step-3">${escapeHtml(lineOne)}</span></span>`,
+      `<span class="hero__line"><span class="hero__segment hero__segment--drop-top hero__step-3">${escapeHtml(lineTwo.before)}</span><span class="hero__accent hero__accent--fade hero__accent--joyful hero__step-1">${escapeHtml(lineTwo.last)}</span></span>`,
+      `<span class="hero__line"><span class="hero__accent hero__accent--fade hero__accent--bold hero__step-2">${escapeHtml(lineThree.first)}</span><span class="hero__segment hero__segment--drop-bottom hero__step-4">${escapeHtml(lineThree.after)}</span></span>`,
+      `<span class="hero__line"><span class="hero__segment hero__segment--drop-bottom hero__step-4">${escapeHtml(lineFour)}</span></span>`,
+    ].join(""),
+  );
+
+  const heroFontSize = getResponsiveDextaAcademyThreeHeroFontSize(value);
+  if (heroFontSize) {
+    setStyleDeclaration(node, "font-size", `${heroFontSize} !important`);
+  } else {
+    removeStyleDeclaration(node, "font-size");
+  }
+
+  return true;
 }
 
 function setDextaAcademy4HeroDisplayHtml(
@@ -1330,6 +1469,12 @@ function applySection(
       for (const node of queryAll(sectionRoot, field.selector)) {
         if (field.target === "innerHTML") {
           if (
+            templateSlug === "dexta-academy-3" &&
+            setDextaAcademyThreeHeroTitleHtml(node, field.key, toText(value))
+          ) {
+            continue;
+          }
+          if (
             templateSlug === "dexta-academy-4" &&
             setDextaAcademy4HeroDisplayHtml(node, field.key, toText(value))
           ) {
@@ -1360,6 +1505,13 @@ function applySection(
             "background-image",
             asset ? `url("${asset}")` : "none",
           );
+        } else if (field.target === "inlineStyle") {
+          if (
+            templateSlug === "dexta-academy-3" &&
+            field.key.toLowerCase().includes("fontfamily")
+          ) {
+            applyDextaAcademyThreeInlineFontFamily(node, value);
+          }
         } else if (field.target === "cssVariable" && field.cssVariable) {
           if (!shouldApplyStaticResponsiveScope(field)) {
             continue;
@@ -1537,6 +1689,13 @@ function applySection(
               "background-image",
               asset ? `url("${asset}")` : "none",
             );
+          } else if (field.target === "inlineStyle") {
+            if (
+              templateSlug === "dexta-academy-3" &&
+              field.key.toLowerCase().includes("fontfamily")
+            ) {
+              applyDextaAcademyThreeInlineFontFamily(node, value);
+            }
           } else if (field.target === "cssVariable" && field.cssVariable) {
             if (!shouldApplyStaticResponsiveScope(field)) {
               continue;
@@ -1767,6 +1926,559 @@ function applyDextaAcademyOneExportLoader(
   }
 }
 
+function getDextaAcademyFourLogoUrl(content: SchoolTemplateProjectContent) {
+  const themeLogoUrl = getThemeLogoUrl(content);
+  if (themeLogoUrl) return themeLogoUrl;
+
+  const headerLogo = getSharedSectionField(content, "header", "logo");
+  return resolveSchoolTemplateAsset(
+    headerLogo,
+    { type: "image" },
+    {
+      cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "",
+    },
+  );
+}
+
+function applyDextaAcademyFourExportLogo(
+  root: ElementNode,
+  content: SchoolTemplateProjectContent,
+) {
+  if (content.templateSlug !== "dexta-academy-4") return;
+
+  const logoUrl = getDextaAcademyFourLogoUrl(content);
+  if (!logoUrl) return;
+
+  for (const image of queryAll(
+    root,
+    ".hero-brand img, .school-footer-brand-logo, .site-preloader-logo",
+  )) {
+    setAttr(image, "src", logoUrl);
+    if (!getAttr(image, "alt")) {
+      setAttr(image, "alt", content.theme.brandName || "School logo");
+    }
+  }
+}
+
+function getDextaAcademyThreeHeaderText(
+  content: SchoolTemplateProjectContent,
+  fieldKey: string,
+  fallback = "",
+) {
+  const value = getSharedSectionField(content, "site-header", fieldKey);
+  const text = toText(value).trim();
+  return text || fallback;
+}
+
+function getDextaAcademyThreeHeaderNumber(
+  content: SchoolTemplateProjectContent,
+  fieldKey: string,
+  fallback: number,
+) {
+  const value = getSharedSectionField(content, "site-header", fieldKey);
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function clampDextaAcademyThreeExportNumber(
+  value: number,
+  min: number,
+  max: number,
+) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getDextaAcademyThreeExportCssValue(value: unknown, fallback = "") {
+  const text = String(value ?? "").trim();
+  if (!text) return fallback;
+  return text.replace(/[<>{};]/g, "");
+}
+
+function getDextaAcademyThreeExportColorWithOpacity(
+  color: string,
+  opacity: number,
+) {
+  const normalizedOpacity = clampDextaAcademyThreeExportNumber(opacity, 0, 100);
+  if (normalizedOpacity >= 100) return color;
+
+  const hexMatch = color.match(/^#([a-f\d]{3}|[a-f\d]{6})$/i);
+  if (!hexMatch) {
+    return `color-mix(in srgb, ${color} ${normalizedOpacity}%, transparent)`;
+  }
+
+  const hex =
+    hexMatch[1].length === 3
+      ? hexMatch[1]
+          .split("")
+          .map((character) => `${character}${character}`)
+          .join("")
+      : hexMatch[1];
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+  const alpha = Number((normalizedOpacity / 100).toFixed(3));
+
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
+function getDextaAcademyThreeExportAnchorHref(
+  content: SchoolTemplateProjectContent,
+  fieldKey: string,
+  anchorId: string,
+  pageSlug: string,
+) {
+  const fallback =
+    pageSlug === "home" ? `#${anchorId}` : `index.html#${anchorId}`;
+  const value = getDextaAcademyThreeHeaderText(
+    content,
+    fieldKey,
+    `index.html#${anchorId}`,
+  );
+
+  return value === `#${anchorId}` || value === `index.html#${anchorId}`
+    ? fallback
+    : value;
+}
+
+function getDextaAcademyThreeExportBrandText(
+  content: SchoolTemplateProjectContent,
+  themeKey: "brandName" | "brandTagline",
+  headerKey: "brandPrimary" | "brandSecondary",
+  fallback: string,
+) {
+  const themeValue = content.theme[themeKey];
+  if (themeValue !== null && themeValue !== undefined) {
+    const text = String(themeValue).trim();
+    if (text) return text;
+  }
+
+  return getDextaAcademyThreeHeaderText(content, headerKey, fallback);
+}
+
+function getDextaAcademyThreeExportLogoMarkup(
+  content: SchoolTemplateProjectContent,
+  className = "brand__crest",
+) {
+  const logoUrl = getThemeLogoUrl(content);
+  const brandName = content.theme.brandName || content.templateName;
+  const isLoaderLogo = className.includes("page-loader");
+  const logoWidth = isLoaderLogo
+    ? content.theme.loadingLogoWidth || content.theme.logoWidth || 46
+    : content.theme.logoWidth || 46;
+  const logoHeight = isLoaderLogo
+    ? content.theme.loadingLogoHeight || content.theme.logoHeight || 46
+    : content.theme.logoHeight || 46;
+  const logoBorder =
+    content.theme.logoBorderEnabled && !isLoaderLogo
+      ? `1px solid ${content.theme.logoBorderColor || "#ffc43d"}`
+      : "0";
+  const logoRadius = `${content.theme.logoBorderRadius || 16}px`;
+  const logoBackground = content.theme.logoBackgroundColor || "transparent";
+
+  if (!logoUrl) {
+    return `<span class="${escapeAttribute(className)} dexta-empty-logo-mark" hidden aria-hidden="true"></span>`;
+  }
+
+  return `<span class="${escapeAttribute(className)} dexta-theme-logo-mark" style="${escapeAttribute(
+    `background:${logoBackground}!important;border:${logoBorder}!important;border-radius:${logoRadius}!important;box-shadow:none!important;width:${logoWidth}px!important;height:${logoHeight}px!important;max-width:${logoWidth}px!important;display:grid!important;place-items:center!important;overflow:hidden;`,
+  )}" aria-hidden="true"><img src="${escapeAttribute(logoUrl)}" alt="${escapeAttribute(brandName)}"></span>`;
+}
+
+function getDextaAcademyThreeExportNavbarMarkup(
+  pageSlug: string,
+  content: SchoolTemplateProjectContent,
+) {
+  const currentPage = pageSlug === "home" ? "home" : pageSlug;
+  const programmesHref = getDextaAcademyThreeExportAnchorHref(
+    content,
+    "navProgrammesHref",
+    "programmes",
+    pageSlug,
+  );
+  const applyHref = getDextaAcademyThreeExportAnchorHref(
+    content,
+    "navApplyHref",
+    "how-to-apply",
+    pageSlug,
+  );
+  const headerCtaHref = getDextaAcademyThreeExportAnchorHref(
+    content,
+    "headerCtaHref",
+    "how-to-apply",
+    pageSlug,
+  );
+  const headerCtaText = getDextaAcademyThreeHeaderText(
+    content,
+    "headerCtaText",
+    "Apply Now",
+  );
+  const shouldOpenAdmissionModal =
+    pageSlug === "contact" &&
+    (headerCtaHref === "#how-to-apply" ||
+      headerCtaHref === "index.html#how-to-apply");
+  const hasHeaderCta = Boolean(headerCtaText && headerCtaHref);
+  const applyAttributes = shouldOpenAdmissionModal
+    ? 'href="#admission" data-admission-modal-open aria-controls="admission-modal"'
+    : `href="${escapeAttribute(headerCtaHref)}"`;
+  const brandPrimary = getDextaAcademyThreeExportBrandText(
+    content,
+    "brandName",
+    "brandPrimary",
+    content.theme.brandName || "DXT",
+  );
+  const brandSecondary = getDextaAcademyThreeExportBrandText(
+    content,
+    "brandTagline",
+    "brandSecondary",
+    content.theme.brandTagline || "Academy",
+  );
+  const brandLabel = [brandPrimary, brandSecondary].filter(Boolean).join(" ");
+  const navbarColor = getDextaAcademyThreeExportCssValue(
+    content.theme.navBarColor,
+    "#020c20",
+  );
+  const navbarOpacity = clampDextaAcademyThreeExportNumber(
+    Number(content.theme.navBarOpacity ?? 100),
+    0,
+    100,
+  );
+  const navbarBackground = content.theme.navBarTransparent
+    ? getDextaAcademyThreeExportColorWithOpacity(navbarColor, navbarOpacity)
+    : navbarColor;
+  const navbarBackdrop = content.theme.navBarTransparent
+    ? "blur(18px)"
+    : "none";
+  const brandNameColor = getDextaAcademyThreeExportCssValue(
+    content.theme.brandNameColor,
+    "#061a40",
+  );
+  const brandTaglineColor = getDextaAcademyThreeExportCssValue(
+    content.theme.brandTaglineColor,
+    "#061a40",
+  );
+  const navLinkColor = getDextaAcademyThreeExportCssValue(
+    content.theme.navLinkColor || content.theme.brandTaglineColor,
+    "#ffffff",
+  );
+  const navActiveColor =
+    content.theme.navHoverEnabled === false
+      ? navLinkColor
+      : getDextaAcademyThreeExportCssValue(
+          content.theme.navHoverColor,
+          "#f5b82e",
+        );
+  const navHoverColor = getDextaAcademyThreeExportCssValue(
+    content.theme.navHoverColor,
+    "#f5b82e",
+  );
+  const navFont = getGoogleFontFamilyName(
+    content.theme.navLinkFontFamily || content.theme.fontFamily,
+  );
+  const navFontStyle = navFont
+    ? `font-family:${JSON.stringify(navFont)},"Segoe UI",sans-serif!important;`
+    : "";
+  const headerStyle = `background:${navbarBackground}!important;background-color:${navbarBackground}!important;background-image:none!important;backdrop-filter:${navbarBackdrop}!important;`;
+  const brandStrongStyle = `color:${brandNameColor}!important;font-size:${Number(
+    content.theme.brandNameFontSize || 16,
+  )}px!important;`;
+  const brandSpanStyle = `color:${brandTaglineColor}!important;font-size:${Number(
+    content.theme.brandTaglineFontSize || 16,
+  )}px!important;`;
+  const navLinkStyle = `color:${navLinkColor}!important;${navFontStyle}`;
+  const currentNavLinkStyle = `color:${navActiveColor}!important;${navFontStyle}`;
+  const portalText = getDextaAcademyThreeHeaderText(
+    content,
+    "portalText",
+    "Portal",
+  );
+  const portalHref = getDextaAcademyThreeHeaderText(content, "portalHref", "#");
+  const hasPortalLink = Boolean(portalText && portalHref);
+  const portalButtonBg = getDextaAcademyThreeExportCssValue(
+    getDextaAcademyThreeHeaderText(content, "portalButtonBgColor", "#ffffff"),
+    "#ffffff",
+  );
+  const portalButtonBgOpacity = clampDextaAcademyThreeExportNumber(
+    getDextaAcademyThreeHeaderNumber(content, "portalButtonBgOpacity", 0),
+    0,
+    100,
+  );
+  const portalButtonBackground = getDextaAcademyThreeExportColorWithOpacity(
+    portalButtonBg,
+    portalButtonBgOpacity,
+  );
+  const portalButtonText = getDextaAcademyThreeExportCssValue(
+    getDextaAcademyThreeHeaderText(content, "portalButtonTextColor", "#ffffff"),
+    "#ffffff",
+  );
+  const portalButtonBorderColor = getDextaAcademyThreeExportCssValue(
+    getDextaAcademyThreeHeaderText(
+      content,
+      "portalButtonBorderColor",
+      "#ffffff",
+    ),
+    "#ffffff",
+  );
+  const portalButtonBorderWidth = clampDextaAcademyThreeExportNumber(
+    getDextaAcademyThreeHeaderNumber(content, "portalButtonBorderWidth", 0),
+    0,
+    12,
+  );
+  const portalButtonShapeStyle =
+    "display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;padding:12px 18px!important;border-radius:999px!important;font-weight:700!important;text-decoration:none!important;";
+  const portalButtonStyle = `${portalButtonShapeStyle}background:${portalButtonBackground}!important;background-color:${portalButtonBackground}!important;background-image:none!important;color:${portalButtonText}!important;border:${portalButtonBorderWidth}px solid ${portalButtonBorderColor}!important;${navFontStyle}`;
+  const headerButtonBg = getDextaAcademyThreeExportCssValue(
+    getDextaAcademyThreeHeaderText(content, "buttonBgColor", "#f3bf35"),
+    "#f3bf35",
+  );
+  const headerButtonBgOpacity = clampDextaAcademyThreeExportNumber(
+    getDextaAcademyThreeHeaderNumber(content, "buttonBgOpacity", 100),
+    0,
+    100,
+  );
+  const headerButtonBackground = getDextaAcademyThreeExportColorWithOpacity(
+    headerButtonBg,
+    headerButtonBgOpacity,
+  );
+  const headerButtonText = getDextaAcademyThreeExportCssValue(
+    getDextaAcademyThreeHeaderText(content, "buttonTextColor", "#09142f"),
+    "#09142f",
+  );
+  const headerButtonBorderColor = getDextaAcademyThreeExportCssValue(
+    getDextaAcademyThreeHeaderText(content, "buttonBorderColor", "#f3bf35"),
+    "#f3bf35",
+  );
+  const headerButtonBorderWidth = clampDextaAcademyThreeExportNumber(
+    getDextaAcademyThreeHeaderNumber(content, "buttonBorderWidth", 0),
+    0,
+    12,
+  );
+  const headerButtonStyle = `background:${headerButtonBackground}!important;background-color:${headerButtonBackground}!important;background-image:none!important;color:${headerButtonText}!important;border:${headerButtonBorderWidth}px solid ${headerButtonBorderColor}!important;${navFontStyle}`;
+  const links = [
+    {
+      href: getDextaAcademyThreeHeaderText(
+        content,
+        "navHomeHref",
+        "index.html",
+      ),
+      label: getDextaAcademyThreeHeaderText(content, "navHomeText", "Home"),
+      page: "home",
+    },
+    {
+      href: getDextaAcademyThreeHeaderText(
+        content,
+        "navAboutHref",
+        "about.html",
+      ),
+      label: getDextaAcademyThreeHeaderText(content, "navAboutText", "About"),
+      page: "about",
+    },
+    {
+      href: programmesHref,
+      label: getDextaAcademyThreeHeaderText(
+        content,
+        "navProgrammesText",
+        "Programmes",
+      ),
+    },
+    {
+      href: getDextaAcademyThreeHeaderText(
+        content,
+        "navGalleryHref",
+        "gallery.html",
+      ),
+      label: getDextaAcademyThreeHeaderText(
+        content,
+        "navGalleryText",
+        "Gallery",
+      ),
+      page: "gallery",
+    },
+    {
+      href: applyHref,
+      label: getDextaAcademyThreeHeaderText(
+        content,
+        "navApplyText",
+        "How To Apply",
+      ),
+    },
+    {
+      href: getDextaAcademyThreeHeaderText(
+        content,
+        "navContactHref",
+        "contact.html",
+      ),
+      label: getDextaAcademyThreeHeaderText(
+        content,
+        "navContactText",
+        "Contact",
+      ),
+      page: "contact",
+    },
+  ];
+  const navLinks = links
+    .filter((link) => link.label)
+    .map((link) => {
+      const current =
+        link.page && link.page === currentPage ? ' aria-current="page"' : "";
+      const linkStyle =
+        link.page && link.page === currentPage
+          ? currentNavLinkStyle
+          : navLinkStyle;
+      return `<a href="${escapeAttribute(link.href)}"${current} style="${escapeAttribute(linkStyle)}">${escapeHtml(link.label)}</a>`;
+    })
+    .join("");
+
+  return `<header class="site-header" style="${escapeAttribute(headerStyle)}">
+  <a class="brand" href="index.html" aria-label="${escapeAttribute(brandLabel || "School")} home">
+    ${getDextaAcademyThreeExportLogoMarkup(content)}
+    <span class="brand__name">
+      <strong style="${escapeAttribute(brandStrongStyle)}">${escapeHtml(brandPrimary)}</strong>
+      <span style="${escapeAttribute(brandSpanStyle)}">${escapeHtml(brandSecondary)}</span>
+    </span>
+  </a>
+  <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+  <nav class="site-nav" id="site-nav" aria-label="Primary navigation">${navLinks}</nav>
+  <div class="header-actions">
+    ${
+      hasPortalLink
+        ? `<a class="portal-link" href="${escapeAttribute(portalHref)}" style="${escapeAttribute(portalButtonStyle)}">${escapeHtml(portalText)}</a>`
+        : ""
+    }
+    ${
+      hasHeaderCta
+        ? `<a class="button button--gold" ${applyAttributes} style="${escapeAttribute(headerButtonStyle)}">${escapeHtml(headerCtaText)}</a>`
+        : ""
+    }
+  </div>
+</header><style data-dexta-template3-export-navbar="true">.site-header .site-nav a::after{background:${navHoverColor}!important;}</style>`;
+}
+
+function renderDextaAcademyThreeExportNavbarFallback(
+  sourceHtml: string,
+  pageSlug: string,
+  content: SchoolTemplateProjectContent,
+) {
+  if (content.templateSlug !== "dexta-academy-3") return sourceHtml;
+  if (!sourceHtml.includes("data-site-navbar")) return sourceHtml;
+
+  return sourceHtml.replace(
+    /<div\s+data-site-navbar\s*>\s*<\/div>/i,
+    getDextaAcademyThreeExportNavbarMarkup(pageSlug, content),
+  );
+}
+
+function getDextaAcademyThreeExportLoaderMarkup(
+  content: SchoolTemplateProjectContent,
+) {
+  const loadingText = content.theme.loadingText.trim();
+
+  return `<div id="page-loader" class="page-loader" role="status" aria-live="polite">
+  <div class="page-loader__inner">
+    <div class="page-loader__halo" aria-hidden="true"></div>
+    ${getDextaAcademyThreeExportLogoMarkup(content, "page-loader__crest brand__crest")}
+    ${
+      loadingText
+        ? `<p class="page-loader__copy">${escapeHtml(loadingText)}</p>`
+        : ""
+    }
+    <div class="page-loader__track" aria-hidden="true">
+      <span class="page-loader__bar"></span>
+    </div>
+  </div>
+</div>`;
+}
+
+function renderDextaAcademyThreeExportLoaderFallback(
+  sourceHtml: string,
+  pageSlug: string,
+  content: SchoolTemplateProjectContent,
+) {
+  if (content.templateSlug !== "dexta-academy-3" || pageSlug !== "home") {
+    return sourceHtml;
+  }
+  if (sourceHtml.includes('id="page-loader"')) return sourceHtml;
+
+  return sourceHtml.replace(
+    /(<body\b[^>]*>)/i,
+    `$1\n    ${getDextaAcademyThreeExportLoaderMarkup(content)}`,
+  );
+}
+
+function applyDextaAcademyThreeExportHeaderIdentity(
+  root: ElementNode,
+  content: SchoolTemplateProjectContent,
+) {
+  if (content.templateSlug !== "dexta-academy-3") return;
+
+  const brandPrimary = getDextaAcademyThreeExportBrandText(
+    content,
+    "brandName",
+    "brandPrimary",
+    "DXT",
+  );
+  const brandSecondary = getDextaAcademyThreeExportBrandText(
+    content,
+    "brandTagline",
+    "brandSecondary",
+    "Academy",
+  );
+  const brandLabel =
+    [brandPrimary, brandSecondary].filter(Boolean).join(" ") || "School";
+
+  queryAll(root, ".site-header .brand__name strong").forEach((node) =>
+    setTextContent(node, brandPrimary),
+  );
+  queryAll(root, ".site-header .brand__name span").forEach((node) =>
+    setTextContent(node, brandSecondary),
+  );
+  queryAll(root, ".site-header .brand").forEach((node) =>
+    setAttr(node, "aria-label", `${brandLabel} home`),
+  );
+}
+
+function getDextaAcademyThreeHomeHeroText(
+  content: SchoolTemplateProjectContent,
+  fieldKey: string,
+  fallback: string,
+) {
+  const value = getProjectSectionField(content, "home", "hero", fieldKey);
+  const text = toText(value).trim();
+  return text || fallback;
+}
+
+function applyDextaAcademyThreeExportHeroColors(
+  root: ElementNode,
+  content: SchoolTemplateProjectContent,
+) {
+  if (content.templateSlug !== "dexta-academy-3") return;
+
+  const headlineColor = getDextaAcademyThreeHomeHeroText(
+    content,
+    "headlineTextColor",
+    "#fff",
+  );
+  const joyfulColor = getDextaAcademyThreeHomeHeroText(
+    content,
+    "joyfulAccentColor",
+    "#ffc94c",
+  );
+  const boldColor = getDextaAcademyThreeHomeHeroText(
+    content,
+    "boldAccentColor",
+    "#ffc94c",
+  );
+
+  queryAll(root, ".hero__title, .hero__line, .hero__segment").forEach((node) =>
+    setStyleDeclaration(node, "color", `${headlineColor} !important`),
+  );
+  queryAll(root, ".hero__accent--joyful").forEach((node) =>
+    setStyleDeclaration(node, "color", `${joyfulColor} !important`),
+  );
+  queryAll(root, ".hero__accent--bold").forEach((node) =>
+    setStyleDeclaration(node, "color", `${boldColor} !important`),
+  );
+}
+
 function getThemeVariableDeclarations(content: SchoolTemplateProjectContent) {
   const primary = content.theme.primaryColor;
   const secondary = content.theme.secondaryColor;
@@ -1843,11 +2555,15 @@ function getThemeVariableDeclarations(content: SchoolTemplateProjectContent) {
 }
 
 function getGlobalAppearanceCss(content: SchoolTemplateProjectContent) {
-  const loadingBackground = content.theme.loadingBackgroundColor;
-  const loadingTextColor = content.theme.loadingTextColor || "currentColor";
   const isTemplateOne = content.templateSlug === "dexta-academy-1";
   const isTemplateTwo = content.templateSlug === "dexta-academy-2";
   const isTemplateThree = content.templateSlug === "dexta-academy-3";
+  const loadingBackground =
+    content.theme.loadingBackgroundColor ||
+    (isTemplateThree ? "#fff7df" : "#ffffff");
+  const loadingTextColor =
+    content.theme.loadingTextColor ||
+    (isTemplateThree ? "#061a40" : "currentColor");
   const navbarBackground = content.theme.navBarTransparent
     ? "transparent"
     : content.theme.navBarColor;
@@ -1944,8 +2660,146 @@ body[data-page="home"] .site-header__bar {
   box-shadow: ${navbarShadow} !important;
 }`);
   } else if (content.templateSlug === "dexta-academy-3") {
-    // Template 3: .site-header handled by section override CSS — skip generic navbar override
+    const templateThreeNavOpacity = Math.max(
+      0,
+      Math.min(100, Number(content.theme.navBarOpacity ?? 100)),
+    );
+    const templateThreeNavbarBackground = content.theme.navBarTransparent
+      ? `color-mix(in srgb, ${content.theme.navBarColor || "#020c20"} ${templateThreeNavOpacity}%, transparent)`
+      : content.theme.navBarColor || "#020c20";
+    const templateThreeNavbarBackdrop = content.theme.navBarTransparent
+      ? "blur(18px)"
+      : "none";
+    const templateThreeNavLinkColor =
+      content.theme.navLinkColor ||
+      content.theme.brandTaglineColor ||
+      "#ffffff";
+    const templateThreeNavActiveColor =
+      content.theme.navHoverEnabled === false
+        ? templateThreeNavLinkColor
+        : content.theme.navHoverColor ||
+          content.theme.secondaryColor ||
+          "#f5b82e";
+    const templateThreeNavUnderlineColor =
+      content.theme.navHoverColor || content.theme.secondaryColor || "#f5b82e";
+
+    // Template 3 renders its header from script.js in the source template.
+    // Export server-renders that header, then this mirrors the preview renderer's
+    // theme layer so editor navbar colors survive in static HTML.
     css.push(`
+.site-header,
+.home-page .site-header,
+.home-page.is-animated .site-header,
+.about-page .site-header,
+.gallery-page .site-header,
+.contact-page .site-header,
+.about-page .site-header.is-open,
+.gallery-page .site-header.is-open,
+.contact-page .site-header.is-open {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  margin-inline: 0 !important;
+  padding: 18px clamp(20px, 5vw, 84px) !important;
+  transform: none !important;
+  border-radius: 0 !important;
+  z-index: 1200 !important;
+  opacity: 1 !important;
+  animation: none !important;
+  will-change: auto !important;
+  background: ${templateThreeNavbarBackground} !important;
+  background-color: ${templateThreeNavbarBackground} !important;
+  background-image: none !important;
+  box-shadow: ${navbarShadow} !important;
+  backdrop-filter: ${templateThreeNavbarBackdrop} !important;
+}
+.site-header .brand,
+.site-header .brand__name strong {
+  color: ${content.theme.brandNameColor || "#ffffff"} !important;
+  font-size: ${Number(content.theme.brandNameFontSize || 16)}px !important;
+}
+.site-header .brand__name span {
+  color: ${content.theme.brandTaglineColor || "#ffffff"} !important;
+  font-size: ${Number(content.theme.brandTaglineFontSize || 16)}px !important;
+}
+.site-header .site-nav a {
+  color: ${templateThreeNavLinkColor} !important;
+}
+.site-header .site-nav a[aria-current="page"],
+.site-header .site-nav a:hover,
+.site-header .site-nav a:focus-visible {
+  color: ${templateThreeNavActiveColor} !important;
+}
+.site-header .site-nav a::after {
+  bottom: -14px !important;
+  background: ${templateThreeNavUnderlineColor} !important;
+}
+.site-header .portal-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 12px 18px !important;
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+  background: color-mix(in srgb, var(--dexta-academy-3-shared-header-portal-button-bg-color, #fff) var(--dexta-academy-3-shared-header-portal-button-bg-opacity, 0%), transparent) !important;
+  color: var(--dexta-academy-3-shared-header-portal-button-text-color, #fff) !important;
+  border: var(--dexta-academy-3-shared-header-portal-button-border-width, 0px) solid var(--dexta-academy-3-shared-header-portal-button-border-color, #fff) !important;
+}
+@media (min-width: 841px) {
+  .site-header .site-nav {
+    display: inline-flex !important;
+  }
+  .site-header .header-actions {
+    display: inline-flex !important;
+  }
+  .site-header .nav-toggle {
+    display: none !important;
+  }
+}
+.about-page #top,
+.gallery-page #top,
+.contact-page #top {
+  padding-top: 96px !important;
+}
+@media (max-width: 840px) {
+  .site-header,
+  .home-page .site-header,
+  .about-page .site-header,
+  .contact-page .site-header,
+  .gallery-page .site-header,
+  .site-header.is-open,
+  .home-page .site-header.is-open,
+  .about-page .site-header.is-open,
+  .gallery-page .site-header.is-open,
+  .contact-page .site-header.is-open {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    margin-inline: 0 !important;
+    padding: 12px 14px !important;
+    border-radius: 0 !important;
+  }
+  .about-page #top,
+  .gallery-page #top,
+  .contact-page #top {
+    padding-top: 82px !important;
+  }
+  .site-header.is-open .site-nav,
+  .site-header.is-open .header-actions {
+    width: 100% !important;
+  }
+}
 .navbar,
 .navbar.bg-white,
 .ftco-navbar-light {
@@ -2049,7 +2903,8 @@ body[data-page="home"] .site-header__bar {
 	}`);
   }
 
-  css.push(`
+  if (!isTemplateThree) {
+    css.push(`
 #spinner {
   flex-direction: column !important;
   gap: 14px !important;
@@ -2093,6 +2948,7 @@ body[data-page="home"] .site-header__bar {
   font-weight: 700;
   line-height: 1.4;
 }`);
+  }
 
   if (isTemplateOne) {
     css.push(`
@@ -2144,6 +3000,11 @@ body[data-page="home"] .site-header__bar {
     css.push(
       `.site-loader__bar::after { background: ${loadingBarColor} !important; }`,
     );
+    if (isTemplateThree) {
+      css.push(
+        `.page-loader__bar { background: ${loadingBarColor} !important; }`,
+      );
+    }
     if (isTemplateOne) {
       css.push(`
 #spinner.dexta-template-one-loader .spinner-border {
@@ -2157,9 +3018,20 @@ body[data-page="home"] .site-header__bar {
 
   if (isTemplateThree) {
     css.push(`
+.page-loader,
+.js body .page-loader {
+  background: ${loadingBackground} !important;
+  background-color: ${loadingBackground} !important;
+  color: ${loadingTextColor} !important;
+}
 .page-loader__inner {
+  background: ${loadingBackground} !important;
+  background-color: ${loadingBackground} !important;
   border: ${loadingCardBorderWidth}px solid ${loadingCardBorderColor} !important;
   box-shadow: 0 34px 70px color-mix(in srgb, ${loadingCardShadowColor} ${loadingCardShadowOpacity}%, transparent)${loadingCardInsetShadow} !important;
+}
+.page-loader__copy {
+  color: ${loadingTextColor} !important;
 }`);
   }
 
@@ -2287,7 +3159,39 @@ body[data-page="home"] .hero-home__actions .button--primary:hover {
 .news-card {
   border-color: var(--accent) !important;
 }`;
-    case "dexta-academy-3":
+    case "dexta-academy-3": {
+      const navHoverEnabled = content.theme.navHoverEnabled !== false;
+      const navHoverColor = content.theme.navHoverColor || secondary;
+      const buttonOverlayEnabled = content.theme.buttonOverlayEnabled !== false;
+      const buttonOverlayColor = content.theme.buttonOverlayColor || "#ffffff";
+      const buttonOverlaySelectorList = [
+        "button",
+        ".button",
+        ".contact-button",
+        ".filter-chip",
+        ".gallery-filter",
+        ".gallery-page .gallery-pagination__button",
+        ".gallery-lightbox__close",
+        ".circle-button",
+        ".nav-toggle",
+        ".admission-modal__close",
+        ".story-modal__close",
+        ".testimonial-thumb",
+      ];
+      const buttonOverlaySelectors = buttonOverlaySelectorList.join(",");
+      const buttonOverlayPseudoSelectors = buttonOverlaySelectorList
+        .map((selector) => `${selector}::before`)
+        .join(",");
+      const buttonOverlayHoverSelectors = buttonOverlaySelectorList
+        .map(
+          (selector) =>
+            `${selector}:hover::before,${selector}:focus-visible::before`,
+        )
+        .join(",");
+      const buttonOverlayChildSelectors = buttonOverlaySelectorList
+        .map((selector) => `${selector}>*`)
+        .join(",");
+
       return `
 .button--navy {
   background: var(--navy) !important;
@@ -2319,7 +3223,56 @@ body[data-page="home"] .hero-home__actions .button--primary:hover {
 .gallery-filter.is-active {
   background: var(--gold) !important;
   border-color: var(--gold) !important;
+}
+${
+  navHoverEnabled
+    ? `.site-nav a:hover,
+.site-nav a:focus-visible {
+  color: ${navHoverColor} !important;
+}
+.site-nav a::after {
+  display: block !important;
+  background: ${navHoverColor} !important;
+}`
+    : `.site-nav a::after {
+  display: none !important;
+}
+.site-nav a:hover,
+.site-nav a:focus-visible {
+  color: inherit !important;
+}`
+}
+${
+  buttonOverlayEnabled
+    ? `${buttonOverlaySelectors} {
+  position: relative !important;
+  overflow: hidden !important;
+  isolation: isolate;
+}
+${buttonOverlayPseudoSelectors} {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  background: ${buttonOverlayColor} !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 180ms ease !important;
+  z-index: 0 !important;
+}
+${buttonOverlayHoverSelectors} {
+  opacity: .24 !important;
+}
+${buttonOverlayChildSelectors} {
+  position: relative;
+  z-index: 1;
+}`
+    : `${buttonOverlayPseudoSelectors} {
+  display: none !important;
+  content: none !important;
+}`
 }`;
+    }
     case "dexta-academy-4":
       return `
 .btn-primary,
@@ -3743,10 +4696,28 @@ body:not(.home-page) .site-header {
   }
 
   if (content.templateSlug === "dexta-academy-4") {
+    const templateFourNavbarOpacity = Math.max(
+      0,
+      Math.min(100, Number(content.theme.navBarOpacity ?? 100)),
+    );
+    const templateFourNavbarBackground = content.theme.navBarTransparent
+      ? `color-mix(in srgb, ${content.theme.navBarColor || "#020810"} ${templateFourNavbarOpacity}%, transparent)`
+      : content.theme.navBarColor || "#020810";
+
     templateCss += `
 /* Shared Header */
 .hero-header {
-  background-color: color-mix(in srgb, var(--dexta-academy-4-shared-header-section-bg-color, rgba(2,8,20,0.82)) var(--dexta-academy-4-shared-header-section-bg-opacity, 100%), transparent) !important;
+  background: ${templateFourNavbarBackground} !important;
+  background-color: ${templateFourNavbarBackground} !important;
+}
+.hero-header .navbar-collapse.show {
+  background: ${templateFourNavbarBackground} !important;
+  background-color: ${templateFourNavbarBackground} !important;
+}
+.hero-header .hero-navbar {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
 }
 .hero-header .hero-portal-btn {
   background: color-mix(in srgb, var(--dexta-academy-4-shared-header-portal-button-bg-color, transparent) var(--dexta-academy-4-shared-header-portal-button-bg-opacity, 0%), transparent) !important;
@@ -4288,6 +5259,13 @@ function collectFontStylesheetUrls(content: SchoolTemplateProjectContent) {
 
       const normalizedKey = key.toLowerCase();
       if (
+        content.templateSlug === "dexta-academy-3" &&
+        normalizedKey.includes("fontfamily")
+      ) {
+        addGoogleFont(String(value ?? ""));
+      }
+
+      if (
         !normalizedKey.includes("fontstylesheeturl") &&
         !normalizedKey.includes("googlefonturl")
       ) {
@@ -4504,13 +5482,30 @@ function getThemeRuntimeMarkup(
   const sharedHeaderLogo = siteHeader?.fields.logo
     ? resolveAsset(siteHeader.fields.logo, THEME_LOGO_FIELD)
     : "";
-  const logoUrl = getThemeLogoUrl(content) || sharedHeaderLogo;
+  const logoUrl =
+    content.templateSlug === "dexta-academy-4"
+      ? getDextaAcademyFourLogoUrl(content)
+      : getThemeLogoUrl(content) || sharedHeaderLogo;
   const brandName =
-    content.theme.brandName.trim() ||
-    toText(siteHeader?.fields.brandName).trim();
+    content.templateSlug === "dexta-academy-3"
+      ? getDextaAcademyThreeExportBrandText(
+          content,
+          "brandName",
+          "brandPrimary",
+          "DXT",
+        )
+      : content.theme.brandName.trim() ||
+        toText(siteHeader?.fields.brandName).trim();
   const brandTagline =
-    content.theme.brandTagline.trim() ||
-    toText(siteHeader?.fields.brandTagline).trim();
+    content.templateSlug === "dexta-academy-3"
+      ? getDextaAcademyThreeExportBrandText(
+          content,
+          "brandTagline",
+          "brandSecondary",
+          "Academy",
+        )
+      : content.theme.brandTagline.trim() ||
+        toText(siteHeader?.fields.brandTagline).trim();
   const documentTitle = getExportDocumentTitle(content, page);
   const loadingText = content.theme.loadingText.trim();
   const footerAddress = toText(siteFooter?.fields.address).trim();
@@ -4640,6 +5635,7 @@ function getThemeRuntimeMarkup(
         cssVariable: f.cssVariable || undefined,
         defaultValue: f.defaultValue,
         unit: f.unit || undefined,
+        scope: f.scope || undefined,
       }));
 
       return {
@@ -4654,6 +5650,7 @@ function getThemeRuntimeMarkup(
   return `<script data-dexta-export-theme-runtime="true">
 (function () {
 	  var logoUrl = ${escapeScriptJson(logoUrl)};
+	  var isTemplateThreeExport = ${escapeScriptJson(content.templateSlug === "dexta-academy-3")};
 		  var brandName = ${escapeScriptJson(brandName)};
 		  var brandTagline = ${escapeScriptJson(brandTagline)};
 		  var documentTitle = ${escapeScriptJson(documentTitle)};
@@ -4747,27 +5744,96 @@ function getThemeRuntimeMarkup(
     return image;
   }
 
-  function toInlineHtmlExport(value) {
+  function serializeHtmlNodeExport(node) {
+    var wrapper = document.createElement("div");
+    wrapper.appendChild(node.cloneNode(true));
+    return wrapper.innerHTML;
+  }
+
+  function isTextBlockElementExport(node) {
+    return node && node.nodeType === 1 && /^(p|div|h[1-6]|blockquote)$/i.test(node.tagName || "");
+  }
+
+  function getUnwrappedTextBlockHtmlExport(node) {
+    var style = node.getAttribute && node.getAttribute("style");
+    if (!style) return node.innerHTML || "";
+    var wrapper = document.createElement("span");
+    wrapper.setAttribute("style", style);
+    wrapper.innerHTML = node.innerHTML || "";
+    return serializeHtmlNodeExport(wrapper);
+  }
+
+  function toInlineHtmlExport(value, separator) {
     var container = document.createElement("div");
     container.innerHTML = toText(value);
     var parts = [];
     Array.from(container.childNodes).forEach(function (node) {
-      var tagName = (node.tagName || "").toLowerCase();
-      var isBlock = /^(p|div|h[1-6]|blockquote)$/i.test(tagName);
-      if (isBlock) {
-        parts.push(node.innerHTML || "");
-      } else {
-        var wrapper = document.createElement("div");
-        wrapper.appendChild(node.cloneNode(true));
-        parts.push(wrapper.innerHTML);
-      }
+      var html = isTextBlockElementExport(node)
+        ? getUnwrappedTextBlockHtmlExport(node)
+        : serializeHtmlNodeExport(node);
+      html = String(html || "").trim();
+      if (html) parts.push(html);
     });
-    return parts.filter(function (p) { return p.trim(); }).join("<br><br>");
+    return parts.join(separator || "<br><br>");
+  }
+
+  function promoteInlineRichTextColorStylesExport(root) {
+    if (!isTemplateThreeExport || !root || !root.querySelectorAll) return;
+    var styledNodes = [];
+    if (root.getAttribute && root.getAttribute("style")) {
+      styledNodes.push(root);
+    }
+    styledNodes = styledNodes.concat(Array.from(root.querySelectorAll("[style]")));
+    var promotedProperties = [
+      "color",
+      "background-color",
+      "font-family",
+      "font-size",
+      "font-style",
+      "font-weight",
+      "text-align",
+      "text-decoration",
+      "text-transform",
+      "letter-spacing"
+    ];
+    styledNodes.forEach(function (node) {
+      if (!node.style) return;
+      promotedProperties.forEach(function (property) {
+        var value = node.style.getPropertyValue(property);
+        if (value) node.style.setProperty(property, value, "important");
+      });
+    });
+  }
+
+  function getGoogleFontFamilyNameExport(value) {
+    var text = String(value || "").trim().replace(/^["']|["']$/g, "");
+    if (!text) return "";
+    var family = String(text.split(",")[0] || "").trim().replace(/^["']|["']$/g, "");
+    if (!family || /^(inherit|initial|unset|serif|sans-serif|monospace|cursive|fantasy|system-ui)$/i.test(family)) {
+      return "";
+    }
+    return family;
+  }
+
+  function applyFontFamilyExport(node, value) {
+    if (!isTemplateThreeExport) return;
+    var family = getGoogleFontFamilyNameExport(value);
+    if (!family) return;
+    var stack = JSON.stringify(family) + ', "Segoe UI", sans-serif';
+    node.style.setProperty("font-family", stack, "important");
+    node.querySelectorAll("*").forEach(function (child) {
+      child.style.setProperty("font-family", stack, "important");
+    });
   }
 
   function setElementHtmlExport(node, value) {
     var tagName = String(node.tagName || "").toLowerCase();
-    node.innerHTML = /^(h[1-6]|p)$/.test(tagName) ? toInlineHtmlExport(value) : toText(value);
+    node.innerHTML = /^h[1-6]$/.test(tagName)
+      ? toInlineHtmlExport(value, "<br>")
+      : tagName === "p"
+        ? toInlineHtmlExport(value)
+        : toText(value);
+    promoteInlineRichTextColorStylesExport(node);
   }
 
   function escapeHtmlTextExport(value) {
@@ -5144,6 +6210,13 @@ function getThemeRuntimeMarkup(
     if (field.target === "backgroundImage") {
       var bgAsset = toText(value).replace(/"/g, "&quot;");
       node.style.backgroundImage = bgAsset ? 'url("' + bgAsset + '")' : "none";
+      return;
+    }
+
+    if (field.target === "inlineStyle") {
+      if (String(field.key || "").toLowerCase().indexOf("fontfamily") >= 0) {
+        applyFontFamilyExport(node, value);
+      }
       return;
     }
 
@@ -5688,12 +6761,24 @@ function getThemeRuntimeMarkup(
 		    applyTemplateTwoContactForm();
 		  }
 	
-		  applyThemeIdentity();
-		  applyExportSections();
-		  applyTemplateOneSuccessStoryVideo();
+		  function applyRuntimeUpdates() {
+		    if (${escapeScriptJson(
+          content.templateSlug === "dexta-academy-3" ||
+            content.templateSlug === "dexta-academy-4",
+        )}) {
+		      applyExportSections();
+		      applyThemeIdentity();
+		    } else {
+		      applyThemeIdentity();
+		      applyExportSections();
+		    }
+		    applyTemplateOneSuccessStoryVideo();
+		  }
+
+		  applyRuntimeUpdates();
 		  document.body.className = document.body.className.replace(/\bis-preloading\b/g, "").trim();
 		  if (document.readyState === "loading") {
-		    document.addEventListener("DOMContentLoaded", function() { document.body.className = document.body.className.replace(/\bis-preloading\b/g, "").trim(); applyThemeIdentity(); applyExportSections(); applyTemplateOneSuccessStoryVideo(); }, { once: true });
+		    document.addEventListener("DOMContentLoaded", function() { document.body.className = document.body.className.replace(/\bis-preloading\b/g, "").trim(); applyRuntimeUpdates(); }, { once: true });
 		  }
 
 	  // Ensure hamburger toggle works without Bootstrap jQuery plugin
@@ -5714,15 +6799,39 @@ function getThemeRuntimeMarkup(
 	    });
 	  });
 
-		  window.setTimeout(function() { applyThemeIdentity(); applyExportSections(); applyTemplateOneSuccessStoryVideo(); }, 80);
-		  window.setTimeout(function() { applyThemeIdentity(); applyExportSections(); applyTemplateOneSuccessStoryVideo(); }, 350);
-		  window.setTimeout(function() { applyThemeIdentity(); applyExportSections(); applyTemplateOneSuccessStoryVideo(); }, 1000);
+		  window.setTimeout(applyRuntimeUpdates, 80);
+		  window.setTimeout(applyRuntimeUpdates, 350);
+		  window.setTimeout(applyRuntimeUpdates, 1000);
 })();
 </script>`;
 }
 
 function renderThreeConfigMarkup(config: Record<string, unknown>) {
   return `<script>window.schoolHero3dConfig = ${escapeScriptJson(config)};</script>`;
+}
+
+function removeDextaAcademyFourHero3dModule(root: ElementNode) {
+  let removed = false;
+
+  removeNodes(root, (node) => {
+    if (node.tagName !== "script") return false;
+    if ((getAttr(node, "type") ?? "").toLowerCase() !== "module") {
+      return false;
+    }
+
+    const src = getAttr(node, "src") ?? "";
+    const shouldRemove = /(?:^|\/)js\/hero-3d\.js(?:[?#].*)?$/i.test(src);
+    if (shouldRemove) {
+      removed = true;
+    }
+    return shouldRemove;
+  });
+
+  return removed;
+}
+
+function getDextaAcademyFourHero3dModuleMarkup() {
+  return '<script type="module" src="js/hero-3d.js"></script>';
 }
 
 function getTemplateOneExportGalleryMarkup(
@@ -5953,7 +7062,17 @@ async function renderPage({
     sourceSnapshot.sourceDir,
     page.fileName,
   );
-  const sourceHtml = await readFile(sourcePath, "utf8");
+  let sourceHtml = await readFile(sourcePath, "utf8");
+  sourceHtml = renderDextaAcademyThreeExportNavbarFallback(
+    sourceHtml,
+    page.slug,
+    content,
+  );
+  sourceHtml = renderDextaAcademyThreeExportLoaderFallback(
+    sourceHtml,
+    page.slug,
+    content,
+  );
   const root = parseHtml(sourceHtml);
   const threeConfig: Record<string, unknown> = {};
 
@@ -5985,7 +7104,13 @@ async function renderPage({
     }
   }
 
+  applyDextaAcademyThreeExportHeaderIdentity(root, content);
+  applyDextaAcademyThreeExportHeroColors(root, content);
   applySectionFontOverrides(root);
+  applyDextaAcademyFourExportLogo(root, content);
+  const shouldReinjectTemplateFourHero3dModule =
+    content.templateSlug === "dexta-academy-4" &&
+    removeDextaAcademyFourHero3dModule(root);
 
   // Template 3 home page: preserve original dark gradient unless school customized
   if (content.templateSlug === "dexta-academy-3") {
@@ -6019,6 +7144,10 @@ async function renderPage({
 
   if (hasThreeConfig(threeConfig)) {
     injectBeforeBodyClose(root, renderThreeConfigMarkup(threeConfig));
+  }
+
+  if (shouldReinjectTemplateFourHero3dModule) {
+    injectBeforeBodyClose(root, getDextaAcademyFourHero3dModuleMarkup());
   }
 
   injectBeforeBodyClose(
@@ -6168,6 +7297,13 @@ function patchHero3dScript(value: string) {
       /obj\.position\.y -= sz2\.y \* 0\.18;/,
       "obj.position.y -= sz2.y * Math.abs(window.schoolHero3dConfig?.transform?.offset?.y ?? -0.18);",
     );
+}
+
+function rewriteDextaAcademyThreeDemoFetchUrls(value: string) {
+  return value.replace(
+    /https:\/\/res\.cloudinary\.com\/demo\/image\/fetch\/[^"'`\s)]+\/(https:\/\/images\.unsplash\.com\/[^"'`\s)]+)/g,
+    (_match, sourceUrl: string) => sourceUrl,
+  );
 }
 
 function isTextFile(filePath: string) {
@@ -6334,6 +7470,10 @@ async function rewriteTextAssets(
     let text = await readExportFileAsText(file);
     text = rewriteTemplateAbsolutePaths(text, sourceSnapshot);
 
+    if (content.templateSlug === "dexta-academy-3") {
+      text = rewriteDextaAcademyThreeDemoFetchUrls(text);
+    }
+
     if (file.path.replace(/\\/g, "/") === "js/hero-3d.js") {
       text = patchHero3dScript(text);
     }
@@ -6379,12 +7519,23 @@ export async function buildSchoolWebsiteProjectExportZip({
   content: SchoolTemplateProjectContent;
   sourceSnapshot: SchoolTemplateSourceSnapshot;
 }) {
+  const manifest =
+    content.templateSlug === "dexta-academy-3"
+      ? getSchoolTemplateManifest(content.templateSlug)
+      : null;
+  const renderSourceSnapshot = manifest
+    ? buildSchoolTemplateSourceSnapshot(manifest)
+    : sourceSnapshot;
   const renderContent =
     prepareDextaAcademyThreeContactRenderingContent(content);
-  const files = await copyTemplateAssets(sourceSnapshot);
+  const files = await copyTemplateAssets(renderSourceSnapshot);
   const renderedPages = await Promise.all(
     renderContent.pages.map((page) =>
-      renderPage({ content: renderContent, sourceSnapshot, page }),
+      renderPage({
+        content: renderContent,
+        sourceSnapshot: renderSourceSnapshot,
+        page,
+      }),
     ),
   );
 
@@ -6395,7 +7546,7 @@ export async function buildSchoolWebsiteProjectExportZip({
     });
   }
 
-  await rewriteTextAssets(files, sourceSnapshot, content);
+  await rewriteTextAssets(files, renderSourceSnapshot, content);
   await rewriteRemoteAssets(files);
 
   // Include .htaccess for security on cPanel/Apache hosting

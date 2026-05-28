@@ -551,8 +551,10 @@ describe("Dexta Academy 4 export 3D rendering", () => {
   it("keeps the uploaded model in the exported page and patches the hero module", async () => {
     process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME = CLOUD_NAME;
     const rawModelUrl = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/school-models/cap.glb`;
+    const uploadedLogoUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/f_auto,q_auto/school/logos/custom.png`;
     const { content, sourceSnapshot } =
       buildDextaAcademy4PreviewInput(rawModelUrl);
+    content.theme.logoUrl = "school/logos/custom.png";
     const homePage = content.pages.find((page) => page.slug === "home");
     const heroSection = homePage?.sections.find(
       (section) => section.id === "hero",
@@ -622,7 +624,22 @@ describe("Dexta Academy 4 export 3D rendering", () => {
       const heroScript = entries.get("js/hero-3d.js")?.toString("utf8") ?? "";
 
       assert.match(indexHtml, /window\.schoolHero3dConfig = /);
+      assert.ok(
+        indexHtml.indexOf("window.schoolHero3dConfig = ") <
+          indexHtml.indexOf('src="js/hero-3d.js"'),
+        "Expected the exported 3D config to load before the hero module.",
+      );
+      assert.equal(indexHtml.match(/src="js\/hero-3d\.js"/g)?.length, 1);
       assert.ok(indexHtml.includes(rawModelUrl));
+      assert.ok(indexHtml.includes(uploadedLogoUrl));
+      assert.match(
+        indexHtml,
+        /<a class="hero-brand"[\s\S]*?<img[\s\S]*?src="https:\/\/res\.cloudinary\.com\/dexta-test\/image\/upload\/f_auto,q_auto\/school\/logos\/custom\.png"/,
+      );
+      assert.match(
+        indexHtml,
+        /<img\b(?=[^>]*class="school-footer-brand-logo")(?=[^>]*src="https:\/\/res\.cloudinary\.com\/dexta-test\/image\/upload\/f_auto,q_auto\/school\/logos\/custom\.png")[^>]*>/,
+      );
       assert.match(indexHtml, /Playfair\+Display/);
       assert.match(
         indexHtml,

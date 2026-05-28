@@ -3665,9 +3665,14 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	      ].join("");
 	    }
 	    if (preview.content.templateSlug === "dexta-academy-4") {
+	      var templateFourNavbarOpacity = Math.max(0, Math.min(100, Number(preview.content.theme.navBarOpacity == null ? 100 : preview.content.theme.navBarOpacity)));
+	      var templateFourNavbarBackground = preview.content.theme.navBarTransparent
+	        ? "color-mix(in srgb," + (preview.content.theme.navBarColor || "#020810") + " " + templateFourNavbarOpacity + "%,transparent)"
+	        : (preview.content.theme.navBarColor || "#020810");
 	      return [
 	        // ── Shared Header ──
-	        '.hero-header{background-color:color-mix(in srgb,var(--dexta-academy-4-shared-header-section-bg-color,rgba(2,8,20,0.82)) var(--dexta-academy-4-shared-header-section-bg-opacity,100%),transparent)!important;}',
+	        '.hero-header,.hero-header .navbar-collapse.show{background:' + templateFourNavbarBackground + '!important;background-color:' + templateFourNavbarBackground + '!important;}',
+	        '.hero-header .hero-navbar{background:transparent!important;background-color:transparent!important;box-shadow:none!important;}',
 	        '.hero-header .hero-portal-btn{background:color-mix(in srgb,var(--dexta-academy-4-shared-header-portal-button-bg-color,transparent) var(--dexta-academy-4-shared-header-portal-button-bg-opacity,0%),transparent)!important;color:var(--dexta-academy-4-shared-header-portal-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-shared-header-portal-button-border-width,2px) solid var(--dexta-academy-4-shared-header-portal-button-border-color,#4a8fff)!important;}',
 	        '.hero-header .hero-apply-btn{background:color-mix(in srgb,var(--dexta-academy-4-shared-header-apply-button-bg-color,#4a8fff) var(--dexta-academy-4-shared-header-apply-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-4-shared-header-apply-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-shared-header-apply-button-border-width,0px) solid var(--dexta-academy-4-shared-header-apply-button-border-color,#4a8fff)!important;}',
 	        // ── Shared Footer ──
