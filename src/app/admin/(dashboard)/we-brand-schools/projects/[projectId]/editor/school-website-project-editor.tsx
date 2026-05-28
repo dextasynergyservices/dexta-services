@@ -1616,7 +1616,9 @@ export function SchoolWebsiteProjectEditor({
     ((selectedPage?.slug === "home" &&
       activeSection?.content.id === "testimonials") ||
       (selectedPage?.slug === "about" &&
-        activeSection?.content.id === "values"));
+        activeSection?.content.id === "values") ||
+      (selectedPage?.slug === "testimonials" &&
+        activeSection?.content.id === "testimonial-wall"));
   const activeImportTargets = useMemo<CopyImportTarget[]>(() => {
     if (!activeSection) return [];
 

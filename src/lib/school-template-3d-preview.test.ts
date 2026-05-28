@@ -433,10 +433,6 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
     gallerySection.fields.eyebrowTextColor = "#11aa77";
     gallerySection.fields.title =
       '<span style="color: #be123c;">Gallery</span> <span style="color: #1d4ed8;">Moments</span>';
-    if (gallerySection.repeatable?.items[0]) {
-      gallerySection.repeatable.items[0].caption =
-        '<span style="color: #ca8a04;">Creative learning</span>';
-    }
     footerSection.fields.description =
       "<span style=\"font-family: 'Playfair Display', Georgia, serif;\">A warm school community.</span>";
     const html = assertRenderedHtml(
@@ -467,6 +463,19 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
       /--dexta-academy-4-home-gallery-preview-eyebrow-text-color/,
     );
     assert.match(html, /#11aa77/);
+    assert.match(html, /function applyTemplateFourHomeGalleryPagination/);
+    assert.match(html, /data-gallery-page-size="6"/);
+    assert.match(html, /data-gallery-pagination/);
+    assert.match(html, /data-dexta-preview-gallery-observed/);
+    assert.match(html, /new MutationObserver/);
+    assert.match(
+      html,
+      /card\.style\.setProperty\("display", "none", "important"\)/,
+    );
+    assert.match(html, /data-dexta-lightbox-card-bound/);
+    assert.match(html, /data-dexta-lightbox-bound/);
+    assert.doesNotMatch(html, /<span class="gallery-preview-label"/);
+    assert.doesNotMatch(html, /Purposeful spaces for daily learning/);
     assert.match(html, /fontFamily\)/);
     assert.match(
       html,
@@ -591,10 +600,6 @@ describe("Dexta Academy 4 export 3D rendering", () => {
     gallerySection.fields.eyebrowTextColor = "#11aa77";
     gallerySection.fields.title =
       '<span style="color: #be123c;">Gallery</span> <span style="color: #1d4ed8;">Moments</span>';
-    if (gallerySection.repeatable?.items[0]) {
-      gallerySection.repeatable.items[0].caption =
-        '<span style="color: #ca8a04;">Creative learning</span>';
-    }
     footerSection.fields.description =
       "<span style=\"font-family: 'Playfair Display', Georgia, serif;\">A warm school community.</span>";
     const originalFetch = globalThis.fetch;
@@ -680,10 +685,10 @@ describe("Dexta Academy 4 export 3D rendering", () => {
         indexHtml,
         /<h2>\s*<span style="color: #be123c !important;">Gallery<\/span>\s*(?:<br><br>|\s)\s*<span style="color: #1d4ed8 !important;">Moments<\/span>\s*<\/h2>/,
       );
-      assert.match(
-        indexHtml,
-        /<strong><span style="color: #ca8a04 !important;">Creative learning<\/span><\/strong>/,
-      );
+      assert.match(indexHtml, /data-gallery-page-size="6"/);
+      assert.match(indexHtml, /data-gallery-pagination/);
+      assert.doesNotMatch(indexHtml, /<span class="gallery-preview-label"/);
+      assert.doesNotMatch(indexHtml, /Creative learning/);
       assert.match(
         indexHtml,
         /<p class="hero-eyebrow"[^>]*>\s*<span aria-hidden="true"><\/span>Welcome to School B<span aria-hidden="true"><\/span>\s*<\/p>/,

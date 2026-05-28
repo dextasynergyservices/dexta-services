@@ -1269,7 +1269,7 @@ export const dextaAcademy1Manifest = {
             }),
             imageField(
               "primaryImage",
-              "Primary image",
+              "Hero image",
               ".school-hero__photo-card--center img",
             ),
             imageField(
@@ -1951,6 +1951,11 @@ export const dextaAcademy1Manifest = {
               type: "richText",
               target: "innerHTML",
             }),
+            imageField(
+              "image",
+              "Hero image",
+              ".testimonials-page__hero-main img",
+            ),
             textareaField(
               "quoteText",
               "Hero quote",
@@ -1998,15 +2003,25 @@ export const dextaAcademy1Manifest = {
               ".testimonials-page__story-caption",
               { type: "richText", target: "innerHTML" },
             ),
-            textareaField("eyebrow", "Eyebrow", ".testimonials-page__eyebrow", {
-              type: "richText",
-              target: "innerHTML",
-            }),
-            textareaField("title", "Title", "h2", {
-              type: "richText",
-              target: "innerHTML",
-            }),
-            textareaField("body", "Body", ".testimonials-page__story-copy p", {
+            textareaField(
+              "eyebrow",
+              "Eyebrow",
+              ".testimonials-page__story-copy > .testimonials-page__eyebrow",
+              {
+                type: "richText",
+                target: "innerHTML",
+              },
+            ),
+            textareaField(
+              "title",
+              "Title",
+              ".testimonials-page__story-copy > h2",
+              {
+                type: "richText",
+                target: "innerHTML",
+              },
+            ),
+            textareaField("body", "Body", ".testimonials-page__story-body", {
               type: "richText",
               target: "innerHTML",
             }),
@@ -2026,17 +2041,45 @@ export const dextaAcademy1Manifest = {
             ...t1TypographyFields({
               selector: ".testimonials-page__section--wall",
             }),
-            textareaField("quote", "Quote", "p", {
-              type: "richText",
-              target: "innerHTML",
-            }),
-            textField("author", "Author", "h3, strong"),
-            imageField("image", "Image", "img"),
+            textareaField(
+              "eyebrow",
+              "Eyebrow",
+              ".testimonials-page__section-intro .testimonials-page__eyebrow",
+              { type: "richText", target: "innerHTML" },
+            ),
+            textareaField(
+              "title",
+              "Title",
+              ".testimonials-page__section-intro .testimonials-page__heading",
+              { type: "richText", target: "innerHTML" },
+            ),
+            textareaField(
+              "body",
+              "Intro text",
+              ".testimonials-page__section-intro > p",
+              { type: "richText", target: "innerHTML" },
+            ),
+            textareaField(
+              "quote",
+              "Quote",
+              ".testimonials-page__wall-card > p",
+              {
+                type: "richText",
+                target: "innerHTML",
+              },
+            ),
+            textField(
+              "author",
+              "Family name",
+              ".testimonials-page__wall-meta strong",
+            ),
+            textField("year", "Year", ".testimonials-page__wall-meta span"),
+            imageField("image", "Image", ".testimonials-page__wall-avatar"),
           ],
           repeatable: {
-            itemSelector: "article, .testimonial-item",
-            labelSingular: "Testimonial",
-            labelPlural: "Testimonials",
+            itemSelector: ".testimonials-page__wall-card",
+            labelSingular: "Family note",
+            labelPlural: "Family notes",
           },
         },
         {

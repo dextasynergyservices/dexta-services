@@ -329,16 +329,19 @@
             </div>
           </div>
 
-          <div class="gallery-preview-grid">
+          <div
+            class="gallery-preview-grid"
+            id="gallery-preview-grid"
+            data-gallery-grid
+            data-gallery-page-size="6"
+          >
             <a
               href="gallery.html"
-              class="gallery-preview-card gallery-preview-card-lg"
+              class="gallery-preview-card"
               style="
                 background-image: url(&quot;https://res.cloudinary.com/dxoorukfj/image/upload/v1777039633/dxt2-about_ubzert.png&quot;);
               "
             >
-              <span class="gallery-preview-label">Classroom Life</span>
-              <strong>Purposeful spaces for daily learning</strong>
             </a>
             <a
               href="gallery.html"
@@ -347,8 +350,6 @@
                 background-image: url(&quot;https://res.cloudinary.com/dxoorukfj/image/upload/v1777052313/ChatGPT_Image_Apr_24_2026_06_38_15_PM_ioqvmr.png&quot;);
               "
             >
-              <span class="gallery-preview-label">ICT and STEM</span>
-              <strong>Hands-on learning with technology</strong>
             </a>
             <a
               href="gallery.html"
@@ -357,10 +358,101 @@
                 background-image: url(&quot;https://res.cloudinary.com/dxoorukfj/image/upload/v1777052395/ChatGPT_Image_Apr_24_2026_06_39_36_PM_cqlwbh.png&quot;);
               "
             >
-              <span class="gallery-preview-label">Student Life</span>
-              <strong>Confidence built through collaboration</strong>
+            </a>
+            <a
+              href="gallery.html"
+              class="gallery-preview-card"
+              style="
+                background-image: url(&quot;https://res.cloudinary.com/dxoorukfj/image/upload/v1777052241/ChatGPT_Image_Apr_24_2026_06_37_07_PM_tw3iqx.png&quot;);
+              "
+            >
+            </a>
+            <a
+              href="gallery.html"
+              class="gallery-preview-card"
+              style="
+                background-image: url(&quot;https://res.cloudinary.com/dxoorukfj/image/upload/v1777052467/ChatGPT_Image_Apr_24_2026_06_40_33_PM_ke8tlj.png&quot;);
+              "
+            >
+            </a>
+            <a
+              href="gallery.html"
+              class="gallery-preview-card"
+              style="
+                background-image: url(&quot;https://res.cloudinary.com/dxoorukfj/image/upload/v1777052513/ChatGPT_Image_Apr_24_2026_06_41_33_PM_mtrns1.png&quot;);
+              "
+            >
+            </a>
+            <a
+              href="gallery.html"
+              class="gallery-preview-card"
+              hidden
+              style="
+                display: none;
+                background-image: url(&quot;https://res.cloudinary.com/dxoorukfj/image/upload/v1777052572/ChatGPT_Image_Apr_24_2026_06_42_35_PM_prdtzg.png&quot;);
+              "
+            >
+            </a>
+            <a
+              href="gallery.html"
+              class="gallery-preview-card"
+              hidden
+              style="
+                display: none;
+                background-image: url(&quot;https://res.cloudinary.com/dxoorukfj/image/upload/v1777052069/ChatGPT_Image_Apr_24_2026_06_32_39_PM_kxcfch.png&quot;);
+              "
+            >
+            </a>
+            <a
+              href="gallery.html"
+              class="gallery-preview-card"
+              hidden
+              style="
+                display: none;
+                background-image: url(&quot;https://res.cloudinary.com/dxoorukfj/image/upload/v1777051736/ChatGPT_Image_Apr_24_2026_06_28_42_PM_vyghtd.png&quot;);
+              "
+            >
+            </a>
+            <a
+              href="gallery.html"
+              class="gallery-preview-card"
+              hidden
+              style="
+                display: none;
+                background-image: url(&quot;https://res.cloudinary.com/dxoorukfj/image/upload/v1777051568/ChatGPT_Image_Apr_24_2026_06_25_49_PM_qieshw.png&quot;);
+              "
+            >
             </a>
           </div>
+
+          <nav
+            class="gallery-pagination"
+            data-gallery-pagination
+            aria-label="Gallery preview pagination"
+          >
+            <button
+              class="gallery-pagination-btn"
+              type="button"
+              data-gallery-page-prev
+            >
+              Previous
+            </button>
+            <div
+              class="gallery-pagination-numbers"
+              data-gallery-page-numbers
+            ></div>
+            <button
+              class="gallery-pagination-btn"
+              type="button"
+              data-gallery-page-next
+            >
+              Next
+            </button>
+            <span
+              class="gallery-pagination-status"
+              data-gallery-page-status
+            ></span>
+          </nav>
 
           <div class="text-center mt-4">
             <a href="gallery.html" class="btn btn-primary px-4 py-3"
@@ -490,5 +582,98 @@
       }, 10000);
     </script>
     <script type="module" src="js/hero-3d.js"></script>
+    <script>
+      (function () {
+        var grid = document.getElementById("gallery-preview-grid");
+        if (!grid) return;
+        var pagination = grid
+          .closest(".homepage-gallery-preview")
+          .querySelector("[data-gallery-pagination]");
+        if (!pagination) return;
+
+        var cards = Array.prototype.slice.call(
+          grid.querySelectorAll(".gallery-preview-card"),
+        );
+        var pageSize =
+          parseInt(grid.getAttribute("data-gallery-page-size"), 10) || 6;
+        var totalPages = Math.ceil(cards.length / pageSize);
+        var currentPage = 1;
+        var prevButton = pagination.querySelector("[data-gallery-page-prev]");
+        var nextButton = pagination.querySelector("[data-gallery-page-next]");
+        var numberWrap = pagination.querySelector(
+          "[data-gallery-page-numbers]",
+        );
+        var status = pagination.querySelector("[data-gallery-page-status]");
+
+        if (totalPages <= 1) {
+          pagination.hidden = true;
+          return;
+        }
+
+        function renderNumberButtons() {
+          numberWrap.innerHTML = "";
+          for (var page = 1; page <= totalPages; page += 1) {
+            var button = document.createElement("button");
+            button.type = "button";
+            button.className = "gallery-pagination-number";
+            button.textContent = page;
+            button.setAttribute("aria-label", "Show gallery page " + page);
+            button.setAttribute("data-page", page);
+            numberWrap.appendChild(button);
+          }
+        }
+
+        function showPage(page, shouldScroll) {
+          currentPage = Math.max(1, Math.min(page, totalPages));
+          var start = (currentPage - 1) * pageSize;
+          var end = Math.min(start + pageSize, cards.length);
+
+          cards.forEach(function (card, index) {
+            var isVisible = index >= start && index < end;
+            card.hidden = !isVisible;
+            card.classList.toggle("is-gallery-hidden", !isVisible);
+            if (isVisible) {
+              card.style.removeProperty("display");
+            } else {
+              card.style.setProperty("display", "none", "important");
+            }
+          });
+
+          prevButton.disabled = currentPage === 1;
+          nextButton.disabled = currentPage === totalPages;
+          status.textContent =
+            "Showing " + (start + 1) + "\u2013" + end + " of " + cards.length;
+
+          Array.prototype.forEach.call(numberWrap.children, function (button) {
+            var isCurrent =
+              Number(button.getAttribute("data-page")) === currentPage;
+            button.classList.toggle("is-active", isCurrent);
+            if (isCurrent) button.setAttribute("aria-current", "page");
+            else button.removeAttribute("aria-current");
+          });
+
+          if (shouldScroll) {
+            grid.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }
+
+        renderNumberButtons();
+        showPage(1, false);
+
+        prevButton.addEventListener("click", function () {
+          showPage(currentPage - 1, true);
+        });
+
+        nextButton.addEventListener("click", function () {
+          showPage(currentPage + 1, true);
+        });
+
+        numberWrap.addEventListener("click", function (event) {
+          var button = event.target.closest("[data-page]");
+          if (!button) return;
+          showPage(Number(button.getAttribute("data-page")), true);
+        });
+      })();
+    </script>
   </body>
 </html>

@@ -1074,8 +1074,6 @@ export const dextaAcademy4Manifest = {
               "Gallery image",
               ".gallery-preview-card",
             ),
-            richTextField("label", "Gallery label", ".gallery-preview-label"),
-            richTextField("caption", "Gallery caption", "strong"),
             // Section-level styling
             ...homeSectionStyle({
               sectionKey: "gallery-preview",
@@ -1569,8 +1567,6 @@ export const dextaAcademy4Manifest = {
             richTextField("title", "Title", ".text-center h2"),
             richTextField("body", "Intro text", ".section-intro"),
             backgroundImageField("image", "Image", ".gallery-page-card"),
-            textField("label", "Label", "span"),
-            textField("caption", "Caption", "strong"),
             ...gallerySectionStyle({
               sectionKey: "gallery-showcase",
               selector: ".gallery-showcase-section",

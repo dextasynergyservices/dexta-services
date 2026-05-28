@@ -2206,6 +2206,7 @@ function mergeSectionContent(
   options: {
     hydrateEmptyExisting?: boolean;
     preserveEmptyExistingField?: (sectionId: string, key: string) => boolean;
+    preserveExistingRepeatableItemCount?: (sectionId: string) => boolean;
   } = {},
 ): SchoolTemplateProjectSectionContent {
   const valuesIntroBody =
@@ -2319,7 +2320,12 @@ function mergeSectionContent(
         (item) => !isDextaAcademyThreeLegacyFooterContactLink(item),
       )
     : (existingSection?.repeatable?.items ?? []);
-  const itemCount = Math.max(freshItems.length, existingItems.length);
+  const shouldPreserveExistingRepeatableItemCount =
+    !!existingSection &&
+    options.preserveExistingRepeatableItemCount?.(freshSection.id);
+  const itemCount = shouldPreserveExistingRepeatableItemCount
+    ? existingItems.length
+    : Math.max(freshItems.length, existingItems.length);
 
   return {
     ...freshSection,
@@ -2505,6 +2511,9 @@ export function syncSchoolTemplateProjectContentWithManifest({
       manifest.templateSlug === "dexta-academy-3" &&
       sectionId === "site-header" &&
       DEXTA_ACADEMY_3_CLEARABLE_HEADER_FIELD_KEYS.has(key),
+    preserveExistingRepeatableItemCount: (sectionId: string) =>
+      manifest.templateSlug === "dexta-academy-1" &&
+      sectionId === "testimonial-wall",
   };
   const rawTheme =
     rawContent &&
