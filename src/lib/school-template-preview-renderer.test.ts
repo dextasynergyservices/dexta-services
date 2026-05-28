@@ -6,6 +6,7 @@ import {
   applySchoolNameFallbackToProjectContent,
   buildSchoolTemplateProjectContent,
   buildSchoolTemplateSourceSnapshot,
+  syncSchoolTemplateProjectContentWithManifest,
 } from "@/lib/school-template-project-content";
 import { renderSchoolTemplatePreview } from "@/lib/school-template-preview-renderer";
 
@@ -301,6 +302,13 @@ describe("school template preview renderer", () => {
     const successStoryFields =
       testimonialPageSections.find((section) => section.id === "success-story")
         ?.fields ?? [];
+    const testimonialsHeroFields =
+      testimonialPageSections.find((section) => section.id === "hero")
+        ?.fields ?? [];
+    const familyNotesSection = testimonialPageSections.find(
+      (section) => section.id === "testimonial-wall",
+    );
+    const familyNotesFields = familyNotesSection?.fields ?? [];
 
     assert.ok(
       headerFields.some((field) => field.key === "logoWidthMobile"),
@@ -471,6 +479,43 @@ describe("school template preview renderer", () => {
       ),
       "Expected Template 1 featured success story to expose a video link control.",
     );
+    assert.ok(
+      testimonialsHeroFields.some(
+        (field) =>
+          field.key === "image" &&
+          field.type === "image" &&
+          field.selector === ".testimonials-page__hero-main img",
+      ),
+      "Expected Template 1 testimonials hero to expose the visible hero image.",
+    );
+    assert.ok(
+      successStoryFields.some(
+        (field) =>
+          field.key === "body" &&
+          field.selector === ".testimonials-page__story-body",
+      ),
+      "Expected Template 1 success story body to target only its body container.",
+    );
+    assert.equal(
+      familyNotesSection && "repeatable" in familyNotesSection
+        ? familyNotesSection.repeatable?.itemSelector
+        : undefined,
+      ".testimonials-page__wall-card",
+      "Expected Template 1 family notes to be addable/deletable as exact wall cards.",
+    );
+    assert.ok(
+      familyNotesFields.some(
+        (field) =>
+          field.key === "author" &&
+          field.selector === ".testimonials-page__wall-meta strong",
+      ) &&
+        familyNotesFields.some(
+          (field) =>
+            field.key === "year" &&
+            field.selector === ".testimonials-page__wall-meta span",
+        ),
+      "Expected Template 1 family notes to expose family name and year per card.",
+    );
 
     const content = buildSchoolTemplateProjectContent(manifest);
     const sourceSnapshot = buildSchoolTemplateSourceSnapshot(manifest);
@@ -557,6 +602,47 @@ describe("school template preview renderer", () => {
       /--dexta-academy-1-home-academics-performance-bar-green-height/,
     );
     assert.match(html, /--dexta-academy-1-home-gallery-pagination-bg-color/);
+    assert.match(html, /function applyTemplateOneLandingGalleryPagination/);
+    assert.match(html, /var pageSize = 6/);
+    assert.match(html, /dexta-template1-gallery-paginated/);
+    assert.match(html, /data-dexta-preview-gallery-delegated/);
+    assert.match(
+      html,
+      /grid\.addEventListener\("click", handleTemplateOneGalleryClick, true\)/,
+    );
+    assert.match(html, /event\.stopImmediatePropagation/);
+    assert.match(html, /function restoreTemplateOneGalleryItemImage/);
+    assert.match(html, /function getTemplateOneGalleryImageSource/);
+    assert.match(html, /galleryPayloadItems/);
+    assert.match(html, /function openTemplateOneGalleryModal/);
+    assert.match(html, /dexta-template1-gallery-backdrop/);
+    assert.match(
+      html,
+      /\.landing-section--gallery \.landing-gallery:not\(\.dexta-template1-gallery-paginated\) \.landing-gallery__item:nth-of-type\(n\+7\)\{display:none!important;\}/,
+    );
+    assert.match(
+      html,
+      /\.landing-section--gallery \.landing-gallery__body\{display:none!important;\}/,
+    );
+    assert.match(html, /data-dexta-preview-gallery-observed/);
+    assert.match(html, /function applyTemplateOneFamilyNotesPagination/);
+    assert.match(html, /var isTemplateOneFamilyNotes/);
+    assert.match(
+      html,
+      /sectionContent\.repeatable \|\| isTemplateOneFamilyNotes/,
+    );
+    assert.match(html, /sectionContent\.id === "testimonial-wall"/);
+    assert.match(html, /data-dexta-repeatable-hidden/);
+    assert.match(
+      html,
+      /card\.getAttribute\("data-dexta-repeatable-hidden"\) !== "true"/,
+    );
+    assert.match(html, /data-family-notes-pagination/);
+    assert.match(html, /data-dexta-preview-family-notes-observed/);
+    assert.match(
+      html,
+      /\.testimonials-page__section--wall \.testimonials-page__wall:not\(\.dexta-template1-wall-paginated\) \.testimonials-page__wall-card:nth-of-type\(n\+7\)\{display:none!important;\}/,
+    );
     assert.match(html, /--dexta-academy-1-home-admissions-step-card-bg-color/);
     assert.match(html, /--dexta-academy-1-home-admissions-step-number-color/);
     assert.match(html, /--dexta-academy-1-home-admissions-step-title-color/);
@@ -616,9 +702,56 @@ describe("school template preview renderer", () => {
       "Expected Template 1 success story content.",
     );
     successStorySection.fields.videoUrl = "https://youtu.be/dQw4w9WgXcQ";
+    const familyNotesContent = content.pages
+      .find((page) => page.slug === "testimonials")
+      ?.sections.find((section) => section.id === "testimonial-wall");
+    assert.ok(familyNotesContent?.repeatable, "Expected family notes content.");
+    familyNotesContent.repeatable.items = [];
+
+    const syncedAfterFamilyNotesDeletion =
+      syncSchoolTemplateProjectContentWithManifest({
+        content,
+        sourceSnapshot,
+        rawContent: content,
+        templateSlug: manifest.templateSlug,
+      }).contentJson;
+    const syncedFamilyNotes = syncedAfterFamilyNotesDeletion.pages
+      .find((page) => page.slug === "testimonials")
+      ?.sections.find((section) => section.id === "testimonial-wall");
+    assert.equal(
+      syncedFamilyNotes?.repeatable?.items.length,
+      0,
+      "Expected Template 1 family notes sync to preserve admin deletion instead of restoring default cards.",
+    );
+    const contentWithLegacyDeletedFamilyNotes = JSON.parse(
+      JSON.stringify(content),
+    ) as typeof content;
+    const legacyDeletedFamilyNotesSection =
+      contentWithLegacyDeletedFamilyNotes.pages
+        .find((page) => page.slug === "testimonials")
+        ?.sections.find((section) => section.id === "testimonial-wall");
+    assert.ok(
+      legacyDeletedFamilyNotesSection,
+      "Expected legacy family notes content.",
+    );
+    delete legacyDeletedFamilyNotesSection.repeatable;
+    const syncedLegacyDeletedFamilyNotes =
+      syncSchoolTemplateProjectContentWithManifest({
+        content: contentWithLegacyDeletedFamilyNotes,
+        sourceSnapshot,
+        rawContent: contentWithLegacyDeletedFamilyNotes,
+        templateSlug: manifest.templateSlug,
+      })
+        .contentJson.pages.find((page) => page.slug === "testimonials")
+        ?.sections.find((section) => section.id === "testimonial-wall");
+    assert.equal(
+      syncedLegacyDeletedFamilyNotes?.repeatable?.items.length,
+      0,
+      "Expected Template 1 family notes sync to avoid restoring defaults when saved repeatable data is absent.",
+    );
 
     const testimonialsHtml = await renderSchoolTemplatePreview({
-      content,
+      content: syncedAfterFamilyNotesDeletion,
       sourceSnapshot,
       pageSlug: "testimonials",
     });
@@ -635,6 +768,13 @@ describe("school template preview renderer", () => {
       testimonialsHtml,
       /function applyTemplateOneSuccessStoryVideo/,
     );
+    assert.match(testimonialsHtml, /class="testimonials-page__story-body"/);
+    assert.match(
+      testimonialsHtml,
+      /function applyTemplateOneFamilyNotesPagination/,
+    );
+    assert.match(testimonialsHtml, /"id":"testimonial-wall"/);
+    assert.match(testimonialsHtml, /"items":\[\]/);
     assert.match(testimonialsHtml, /\^https\?:\\\/\\\//);
     assert.match(testimonialsHtml, /dexta-template1-video-modal/);
     assert.match(testimonialsHtml, /youtube\.com\/embed/);

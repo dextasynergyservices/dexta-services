@@ -1387,7 +1387,6 @@ function applySection(
   }
 
   const itemContents = sectionContent.repeatable?.items ?? [];
-  if (!itemContents.length) return;
 
   for (const sectionRoot of roots) {
     const existingItems = queryAll(
@@ -1395,6 +1394,27 @@ function applySection(
       sectionSnapshot.repeatable!.itemSelector,
     );
     if (!existingItems.length) continue;
+
+    if (!itemContents.length) {
+      for (let h = existingItems.length - 1; h >= 0; h--) {
+        const item = existingItems[h];
+        if (
+          item.parent &&
+          item.parent !== sectionRoot &&
+          item.parent.children.filter((c) => c.type === "element").length === 1
+        ) {
+          const wrapper = item.parent;
+          if (wrapper.parent) {
+            wrapper.parent.children = wrapper.parent.children.filter(
+              (c) => c !== wrapper,
+            );
+          }
+        } else if (item.parent) {
+          item.parent.children = item.parent.children.filter((c) => c !== item);
+        }
+      }
+      continue;
+    }
 
     // Only clone additional items if data has more items than the template
     if (itemContents.length > existingItems.length) {
@@ -1679,6 +1699,74 @@ function applyDocumentIdentity(
   }
 }
 
+function addClassName(node: ElementNode, className: string) {
+  const currentClass = getAttr(node, "class") ?? "";
+  const classNames = currentClass.split(/\s+/).filter(Boolean);
+
+  if (!classNames.includes(className)) {
+    classNames.push(className);
+    setAttr(node, "class", classNames.join(" "));
+  }
+}
+
+function applyDextaAcademyOneExportLoader(
+  root: ElementNode,
+  content: SchoolTemplateProjectContent,
+) {
+  if (content.templateSlug !== "dexta-academy-1") return;
+
+  const spinner = queryAll(root, "#spinner")[0];
+  if (!spinner) return;
+
+  addClassName(spinner, "dexta-template-one-loader");
+
+  const logoUrl = getThemeLogoUrl(content);
+  const loadingText =
+    content.theme.loadingText.trim() ||
+    (content.theme.brandName.trim()
+      ? `Loading ${content.theme.brandName.trim()}`
+      : "");
+  const spinnerBorderIndex = spinner.children.findIndex(
+    (child) =>
+      child.type === "element" &&
+      /\bspinner-border\b/.test(getAttr(child, "class") ?? ""),
+  );
+
+  if (logoUrl && !queryAll(spinner, ".dexta-loading-logo").length) {
+    const logoNode: RawNode = {
+      type: "raw",
+      parent: spinner,
+      content: `<span class="dexta-loading-logo"><img src="${escapeAttribute(logoUrl)}" alt="${escapeAttribute(content.theme.brandName || content.templateName)}"></span>`,
+    };
+    const insertAt = spinnerBorderIndex >= 0 ? spinnerBorderIndex : 0;
+    spinner.children.splice(insertAt, 0, logoNode);
+  }
+
+  if (loadingText) {
+    queryAll(spinner, ".sr-only").forEach((node) =>
+      setTextContent(node, loadingText),
+    );
+
+    if (!queryAll(spinner, ".dexta-loading-text").length) {
+      const textNode: RawNode = {
+        type: "raw",
+        parent: spinner,
+        content: `<span class="dexta-loading-text">${escapeHtml(loadingText)}</span>`,
+      };
+      const insertAfter = spinner.children.findIndex(
+        (child) =>
+          child.type === "element" &&
+          /\bspinner-border\b/.test(getAttr(child, "class") ?? ""),
+      );
+      spinner.children.splice(
+        insertAfter >= 0 ? insertAfter + 1 : spinner.children.length,
+        0,
+        textNode,
+      );
+    }
+  }
+}
+
 function getThemeVariableDeclarations(content: SchoolTemplateProjectContent) {
   const primary = content.theme.primaryColor;
   const secondary = content.theme.secondaryColor;
@@ -1757,6 +1845,7 @@ function getThemeVariableDeclarations(content: SchoolTemplateProjectContent) {
 function getGlobalAppearanceCss(content: SchoolTemplateProjectContent) {
   const loadingBackground = content.theme.loadingBackgroundColor;
   const loadingTextColor = content.theme.loadingTextColor || "currentColor";
+  const isTemplateOne = content.templateSlug === "dexta-academy-1";
   const isTemplateTwo = content.templateSlug === "dexta-academy-2";
   const isTemplateThree = content.templateSlug === "dexta-academy-3";
   const navbarBackground = content.theme.navBarTransparent
@@ -1779,6 +1868,7 @@ function getGlobalAppearanceCss(content: SchoolTemplateProjectContent) {
   const logoHeight = `${content.theme.logoHeight}px`;
   const loadingLogoWidth = `${content.theme.loadingLogoWidth}px`;
   const loadingLogoHeight = `${content.theme.loadingLogoHeight}px`;
+  const logoBackground = content.theme.logoBackgroundColor || "transparent";
   const loadingCardBorderColor =
     content.theme.loadingCardBorderColor || "rgba(255,255,255,0.1)";
   const loadingCardBorderWidth = Math.max(
@@ -2004,11 +2094,65 @@ body[data-page="home"] .site-header__bar {
   line-height: 1.4;
 }`);
 
+  if (isTemplateOne) {
+    css.push(`
+#spinner.dexta-template-one-loader,
+#spinner.dexta-template-one-loader.show {
+  background: ${loadingBackground} !important;
+  background-color: ${loadingBackground} !important;
+  color: ${loadingTextColor} !important;
+}
+#spinner.dexta-template-one-loader {
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+#spinner.dexta-template-one-loader .dexta-loading-logo {
+  display: grid !important;
+  place-items: center !important;
+  width: ${loadingLogoWidth} !important;
+  height: ${loadingLogoHeight} !important;
+  max-width: ${loadingLogoWidth} !important;
+  background: ${logoBackground} !important;
+  border: ${logoBorder} !important;
+  border-radius: ${logoRadius} !important;
+  overflow: hidden !important;
+}
+#spinner.dexta-template-one-loader .dexta-loading-logo img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+#spinner.dexta-template-one-loader .spinner-border {
+  width: 3rem !important;
+  height: 3rem !important;
+}
+#spinner.dexta-template-one-loader .dexta-loading-text {
+  color: ${loadingTextColor} !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+}`);
+  }
+
   const loadingBarColor = content.theme.loadingBarColor || "";
   if (loadingBarColor) {
     css.push(
       `.site-loader__bar::after { background: ${loadingBarColor} !important; }`,
     );
+    if (isTemplateOne) {
+      css.push(`
+#spinner.dexta-template-one-loader .spinner-border {
+  color: ${loadingBarColor} !important;
+}
+.page-loader__bar {
+  background: ${loadingBarColor} !important;
+}`);
+    }
   }
 
   if (isTemplateThree) {
@@ -2345,6 +2489,183 @@ body[data-page="home"] .hero-home__actions .button--primary:hover {
     default:
       return "";
   }
+}
+
+function getAcademyOneSectionBackgroundCss(
+  selector: string,
+  pageKey: string,
+  sectionKey: string,
+  defaultColor: string,
+) {
+  const prefix = `--dexta-academy-1-${pageKey}-${sectionKey}-`;
+  const overlay = `color-mix(in srgb, var(${prefix}section-bg-color, ${defaultColor}) var(${prefix}section-bg-opacity, 100%), transparent)`;
+  return `${selector}{background-color:${overlay}!important;background-image:linear-gradient(${overlay},${overlay}),var(${prefix}section-bg-image, none)!important;background-position:var(${prefix}section-bg-position, center center)!important;background-size:var(${prefix}section-bg-size, cover)!important;background-repeat:no-repeat!important;}`;
+}
+
+function getDextaAcademyOnePreviewParityCss(
+  content: SchoolTemplateProjectContent,
+) {
+  const academyOneLogoWidth = `${Number(content.theme.logoWidth || 72)}px`;
+  const academyOneLogoHeight = `${Number(content.theme.logoHeight || 56)}px`;
+
+  return [
+    getAcademyOneSectionBackgroundCss(".navbar", "shared", "navbar", "#fff"),
+    `.navbar .navbar-brand img{width:var(--dexta-academy-1-shared-navbar-logo-width-desktop,${academyOneLogoWidth})!important;height:var(--dexta-academy-1-shared-navbar-logo-height-desktop,${academyOneLogoHeight})!important;max-width:var(--dexta-academy-1-shared-navbar-logo-width-desktop,${academyOneLogoWidth})!important;}`,
+    `@media (min-width:768px) and (max-width:1199.98px){.navbar .navbar-brand img{width:var(--dexta-academy-1-shared-navbar-logo-width-tablet,${academyOneLogoWidth})!important;height:var(--dexta-academy-1-shared-navbar-logo-height-tablet,${academyOneLogoHeight})!important;max-width:var(--dexta-academy-1-shared-navbar-logo-width-tablet,${academyOneLogoWidth})!important;}}`,
+    `@media (max-width:767.98px){.navbar .navbar-brand img{width:var(--dexta-academy-1-shared-navbar-logo-width-mobile,${academyOneLogoWidth})!important;height:var(--dexta-academy-1-shared-navbar-logo-height-mobile,${academyOneLogoHeight})!important;max-width:var(--dexta-academy-1-shared-navbar-logo-width-mobile,${academyOneLogoWidth})!important;}}`,
+    `.navbar .btn-primary,.navbar .btn{background:color-mix(in srgb,var(--dexta-academy-1-shared-navbar-cta-button-bg-color,#0d6efd) var(--dexta-academy-1-shared-navbar-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-shared-navbar-cta-button-text-color,#fff)!important;border:var(--dexta-academy-1-shared-navbar-cta-button-border-width,0px) solid var(--dexta-academy-1-shared-navbar-cta-button-border-color,#0d6efd)!important;}`,
+    `.navbar-nav .nav-item.nav-link,.navbar-nav .nav-link,.navbar-nav a{color:var(--dexta-academy-1-shared-navbar-nav-link-color,#696969)!important;}`,
+    `.navbar-nav .nav-item.nav-link:hover,.navbar-nav .nav-link:hover,.navbar-nav a:hover,.navbar-nav .nav-item.nav-link.active,.navbar-nav .nav-link.active{color:var(--dexta-academy-1-shared-navbar-nav-link-hover-color,#0d6efd)!important;}`,
+    getAcademyOneSectionBackgroundCss(
+      ".landing-footer",
+      "shared",
+      "footer",
+      "#1a1a2e",
+    ),
+    getAcademyOneSectionBackgroundCss(
+      ".landing-admissions-modal",
+      "shared",
+      "admission",
+      "#fff",
+    ),
+    getAcademyOneSectionBackgroundCss(".school-hero", "home", "hero", "#fff"),
+    `.school-hero__card-bg--green{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-card-center-bg-color,#0a4d3c) var(--dexta-academy-1-home-hero-card-center-bg-opacity,100%),transparent)!important;}`,
+    `.school-hero__card-bg--orange{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-card-top-bg-color,#ff6b35) var(--dexta-academy-1-home-hero-card-top-bg-opacity,100%),transparent)!important;}`,
+    `.school-hero__card-bg--champagne{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-card-bottom-bg-color,#dce5c8) var(--dexta-academy-1-home-hero-card-bottom-bg-opacity,100%),transparent)!important;}`,
+    `@media (min-width:768px) and (max-width:1199.98px){.school-hero .school-hero__title,.school-hero .school-hero__title *{font-size:var(--dexta-academy-1-home-hero-headline-tablet-font-size,clamp(3.6rem,5vw,5.8rem))!important;}.school-hero .school-hero__text,.school-hero .school-hero__text *{font-size:var(--dexta-academy-1-home-hero-body-tablet-font-size,1.35rem)!important;}}`,
+    `@media (max-width:767.98px){.school-hero .school-hero__title,.school-hero .school-hero__title *{font-size:var(--dexta-academy-1-home-hero-headline-mobile-font-size,clamp(2.6rem,10vw,3.7rem))!important;}.school-hero .school-hero__text,.school-hero .school-hero__text *{font-size:var(--dexta-academy-1-home-hero-body-mobile-font-size,1.1rem)!important;}}`,
+    `.school-hero .school-hero__btn--primary,.school-hero .school-hero__btn--secondary{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-button-bg-color,#0d6efd) var(--dexta-academy-1-home-hero-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-home-hero-button-text-color,#fff)!important;border:var(--dexta-academy-1-home-hero-button-border-width,0px) solid var(--dexta-academy-1-home-hero-button-border-color,#0d6efd)!important;}`,
+    getAcademyOneSectionBackgroundCss(
+      ".landing-section--about",
+      "home",
+      "about-preview",
+      "#fff",
+    ),
+    `.landing-section--about .landing-about__shape{border:var(--dexta-academy-1-home-about-preview-image-border-width,0px) var(--dexta-academy-1-home-about-preview-image-border-style,solid) var(--dexta-academy-1-home-about-preview-image-border-color,#0a4d3c)!important;}`,
+    getAcademyOneSectionBackgroundCss(
+      ".landing-section--academics",
+      "home",
+      "academics",
+      "#f8f9fa",
+    ),
+    `.landing-section--academics .landing-academics__card{background:var(--dexta-academy-1-home-academics-card-bg-color,#fff)!important;}`,
+    `.landing-section--academics .landing-academics__icon{color:var(--dexta-academy-1-home-academics-card-icon-color,#0d6efd)!important;background-color:var(--dexta-academy-1-home-academics-card-icon-bg-color,rgba(10,77,60,.08))!important;background-image:var(--dexta-academy-1-home-academics-card-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;}`,
+    `.landing-section--academics .landing-academics__icon i{color:inherit!important;background:transparent!important;}`,
+    `.landing-section--academics .landing-performance{background:var(--dexta-academy-1-home-academics-performance-bg-color,linear-gradient(180deg,#ffffff 0%,#fffaf1 100%))!important;}`,
+    `.landing-section--academics .landing-performance__chart{background:var(--dexta-academy-1-home-academics-performance-chart-bg-color,rgba(10,77,60,.04))!important;}`,
+    `.landing-section--academics .landing-performance__bar--green span{height:var(--dexta-academy-1-home-academics-performance-bar-green-height,82%)!important;background:var(--dexta-academy-1-home-academics-performance-bar-green-color,#0a4d3c)!important;}`,
+    `.landing-section--academics .landing-performance__bar--orange span{height:var(--dexta-academy-1-home-academics-performance-bar-orange-height,72%)!important;background:var(--dexta-academy-1-home-academics-performance-bar-orange-color,#ff6b35)!important;}`,
+    `.landing-section--academics .landing-performance__bar--champagne span{height:var(--dexta-academy-1-home-academics-performance-bar-champagne-height,64%)!important;background:var(--dexta-academy-1-home-academics-performance-bar-champagne-color,#e9d7b1)!important;}`,
+    getAcademyOneSectionBackgroundCss(
+      ".landing-section--gallery",
+      "home",
+      "gallery",
+      "#fff",
+    ),
+    `.landing-section--gallery .landing-gallery__page{background:var(--dexta-academy-1-home-gallery-pagination-bg-color,#fff)!important;color:var(--dexta-academy-1-home-gallery-pagination-text-color,rgba(30,30,46,.7))!important;}`,
+    `.landing-section--gallery .landing-gallery__page.is-active{background:var(--dexta-academy-1-home-gallery-pagination-active-bg-color,#0a4d3c)!important;border-color:var(--dexta-academy-1-home-gallery-pagination-active-bg-color,#0a4d3c)!important;color:var(--dexta-academy-1-home-gallery-pagination-active-text-color,#fff)!important;}`,
+    getAcademyOneSectionBackgroundCss(
+      ".landing-section--testimonials",
+      "home",
+      "testimonials",
+      "#fff",
+    ),
+    getAcademyOneSectionBackgroundCss(
+      "#admissions",
+      "home",
+      "admissions",
+      "#fff",
+    ),
+    `#admissions .landing-step{background:var(--dexta-academy-1-home-admissions-step-card-bg-color,#fff)!important;}`,
+    `#admissions .landing-step .landing-step__number{color:var(--dexta-academy-1-home-admissions-step-number-color,rgba(10,77,60,.42))!important;}#admissions .landing-step h3{color:var(--dexta-academy-1-home-admissions-step-title-color,#1e1e2e)!important;}#admissions .landing-step p{color:var(--dexta-academy-1-home-admissions-step-body-color,rgba(30,30,46,.72))!important;}`,
+    `#admissions .btn{background:color-mix(in srgb,var(--dexta-academy-1-home-admissions-button-bg-color,#0d6efd) var(--dexta-academy-1-home-admissions-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-home-admissions-button-text-color,#fff)!important;border:var(--dexta-academy-1-home-admissions-button-border-width,0px) solid var(--dexta-academy-1-home-admissions-button-border-color,#0d6efd)!important;}`,
+    getAcademyOneSectionBackgroundCss("#contact", "home", "contact", "#fff"),
+    `#contact .landing-contact__detail i{color:var(--dexta-academy-1-home-contact-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-home-contact-icon-bg-color,#fff) var(--dexta-academy-1-home-contact-icon-bg-opacity,0%),transparent)!important;background-image:var(--dexta-academy-1-home-contact-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-home-contact-icon-border-width,0px) solid var(--dexta-academy-1-home-contact-icon-border-color,#0d6efd)!important;}`,
+    `#contact .landing-contact__detail:nth-of-type(1){background:var(--dexta-academy-1-home-contact-address-card-bg-color,rgba(255,255,255,.92))!important;}#contact .landing-contact__detail:nth-of-type(1) i{color:var(--dexta-academy-1-home-contact-address-icon-color,#0d6efd)!important;}`,
+    `#contact .landing-contact__detail:nth-of-type(2){background:var(--dexta-academy-1-home-contact-phone-card-bg-color,rgba(255,255,255,.92))!important;}#contact .landing-contact__detail:nth-of-type(2) i{color:var(--dexta-academy-1-home-contact-phone-icon-color,#0d6efd)!important;}`,
+    `#contact .landing-contact__detail:nth-of-type(3){background:var(--dexta-academy-1-home-contact-email-card-bg-color,rgba(255,255,255,.92))!important;}#contact .landing-contact__detail:nth-of-type(3) i{color:var(--dexta-academy-1-home-contact-email-icon-color,#0d6efd)!important;}`,
+    getAcademyOneSectionBackgroundCss(
+      ".about-page__hero",
+      "about",
+      "hero",
+      "#fff",
+    ),
+    getAcademyOneSectionBackgroundCss(
+      ".about-page__section--vision",
+      "about",
+      "vision",
+      "#fff",
+    ),
+    `.about-page__section--vision .about-page__panel{background:var(--dexta-academy-1-about-vision-card-bg-color,#fff)!important;color:var(--dexta-academy-1-about-vision-card-text-color,#1e1e2e)!important;}`,
+    `.about-page__section--vision .about-page__panel h3,.about-page__section--vision .about-page__panel p{color:inherit!important;}`,
+    `.about-page__section--vision .about-page__panel-icon,.about-page__section--vision .about-page__panel-icon i{color:var(--dexta-academy-1-about-vision-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-about-vision-icon-bg-color,#e8f0fe) var(--dexta-academy-1-about-vision-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-vision-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-about-vision-icon-border-width,0px) solid var(--dexta-academy-1-about-vision-icon-border-color,#0d6efd)!important;}`,
+    `.about-page__section--vision .about-page__panel-icon{color:var(--dexta-academy-1-about-vision-card-icon-color,var(--dexta-academy-1-about-vision-icon-color,#0d6efd))!important;background-color:var(--dexta-academy-1-about-vision-card-icon-bg-color,#e8f0fe)!important;background-image:var(--dexta-academy-1-about-vision-card-icon-image,var(--dexta-academy-1-about-vision-icon-image,none))!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;}`,
+    `.about-page__section--vision .about-page__panel-icon i{color:inherit!important;background:transparent!important;}`,
+    getAcademyOneSectionBackgroundCss(
+      ".about-page__section--values",
+      "about",
+      "values",
+      "#f8f9fa",
+    ),
+    `.about-page__section--values .about-page__value{background:var(--dexta-academy-1-about-values-card-bg-color,#fff)!important;color:var(--dexta-academy-1-about-values-card-text-color,#1e1e2e)!important;}`,
+    `.about-page__section--values .about-page__value h3,.about-page__section--values .about-page__value p{color:inherit!important;}`,
+    `.about-page__section--values .about-page__value-icon,.about-page__section--values .about-page__value-icon i{color:var(--dexta-academy-1-about-values-icon-color,#0d6efd)!important;background-color:color-mix(in srgb,var(--dexta-academy-1-about-values-icon-bg-color,#e8f0fe) var(--dexta-academy-1-about-values-icon-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-1-about-values-icon-image,none)!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;border:var(--dexta-academy-1-about-values-icon-border-width,0px) solid var(--dexta-academy-1-about-values-icon-border-color,#0d6efd)!important;}`,
+    `.about-page__section--values .about-page__value-icon{color:var(--dexta-academy-1-about-values-card-icon-color,var(--dexta-academy-1-about-values-icon-color,#0d6efd))!important;background-color:var(--dexta-academy-1-about-values-card-icon-bg-color,#e8f0fe)!important;background-image:var(--dexta-academy-1-about-values-card-icon-image,var(--dexta-academy-1-about-values-icon-image,none))!important;background-position:center!important;background-repeat:no-repeat!important;background-size:contain!important;}`,
+    `.about-page__section--values .about-page__value-icon i{color:inherit!important;background:transparent!important;}`,
+    getAcademyOneSectionBackgroundCss(
+      ".about-page__section--story",
+      "about",
+      "story",
+      "#fff",
+    ),
+    `.about-page__section--story #readMoreBtn,.about-page__section--story .btn{background:color-mix(in srgb,var(--dexta-academy-1-about-story-button-bg-color,#0d6efd) var(--dexta-academy-1-about-story-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-about-story-button-text-color,#fff)!important;border:var(--dexta-academy-1-about-story-button-border-width,0px) solid var(--dexta-academy-1-about-story-button-border-color,#0d6efd)!important;}`,
+    getAcademyOneSectionBackgroundCss(
+      ".about-page__message",
+      "about",
+      "head-message",
+      "#fff",
+    ),
+    getAcademyOneSectionBackgroundCss(
+      ".about-page__section--reasons",
+      "about",
+      "reasons",
+      "#f8f9fa",
+    ),
+    getAcademyOneSectionBackgroundCss(
+      ".about-page__cta",
+      "about",
+      "cta",
+      "#0d6efd",
+    ),
+    `.about-page__cta .about-page__cta-card{background:var(--dexta-academy-1-about-cta-card-bg-color,#0d6efd)!important;}`,
+    `.about-page__cta .about-page__button{background:color-mix(in srgb,var(--dexta-academy-1-about-cta-button-bg-color,#fff) var(--dexta-academy-1-about-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-about-cta-button-text-color,#0d6efd)!important;border:var(--dexta-academy-1-about-cta-button-border-width,0px) solid var(--dexta-academy-1-about-cta-button-border-color,#fff)!important;}`,
+    getAcademyOneSectionBackgroundCss(
+      ".testimonials-page__hero",
+      "testimonials",
+      "hero",
+      "#fff",
+    ),
+    getAcademyOneSectionBackgroundCss(
+      ".testimonials-page__section--story",
+      "testimonials",
+      "success-story",
+      "#fff",
+    ),
+    getAcademyOneSectionBackgroundCss(
+      ".testimonials-page__section--wall",
+      "testimonials",
+      "wall",
+      "#f8f9fa",
+    ),
+    getAcademyOneSectionBackgroundCss(
+      ".testimonials-page__section--cta",
+      "testimonials",
+      "cta",
+      "#0d6efd",
+    ),
+    `.testimonials-page__section--cta .btn-primary{background:color-mix(in srgb,var(--dexta-academy-1-testimonials-cta-button-bg-color,#fff) var(--dexta-academy-1-testimonials-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-testimonials-cta-button-text-color,#0d6efd)!important;border:var(--dexta-academy-1-testimonials-cta-button-border-width,0px) solid var(--dexta-academy-1-testimonials-cta-button-border-color,#fff)!important;}`,
+    `.testimonials-page__cta{background:var(--dexta-academy-1-testimonials-cta-card-bg-color,#0d6efd)!important;}`,
+  ].join("");
 }
 
 function getTemplateOverrideCss(content: SchoolTemplateProjectContent) {
@@ -2865,6 +3186,7 @@ body[data-page="contact"] .accent-panel .feature-list__bullet {
 	.about-page__cta .about-page__cta-card {
 	  background: var(--dexta-academy-1-about-cta-card-bg-color, #0d6efd) !important;
 	}`;
+    templateCss += getDextaAcademyOnePreviewParityCss(content);
   }
 
   if (content.templateSlug === "dexta-academy-3") {
@@ -5403,6 +5725,204 @@ function renderThreeConfigMarkup(config: Record<string, unknown>) {
   return `<script>window.schoolHero3dConfig = ${escapeScriptJson(config)};</script>`;
 }
 
+function getTemplateOneExportGalleryMarkup(
+  content: SchoolTemplateProjectContent,
+  page: SchoolTemplateProjectPageContent,
+): string {
+  if (content.templateSlug !== "dexta-academy-1") return "";
+
+  const galleryItems =
+    page.slug === "home"
+      ? (page.sections.find((section) => section.id === "gallery")?.repeatable
+          ?.items ?? [])
+      : [];
+  const familyNotesCount =
+    page.slug === "testimonials"
+      ? (page.sections.find((section) => section.id === "testimonial-wall")
+          ?.repeatable?.items.length ?? 0)
+      : null;
+
+  const css: string[] = [];
+  if (page.slug === "home") {
+    css.push(
+      ".landing-section--gallery .landing-gallery__body{display:none!important;}",
+      ".landing-section--gallery .landing-gallery__trigger{cursor:pointer;pointer-events:auto!important;}",
+      ".landing-section--gallery .landing-gallery__trigger img{pointer-events:auto!important;opacity:1!important;visibility:visible!important;}",
+      ".landing-section--gallery .landing-gallery:not(.dexta-template1-gallery-paginated) .landing-gallery__item:nth-of-type(n+7){display:none!important;}",
+    );
+  }
+  if (familyNotesCount !== null) {
+    css.push(
+      familyNotesCount <= 0
+        ? ".testimonials-page__section--wall .testimonials-page__wall-card{display:none!important;}"
+        : `.testimonials-page__section--wall .testimonials-page__wall-card:nth-of-type(n+${
+            familyNotesCount + 1
+          }){display:none!important;}`,
+    );
+  }
+
+  const style = css.length
+    ? `<style data-dexta-template1-export="true">${css.join("")}</style>`
+    : "";
+  if (page.slug !== "home") return style;
+
+  return `${style}<script>
+(function(){
+  var galleryPayloadItems = ${escapeScriptJson(galleryItems)};
+  function resolveGalleryImage(value){ return String(value || "").trim(); }
+  function getGalleryItems(){ return Array.prototype.slice.call(document.querySelectorAll(".landing-section--gallery .landing-gallery__item")); }
+  function getGalleryImageSource(image,index){
+    var payloadImage = galleryPayloadItems[index] && galleryPayloadItems[index].image ? galleryPayloadItems[index].image : "";
+    return resolveGalleryImage(payloadImage) || image.getAttribute("data-original-src") || image.currentSrc || image.src || "";
+  }
+  function restoreGalleryItemImage(item,index){
+    var image = item.querySelector(".landing-gallery__trigger img");
+    if(!image) return;
+    var source = getGalleryImageSource(image,index);
+    if(!source) return;
+    image.src = source;
+    image.setAttribute("data-original-src", source);
+    image.removeAttribute("loading");
+    image.style.removeProperty("display");
+    image.style.setProperty("opacity","1","important");
+    image.style.setProperty("visibility","visible","important");
+  }
+  function openGalleryModal(src,alt){
+    var modal = document.getElementById("landingGalleryModal");
+    var modalImage = document.getElementById("landingGalleryModalImage");
+    if(!modal || !modalImage || !src) return;
+    modalImage.src = src;
+    modalImage.alt = alt || "Gallery image";
+    if(window.bootstrap && window.bootstrap.Modal){
+      try{ window.bootstrap.Modal.getOrCreateInstance(modal).show(); }catch(error){}
+    }
+    modal.classList.add("show");
+    modal.style.display = "block";
+    modal.removeAttribute("aria-hidden");
+    modal.setAttribute("aria-modal","true");
+    modal.setAttribute("role","dialog");
+    document.body.classList.add("modal-open");
+  }
+  function closeGalleryModal(){
+    var modal = document.getElementById("landingGalleryModal");
+    if(!modal) return;
+    modal.classList.remove("show");
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden","true");
+    modal.removeAttribute("aria-modal");
+    modal.removeAttribute("role");
+    document.body.classList.remove("modal-open");
+  }
+  function applyGallery(){
+    var section = document.querySelector(".landing-section--gallery");
+    if(!section) return;
+    var grid = section.querySelector(".landing-gallery");
+    if(!grid) return;
+    var items = getGalleryItems();
+    if(!items.length) return;
+    var pageSize = 6;
+    var totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+    var pagination = section.querySelector(".landing-gallery__pagination");
+    if(!pagination){
+      pagination = document.createElement("div");
+      pagination.className = "landing-gallery__pagination";
+      pagination.setAttribute("aria-label","Gallery pagination");
+      grid.parentNode.insertBefore(pagination, grid.nextSibling);
+    }
+    items.forEach(function(item,index){
+      item.querySelectorAll(".landing-gallery__body").forEach(function(node){ node.remove(); });
+      restoreGalleryItemImage(item,index);
+      var trigger = item.querySelector(".landing-gallery__trigger");
+      if(trigger){
+        trigger.setAttribute("data-gallery-index", String(index));
+        trigger.setAttribute("aria-label", "Open gallery image " + (index + 1));
+        trigger.style.cursor = "pointer";
+        trigger.style.pointerEvents = "auto";
+      }
+    });
+    function showPage(page){
+      var currentPage = Math.max(1, Math.min(page, totalPages));
+      section.setAttribute("data-dexta-gallery-page", String(currentPage));
+      grid.classList.add("dexta-template1-gallery-paginated");
+      var start = (currentPage - 1) * pageSize;
+      var end = Math.min(start + pageSize, items.length);
+      items.forEach(function(item,index){
+        var visible = index >= start && index < end;
+        item.hidden = !visible;
+        if(visible){
+          restoreGalleryItemImage(item,index);
+          item.style.removeProperty("display");
+          item.style.setProperty("opacity","1","important");
+          item.style.setProperty("visibility","visible","important");
+        }else{
+          item.style.setProperty("display","none","important");
+        }
+      });
+      pagination.hidden = totalPages <= 1;
+      pagination.innerHTML = "";
+      for(var pageIndex=1; pageIndex<=totalPages; pageIndex+=1){
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "landing-gallery__page" + (pageIndex === currentPage ? " is-active" : "");
+        button.textContent = pageIndex;
+        button.setAttribute("data-page", String(pageIndex));
+        button.setAttribute("aria-label", "Go to gallery page " + pageIndex);
+        pagination.appendChild(button);
+      }
+    }
+    section.__dextaTemplateOneExportGalleryShowPage = showPage;
+    showPage(Number(section.getAttribute("data-dexta-gallery-page") || "1") || 1);
+    if(grid.getAttribute("data-dexta-export-gallery-bound") !== "true"){
+      grid.setAttribute("data-dexta-export-gallery-bound","true");
+      grid.addEventListener("click", function(event){
+        var target = event.target;
+        if(!target || !target.closest) return;
+        var item = target.closest(".landing-gallery__item");
+        if(!item || !grid.contains(item) || item.hidden) return;
+        var trigger = target.closest(".landing-gallery__trigger") || item.querySelector(".landing-gallery__trigger");
+        if(!trigger) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if(event.stopImmediatePropagation) event.stopImmediatePropagation();
+        var image = trigger.querySelector("img");
+        if(!image) return;
+        var index = Number(trigger.getAttribute("data-gallery-index") || "0") || 0;
+        openGalleryModal(getGalleryImageSource(image,index), image.alt || "Gallery image");
+      }, true);
+    }
+    if(pagination.getAttribute("data-dexta-export-gallery-bound") !== "true"){
+      pagination.setAttribute("data-dexta-export-gallery-bound","true");
+      pagination.addEventListener("click", function(event){
+        var button = event.target && event.target.closest ? event.target.closest("[data-page]") : null;
+        if(!button) return;
+        showPage(Number(button.getAttribute("data-page")));
+      });
+    }
+    var modal = document.getElementById("landingGalleryModal");
+    if(modal && modal.getAttribute("data-dexta-export-modal-bound") !== "true"){
+      modal.setAttribute("data-dexta-export-modal-bound","true");
+      modal.addEventListener("click", function(event){
+        var closeButton = event.target && event.target.closest ? event.target.closest('[data-bs-dismiss="modal"], .landing-gallery-modal__close') : null;
+        if(event.target === modal || closeButton){
+          event.preventDefault();
+          closeGalleryModal();
+        }
+      });
+      document.addEventListener("keydown", function(event){
+        if(event.key === "Escape" && modal.classList.contains("show")) closeGalleryModal();
+      });
+    }
+  }
+  applyGallery();
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", applyGallery, { once: true });
+  }
+  window.setTimeout(applyGallery, 80);
+  window.setTimeout(applyGallery, 350);
+})();
+</script>`;
+}
+
 function rewriteTemplateAbsolutePaths(
   value: string,
   sourceSnapshot: SchoolTemplateSourceSnapshot,
@@ -5439,6 +5959,7 @@ async function renderPage({
 
   removeNodes(root, (node) => node.tagName === "base");
   applyDocumentIdentity(root, content, page);
+  applyDextaAcademyOneExportLoader(root, content);
 
   for (const sectionContent of content.sharedSections) {
     applySection(
@@ -5504,6 +6025,14 @@ async function renderPage({
     root,
     getThemeRuntimeMarkup(content, sourceSnapshot, page),
   );
+
+  const templateOneExportGalleryMarkup = getTemplateOneExportGalleryMarkup(
+    content,
+    page,
+  );
+  if (templateOneExportGalleryMarkup) {
+    injectBeforeBodyClose(root, templateOneExportGalleryMarkup);
+  }
 
   // Inject gallery lightbox for template 4
   if (content.templateSlug === "dexta-academy-4") {

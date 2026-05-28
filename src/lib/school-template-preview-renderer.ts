@@ -2785,10 +2785,23 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    var roots = getSectionRoots(sectionSnapshot);
 
 	    // Determine which fields are item-level when section is repeatable
-	    var isRepeatableSection = !!(sectionContent.repeatable && sectionSnapshot.repeatable);
+	    var isTemplateOneFamilyNotes =
+	      preview.content.templateSlug === "dexta-academy-1" &&
+	      sectionContent.id === "testimonial-wall";
+	    var repeatableSnapshot = sectionSnapshot.repeatable || (
+	      isTemplateOneFamilyNotes
+	        ? { itemSelector: ".testimonials-page__wall-card" }
+	        : null
+	    );
+	    var isRepeatableSection = !!(
+	      repeatableSnapshot &&
+	      (sectionContent.repeatable || isTemplateOneFamilyNotes)
+	    );
 	    var itemLevelKeys = {};
 	    if (isRepeatableSection) {
-	      var itemSelector = sectionSnapshot.repeatable.itemSelector;
+	      var itemSelector = isTemplateOneFamilyNotes
+	        ? ".testimonials-page__wall-card"
+	        : repeatableSnapshot.itemSelector;
 	      roots.forEach(function (root) {
 	        var sampleItems = queryWithin(root, itemSelector);
 	        if (sampleItems.length > 0) {
@@ -2864,14 +2877,18 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    });
 
 	    if (!isRepeatableSection) return;
-	    var itemContents = sectionContent.repeatable.items || [];
+	    var itemContents =
+	      sectionContent.repeatable && Array.isArray(sectionContent.repeatable.items)
+	        ? sectionContent.repeatable.items
+	        : [];
 	    var shouldHideEmptyRepeatable =
 	      preview.content.templateSlug === "dexta-academy-1" &&
-	      sectionContent.id === "testimonials";
+	      (sectionContent.id === "testimonials" ||
+	        sectionContent.id === "testimonial-wall");
 	    if (!itemContents.length && !shouldHideEmptyRepeatable) return;
 
 	    roots.forEach(function (root) {
-	      var existingItems = queryWithin(root, sectionSnapshot.repeatable.itemSelector);
+	      var existingItems = queryWithin(root, itemSelector);
 	      if (!existingItems.length) return;
 
 	      if (!itemContents.length) {
@@ -2881,6 +2898,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	              hideTarget.parentElement.children.length === 1) {
 	            hideTarget = hideTarget.parentElement;
 	          }
+	          itemRoot.setAttribute("data-dexta-repeatable-hidden", "true");
 	          hideTarget.style.setProperty("display", "none", "important");
 	        });
 	        return;
@@ -2905,7 +2923,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	      }
 
 	      // Re-query after cloning
-	      var finalItems = queryWithin(root, sectionSnapshot.repeatable.itemSelector);
+	      var finalItems = queryWithin(root, itemSelector);
 
 	      // Hide items beyond the data count
 	      for (var h = itemContents.length; h < finalItems.length; h++) {
@@ -2914,6 +2932,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	            hideTarget.parentElement.children.length === 1) {
 	          hideTarget = hideTarget.parentElement;
 	        }
+	        finalItems[h].setAttribute("data-dexta-repeatable-hidden", "true");
 	        hideTarget.style.setProperty("display", "none", "important");
 	      }
 
@@ -2925,6 +2944,7 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		            activeItemDisplayTarget.parentElement.children.length === 1) {
 		          activeItemDisplayTarget = activeItemDisplayTarget.parentElement;
 		        }
+		        itemRoot.removeAttribute("data-dexta-repeatable-hidden");
 		        activeItemDisplayTarget.style.removeProperty("display");
 
 		        if (
@@ -2949,11 +2969,20 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 			        }
 	
 		        // Auto-sync: if image is set but imageHref is not, copy image → imageHref
-		        if (itemContent["image"] && !itemContent["imageHref"]) {
-	          itemContent["imageHref"] = itemContent["image"];
-	        }
+                if (itemContent["image"] && !itemContent["imageHref"]) {
+                  itemContent["imageHref"] = itemContent["image"];
+                }
 
-	        sectionSnapshot.fields.forEach(function (field) {
+                if (
+                  preview.content.templateSlug === "dexta-academy-1" &&
+                  sectionContent.id === "testimonial-wall" &&
+                  !isFilled(itemContent["year"])
+                ) {
+                  var familyYear = itemRoot.querySelector(".testimonials-page__wall-meta span");
+                  itemContent["year"] = familyYear ? familyYear.textContent : "";
+                }
+
+                sectionSnapshot.fields.forEach(function (field) {
 	          if (field.target === "threeConfig") return;
 	          if (!itemLevelKeys[field.key]) return;
 
@@ -3673,6 +3702,9 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	        '.admissions-page-cta .btn{background:color-mix(in srgb,var(--dexta-academy-4-admissions-admissions-cta-button-bg-color,#4a8fff) var(--dexta-academy-4-admissions-admissions-cta-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-4-admissions-admissions-cta-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-admissions-admissions-cta-button-border-width,0px) solid var(--dexta-academy-4-admissions-admissions-cta-button-border-color,#4a8fff)!important;}',
 	        // ── Gallery sections ──
 	        '.gallery-showcase-section{background-color:color-mix(in srgb,var(--dexta-academy-4-gallery-gallery-showcase-section-bg-color,#ffffff) var(--dexta-academy-4-gallery-gallery-showcase-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-4-gallery-gallery-showcase-section-bg-image,none)!important;background-position:var(--dexta-academy-4-gallery-gallery-showcase-section-bg-position,center center)!important;background-size:var(--dexta-academy-4-gallery-gallery-showcase-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
+	        '.gallery-page-card>span,.gallery-page-card>strong{display:none!important;}',
+	        '.gallery-page-card::before{background:linear-gradient(180deg,transparent 0%,rgba(15,23,42,0.18) 100%)!important;}',
+	        '.gallery-page-card:hover::before,.gallery-page-card:focus::before{background:linear-gradient(180deg,transparent 0%,rgba(15,23,42,0.28) 100%)!important;}',
 	        '.gallery-page-cta{background-color:color-mix(in srgb,var(--dexta-academy-4-gallery-gallery-cta-section-bg-color,#f0f4f8) var(--dexta-academy-4-gallery-gallery-cta-section-bg-opacity,100%),transparent)!important;background-image:var(--dexta-academy-4-gallery-gallery-cta-section-bg-image,none)!important;background-position:var(--dexta-academy-4-gallery-gallery-cta-section-bg-position,center center)!important;background-size:var(--dexta-academy-4-gallery-gallery-cta-section-bg-size,cover)!important;background-repeat:no-repeat!important;}',
 	        '.gallery-page-cta .cta-panel{background:var(--dexta-academy-4-gallery-gallery-cta-panel-bg-color,linear-gradient(135deg,#102542 0%,#0f766e 100%))!important;}',
 	        '.gallery-page-cta .btn-primary{background:color-mix(in srgb,var(--dexta-academy-4-gallery-gallery-cta-primary-button-bg-color,#4a8fff) var(--dexta-academy-4-gallery-gallery-cta-primary-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-4-gallery-gallery-cta-primary-button-text-color,#ffffff)!important;border:var(--dexta-academy-4-gallery-gallery-cta-primary-button-border-width,0px) solid var(--dexta-academy-4-gallery-gallery-cta-primary-button-border-color,#4a8fff)!important;}',
@@ -4325,25 +4357,27 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 
 		  function initGalleryLightbox() {
 		    if (preview.content.templateSlug !== "dexta-academy-4") return;
-		    if (document.getElementById("dexta-lightbox-overlay")) return;
+		    var overlay = document.getElementById("dexta-lightbox-overlay");
+		    if (!overlay) {
+		      var style = document.createElement("style");
+		      style.textContent = [
+		        "#dexta-lightbox-overlay{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);display:none;align-items:center;justify-content:center;cursor:zoom-out;}",
+		        "#dexta-lightbox-overlay.active{display:flex;}",
+		        "#dexta-lightbox-img{display:block!important;visibility:visible!important;opacity:1!important;max-width:90vw;max-height:90vh;width:auto;height:auto;object-fit:contain;border-radius:8px;transition:transform 0.2s ease;transform-origin:center center;cursor:grab;}",
+		        "#dexta-lightbox-img.zoomed{max-width:none;max-height:none;cursor:move;}",
+		        "#dexta-lightbox-close{position:absolute;top:20px;right:20px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}",
+		        "#dexta-lightbox-close:hover{background:rgba(255,255,255,0.3);}",
+		      ].join("");
+		      document.head.appendChild(style);
 
-		    var style = document.createElement("style");
-		    style.textContent = [
-		      "#dexta-lightbox-overlay{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);display:none;align-items:center;justify-content:center;cursor:zoom-out;}",
-		      "#dexta-lightbox-overlay.active{display:flex;}",
-		      "#dexta-lightbox-img{display:block!important;visibility:visible!important;opacity:1!important;max-width:90vw;max-height:90vh;width:auto;height:auto;object-fit:contain;border-radius:8px;transition:transform 0.2s ease;transform-origin:center center;cursor:grab;}",
-		      "#dexta-lightbox-img.zoomed{max-width:none;max-height:none;cursor:move;}",
-		      "#dexta-lightbox-close{position:absolute;top:20px;right:20px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}",
-		      "#dexta-lightbox-close:hover{background:rgba(255,255,255,0.3);}",
-		    ].join("");
-		    document.head.appendChild(style);
-
-		    var overlay = document.createElement("div");
-		    overlay.id = "dexta-lightbox-overlay";
-		    overlay.innerHTML = '<button id="dexta-lightbox-close" aria-label="Close">&times;</button><img id="dexta-lightbox-img" alt="Gallery image" />';
-		    document.body.appendChild(overlay);
+		      overlay = document.createElement("div");
+		      overlay.id = "dexta-lightbox-overlay";
+		      overlay.innerHTML = '<button id="dexta-lightbox-close" aria-label="Close">&times;</button><img id="dexta-lightbox-img" alt="Gallery image" />';
+		      document.body.appendChild(overlay);
+		    }
 
 		    var img = document.getElementById("dexta-lightbox-img");
+		    if (!img) return;
 		    var zoomed = false;
 		    var panX = 0, panY = 0, startX = 0, startY = 0, dragging = false;
 
@@ -4361,55 +4395,60 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		      img.src = "";
 		    }
 
-		    overlay.addEventListener("click", function (e) {
-		      if (e.target === overlay) closeLightbox();
-		    });
-		    document.getElementById("dexta-lightbox-close").addEventListener("click", closeLightbox);
+		    if (overlay.getAttribute("data-dexta-lightbox-bound") !== "true") {
+		      overlay.setAttribute("data-dexta-lightbox-bound", "true");
+		      overlay.addEventListener("click", function (e) {
+		        if (e.target === overlay) closeLightbox();
+		      });
+		      document.getElementById("dexta-lightbox-close").addEventListener("click", closeLightbox);
 
-		    img.addEventListener("click", function (e) {
-		      e.stopPropagation();
-		      zoomed = !zoomed;
-		      if (zoomed) {
-		        img.classList.add("zoomed");
-		        img.style.transform = "scale(2)";
-		        panX = 0; panY = 0;
-		      } else {
-		        img.classList.remove("zoomed");
-		        img.style.transform = "";
-		        panX = 0; panY = 0;
-		      }
-		    });
+		      img.addEventListener("click", function (e) {
+		        e.stopPropagation();
+		        zoomed = !zoomed;
+		        if (zoomed) {
+		          img.classList.add("zoomed");
+		          img.style.transform = "scale(2)";
+		          panX = 0; panY = 0;
+		        } else {
+		          img.classList.remove("zoomed");
+		          img.style.transform = "";
+		          panX = 0; panY = 0;
+		        }
+		      });
 
-		    img.addEventListener("mousedown", function (e) {
-		      if (!zoomed) return;
-		      dragging = true;
-		      startX = e.clientX - panX;
-		      startY = e.clientY - panY;
-		      img.style.cursor = "grabbing";
-		      e.preventDefault();
-		    });
+		      img.addEventListener("mousedown", function (e) {
+		        if (!zoomed) return;
+		        dragging = true;
+		        startX = e.clientX - panX;
+		        startY = e.clientY - panY;
+		        img.style.cursor = "grabbing";
+		        e.preventDefault();
+		      });
 
-		    document.addEventListener("mousemove", function (e) {
-		      if (!dragging) return;
-		      panX = e.clientX - startX;
-		      panY = e.clientY - startY;
-		      img.style.transform = "scale(2) translate(" + (panX / 2) + "px," + (panY / 2) + "px)";
-		    });
+		      document.addEventListener("mousemove", function (e) {
+		        if (!dragging) return;
+		        panX = e.clientX - startX;
+		        panY = e.clientY - startY;
+		        img.style.transform = "scale(2) translate(" + (panX / 2) + "px," + (panY / 2) + "px)";
+		      });
 
-		    document.addEventListener("mouseup", function () {
-		      if (dragging) {
-		        dragging = false;
-		        img.style.cursor = "grab";
-		      }
-		    });
+		      document.addEventListener("mouseup", function () {
+		        if (dragging) {
+		          dragging = false;
+		          img.style.cursor = "grab";
+		        }
+		      });
 
-		    document.addEventListener("keydown", function (e) {
-		      if (e.key === "Escape") closeLightbox();
-		    });
+		      document.addEventListener("keydown", function (e) {
+		        if (e.key === "Escape") closeLightbox();
+		      });
+		    }
 
 		    // Attach click handlers to gallery cards
 		    document.querySelectorAll(".gallery-preview-card, .gallery-page-card").forEach(function (card) {
 		      card.style.cursor = "pointer";
+		      if (card.getAttribute("data-dexta-lightbox-card-bound") === "true") return;
+		      card.setAttribute("data-dexta-lightbox-card-bound", "true");
 		      card.addEventListener("click", function (e) {
 		        e.preventDefault();
 		        var bgImage = window.getComputedStyle(card).backgroundImage || card.style.backgroundImage || "";
@@ -4420,6 +4459,135 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		          openLightbox(card.getAttribute("href"));
 		        }
 		      });
+		    });
+		  }
+
+		  function applyTemplateFourHomeGalleryPagination() {
+		    if (preview.content.templateSlug !== "dexta-academy-4") return;
+		    var section = document.querySelector(".homepage-gallery-preview");
+		    if (!section) return;
+		    var grid = section.querySelector("[data-gallery-grid]") || section.querySelector(".gallery-preview-grid");
+		    if (!grid) return;
+
+		    grid.setAttribute("data-gallery-page-size", "6");
+		    grid.querySelectorAll(".gallery-preview-card").forEach(function (card) {
+		      card.querySelectorAll(".gallery-preview-label,strong").forEach(function (node) {
+		        node.remove();
+		      });
+		    });
+
+		    var pagination = section.querySelector("[data-gallery-pagination]");
+		    if (!pagination) {
+		      pagination = document.createElement("nav");
+		      pagination.className = "gallery-pagination";
+		      pagination.setAttribute("data-gallery-pagination", "");
+		      pagination.setAttribute("aria-label", "Gallery preview pagination");
+		      pagination.innerHTML = '<button class="gallery-pagination-btn" type="button" data-gallery-page-prev>Previous</button><div class="gallery-pagination-numbers" data-gallery-page-numbers></div><button class="gallery-pagination-btn" type="button" data-gallery-page-next>Next</button><span class="gallery-pagination-status" data-gallery-page-status></span>';
+		      var actionBlock = section.querySelector(".text-center.mt-4");
+		      if (actionBlock && actionBlock.parentNode) {
+		        actionBlock.parentNode.insertBefore(pagination, actionBlock);
+		      } else if (grid.parentNode) {
+		        grid.parentNode.insertBefore(pagination, grid.nextSibling);
+		      }
+		    }
+
+		    var cards = Array.prototype.slice.call(grid.querySelectorAll(".gallery-preview-card"));
+		    var pageSize = 6;
+		    var totalPages = Math.max(1, Math.ceil(cards.length / pageSize));
+		    var prevButton = pagination.querySelector("[data-gallery-page-prev]");
+		    var nextButton = pagination.querySelector("[data-gallery-page-next]");
+		    var numberWrap = pagination.querySelector("[data-gallery-page-numbers]");
+		    var status = pagination.querySelector("[data-gallery-page-status]");
+		    if (!prevButton || !nextButton || !numberWrap || !status) return;
+
+		    var requestedPage = parseInt(section.getAttribute("data-dexta-gallery-page") || "1", 10) || 1;
+		    var currentPage = Math.max(1, Math.min(requestedPage, totalPages));
+
+		    function renderNumberButtons() {
+		      numberWrap.innerHTML = "";
+		      if (totalPages <= 1) return;
+		      for (var page = 1; page <= totalPages; page += 1) {
+		        var button = document.createElement("button");
+		        button.type = "button";
+		        button.className = "gallery-pagination-number";
+		        button.textContent = page;
+		        button.setAttribute("aria-label", "Show gallery page " + page);
+		        button.setAttribute("data-page", page);
+		        numberWrap.appendChild(button);
+		      }
+		    }
+
+		    function showPage(page, shouldScroll) {
+		      currentPage = Math.max(1, Math.min(page, totalPages));
+		      section.setAttribute("data-dexta-gallery-page", String(currentPage));
+		      var start = (currentPage - 1) * pageSize;
+		      var end = Math.min(start + pageSize, cards.length);
+
+		      cards.forEach(function (card, index) {
+		        var isVisible = totalPages <= 1 || (index >= start && index < end);
+		        card.hidden = !isVisible;
+		        card.classList.toggle("is-gallery-hidden", !isVisible);
+		        if (isVisible) {
+		          card.style.removeProperty("display");
+		        } else {
+		          card.style.setProperty("display", "none", "important");
+		        }
+		      });
+
+		      pagination.hidden = totalPages <= 1;
+		      prevButton.disabled = currentPage === 1;
+		      nextButton.disabled = currentPage === totalPages;
+		      status.textContent = cards.length ? "Showing " + (start + 1) + "-" + end + " of " + cards.length : "";
+
+		      Array.prototype.forEach.call(numberWrap.children, function (button) {
+		        var isCurrent = Number(button.getAttribute("data-page")) === currentPage;
+		        button.classList.toggle("is-active", isCurrent);
+		        if (isCurrent) button.setAttribute("aria-current", "page");
+		        else button.removeAttribute("aria-current");
+		      });
+
+		      if (shouldScroll) {
+		        grid.scrollIntoView({ behavior: "smooth", block: "start" });
+		      }
+		    }
+
+		    section.__dextaTemplateFourGalleryShowPage = showPage;
+		    renderNumberButtons();
+		    showPage(currentPage, false);
+
+		    if (grid.getAttribute("data-dexta-preview-gallery-observed") !== "true") {
+		      grid.setAttribute("data-dexta-preview-gallery-observed", "true");
+		      var scheduled = false;
+		      var observer = new MutationObserver(function () {
+		        if (scheduled) return;
+		        scheduled = true;
+		        window.setTimeout(function () {
+		          scheduled = false;
+		          applyTemplateFourHomeGalleryPagination();
+		          initGalleryLightbox();
+		        }, 0);
+		      });
+		      observer.observe(grid, { childList: true, subtree: true });
+		    }
+
+		    if (pagination.getAttribute("data-dexta-preview-gallery-bound") === "true") return;
+		    pagination.setAttribute("data-dexta-preview-gallery-bound", "true");
+		    prevButton.addEventListener("click", function () {
+		      var page = parseInt(section.getAttribute("data-dexta-gallery-page") || "1", 10) || 1;
+		      if (typeof section.__dextaTemplateFourGalleryShowPage === "function") {
+		        section.__dextaTemplateFourGalleryShowPage(page - 1, true);
+		      }
+		    });
+		    nextButton.addEventListener("click", function () {
+		      var page = parseInt(section.getAttribute("data-dexta-gallery-page") || "1", 10) || 1;
+		      if (typeof section.__dextaTemplateFourGalleryShowPage === "function") {
+		        section.__dextaTemplateFourGalleryShowPage(page + 1, true);
+		      }
+		    });
+		    numberWrap.addEventListener("click", function (event) {
+		      var button = event.target && event.target.closest ? event.target.closest("[data-page]") : null;
+		      if (!button || typeof section.__dextaTemplateFourGalleryShowPage !== "function") return;
+		      section.__dextaTemplateFourGalleryShowPage(Number(button.getAttribute("data-page")), true);
 		    });
 		  }
 
@@ -4690,6 +4858,344 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    });
 	  }
 
+	  function applyTemplateOneLandingGalleryPagination() {
+	    if (preview.content.templateSlug !== "dexta-academy-1") return;
+	    var section = document.querySelector(".landing-section--gallery");
+	    if (!section) return;
+	    var grid = section.querySelector(".landing-gallery");
+	    if (!grid) return;
+
+	    function closeTemplateOneGalleryModal(modalElement) {
+	      modalElement.classList.remove("show");
+	      modalElement.style.display = "none";
+	      modalElement.setAttribute("aria-hidden", "true");
+	      modalElement.removeAttribute("aria-modal");
+	      modalElement.removeAttribute("role");
+	      document.body.classList.remove("modal-open");
+	      document.body.style.removeProperty("overflow");
+	      document.body.style.removeProperty("padding-right");
+	      var fallbackBackdrop = document.getElementById("dexta-template1-gallery-backdrop");
+	      if (fallbackBackdrop && fallbackBackdrop.parentNode) {
+	        fallbackBackdrop.parentNode.removeChild(fallbackBackdrop);
+	      }
+	    }
+
+	    function openTemplateOneGalleryModal(modalElement) {
+	      if (window.bootstrap && window.bootstrap.Modal) {
+	        try {
+	          window.bootstrap.Modal.getOrCreateInstance(modalElement).show();
+	        } catch (_error) {}
+	      }
+
+	      modalElement.classList.add("show");
+	      modalElement.style.display = "block";
+	      modalElement.removeAttribute("aria-hidden");
+	      modalElement.setAttribute("aria-modal", "true");
+	      modalElement.setAttribute("role", "dialog");
+	      document.body.classList.add("modal-open");
+	      document.body.style.overflow = "hidden";
+
+	      if (
+	        !document.querySelector(".modal-backdrop.show") &&
+	        !document.getElementById("dexta-template1-gallery-backdrop")
+	      ) {
+	        var fallbackBackdrop = document.createElement("div");
+	        fallbackBackdrop.id = "dexta-template1-gallery-backdrop";
+	        fallbackBackdrop.className = "modal-backdrop fade show";
+	        document.body.appendChild(fallbackBackdrop);
+	      }
+
+	      if (modalElement.getAttribute("data-dexta-fallback-modal-bound") !== "true") {
+	        modalElement.setAttribute("data-dexta-fallback-modal-bound", "true");
+	        modalElement.addEventListener("click", function (event) {
+	          var closeButton = event.target && event.target.closest ? event.target.closest('[data-bs-dismiss="modal"], .landing-gallery-modal__close') : null;
+	          if (event.target === modalElement || closeButton) {
+	            event.preventDefault();
+	            closeTemplateOneGalleryModal(modalElement);
+	          }
+	        });
+	        document.addEventListener("keydown", function (event) {
+	          if (event.key === "Escape" && modalElement.classList.contains("show")) {
+	            closeTemplateOneGalleryModal(modalElement);
+	          }
+	        });
+	      }
+	    }
+
+	    var items = Array.prototype.slice.call(grid.querySelectorAll(".landing-gallery__item"));
+	    if (!items.length) return;
+	    var currentPreviewPage = preview.content.pages.find(function (item) {
+	      return item.slug === preview.pageSlug;
+	    });
+	    var gallerySectionContent = currentPreviewPage && currentPreviewPage.sections
+	      ? currentPreviewPage.sections.find(function (item) { return item.id === "gallery"; })
+	      : null;
+	    var galleryPayloadItems =
+	      gallerySectionContent &&
+	      gallerySectionContent.repeatable &&
+	      Array.isArray(gallerySectionContent.repeatable.items)
+	        ? gallerySectionContent.repeatable.items
+	        : [];
+	    var galleryImageField = {
+	      key: "image",
+	      label: "Gallery image",
+	      type: "image",
+	      selector: ".landing-gallery__trigger img",
+	      target: "attribute",
+	      attribute: "src"
+	    };
+	    var pageSize = 6;
+	    var totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+	    var pagination = section.querySelector(".landing-gallery__pagination");
+	    if (!pagination) {
+	      pagination = document.createElement("div");
+	      pagination.className = "landing-gallery__pagination";
+	      pagination.setAttribute("aria-label", "Gallery pagination");
+	      grid.parentNode.insertBefore(pagination, grid.nextSibling);
+	    }
+
+	    function getTemplateOneGalleryImageSource(image, index) {
+	      var payloadImage =
+	        galleryPayloadItems[index] && galleryPayloadItems[index].image
+	          ? galleryPayloadItems[index].image
+	          : "";
+	      var resolvedPayloadImage = payloadImage
+	        ? resolveAsset(payloadImage, galleryImageField)
+	        : "";
+	      return (
+	        resolvedPayloadImage ||
+	        image.getAttribute("data-original-src") ||
+	        image.currentSrc ||
+	        image.src ||
+	        ""
+	      );
+	    }
+
+	    function restoreTemplateOneGalleryItemImage(item, index) {
+	      var image = item.querySelector(".landing-gallery__trigger img");
+	      if (!image) return;
+	      var source = getTemplateOneGalleryImageSource(image, index);
+	      if (!source) return;
+	      image.src = source;
+	      image.setAttribute("data-original-src", source);
+	      image.removeAttribute("loading");
+	      image.style.removeProperty("display");
+	      image.style.setProperty("opacity", "1", "important");
+	      image.style.setProperty("visibility", "visible", "important");
+	    }
+
+	    items.forEach(function (item, index) {
+	      item.style.position = item.style.position || "relative";
+	      item.querySelectorAll(".landing-gallery__body").forEach(function (node) {
+	        node.remove();
+	      });
+	      restoreTemplateOneGalleryItemImage(item, index);
+	      var trigger = item.querySelector(".landing-gallery__trigger");
+	      if (trigger) {
+	        trigger.setAttribute("data-gallery-index", String(index));
+	        trigger.setAttribute("aria-label", "Open gallery image " + (index + 1));
+	        trigger.removeAttribute("data-dexta-preview-gallery-bound");
+	        trigger.style.cursor = "pointer";
+	        trigger.style.pointerEvents = "auto";
+	        var triggerImage = trigger.querySelector("img");
+	        if (triggerImage) {
+	          triggerImage.style.pointerEvents = "auto";
+	        }
+	      }
+	    });
+
+	    var requestedPage = parseInt(section.getAttribute("data-dexta-gallery-page") || "1", 10) || 1;
+	    var currentPage = Math.max(1, Math.min(requestedPage, totalPages));
+
+	    function showPage(page) {
+	      currentPage = Math.max(1, Math.min(page, totalPages));
+	      section.setAttribute("data-dexta-gallery-page", String(currentPage));
+	      grid.classList.add("dexta-template1-gallery-paginated");
+	      var start = (currentPage - 1) * pageSize;
+	      var end = Math.min(start + pageSize, items.length);
+	      items.forEach(function (item, index) {
+	        var isVisible = index >= start && index < end;
+	        item.hidden = !isVisible;
+	        if (isVisible) {
+	          restoreTemplateOneGalleryItemImage(item, index);
+	          item.style.removeProperty("display");
+	          item.style.setProperty("opacity", "1", "important");
+	          item.style.setProperty("visibility", "visible", "important");
+	        } else {
+	          item.style.setProperty("display", "none", "important");
+	        }
+	      });
+	      pagination.hidden = totalPages <= 1;
+	      pagination.innerHTML = "";
+	      for (var pageIndex = 1; pageIndex <= totalPages; pageIndex += 1) {
+	        var button = document.createElement("button");
+	        button.type = "button";
+	        button.className = "landing-gallery__page" + (pageIndex === currentPage ? " is-active" : "");
+	        button.textContent = pageIndex;
+	        button.setAttribute("aria-label", "Go to gallery page " + pageIndex);
+	        button.setAttribute("data-page", String(pageIndex));
+	        pagination.appendChild(button);
+	      }
+	    }
+
+	    section.__dextaTemplateOneGalleryShowPage = showPage;
+	    showPage(currentPage);
+
+	    function handleTemplateOneGalleryClick(event) {
+	      var target = event.target;
+	      if (!target || !target.closest) return;
+	      var item = target.closest(".landing-gallery__item");
+	      if (!item || !grid.contains(item) || item.hidden) return;
+	      var trigger = target.closest(".landing-gallery__trigger") || item.querySelector(".landing-gallery__trigger");
+	      if (!trigger) return;
+	      event.preventDefault();
+	      event.stopPropagation();
+	      if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+	      var image = trigger.querySelector("img");
+	      var modalImage = document.getElementById("landingGalleryModalImage");
+	      var modalElement = document.getElementById("landingGalleryModal");
+	      if (!image || !modalImage || !modalElement) return;
+	      modalImage.src =
+	        getTemplateOneGalleryImageSource(image, Number(trigger.getAttribute("data-gallery-index") || "0")) ||
+	        image.currentSrc ||
+	        image.src;
+	      modalImage.alt = image.alt || "Gallery image";
+	      openTemplateOneGalleryModal(modalElement);
+	    }
+
+	    if (grid.getAttribute("data-dexta-preview-gallery-delegated") !== "true") {
+	      grid.setAttribute("data-dexta-preview-gallery-delegated", "true");
+	      grid.addEventListener("click", handleTemplateOneGalleryClick, true);
+	      grid.addEventListener("keydown", function (event) {
+	        if (event.key !== "Enter" && event.key !== " ") return;
+	        var target = event.target;
+	        if (!target || !target.closest || !target.closest(".landing-gallery__trigger")) return;
+	        event.preventDefault();
+	        handleTemplateOneGalleryClick(event);
+	      });
+	    }
+
+	    if (pagination.getAttribute("data-dexta-preview-gallery-bound") !== "true") {
+	      pagination.setAttribute("data-dexta-preview-gallery-bound", "true");
+	      pagination.addEventListener("click", function (event) {
+	        var button = event.target && event.target.closest ? event.target.closest("[data-page]") : null;
+	        if (!button || typeof section.__dextaTemplateOneGalleryShowPage !== "function") return;
+	        section.__dextaTemplateOneGalleryShowPage(Number(button.getAttribute("data-page")));
+	      });
+	    }
+
+	    if (grid.getAttribute("data-dexta-preview-gallery-observed") !== "true") {
+	      grid.setAttribute("data-dexta-preview-gallery-observed", "true");
+	      var scheduled = false;
+	      var observer = new MutationObserver(function () {
+	        if (scheduled) return;
+	        scheduled = true;
+	        window.setTimeout(function () {
+	          scheduled = false;
+	          applyTemplateOneLandingGalleryPagination();
+	        }, 0);
+	      });
+	      observer.observe(grid, { childList: true, subtree: true });
+	    }
+	  }
+
+	  function applyTemplateOneFamilyNotesPagination() {
+	    if (preview.content.templateSlug !== "dexta-academy-1") return;
+	    var section = document.querySelector(".testimonials-page__section--wall");
+	    if (!section) return;
+	    var grid = section.querySelector(".testimonials-page__wall");
+	    if (!grid) return;
+	    var allCards = Array.prototype.slice.call(grid.querySelectorAll(".testimonials-page__wall-card"));
+	    var cards = allCards.filter(function (card) {
+	      return card.getAttribute("data-dexta-repeatable-hidden") !== "true";
+	    });
+
+	    var pageSize = 6;
+	    var totalPages = Math.max(1, Math.ceil(cards.length / pageSize));
+	    var pagination = section.querySelector("[data-family-notes-pagination]");
+	    if (!pagination) {
+	      pagination = document.createElement("nav");
+	      pagination.className = "testimonials-page__pagination";
+	      pagination.setAttribute("data-family-notes-pagination", "");
+	      pagination.setAttribute("aria-label", "Family notes pagination");
+	      grid.parentNode.insertBefore(pagination, grid.nextSibling);
+	    }
+
+	    if (!cards.length) {
+	      allCards.forEach(function (card) {
+	        card.hidden = true;
+	        card.style.setProperty("display", "none", "important");
+	      });
+	      pagination.hidden = true;
+	      pagination.innerHTML = "";
+	      return;
+	    }
+
+	    var requestedPage = parseInt(section.getAttribute("data-dexta-family-notes-page") || "1", 10) || 1;
+	    var currentPage = Math.max(1, Math.min(requestedPage, totalPages));
+
+	    function showPage(page) {
+	      currentPage = Math.max(1, Math.min(page, totalPages));
+	      section.setAttribute("data-dexta-family-notes-page", String(currentPage));
+	      grid.classList.add("dexta-template1-wall-paginated");
+	      var start = (currentPage - 1) * pageSize;
+	      var end = Math.min(start + pageSize, cards.length);
+	      allCards.forEach(function (card) {
+	        if (cards.indexOf(card) === -1) {
+	          card.hidden = true;
+	          card.style.setProperty("display", "none", "important");
+	        }
+	      });
+	      cards.forEach(function (card, index) {
+	        var isVisible = index >= start && index < end;
+	        card.hidden = !isVisible;
+	        if (isVisible) {
+	          card.style.removeProperty("display");
+	        } else {
+	          card.style.setProperty("display", "none", "important");
+	        }
+	      });
+	      pagination.hidden = totalPages <= 1;
+	      pagination.innerHTML = "";
+	      for (var pageIndex = 1; pageIndex <= totalPages; pageIndex += 1) {
+	        var button = document.createElement("button");
+	        button.type = "button";
+	        button.className = "testimonials-page__pagination-button" + (pageIndex === currentPage ? " is-active" : "");
+	        button.textContent = pageIndex;
+	        button.setAttribute("aria-label", "Show family notes page " + pageIndex);
+	        button.setAttribute("data-page", String(pageIndex));
+	        if (pageIndex === currentPage) button.setAttribute("aria-current", "page");
+	        pagination.appendChild(button);
+	      }
+	    }
+
+	    section.__dextaTemplateOneFamilyNotesShowPage = showPage;
+	    showPage(currentPage);
+
+	    if (pagination.getAttribute("data-dexta-preview-family-notes-bound") !== "true") {
+	      pagination.setAttribute("data-dexta-preview-family-notes-bound", "true");
+	      pagination.addEventListener("click", function (event) {
+	        var button = event.target && event.target.closest ? event.target.closest("[data-page]") : null;
+	        if (!button || typeof section.__dextaTemplateOneFamilyNotesShowPage !== "function") return;
+	        section.__dextaTemplateOneFamilyNotesShowPage(Number(button.getAttribute("data-page")));
+	      });
+	    }
+
+	    if (grid.getAttribute("data-dexta-preview-family-notes-observed") !== "true") {
+	      grid.setAttribute("data-dexta-preview-family-notes-observed", "true");
+	      var scheduled = false;
+	      var observer = new MutationObserver(function () {
+	        if (scheduled) return;
+	        scheduled = true;
+	        window.setTimeout(function () {
+	          scheduled = false;
+	          applyTemplateOneFamilyNotesPagination();
+	        }, 0);
+	      });
+	      observer.observe(grid, { childList: true, subtree: true });
+	    }
+	  }
+
   function applyPreviewContent() {
     var page = preview.content.pages.find(function (item) { return item.slug === preview.pageSlug; });
     var pageSnapshot = preview.sourceSnapshot.pages.find(function (item) { return item.slug === preview.pageSlug; });
@@ -4722,11 +5228,14 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    applyTemplateTwoAdmissionForm();
 		    applyAdmissionForm();
 		    applyTemplateOneSuccessStoryVideo();
+		    applyTemplateOneLandingGalleryPagination();
+		    applyTemplateOneFamilyNotesPagination();
 		    rewritePreviewInternalLinks();
 	    injectPreviewFontStylesheets();
 	    applySectionFontOverrides();
 		    refreshTemplateTwoIcons();
 		    applyAcademyThreeHeroBackgroundImage();
+		    applyTemplateFourHomeGalleryPagination();
 		    initGalleryLightbox();
 
 	    // Template 3 home page: only override header bg if school customized it
@@ -4776,10 +5285,13 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	  window.setTimeout(applyTemplateTwoFooterVisibility, 350);
 	  window.setTimeout(applyTemplateTwoAdmissionForm, 350);
 	  window.setTimeout(applyAdmissionForm, 350);
+	  window.setTimeout(applyTemplateOneLandingGalleryPagination, 350);
+	  window.setTimeout(applyTemplateOneFamilyNotesPagination, 350);
 	  window.setTimeout(rewritePreviewInternalLinks, 350);
 	  window.setTimeout(injectPreviewFontStylesheets, 350);
 	  window.setTimeout(applySectionFontOverrides, 350);
 	  window.setTimeout(refreshTemplateTwoIcons, 350);
+		  window.setTimeout(applyTemplateFourHomeGalleryPagination, 350);
 		  window.setTimeout(initGalleryLightbox, 350);
 		  window.setTimeout(applyThemeIdentity, 1000);
 		  window.setTimeout(applyTemplateThreeHeaderFields, 1000);
@@ -4788,10 +5300,13 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	  window.setTimeout(applyTemplateTwoFooterVisibility, 1000);
 	  window.setTimeout(applyTemplateTwoAdmissionForm, 1000);
 	  window.setTimeout(applyAdmissionForm, 1000);
+	  window.setTimeout(applyTemplateOneLandingGalleryPagination, 1000);
+	  window.setTimeout(applyTemplateOneFamilyNotesPagination, 1000);
 	  window.setTimeout(rewritePreviewInternalLinks, 1000);
 	  window.setTimeout(injectPreviewFontStylesheets, 1000);
 	  window.setTimeout(applySectionFontOverrides, 1000);
 	  window.setTimeout(refreshTemplateTwoIcons, 1000);
+	  window.setTimeout(applyTemplateFourHomeGalleryPagination, 1000);
 	})();
 	</script>`;
 }
@@ -4816,6 +5331,13 @@ function getServerSideFontOverrideStyle(
     return `<style data-dexta-font-override="true">
 body,h1,h2,h3,h4,h5,h6,p,li,a,span,label,input,textarea,select,button{font-family:${JSON.stringify(bodyFont)},sans-serif!important;}
 .navbar-nav .nav-link,.navbar-nav a,.site-nav a,.site-nav__link,.mobile-nav a,.mobile-nav__link,.site-header__nav a,.site-header__links a,.main-nav a,.site-footer,.site-footer a,.footer__links a,.footer__contact,.footer__bottom{font-family:${JSON.stringify(navFont)},sans-serif!important;}
+.landing-section--gallery .landing-gallery:not(.dexta-template1-gallery-paginated) .landing-gallery__item:nth-of-type(n+7){display:none!important;}
+.landing-section--gallery .landing-gallery__body{display:none!important;}
+.testimonials-page__section--wall .testimonials-page__wall:not(.dexta-template1-wall-paginated) .testimonials-page__wall-card:nth-of-type(n+7){display:none!important;}
+.testimonials-page__pagination{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:28px;}
+.testimonials-page__pagination[hidden]{display:none!important;}
+.testimonials-page__pagination-button{min-width:42px;height:42px;border-radius:999px;border:1px solid rgba(15,23,42,.14);background:#fff;color:#1f2937;font-weight:700;cursor:pointer;}
+.testimonials-page__pagination-button.is-active{background:var(--dexta-academy-1-home-gallery-pagination-active-bg-color,#0d6efd);color:var(--dexta-academy-1-home-gallery-pagination-active-text-color,#fff);border-color:transparent;}
 </style>`;
   }
 
@@ -4917,6 +5439,32 @@ function getLogoPreloadMarkup(content: SchoolTemplateProjectContent): string {
   if (!resolvedUrl) return "";
   const safeUrl = resolvedUrl.replace(/"/g, "&quot;");
   return `<link rel="preload" as="image" href="${safeUrl}">`;
+}
+
+function getDextaAcademyOneRepeatableFallbackCss(
+  content: SchoolTemplateProjectContent,
+  page: SchoolTemplateProjectPageContent,
+): string {
+  if (content.templateSlug !== "dexta-academy-1") return "";
+
+  const css: string[] = [];
+  if (page.slug === "testimonials") {
+    const familyNotesCount =
+      page.sections.find((section) => section.id === "testimonial-wall")
+        ?.repeatable?.items.length ?? 0;
+
+    css.push(
+      familyNotesCount <= 0
+        ? ".testimonials-page__section--wall .testimonials-page__wall-card{display:none!important;}"
+        : `.testimonials-page__section--wall .testimonials-page__wall-card:nth-of-type(n+${
+            familyNotesCount + 1
+          }){display:none!important;}`,
+    );
+  }
+
+  return css.length
+    ? `<style data-dexta-template1-repeatable-fallback="true">${css.join("")}</style>`
+    : "";
 }
 
 export async function renderSchoolTemplatePreview({
@@ -5035,7 +5583,7 @@ export async function renderSchoolTemplatePreview({
       renderContent,
     )}${getServerSideFontOverrideStyle(renderContent)}${getLogoPreloadMarkup(
       renderContent,
-    )}${
+    )}${getDextaAcademyOneRepeatableFallbackCss(renderContent, page)}${
       renderSourceSnapshot.templateSlug === "dexta-academy-1"
         ? getDextaAcademyOneStaticLoaderCss(renderContent)
         : ""

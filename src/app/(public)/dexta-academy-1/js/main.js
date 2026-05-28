@@ -79,17 +79,17 @@
   const galleryPagination = document.querySelector(
     ".landing-gallery__pagination",
   );
-  const galleryTriggers = Array.from(
-    document.querySelectorAll(".landing-gallery__trigger"),
-  );
   const galleryModalElement = document.getElementById("landingGalleryModal");
   const galleryModalImage = document.getElementById("landingGalleryModalImage");
   const galleryNavButtons = Array.from(
     document.querySelectorAll("[data-gallery-nav]"),
   );
-  const galleryPageSize = 3;
+  const galleryPageSize = 6;
   let galleryPage = 1;
   let activeGalleryIndex = 0;
+
+  const getGalleryTriggers = () =>
+    Array.from(document.querySelectorAll(".landing-gallery__trigger"));
 
   const updateGalleryPagination = () => {
     if (!galleryItems.length || !galleryPagination) {
@@ -124,6 +124,7 @@
   };
 
   const updateGalleryModal = () => {
+    const galleryTriggers = getGalleryTriggers();
     if (!galleryModalImage || !galleryTriggers.length) {
       return;
     }
@@ -134,7 +135,10 @@
       return;
     }
 
-    galleryModalImage.src = currentImage.src;
+    galleryModalImage.src =
+      currentImage.currentSrc ||
+      currentImage.getAttribute("data-original-src") ||
+      currentImage.src;
     galleryModalImage.alt = currentImage.alt;
 
     galleryNavButtons.forEach((button) => {
@@ -151,19 +155,72 @@
     updateGalleryPagination();
   }
 
-  if (galleryModalElement && galleryTriggers.length) {
-    const galleryModal = new bootstrap.Modal(galleryModalElement);
+  if (galleryModalElement) {
+    const galleryModal =
+      window.bootstrap && window.bootstrap.Modal
+        ? new bootstrap.Modal(galleryModalElement)
+        : null;
+    const closeGalleryModal = () => {
+      galleryModalElement.classList.remove("show");
+      galleryModalElement.style.display = "none";
+      galleryModalElement.setAttribute("aria-hidden", "true");
+      galleryModalElement.removeAttribute("aria-modal");
+      galleryModalElement.removeAttribute("role");
+      document.body.classList.remove("modal-open");
+    };
 
-    galleryTriggers.forEach((trigger, index) => {
-      trigger.addEventListener("click", () => {
-        activeGalleryIndex = index;
-        updateGalleryModal();
+    document.addEventListener("click", (event) => {
+      const trigger = event.target.closest(".landing-gallery__trigger");
+      if (!trigger) {
+        return;
+      }
+
+      const galleryTriggers = getGalleryTriggers();
+      const index = galleryTriggers.indexOf(trigger);
+      if (index < 0) {
+        return;
+      }
+
+      event.preventDefault();
+      activeGalleryIndex = index;
+      updateGalleryModal();
+      if (galleryModal) {
         galleryModal.show();
-      });
+      } else {
+        galleryModalElement.classList.add("show");
+        galleryModalElement.style.display = "block";
+        galleryModalElement.removeAttribute("aria-hidden");
+        galleryModalElement.setAttribute("aria-modal", "true");
+        galleryModalElement.setAttribute("role", "dialog");
+        document.body.classList.add("modal-open");
+      }
+    });
+
+    galleryModalElement.addEventListener("click", (event) => {
+      const closeButton = event.target.closest('[data-bs-dismiss="modal"]');
+      if (
+        galleryModal ||
+        (event.target !== galleryModalElement && !closeButton)
+      ) {
+        return;
+      }
+      event.preventDefault();
+      closeGalleryModal();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (
+        !galleryModal &&
+        event.key === "Escape" &&
+        galleryModalElement.classList.contains("show")
+      ) {
+        closeGalleryModal();
+      }
     });
 
     galleryNavButtons.forEach((button) => {
       button.addEventListener("click", () => {
+        const galleryTriggers = getGalleryTriggers();
         if (button.dataset.galleryNav === "prev" && activeGalleryIndex > 0) {
           activeGalleryIndex -= 1;
         }
