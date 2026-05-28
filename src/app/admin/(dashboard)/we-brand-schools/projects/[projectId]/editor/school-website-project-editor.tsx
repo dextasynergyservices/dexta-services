@@ -123,6 +123,7 @@ const THEME_HISTORY_KEY = "theme";
 const COMPONENT_HISTORY_LIMIT = 50;
 const DEXTA_ACADEMY_2_SLUG = "dexta-academy-2";
 const DEXTA_ACADEMY_3_SLUG = "dexta-academy-3";
+const DEXTA_ACADEMY_4_SLUG = "dexta-academy-4";
 const DEXTA_ACADEMY_3_FOOTER_PAGE_SECTION_IDS = new Set([
   "contact-footer-brand",
   "contact-footer-explore",
@@ -133,7 +134,7 @@ const DEXTA_ACADEMY_3_FOOTER_PAGE_SECTION_IDS = new Set([
 const NAVBAR_SHARED_SECTION_ID = "site-header";
 const DEXTA_ACADEMY_5_SLUG = "dexta-academy-5";
 const DEXTA_ACADEMY_1_SLUG = "dexta-academy-1";
-const FOOTER_ONLY_SHARED_SECTION_IDS = new Set(["site-footer"]);
+const FOOTER_ONLY_SHARED_SECTION_IDS = new Set(["site-footer", "footer"]);
 const DEXTA_ACADEMY_2_NAVBAR_FIELD_KEYS = new Set([
   "portalCtaText",
   "portalCtaHref",
@@ -177,6 +178,22 @@ const DEXTA_ACADEMY_3_NAVBAR_FIELD_KEYS = new Set([
   "buttonTextColor",
   "buttonBorderColor",
   "buttonBorderWidth",
+]);
+const DEXTA_ACADEMY_4_NAVBAR_FIELD_KEYS = new Set([
+  "portalText",
+  "portalHref",
+  "portalButtonBgColor",
+  "portalButtonBgOpacity",
+  "portalButtonTextColor",
+  "portalButtonBorderColor",
+  "portalButtonBorderWidth",
+  "applyText",
+  "applyHref",
+  "applyButtonBgColor",
+  "applyButtonBgOpacity",
+  "applyButtonTextColor",
+  "applyButtonBorderColor",
+  "applyButtonBorderWidth",
 ]);
 const ORIGINAL_THEME_COLORS: Record<
   string,
@@ -1426,16 +1443,23 @@ export function SchoolWebsiteProjectEditor({
   );
   const isDextaAcademy2Template = draft.templateSlug === DEXTA_ACADEMY_2_SLUG;
   const isDextaAcademy3Template = draft.templateSlug === DEXTA_ACADEMY_3_SLUG;
+  const isDextaAcademy4Template = draft.templateSlug === DEXTA_ACADEMY_4_SLUG;
   const navbarFieldKeys = isDextaAcademy3Template
     ? DEXTA_ACADEMY_3_NAVBAR_FIELD_KEYS
     : isDextaAcademy2Template
       ? DEXTA_ACADEMY_2_NAVBAR_FIELD_KEYS
-      : null;
+      : isDextaAcademy4Template
+        ? DEXTA_ACADEMY_4_NAVBAR_FIELD_KEYS
+        : null;
   const hasNavbarTab =
     isDextaAcademy2Template ||
     isDextaAcademy3Template ||
+    isDextaAcademy4Template ||
     draft.templateSlug === DEXTA_ACADEMY_5_SLUG ||
     draft.templateSlug === DEXTA_ACADEMY_1_SLUG;
+  const navbarSharedSectionId = isDextaAcademy4Template
+    ? "header"
+    : NAVBAR_SHARED_SECTION_ID;
   const visibleSharedSections = useMemo(
     () =>
       hasNavbarTab
@@ -1452,16 +1476,16 @@ export function SchoolWebsiteProjectEditor({
   const navbarHeaderSection = useMemo(
     () =>
       draft.sharedSections.find(
-        (section) => section.id === NAVBAR_SHARED_SECTION_ID,
+        (section) => section.id === navbarSharedSectionId,
       ) ?? null,
-    [draft.sharedSections],
+    [draft.sharedSections, navbarSharedSectionId],
   );
   const navbarHeaderSnapshot = useMemo(
     () =>
       sourceSnapshot.sharedSections.find(
-        (section) => section.id === NAVBAR_SHARED_SECTION_ID,
+        (section) => section.id === navbarSharedSectionId,
       ) ?? null,
-    [sourceSnapshot.sharedSections],
+    [navbarSharedSectionId, sourceSnapshot.sharedSections],
   );
   const navbarButtonFieldGroups = useMemo(() => {
     if (!hasNavbarTab || !navbarHeaderSection || !navbarHeaderSnapshot) {
@@ -1470,12 +1494,14 @@ export function SchoolWebsiteProjectEditor({
 
     const isTemplate5 = draft.templateSlug === DEXTA_ACADEMY_5_SLUG;
     const isTemplate1 = draft.templateSlug === DEXTA_ACADEMY_1_SLUG;
+    const isTemplate4 = draft.templateSlug === DEXTA_ACADEMY_4_SLUG;
     const groups = new Map<string, SchoolTemplateProjectFieldSnapshot[]>();
     for (const field of navbarHeaderSnapshot.fields) {
       if (navbarFieldKeys && !navbarFieldKeys.has(field.key)) continue;
       // Template 5/1 shows all header fields except Section background.
+      // Template 4 uses the normal navbar background controls instead.
       if (
-        (isTemplate5 || isTemplate1) &&
+        (isTemplate5 || isTemplate1 || isTemplate4) &&
         field.uiGroup === "Section background"
       )
         continue;
@@ -3936,12 +3962,12 @@ export function SchoolWebsiteProjectEditor({
                                   null
                                 }
                                 originalValue={getOriginalSharedSectionFieldValue(
-                                  NAVBAR_SHARED_SECTION_ID,
+                                  navbarSharedSectionId,
                                   field,
                                 )}
                                 onChange={(value) =>
                                   updateSharedSectionField(
-                                    NAVBAR_SHARED_SECTION_ID,
+                                    navbarSharedSectionId,
                                     field.key,
                                     value,
                                   )

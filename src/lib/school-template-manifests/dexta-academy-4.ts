@@ -442,10 +442,14 @@ export const dextaAcademy4Manifest = {
           ".hero-apply-btn .hero-btn-text",
           {
             defaultValue: "Apply Now",
+            uiGroup: "Apply button",
+            uiOrder: 5,
           },
         ),
         linkField("applyHref", "Apply button link", ".hero-apply-btn", {
           defaultValue: "admissions.html",
+          uiGroup: "Apply button",
+          uiOrder: 6,
         }),
         ...t4SectionStyleFields({
           pageKey: "shared",
