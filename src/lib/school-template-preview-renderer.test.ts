@@ -331,6 +331,11 @@ describe("school template preview renderer", () => {
       "Expected Template 1 hero to expose mobile body sizing.",
     );
     assert.ok(
+      heroFields.some((field) => field.key === "buttonMobileFontSize") &&
+        heroFields.some((field) => field.key === "buttonMobileMinHeight"),
+      "Expected Template 1 hero to expose mobile button sizing.",
+    );
+    assert.ok(
       heroFields.some((field) => field.key === "cardCenterBgColor"),
       "Expected Template 1 hero to expose image card background colors.",
     );
@@ -520,6 +525,22 @@ describe("school template preview renderer", () => {
     const content = buildSchoolTemplateProjectContent(manifest);
     const sourceSnapshot = buildSchoolTemplateSourceSnapshot(manifest);
     content.theme.loadingBarColor = "#f97316";
+    const homeHeroSection = content.pages
+      .find((page) => page.slug === "home")
+      ?.sections.find((section) => section.id === "hero");
+    assert.ok(homeHeroSection, "Expected Template 1 home hero content.");
+    homeHeroSection.fields.headlineTabletFontSize = 49;
+    homeHeroSection.fields.headlineMobileFontSize = 31;
+    homeHeroSection.fields.bodyTabletFontSize = 19;
+    homeHeroSection.fields.bodyMobileFontSize = 15;
+    homeHeroSection.fields.headline =
+      '<span style="font-size:88px">Responsive hero headline</span>';
+    homeHeroSection.fields.body =
+      '<span style="font-size:28px">Responsive hero body.</span>';
+    homeHeroSection.fields.buttonTabletFontSize = 14;
+    homeHeroSection.fields.buttonMobileFontSize = 12;
+    homeHeroSection.fields.buttonTabletMinHeight = 48;
+    homeHeroSection.fields.buttonMobileMinHeight = 42;
 
     const html = await renderSchoolTemplatePreview({
       content,
@@ -584,6 +605,27 @@ describe("school template preview renderer", () => {
     );
     assert.match(html, /--dexta-academy-1-home-hero-line-orange-opacity/);
     assert.match(html, /--dexta-academy-1-home-hero-headline-mobile-font-size/);
+    assert.match(html, /academyOneHeroTextSize/);
+    assert.match(html, /isTemplateOneHomeHeroText/);
+    assert.match(html, /isTemplateOneHomeHeroText && property === "font-size"/);
+    assert.match(
+      html,
+      /headline-tablet-font-size,' \+ academyOneHeroHeadlineTabletSize \+ '\)/,
+    );
+    assert.match(
+      html,
+      /headline-mobile-font-size,' \+ academyOneHeroHeadlineMobileSize \+ '\)/,
+    );
+    assert.match(html, /"headlineTabletFontSize":49/);
+    assert.match(html, /"headlineMobileFontSize":31/);
+    assert.match(html, /"bodyTabletFontSize":19/);
+    assert.match(html, /"bodyMobileFontSize":15/);
+    assert.match(html, /--dexta-academy-1-home-hero-button-mobile-font-size/);
+    assert.match(html, /--dexta-academy-1-home-hero-button-mobile-min-height/);
+    assert.match(html, /"buttonTabletFontSize":14/);
+    assert.match(html, /"buttonMobileFontSize":12/);
+    assert.match(html, /"buttonTabletMinHeight":48/);
+    assert.match(html, /"buttonMobileMinHeight":42/);
     assert.match(html, /--dexta-academy-1-home-hero-card-center-bg-color/);
     assert.match(
       html,

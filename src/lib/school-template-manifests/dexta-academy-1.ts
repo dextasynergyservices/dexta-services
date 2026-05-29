@@ -368,6 +368,58 @@ function t1HeroResponsiveTextFields(): SchoolTemplateField[] {
       max: 40,
       uiOrder: 223,
     }),
+    numberField(
+      "buttonTabletFontSize",
+      "Hero button tablet text size",
+      ".school-hero",
+      {
+        ...fieldBase,
+        cssVariable: t1CssVar("home", "hero", "button-tablet-font-size"),
+        defaultValue: 16,
+        min: 10,
+        max: 32,
+        uiOrder: 224,
+      },
+    ),
+    numberField(
+      "buttonMobileFontSize",
+      "Hero button mobile text size",
+      ".school-hero",
+      {
+        ...fieldBase,
+        cssVariable: t1CssVar("home", "hero", "button-mobile-font-size"),
+        defaultValue: 16,
+        min: 10,
+        max: 32,
+        uiOrder: 225,
+      },
+    ),
+    numberField(
+      "buttonTabletMinHeight",
+      "Hero button tablet height",
+      ".school-hero",
+      {
+        ...fieldBase,
+        cssVariable: t1CssVar("home", "hero", "button-tablet-min-height"),
+        defaultValue: 60,
+        min: 36,
+        max: 90,
+        uiOrder: 226,
+      },
+    ),
+    numberField(
+      "buttonMobileMinHeight",
+      "Hero button mobile height",
+      ".school-hero",
+      {
+        ...fieldBase,
+        cssVariable: t1CssVar("home", "hero", "button-mobile-min-height"),
+        defaultValue: 56,
+        min: 36,
+        max: 84,
+        uiOrder: 227,
+      },
+    ),
   ];
 }
 
