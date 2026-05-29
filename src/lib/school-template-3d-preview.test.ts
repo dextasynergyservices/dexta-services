@@ -151,6 +151,34 @@ function assertRenderedHtml(value: string | null): string {
   return value;
 }
 
+const TEMPLATE_FOUR_INNER_PAGE_HERO_CASES = [
+  {
+    slug: "about",
+    fileName: "about.html",
+    overlaySelector: /\.about-page-hero::before/,
+    opacityVariable: /--dexta-academy-4-about-page-hero-section-bg-opacity/,
+  },
+  {
+    slug: "admissions",
+    fileName: "admissions.html",
+    overlaySelector: /\.admissions-page-hero::before/,
+    opacityVariable:
+      /--dexta-academy-4-admissions-page-hero-section-bg-opacity/,
+  },
+  {
+    slug: "gallery",
+    fileName: "gallery.html",
+    overlaySelector: /\.gallery-page-hero::before/,
+    opacityVariable: /--dexta-academy-4-gallery-page-hero-section-bg-opacity/,
+  },
+  {
+    slug: "contact",
+    fileName: "contact.html",
+    overlaySelector: /\.contact-page-hero::before/,
+    opacityVariable: /--dexta-academy-4-contact-page-hero-section-bg-opacity/,
+  },
+] as const;
+
 describe("school template 3D asset normalization", () => {
   it("keeps local template model assets relative", () => {
     assert.equal(
@@ -410,6 +438,8 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
     heroSection.fields.eyebrow =
       '<em><span style="font-family: Inter, sans-serif; color: #33ddff; font-size: 18px;">Welcome to School B</span></em>';
     heroSection.fields.eyebrowDashColor = "#ff44aa";
+    heroSection.fields.sectionBgColor = "#123456";
+    heroSection.fields.sectionBgOpacity = 37;
     heroSection.fields.headline =
       '<p style="font-family: \'Playfair Display\', Georgia, serif; font-size: 88px;"><strong><span style="color: #ffcc00;">Nurturing</span> <em><span style="color: #66ff99;">Excellence</span></em></strong></p>';
     aboutSection.fields.eyebrowTextColor = "#cc3366";
@@ -451,6 +481,15 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
     assert.match(html, /Inter/);
     assert.match(html, /--dexta-academy-4-home-hero-eyebrow-dash-color/);
     assert.match(html, /#ff44aa/);
+    assert.match(html, /--dexta-academy-4-home-hero-section-bg-color/);
+    assert.match(html, /--dexta-academy-4-home-hero-section-bg-opacity/);
+    assert.match(html, /#123456/);
+    assert.match(html, /"sectionBgOpacity":37/);
+    assert.match(html, /\.school-hero \.hero::before/);
+    assert.match(
+      html,
+      /color-mix\(in srgb,color-mix\(in srgb,var\(--dexta-academy-4-home-hero-section-bg-color,#020810\) 88%,transparent\) var\(--dexta-academy-4-home-hero-section-bg-opacity,100%\),transparent\)/,
+    );
     assert.match(
       html,
       /--dexta-academy-4-home-about-preview-eyebrow-text-color/,
@@ -545,6 +584,34 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
     assert.match(html, /function isResponsiveScopeActive/);
     assert.match(html, /if \(!isResponsiveScopeActive\(field\)\) return;/);
   });
+
+  it("keeps Template 4 inner page hero opacity tied to the visible overlay", async () => {
+    const { content, sourceSnapshot } =
+      buildDextaAcademy4PreviewInput("assets/3d/gr.glb");
+
+    for (const pageCase of TEMPLATE_FOUR_INNER_PAGE_HERO_CASES) {
+      const page = content.pages.find((item) => item.slug === pageCase.slug);
+      const heroSection = page?.sections.find(
+        (section) => section.id === "page-hero",
+      );
+      assert.ok(heroSection, `${pageCase.slug} should include a page hero.`);
+      heroSection.fields.sectionBgColor = "#123456";
+      heroSection.fields.sectionBgOpacity = 41;
+
+      const html = assertRenderedHtml(
+        await renderSchoolTemplatePreview({
+          content,
+          sourceSnapshot,
+          pageSlug: pageCase.slug,
+        }),
+      );
+
+      assert.match(html, pageCase.overlaySelector);
+      assert.match(html, pageCase.opacityVariable);
+      assert.match(html, /#123456/);
+      assert.match(html, /"sectionBgOpacity":41/);
+    }
+  });
 });
 
 describe("Dexta Academy 4 export 3D rendering", () => {
@@ -555,6 +622,15 @@ describe("Dexta Academy 4 export 3D rendering", () => {
     const { content, sourceSnapshot } =
       buildDextaAcademy4PreviewInput(rawModelUrl);
     content.theme.logoUrl = "school/logos/custom.png";
+    for (const pageCase of TEMPLATE_FOUR_INNER_PAGE_HERO_CASES) {
+      const page = content.pages.find((item) => item.slug === pageCase.slug);
+      const heroSection = page?.sections.find(
+        (section) => section.id === "page-hero",
+      );
+      assert.ok(heroSection, `${pageCase.slug} should include a page hero.`);
+      heroSection.fields.sectionBgColor = "#123456";
+      heroSection.fields.sectionBgOpacity = 41;
+    }
     const homePage = content.pages.find((page) => page.slug === "home");
     const heroSection = homePage?.sections.find(
       (section) => section.id === "hero",
@@ -579,6 +655,8 @@ describe("Dexta Academy 4 export 3D rendering", () => {
     heroSection.fields.eyebrow =
       '<em><span style="font-family: Inter, sans-serif; color: #33ddff; font-size: 18px;">Welcome to School B</span></em>';
     heroSection.fields.eyebrowDashColor = "#ff44aa";
+    heroSection.fields.sectionBgColor = "#123456";
+    heroSection.fields.sectionBgOpacity = 37;
     heroSection.fields.headline =
       '<p style="font-family: \'Playfair Display\', Georgia, serif; font-size: 88px;"><strong><span style="color: #ffcc00;">Nurturing</span> <em><span style="color: #66ff99;">Excellence</span></em></strong></p>';
     aboutSection.fields.eyebrowTextColor = "#cc3366";
@@ -622,6 +700,13 @@ describe("Dexta Academy 4 export 3D rendering", () => {
       const entries = readZipEntries(buffer);
       const indexHtml = entries.get("index.html")?.toString("utf8") ?? "";
       const heroScript = entries.get("js/hero-3d.js")?.toString("utf8") ?? "";
+      for (const pageCase of TEMPLATE_FOUR_INNER_PAGE_HERO_CASES) {
+        const pageHtml = entries.get(pageCase.fileName)?.toString("utf8") ?? "";
+        assert.match(pageHtml, pageCase.overlaySelector);
+        assert.match(pageHtml, pageCase.opacityVariable);
+        assert.match(pageHtml, /#123456/);
+        assert.match(pageHtml, /section-bg-opacity:\s*41%/);
+      }
 
       assert.match(indexHtml, /window\.schoolHero3dConfig = /);
       assert.ok(
@@ -664,6 +749,19 @@ describe("Dexta Academy 4 export 3D rendering", () => {
       );
       assert.match(
         indexHtml,
+        /--dexta-academy-4-home-hero-section-bg-color:\s*#123456/,
+      );
+      assert.match(
+        indexHtml,
+        /--dexta-academy-4-home-hero-section-bg-opacity:\s*37%/,
+      );
+      assert.match(indexHtml, /\.school-hero \.hero::before/);
+      assert.match(
+        indexHtml,
+        /color-mix\(in srgb, color-mix\(in srgb, var\(--dexta-academy-4-home-hero-section-bg-color, #020810\) 88%, transparent\) var\(--dexta-academy-4-home-hero-section-bg-opacity, 100%\), transparent\)/,
+      );
+      assert.match(
+        indexHtml,
         /--dexta-academy-4-home-about-preview-eyebrow-text-color:\s*#cc3366/,
       );
       assert.match(
@@ -682,14 +780,11 @@ describe("Dexta Academy 4 export 3D rendering", () => {
         indexHtml,
         /<p><span style="font-family: Inter, sans-serif !important; color: #0f766e !important;">About body text<\/span><\/p>/,
       );
-      assert.match(
-        indexHtml,
-        /<strong><span style="color: #dc2626 !important;">98%<\/span><\/strong>/,
-      );
-      assert.match(
-        indexHtml,
-        /<span><span style="color: #7c3aed !important;">Exam Pass Rate<\/span><\/span>/,
-      );
+      assert.match(indexHtml, /#dc2626/);
+      assert.match(indexHtml, /#7c3aed/);
+      assert.match(indexHtml, /class="stat-card__value"/);
+      assert.match(indexHtml, /class="stat-card__body"/);
+      assert.doesNotMatch(indexHtml, /View All Programs/);
       assert.match(
         indexHtml,
         /<h2>\s*<span style="color: #0891b2 !important;">Programs<\/span>\s*(?:<br><br>|\s)\s*<span style="color: #9333ea !important;">That Grow<\/span>\s*<\/h2>/,

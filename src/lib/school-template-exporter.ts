@@ -4809,11 +4809,24 @@ body:not(.home-page) .site-header {
 }
 .school-hero .hero {
   background-image:
-    linear-gradient(90deg, rgba(9,20,36,0.88) 0%, rgba(9,20,36,0.74) 40%, rgba(9,20,36,0.3) 100%),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-home-hero-section-bg-color, #020810) 88%, transparent) var(--dexta-academy-4-home-hero-section-bg-opacity, 100%), transparent) 0%,
+      color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-home-hero-section-bg-color, #020810) 74%, transparent) var(--dexta-academy-4-home-hero-section-bg-opacity, 100%), transparent) 40%,
+      color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-home-hero-section-bg-color, #020810) 30%, transparent) var(--dexta-academy-4-home-hero-section-bg-opacity, 100%), transparent) 100%
+    ),
     var(--dexta-academy-4-home-hero-bg-image, url("https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1600&q=80")) !important;
   background-position: center !important;
   background-size: cover !important;
   background-repeat: no-repeat !important;
+}
+.school-hero .hero::before {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-home-hero-section-bg-color, #020810) 34%, transparent) var(--dexta-academy-4-home-hero-section-bg-opacity, 100%), transparent) 0%,
+    color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-home-hero-section-bg-color, #020810) 76%, transparent) var(--dexta-academy-4-home-hero-section-bg-opacity, 100%), transparent) 55%,
+    color-mix(in srgb, var(--dexta-academy-4-home-hero-section-bg-color, #020810) var(--dexta-academy-4-home-hero-section-bg-opacity, 100%), transparent) 100%
+  ) !important;
 }
 .school-hero .hero-primary-btn {
   background: color-mix(in srgb, var(--dexta-academy-4-home-hero-primary-button-bg-color, #4a8fff) var(--dexta-academy-4-home-hero-primary-button-bg-opacity, 100%), transparent) !important;
@@ -4870,10 +4883,22 @@ body:not(.home-page) .site-header {
 }
 /* Page Hero background images (per-page gradient + image variable) */
 .about-page-hero {
-  background-image: linear-gradient(90deg, rgba(16,37,66,0.88) 0%, rgba(16,37,66,0.74) 42%, rgba(15,118,110,0.46) 100%), var(--dexta-academy-4-about-page-hero-bg-image, url("https://res.cloudinary.com/dxoorukfj/image/upload/v1777039633/dxt2-about_ubzert.png")) !important;
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-about-page-hero-section-bg-color, #102542) 88%, transparent) var(--dexta-academy-4-about-page-hero-section-bg-opacity, 100%), transparent) 0%,
+    color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-about-page-hero-section-bg-color, #102542) 74%, transparent) var(--dexta-academy-4-about-page-hero-section-bg-opacity, 100%), transparent) 42%,
+    color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-about-page-hero-section-bg-color, #102542) 46%, transparent) var(--dexta-academy-4-about-page-hero-section-bg-opacity, 100%), transparent) 100%
+  ), var(--dexta-academy-4-about-page-hero-bg-image, url("https://res.cloudinary.com/dxoorukfj/image/upload/v1777039633/dxt2-about_ubzert.png")) !important;
   background-position: center !important;
   background-size: cover !important;
   background-repeat: no-repeat !important;
+}
+.about-page-hero::before {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-about-page-hero-section-bg-color, #102542) 12%, transparent) var(--dexta-academy-4-about-page-hero-section-bg-opacity, 100%), transparent) 0%,
+    color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-about-page-hero-section-bg-color, #102542) 46%, transparent) var(--dexta-academy-4-about-page-hero-section-bg-opacity, 100%), transparent) 100%
+  ) !important;
 }
 .admissions-page-hero {
   background-image: var(--dexta-academy-4-admissions-page-hero-bg-image, url("https://images.unsplash.com/photo-1529390079861-591de354faf5?auto=format&fit=crop&w=1600&q=80")) !important;
@@ -4881,11 +4906,27 @@ body:not(.home-page) .site-header {
   background-size: cover !important;
   background-repeat: no-repeat !important;
 }
+.admissions-page-hero::before {
+  background: color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-admissions-page-hero-section-bg-color, #102542) 70%, transparent) var(--dexta-academy-4-admissions-page-hero-section-bg-opacity, 100%), transparent) !important;
+}
 .gallery-page-hero {
-  background-image: linear-gradient(90deg, rgba(16,37,66,0.88) 0%, rgba(16,37,66,0.72) 42%, rgba(15,118,110,0.42) 100%), var(--dexta-academy-4-gallery-page-hero-bg-image, url("https://res.cloudinary.com/dxoorukfj/image/upload/v1777041124/ChatGPT_Image_Apr_24_2026_03_31_43_PM_ssnnin.png")) !important;
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-gallery-page-hero-section-bg-color, #102542) 88%, transparent) var(--dexta-academy-4-gallery-page-hero-section-bg-opacity, 100%), transparent) 0%,
+    color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-gallery-page-hero-section-bg-color, #102542) 72%, transparent) var(--dexta-academy-4-gallery-page-hero-section-bg-opacity, 100%), transparent) 42%,
+    color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-gallery-page-hero-section-bg-color, #102542) 42%, transparent) var(--dexta-academy-4-gallery-page-hero-section-bg-opacity, 100%), transparent) 100%
+  ), var(--dexta-academy-4-gallery-page-hero-bg-image, url("https://res.cloudinary.com/dxoorukfj/image/upload/v1777041124/ChatGPT_Image_Apr_24_2026_03_31_43_PM_ssnnin.png")) !important;
   background-position: center !important;
   background-size: cover !important;
   background-repeat: no-repeat !important;
+}
+.school-gallery-page .gallery-page-hero::before,
+.gallery-page-hero::before {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-gallery-page-hero-section-bg-color, #102542) 8%, transparent) var(--dexta-academy-4-gallery-page-hero-section-bg-opacity, 100%), transparent) 0%,
+    color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-gallery-page-hero-section-bg-color, #102542) 48%, transparent) var(--dexta-academy-4-gallery-page-hero-section-bg-opacity, 100%), transparent) 100%
+  ) !important;
 }
 .contact-page-hero {
   background-image: var(--dexta-academy-4-contact-page-hero-bg-image, url("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1600&q=80")) !important;
@@ -4893,9 +4934,76 @@ body:not(.home-page) .site-header {
   background-size: cover !important;
   background-repeat: no-repeat !important;
 }
-/* Principal note signoff alignment */
+.contact-page-hero::before {
+  background: color-mix(in srgb, color-mix(in srgb, var(--dexta-academy-4-contact-page-hero-section-bg-color, #102542) 72%, transparent) var(--dexta-academy-4-contact-page-hero-section-bg-opacity, 100%), transparent) !important;
+}
+/* About sections */
+.about-story-section {
+  background-color: color-mix(in srgb, var(--dexta-academy-4-about-story-section-bg-color, #ffffff) var(--dexta-academy-4-about-story-section-bg-opacity, 100%), transparent) !important;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--dexta-academy-4-about-story-section-bg-color, #ffffff) var(--dexta-academy-4-about-story-section-bg-opacity, 100%), transparent),
+      color-mix(in srgb, var(--dexta-academy-4-about-story-section-bg-color, #ffffff) var(--dexta-academy-4-about-story-section-bg-opacity, 100%), transparent)
+    ),
+    var(--dexta-academy-4-about-story-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-4-about-story-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-4-about-story-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+.about-principles-section {
+  background-color: color-mix(in srgb, var(--dexta-academy-4-about-principles-section-bg-color, #f0f4f8) var(--dexta-academy-4-about-principles-section-bg-opacity, 100%), transparent) !important;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--dexta-academy-4-about-principles-section-bg-color, #f0f4f8) var(--dexta-academy-4-about-principles-section-bg-opacity, 100%), transparent),
+      color-mix(in srgb, var(--dexta-academy-4-about-principles-section-bg-color, #f0f4f8) var(--dexta-academy-4-about-principles-section-bg-opacity, 100%), transparent)
+    ),
+    var(--dexta-academy-4-about-principles-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-4-about-principles-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-4-about-principles-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+.principal-note-section {
+  background-color: color-mix(in srgb, var(--dexta-academy-4-about-principal-note-section-bg-color, #ffffff) var(--dexta-academy-4-about-principal-note-section-bg-opacity, 100%), transparent) !important;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--dexta-academy-4-about-principal-note-section-bg-color, #ffffff) var(--dexta-academy-4-about-principal-note-section-bg-opacity, 100%), transparent),
+      color-mix(in srgb, var(--dexta-academy-4-about-principal-note-section-bg-color, #ffffff) var(--dexta-academy-4-about-principal-note-section-bg-opacity, 100%), transparent)
+    ),
+    var(--dexta-academy-4-about-principal-note-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-4-about-principal-note-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-4-about-principal-note-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+.principal-note-panel {
+  background: color-mix(in srgb, var(--dexta-academy-4-about-principal-note-panel-bg-color, #102542) var(--dexta-academy-4-about-principal-note-panel-bg-opacity, 100%), transparent) !important;
+}
 .principal-note-signoff {
   align-self: start !important;
+  background: color-mix(in srgb, var(--dexta-academy-4-about-principal-note-signoff-bg-color, #ffffff) var(--dexta-academy-4-about-principal-note-signoff-bg-opacity, 8%), transparent) !important;
+}
+.student-experience-section {
+  background-color: color-mix(in srgb, var(--dexta-academy-4-about-student-experience-section-bg-color, #f7fafc) var(--dexta-academy-4-about-student-experience-section-bg-opacity, 100%), transparent) !important;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--dexta-academy-4-about-student-experience-section-bg-color, #f7fafc) var(--dexta-academy-4-about-student-experience-section-bg-opacity, 100%), transparent),
+      color-mix(in srgb, var(--dexta-academy-4-about-student-experience-section-bg-color, #f7fafc) var(--dexta-academy-4-about-student-experience-section-bg-opacity, 100%), transparent)
+    ),
+    var(--dexta-academy-4-about-student-experience-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-4-about-student-experience-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-4-about-student-experience-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
+}
+.about-facts-section {
+  background-color: color-mix(in srgb, var(--dexta-academy-4-about-facts-section-bg-color, #ffffff) var(--dexta-academy-4-about-facts-section-bg-opacity, 100%), transparent) !important;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--dexta-academy-4-about-facts-section-bg-color, #ffffff) var(--dexta-academy-4-about-facts-section-bg-opacity, 100%), transparent),
+      color-mix(in srgb, var(--dexta-academy-4-about-facts-section-bg-color, #ffffff) var(--dexta-academy-4-about-facts-section-bg-opacity, 100%), transparent)
+    ),
+    var(--dexta-academy-4-about-facts-section-bg-image, none) !important;
+  background-position: var(--dexta-academy-4-about-facts-section-bg-position, center center) !important;
+  background-size: var(--dexta-academy-4-about-facts-section-bg-size, cover) !important;
+  background-repeat: no-repeat !important;
 }
 /* Existing admissions + contact form sections */
 .admissions-process-section {
