@@ -511,7 +511,10 @@ function withImportantStyleValue(value: string) {
   return /\s!important$/i.test(trimmed) ? trimmed : `${trimmed} !important`;
 }
 
-function promoteRichTextColorStyles(node: ElementNode) {
+function promoteRichTextColorStyles(
+  node: ElementNode,
+  options: { skipFontSize?: boolean } = {},
+) {
   const currentStyle = getAttr(node, "style") ?? "";
   const declarations = currentStyle
     .split(";")
@@ -537,6 +540,9 @@ function promoteRichTextColorStyles(node: ElementNode) {
         normalizedProperty === "text-transform" ||
         normalizedProperty === "letter-spacing"
       ) {
+        if (options.skipFontSize && normalizedProperty === "font-size") {
+          return `${property}: ${value}`;
+        }
         return `${property}: ${withImportantStyleValue(value)}`;
       }
 
@@ -549,17 +555,23 @@ function promoteRichTextColorStyles(node: ElementNode) {
 
   node.children.forEach((child) => {
     if (child.type === "element") {
-      promoteRichTextColorStyles(child);
+      promoteRichTextColorStyles(child, options);
     }
   });
 }
 
-function setRichTextHtml(node: ElementNode, value: string) {
+function setRichTextHtml(
+  node: ElementNode,
+  value: string,
+  options: { skipFontSizePromotion?: boolean } = {},
+) {
   setInnerHtml(
     node,
     isInlineRichTextTarget(node) ? toInlineHtml(value) : value,
   );
-  promoteRichTextColorStyles(node);
+  promoteRichTextColorStyles(node, {
+    skipFontSize: options.skipFontSizePromotion,
+  });
 }
 
 function getPlainTextFromHtml(value: string) {
@@ -1486,7 +1498,12 @@ function applySection(
           ) {
             continue;
           }
-          setRichTextHtml(node, toText(value));
+          setRichTextHtml(node, toText(value), {
+            skipFontSizePromotion:
+              templateSlug === "dexta-academy-1" &&
+              sectionContent.id === "hero" &&
+              (field.key === "headline" || field.key === "body"),
+          });
         } else if (field.target === "attribute") {
           const attribute =
             field.attribute ?? (field.type === "link" ? "href" : "src");
@@ -3455,11 +3472,64 @@ function getAcademyOneSectionBackgroundCss(
   return `${selector}{background-color:${overlay}!important;background-image:linear-gradient(${overlay},${overlay}),var(${prefix}section-bg-image, none)!important;background-position:var(${prefix}section-bg-position, center center)!important;background-size:var(${prefix}section-bg-size, cover)!important;background-repeat:no-repeat!important;}`;
 }
 
+function getAcademyOneHeroResponsiveSize(
+  content: SchoolTemplateProjectContent,
+  fieldKey: string,
+  fallback: string,
+) {
+  const value = getProjectSectionField(content, "home", "hero", fieldKey);
+  const text = toText(value).trim();
+  if (/^\d+(?:\.\d+)?(?:px|rem|em|%)$/i.test(text)) return text;
+
+  const parsed = Number(text);
+  return Number.isFinite(parsed) && parsed > 0 ? `${parsed}px` : fallback;
+}
+
 function getDextaAcademyOnePreviewParityCss(
   content: SchoolTemplateProjectContent,
 ) {
   const academyOneLogoWidth = `${Number(content.theme.logoWidth || 72)}px`;
   const academyOneLogoHeight = `${Number(content.theme.logoHeight || 56)}px`;
+  const heroHeadlineTabletSize = getAcademyOneHeroResponsiveSize(
+    content,
+    "headlineTabletFontSize",
+    "clamp(3.6rem,5vw,5.8rem)",
+  );
+  const heroHeadlineMobileSize = getAcademyOneHeroResponsiveSize(
+    content,
+    "headlineMobileFontSize",
+    "clamp(2.6rem,10vw,3.7rem)",
+  );
+  const heroBodyTabletSize = getAcademyOneHeroResponsiveSize(
+    content,
+    "bodyTabletFontSize",
+    "1.35rem",
+  );
+  const heroBodyMobileSize = getAcademyOneHeroResponsiveSize(
+    content,
+    "bodyMobileFontSize",
+    "1.1rem",
+  );
+  const heroButtonTabletFontSize = getAcademyOneHeroResponsiveSize(
+    content,
+    "buttonTabletFontSize",
+    "1rem",
+  );
+  const heroButtonMobileFontSize = getAcademyOneHeroResponsiveSize(
+    content,
+    "buttonMobileFontSize",
+    "1rem",
+  );
+  const heroButtonTabletMinHeight = getAcademyOneHeroResponsiveSize(
+    content,
+    "buttonTabletMinHeight",
+    "60px",
+  );
+  const heroButtonMobileMinHeight = getAcademyOneHeroResponsiveSize(
+    content,
+    "buttonMobileMinHeight",
+    "56px",
+  );
 
   return [
     getAcademyOneSectionBackgroundCss(".navbar", "shared", "navbar", "#fff"),
@@ -3485,8 +3555,8 @@ function getDextaAcademyOnePreviewParityCss(
     `.school-hero__card-bg--green{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-card-center-bg-color,#0a4d3c) var(--dexta-academy-1-home-hero-card-center-bg-opacity,100%),transparent)!important;}`,
     `.school-hero__card-bg--orange{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-card-top-bg-color,#ff6b35) var(--dexta-academy-1-home-hero-card-top-bg-opacity,100%),transparent)!important;}`,
     `.school-hero__card-bg--champagne{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-card-bottom-bg-color,#dce5c8) var(--dexta-academy-1-home-hero-card-bottom-bg-opacity,100%),transparent)!important;}`,
-    `@media (min-width:768px) and (max-width:1199.98px){.school-hero .school-hero__title,.school-hero .school-hero__title *{font-size:var(--dexta-academy-1-home-hero-headline-tablet-font-size,clamp(3.6rem,5vw,5.8rem))!important;}.school-hero .school-hero__text,.school-hero .school-hero__text *{font-size:var(--dexta-academy-1-home-hero-body-tablet-font-size,1.35rem)!important;}}`,
-    `@media (max-width:767.98px){.school-hero .school-hero__title,.school-hero .school-hero__title *{font-size:var(--dexta-academy-1-home-hero-headline-mobile-font-size,clamp(2.6rem,10vw,3.7rem))!important;}.school-hero .school-hero__text,.school-hero .school-hero__text *{font-size:var(--dexta-academy-1-home-hero-body-mobile-font-size,1.1rem)!important;}}`,
+    `@media (min-width:768px) and (max-width:1199.98px){.school-hero .school-hero__title,.school-hero .school-hero__title *{font-size:var(--dexta-academy-1-home-hero-headline-tablet-font-size,${heroHeadlineTabletSize})!important;}.school-hero .school-hero__text,.school-hero .school-hero__text *{font-size:var(--dexta-academy-1-home-hero-body-tablet-font-size,${heroBodyTabletSize})!important;}.school-hero .school-hero__btn{font-size:var(--dexta-academy-1-home-hero-button-tablet-font-size,${heroButtonTabletFontSize})!important;min-height:var(--dexta-academy-1-home-hero-button-tablet-min-height,${heroButtonTabletMinHeight})!important;}}`,
+    `@media (max-width:767.98px){.school-hero .school-hero__title,.school-hero .school-hero__title *{font-size:var(--dexta-academy-1-home-hero-headline-mobile-font-size,${heroHeadlineMobileSize})!important;}.school-hero .school-hero__text,.school-hero .school-hero__text *{font-size:var(--dexta-academy-1-home-hero-body-mobile-font-size,${heroBodyMobileSize})!important;}.school-hero .school-hero__btn{font-size:var(--dexta-academy-1-home-hero-button-mobile-font-size,${heroButtonMobileFontSize})!important;min-height:var(--dexta-academy-1-home-hero-button-mobile-min-height,${heroButtonMobileMinHeight})!important;}}`,
     `.school-hero .school-hero__btn--primary,.school-hero .school-hero__btn--secondary{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-button-bg-color,#0d6efd) var(--dexta-academy-1-home-hero-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-home-hero-button-text-color,#fff)!important;border:var(--dexta-academy-1-home-hero-button-border-width,0px) solid var(--dexta-academy-1-home-hero-button-border-color,#0d6efd)!important;}`,
     getAcademyOneSectionBackgroundCss(
       ".landing-section--about",

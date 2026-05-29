@@ -1669,6 +1669,11 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 
 	  function promoteInlineRichTextColorStyles(root) {
 	    if (!root || !root.querySelectorAll) return;
+	    var isTemplateOneHomeHeroText =
+	      preview.content.templateSlug === "dexta-academy-1" &&
+	      root.classList &&
+	      (root.classList.contains("school-hero__title") ||
+	        root.classList.contains("school-hero__text"));
 	    var styledNodes = [];
 	    if (root.getAttribute && root.getAttribute("style")) {
 	      styledNodes.push(root);
@@ -1689,6 +1694,7 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 	    styledNodes.forEach(function (node) {
 	      if (!node.style) return;
 	      promotedProperties.forEach(function (property) {
+	        if (isTemplateOneHomeHeroText && property === "font-size") return;
 	        var value = node.style.getPropertyValue(property);
 	        if (value) node.style.setProperty(property, value, "important");
 	      });
@@ -3459,12 +3465,26 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		    if (preview.content.templateSlug === "dexta-academy-1") {
 		      var academyOneLogoWidth = (Number(preview.content.theme.logoWidth || 72)) + "px";
 		      var academyOneLogoHeight = (Number(preview.content.theme.logoHeight || 56)) + "px";
-		      function academyOneSectionBackground(selector, pageKey, sectionKey, defaultColor) {
-		        var prefix = "--dexta-academy-1-" + pageKey + "-" + sectionKey + "-";
-		        var overlay = "color-mix(in srgb,var(" + prefix + "section-bg-color," + defaultColor + ") var(" + prefix + "section-bg-opacity,100%),transparent)";
-		        return selector + "{background-color:" + overlay + "!important;background-image:linear-gradient(" + overlay + "," + overlay + "),var(" + prefix + "section-bg-image,none)!important;background-position:var(" + prefix + "section-bg-position,center center)!important;background-size:var(" + prefix + "section-bg-size,cover)!important;background-repeat:no-repeat!important;}";
-		      }
-		      return [
+			      function academyOneSectionBackground(selector, pageKey, sectionKey, defaultColor) {
+			        var prefix = "--dexta-academy-1-" + pageKey + "-" + sectionKey + "-";
+			        var overlay = "color-mix(in srgb,var(" + prefix + "section-bg-color," + defaultColor + ") var(" + prefix + "section-bg-opacity,100%),transparent)";
+			        return selector + "{background-color:" + overlay + "!important;background-image:linear-gradient(" + overlay + "," + overlay + "),var(" + prefix + "section-bg-image,none)!important;background-position:var(" + prefix + "section-bg-position,center center)!important;background-size:var(" + prefix + "section-bg-size,cover)!important;background-repeat:no-repeat!important;}";
+			      }
+			      function academyOneHeroTextSize(fieldKey, fallback) {
+			        var text = String(getPageSectionField("home", "hero", fieldKey) || "").trim();
+			        if (/^\\d+(?:\\.\\d+)?(?:px|rem|em|%)$/i.test(text)) return text;
+			        var parsed = Number(text);
+			        return Number.isFinite(parsed) && parsed > 0 ? parsed + "px" : fallback;
+			      }
+			      var academyOneHeroHeadlineTabletSize = academyOneHeroTextSize("headlineTabletFontSize", "clamp(3.6rem,5vw,5.8rem)");
+			      var academyOneHeroHeadlineMobileSize = academyOneHeroTextSize("headlineMobileFontSize", "clamp(2.6rem,10vw,3.7rem)");
+			      var academyOneHeroBodyTabletSize = academyOneHeroTextSize("bodyTabletFontSize", "1.35rem");
+			      var academyOneHeroBodyMobileSize = academyOneHeroTextSize("bodyMobileFontSize", "1.1rem");
+			      var academyOneHeroButtonTabletFontSize = academyOneHeroTextSize("buttonTabletFontSize", "1rem");
+			      var academyOneHeroButtonMobileFontSize = academyOneHeroTextSize("buttonMobileFontSize", "1rem");
+			      var academyOneHeroButtonTabletMinHeight = academyOneHeroTextSize("buttonTabletMinHeight", "60px");
+			      var academyOneHeroButtonMobileMinHeight = academyOneHeroTextSize("buttonMobileMinHeight", "56px");
+			      return [
 		        // ── Shared: Navbar ──
 		        academyOneSectionBackground(".navbar", "shared", "navbar", "#fff"),
 	        '.navbar .navbar-brand img{width:var(--dexta-academy-1-shared-navbar-logo-width-desktop,' + academyOneLogoWidth + ')!important;height:var(--dexta-academy-1-shared-navbar-logo-height-desktop,' + academyOneLogoHeight + ')!important;max-width:var(--dexta-academy-1-shared-navbar-logo-width-desktop,' + academyOneLogoWidth + ')!important;}',
@@ -3482,8 +3502,8 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	        '.school-hero__card-bg--green{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-card-center-bg-color,#0a4d3c) var(--dexta-academy-1-home-hero-card-center-bg-opacity,100%),transparent)!important;}',
 	        '.school-hero__card-bg--orange{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-card-top-bg-color,#ff6b35) var(--dexta-academy-1-home-hero-card-top-bg-opacity,100%),transparent)!important;}',
 	        '.school-hero__card-bg--champagne{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-card-bottom-bg-color,#dce5c8) var(--dexta-academy-1-home-hero-card-bottom-bg-opacity,100%),transparent)!important;}',
-	        '@media (min-width:768px) and (max-width:1199.98px){.school-hero .school-hero__title,.school-hero .school-hero__title *{font-size:var(--dexta-academy-1-home-hero-headline-tablet-font-size,clamp(3.6rem,5vw,5.8rem))!important;}.school-hero .school-hero__text,.school-hero .school-hero__text *{font-size:var(--dexta-academy-1-home-hero-body-tablet-font-size,1.35rem)!important;}}',
-	        '@media (max-width:767.98px){.school-hero .school-hero__title,.school-hero .school-hero__title *{font-size:var(--dexta-academy-1-home-hero-headline-mobile-font-size,clamp(2.6rem,10vw,3.7rem))!important;}.school-hero .school-hero__text,.school-hero .school-hero__text *{font-size:var(--dexta-academy-1-home-hero-body-mobile-font-size,1.1rem)!important;}}',
+		        '@media (min-width:768px) and (max-width:1199.98px){.school-hero .school-hero__title,.school-hero .school-hero__title *{font-size:var(--dexta-academy-1-home-hero-headline-tablet-font-size,' + academyOneHeroHeadlineTabletSize + ')!important;}.school-hero .school-hero__text,.school-hero .school-hero__text *{font-size:var(--dexta-academy-1-home-hero-body-tablet-font-size,' + academyOneHeroBodyTabletSize + ')!important;}.school-hero .school-hero__btn{font-size:var(--dexta-academy-1-home-hero-button-tablet-font-size,' + academyOneHeroButtonTabletFontSize + ')!important;min-height:var(--dexta-academy-1-home-hero-button-tablet-min-height,' + academyOneHeroButtonTabletMinHeight + ')!important;}}',
+		        '@media (max-width:767.98px){.school-hero .school-hero__title,.school-hero .school-hero__title *{font-size:var(--dexta-academy-1-home-hero-headline-mobile-font-size,' + academyOneHeroHeadlineMobileSize + ')!important;}.school-hero .school-hero__text,.school-hero .school-hero__text *{font-size:var(--dexta-academy-1-home-hero-body-mobile-font-size,' + academyOneHeroBodyMobileSize + ')!important;}.school-hero .school-hero__btn{font-size:var(--dexta-academy-1-home-hero-button-mobile-font-size,' + academyOneHeroButtonMobileFontSize + ')!important;min-height:var(--dexta-academy-1-home-hero-button-mobile-min-height,' + academyOneHeroButtonMobileMinHeight + ')!important;}}',
 		        '.school-hero .school-hero__btn--primary,.school-hero .school-hero__btn--secondary{background:color-mix(in srgb,var(--dexta-academy-1-home-hero-button-bg-color,#0d6efd) var(--dexta-academy-1-home-hero-button-bg-opacity,100%),transparent)!important;color:var(--dexta-academy-1-home-hero-button-text-color,#fff)!important;border:var(--dexta-academy-1-home-hero-button-border-width,0px) solid var(--dexta-academy-1-home-hero-button-border-color,#0d6efd)!important;}',
 		        // ── Home: About Preview ──
 		        academyOneSectionBackground(".landing-section--about", "home", "about-preview", "#fff"),
