@@ -41,6 +41,24 @@ function getAboutManifestSection(sectionId: string) {
     ?.sections.find((section) => section.id === sectionId);
 }
 
+function getAdmissionsManifestSection(sectionId: string) {
+  return dextaAcademy4Manifest.pages
+    .find((page) => page.slug === "admissions")
+    ?.sections.find((section) => section.id === sectionId);
+}
+
+function getGalleryManifestSection(sectionId: string) {
+  return dextaAcademy4Manifest.pages
+    .find((page) => page.slug === "gallery")
+    ?.sections.find((section) => section.id === sectionId);
+}
+
+function getContactManifestSection(sectionId: string) {
+  return dextaAcademy4Manifest.pages
+    .find((page) => page.slug === "contact")
+    ?.sections.find((section) => section.id === sectionId);
+}
+
 function getTemplateFourAboutSourceHtml() {
   return readFileSync(
     path.resolve(process.cwd(), dextaAcademy4Manifest.sourceDir, "about.html"),
@@ -310,5 +328,245 @@ describe("Dexta Academy 4 manifest", () => {
       exporter,
       /\.about-principles-section\s*\{[^}]*background-image:[^}]*linear-gradient\([^}]*--dexta-academy-4-about-principles-section-bg-opacity/s,
     );
+  });
+
+  it("wires Template 4 Admissions background and card style controls", () => {
+    const processSection = getAdmissionsManifestSection("process");
+    const formSection = getAdmissionsManifestSection("application-form-intro");
+    const ctaSection = getAdmissionsManifestSection("admissions-cta");
+    const previewRenderer = readFileSync(
+      path.resolve(
+        process.cwd(),
+        "src/lib/school-template-preview-renderer.ts",
+      ),
+      "utf8",
+    );
+    const exporter = readFileSync(
+      path.resolve(process.cwd(), "src/lib/school-template-exporter.ts"),
+      "utf8",
+    );
+    const processFields = new Map(
+      (processSection?.fields ?? []).map((field) => [field.key, field]),
+    );
+    const formFields = new Map(
+      (formSection?.fields ?? []).map((field) => [field.key, field]),
+    );
+    const ctaFields = new Map(
+      (ctaSection?.fields ?? []).map((field) => [field.key, field]),
+    );
+    const expectedTokens = [
+      "--dexta-academy-4-admissions-process-side-panel-bg-color",
+      "--dexta-academy-4-admissions-process-side-panel-bg-opacity",
+      "--dexta-academy-4-admissions-process-contact-card-bg-color",
+      "--dexta-academy-4-admissions-process-contact-card-bg-opacity",
+      "--dexta-academy-4-admissions-process-step-card-bg-color",
+      "--dexta-academy-4-admissions-process-step-card-bg-opacity",
+      "--dexta-academy-4-admissions-process-step-number-color",
+      "--dexta-academy-4-admissions-process-step-number-bg-color",
+      "--dexta-academy-4-admissions-process-step-number-bg-opacity",
+      "--dexta-academy-4-admissions-form-button-bg-color",
+      "--dexta-academy-4-admissions-form-button-text-color",
+      "--dexta-academy-4-admissions-admissions-cta-panel-bg-color",
+      "--dexta-academy-4-admissions-admissions-cta-panel-bg-opacity",
+    ];
+
+    assert.equal(
+      processFields.get("sidePanelBgColor")?.cssVariable,
+      "--dexta-academy-4-admissions-process-side-panel-bg-color",
+    );
+    assert.equal(
+      processFields.get("contactCardBgOpacity")?.cssVariable,
+      "--dexta-academy-4-admissions-process-contact-card-bg-opacity",
+    );
+    assert.equal(
+      processFields.get("stepNumberColor")?.selector,
+      ".admissions-step-number",
+    );
+    assert.equal(
+      processFields.get("stepNumberBgColor")?.cssVariable,
+      "--dexta-academy-4-admissions-process-step-number-bg-color",
+    );
+    assert.equal(
+      formFields.get("buttonBgColor")?.cssVariable,
+      "--dexta-academy-4-admissions-form-button-bg-color",
+    );
+    assert.equal(
+      formFields.get("buttonTextColor")?.cssVariable,
+      "--dexta-academy-4-admissions-form-button-text-color",
+    );
+    assert.equal(
+      ctaFields.get("panelBgColor")?.cssVariable,
+      "--dexta-academy-4-admissions-admissions-cta-panel-bg-color",
+    );
+
+    for (const token of expectedTokens) {
+      assert.match(previewRenderer, new RegExp(token));
+      assert.match(exporter, new RegExp(token));
+    }
+    assert.match(
+      previewRenderer,
+      /admissions-process-section\{[\s\S]*background-image:linear-gradient\([\s\S]*--dexta-academy-4-admissions-process-section-bg-opacity/,
+    );
+    assert.match(
+      previewRenderer,
+      /admissions-form-section\{[\s\S]*background-image:linear-gradient\([\s\S]*--dexta-academy-4-admissions-form-section-bg-opacity/,
+    );
+    assert.match(
+      previewRenderer,
+      /admissions-page-cta\{[\s\S]*background-image:linear-gradient\([\s\S]*--dexta-academy-4-admissions-admissions-cta-section-bg-opacity/,
+    );
+    assert.match(
+      exporter,
+      /\.admissions-process-section\s*\{[\s\S]*background-image:[\s\S]*linear-gradient\([\s\S]*--dexta-academy-4-admissions-process-section-bg-opacity/,
+    );
+    assert.match(
+      exporter,
+      /\.admissions-form-section\s*\{[\s\S]*background-image:[\s\S]*linear-gradient\([\s\S]*--dexta-academy-4-admissions-form-section-bg-opacity/,
+    );
+    assert.match(
+      exporter,
+      /\.admissions-page-cta\s*\{[\s\S]*background-image:[\s\S]*linear-gradient\([\s\S]*--dexta-academy-4-admissions-admissions-cta-section-bg-opacity/,
+    );
+  });
+
+  it("wires Template 4 Gallery lightbox and CTA overlay controls", () => {
+    const galleryCtaSection = getGalleryManifestSection("gallery-cta");
+    const galleryCtaFields = new Map(
+      (galleryCtaSection?.fields ?? []).map((field) => [field.key, field]),
+    );
+    const previewRenderer = readFileSync(
+      path.resolve(
+        process.cwd(),
+        "src/lib/school-template-preview-renderer.ts",
+      ),
+      "utf8",
+    );
+    const exporter = readFileSync(
+      path.resolve(process.cwd(), "src/lib/school-template-exporter.ts"),
+      "utf8",
+    );
+
+    assert.equal(
+      galleryCtaFields.get("panelBgOpacity")?.cssVariable,
+      "--dexta-academy-4-gallery-gallery-cta-panel-bg-opacity",
+    );
+    assert.match(previewRenderer, /data-dexta-lightbox-src/);
+    assert.match(exporter, /data-dexta-lightbox-src/);
+    assert.match(
+      previewRenderer,
+      /gallery-page-cta\{[\s\S]*background-image:linear-gradient\([\s\S]*--dexta-academy-4-gallery-gallery-cta-section-bg-opacity/,
+    );
+    assert.match(
+      exporter,
+      /\.gallery-page-cta\s*\{[\s\S]*background-image:[\s\S]*linear-gradient\([\s\S]*--dexta-academy-4-gallery-gallery-cta-section-bg-opacity/,
+    );
+    assert.match(
+      previewRenderer,
+      /--dexta-academy-4-gallery-gallery-cta-panel-bg-opacity/,
+    );
+    assert.match(
+      exporter,
+      /--dexta-academy-4-gallery-gallery-cta-panel-bg-opacity/,
+    );
+  });
+
+  it("wires Template 4 Contact hero, card, form, and CTA style controls", () => {
+    const pageHeroSection = getContactManifestSection("page-hero");
+    const detailsSection = getContactManifestSection("contact-details");
+    const formSection = getContactManifestSection("contact-form");
+    const ctaSection = getContactManifestSection("contact-cta");
+    const pageHeroFields = new Map(
+      (pageHeroSection?.fields ?? []).map((field) => [field.key, field]),
+    );
+    const detailsFields = new Map(
+      (detailsSection?.fields ?? []).map((field) => [field.key, field]),
+    );
+    const formFields = new Map(
+      (formSection?.fields ?? []).map((field) => [field.key, field]),
+    );
+    const ctaFields = new Map(
+      (ctaSection?.fields ?? []).map((field) => [field.key, field]),
+    );
+    const sourceHtml = readFileSync(
+      path.resolve(
+        process.cwd(),
+        dextaAcademy4Manifest.sourceDir,
+        "contact.html",
+      ),
+      "utf8",
+    );
+    const previewRenderer = readFileSync(
+      path.resolve(
+        process.cwd(),
+        "src/lib/school-template-preview-renderer.ts",
+      ),
+      "utf8",
+    );
+    const exporter = readFileSync(
+      path.resolve(process.cwd(), "src/lib/school-template-exporter.ts"),
+      "utf8",
+    );
+    const expectedTokens = [
+      "--dexta-academy-4-contact-contact-details-card-bg-color",
+      "--dexta-academy-4-contact-contact-details-card-border-color",
+      "--dexta-academy-4-contact-contact-details-card-title-text-color",
+      "--dexta-academy-4-contact-contact-details-card-body-text-color",
+      "--dexta-academy-4-contact-form-button-bg-color",
+      "--dexta-academy-4-contact-form-button-text-color",
+      "--dexta-academy-4-contact-form-side-panel-bg-color",
+      "--dexta-academy-4-contact-form-side-panel-title-text-color",
+      "--dexta-academy-4-contact-contact-cta-panel-bg-opacity",
+    ];
+
+    assert.equal(
+      pageHeroFields.get("secondaryCtaText")?.selector,
+      ".contact-secondary-link-text",
+    );
+    assert.equal(
+      pageHeroFields.get("secondaryCtaHref")?.selector,
+      ".contact-secondary-link",
+    );
+    assert.match(sourceHtml, /class="contact-secondary-link-text"/);
+    assert.equal(
+      detailsFields.get("cardBgColor")?.cssVariable,
+      "--dexta-academy-4-contact-contact-details-card-bg-color",
+    );
+    assert.equal(detailsFields.get("cardTitleTextColor")?.selector, "strong");
+    assert.equal(detailsFields.get("cardBodyTextColor")?.selector, "span, a");
+    assert.equal(
+      formFields.get("buttonBgColor")?.cssVariable,
+      "--dexta-academy-4-contact-form-button-bg-color",
+    );
+    assert.equal(
+      formFields.get("sidePanelBgColor")?.cssVariable,
+      "--dexta-academy-4-contact-form-side-panel-bg-color",
+    );
+    assert.equal(
+      ctaFields.get("panelBgOpacity")?.cssVariable,
+      "--dexta-academy-4-contact-contact-cta-panel-bg-opacity",
+    );
+
+    for (const token of expectedTokens) {
+      assert.match(previewRenderer, new RegExp(token));
+      assert.match(exporter, new RegExp(token));
+    }
+    for (const [selector, token] of [
+      ["contact-details-section", "contact-contact-details-section-bg-opacity"],
+      ["contact-form-section", "contact-form-section-bg-opacity"],
+      ["contact-page-cta", "contact-contact-cta-section-bg-opacity"],
+    ]) {
+      assert.match(
+        previewRenderer,
+        new RegExp(
+          `${selector}\\{[\\s\\S]*background-image:linear-gradient\\([\\s\\S]*--dexta-academy-4-${token}`,
+        ),
+      );
+      assert.match(
+        exporter,
+        new RegExp(
+          `\\.${selector}\\s*\\{[\\s\\S]*background-image:[\\s\\S]*linear-gradient\\([\\s\\S]*--dexta-academy-4-${token}`,
+        ),
+      );
+    }
   });
 });

@@ -165,6 +165,28 @@ function getCssVariableValue(
   return withUnit(value, field.unit);
 }
 
+function syncDextaAcademy4GalleryLightboxSource(
+  templateSlug: string,
+  node: ElementNode,
+  asset: string,
+) {
+  if (
+    templateSlug !== "dexta-academy-4" ||
+    !matchesSelector(node, ".gallery-preview-card, .gallery-page-card")
+  ) {
+    return;
+  }
+
+  if (asset) {
+    setAttr(node, "href", asset);
+    setAttr(node, "data-dexta-lightbox-src", asset);
+  } else {
+    node.attrs = node.attrs.filter(
+      (attr) => attr.name !== "data-dexta-lightbox-src",
+    );
+  }
+}
+
 function shouldApplyStaticResponsiveScope(
   field: SchoolTemplateProjectSectionSnapshot["fields"][number],
 ) {
@@ -1516,12 +1538,14 @@ function applySection(
             setAttr(node, attribute, resolveAsset(value, field));
           }
         } else if (field.target === "backgroundImage") {
-          const asset = resolveAsset(value, field).replace(/"/g, "&quot;");
+          const rawAsset = resolveAsset(value, field);
+          const asset = rawAsset.replace(/"/g, "&quot;");
           setStyleDeclaration(
             node,
             "background-image",
             asset ? `url("${asset}")` : "none",
           );
+          syncDextaAcademy4GalleryLightboxSource(templateSlug, node, rawAsset);
         } else if (field.target === "inlineStyle") {
           if (
             templateSlug === "dexta-academy-3" &&
@@ -1700,11 +1724,17 @@ function applySection(
               setAttr(node, attribute, resolveAsset(value, field));
             }
           } else if (field.target === "backgroundImage") {
-            const asset = resolveAsset(value, field).replace(/"/g, "&quot;");
+            const rawAsset = resolveAsset(value, field);
+            const asset = rawAsset.replace(/"/g, "&quot;");
             setStyleDeclaration(
               node,
               "background-image",
               asset ? `url("${asset}")` : "none",
+            );
+            syncDextaAcademy4GalleryLightboxSource(
+              templateSlug,
+              node,
+              rawAsset,
             );
           } else if (field.target === "inlineStyle") {
             if (
@@ -1746,6 +1776,7 @@ function getGalleryLightboxMarkup(): string {
   var img=document.getElementById("dexta-lightbox-img");
   var zoomed=false,panX=0,panY=0,startX=0,startY=0,dragging=false;
   function openLightbox(src){img.src=src;img.style.transform="";img.classList.remove("zoomed");zoomed=false;panX=0;panY=0;overlay.classList.add("active");}
+  function getGalleryCardLightboxSource(card){var explicit=card.getAttribute("data-dexta-lightbox-src");if(explicit)return explicit;var href=card.getAttribute("href");if(href&&/^https?:\\/\\//.test(href))return href;var bg=window.getComputedStyle(card).backgroundImage||card.style.backgroundImage||"";var m=bg.match(/url\\(["']?(.*?)["']?\\)/);return m&&m[1]?m[1]:"";}
   function closeLightbox(){overlay.classList.remove("active");img.src="";}
   overlay.addEventListener("click",function(e){if(e.target===overlay)closeLightbox();});
   document.getElementById("dexta-lightbox-close").addEventListener("click",closeLightbox);
@@ -1756,7 +1787,7 @@ function getGalleryLightboxMarkup(): string {
   document.addEventListener("keydown",function(e){if(e.key==="Escape")closeLightbox();});
   document.querySelectorAll(".gallery-preview-card, .gallery-page-card").forEach(function(card){
     card.style.cursor="pointer";
-    card.addEventListener("click",function(e){e.preventDefault();var bg=window.getComputedStyle(card).backgroundImage||card.style.backgroundImage||"";var m=bg.match(/url\\(["']?(.*?)["']?\\)/);if(m&&m[1])openLightbox(m[1]);else if(card.getAttribute("href")&&/^https?:\\/\\//.test(card.getAttribute("href")))openLightbox(card.getAttribute("href"));});
+    card.addEventListener("click",function(e){e.preventDefault();var source=getGalleryCardLightboxSource(card);if(source)openLightbox(source);});
   });
 })();`;
 
@@ -5008,31 +5039,95 @@ body:not(.home-page) .site-header {
 /* Existing admissions + contact form sections */
 .admissions-process-section {
   background-color: color-mix(in srgb, var(--dexta-academy-4-admissions-process-section-bg-color, #ffffff) var(--dexta-academy-4-admissions-process-section-bg-opacity, 100%), transparent) !important;
-  background-image: var(--dexta-academy-4-admissions-process-section-bg-image, none) !important;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--dexta-academy-4-admissions-process-section-bg-color, #ffffff) var(--dexta-academy-4-admissions-process-section-bg-opacity, 100%), transparent),
+      color-mix(in srgb, var(--dexta-academy-4-admissions-process-section-bg-color, #ffffff) var(--dexta-academy-4-admissions-process-section-bg-opacity, 100%), transparent)
+    ),
+    var(--dexta-academy-4-admissions-process-section-bg-image, none) !important;
   background-position: var(--dexta-academy-4-admissions-process-section-bg-position, center center) !important;
   background-size: var(--dexta-academy-4-admissions-process-section-bg-size, cover) !important;
   background-repeat: no-repeat !important;
 }
+.admissions-side-panel {
+  background: color-mix(in srgb, var(--dexta-academy-4-admissions-process-side-panel-bg-color, #102542) var(--dexta-academy-4-admissions-process-side-panel-bg-opacity, 100%), transparent) !important;
+}
+.admissions-contact-card {
+  background: color-mix(in srgb, var(--dexta-academy-4-admissions-process-contact-card-bg-color, #ffffff) var(--dexta-academy-4-admissions-process-contact-card-bg-opacity, 8%), transparent) !important;
+}
+.admissions-step-card {
+  background: color-mix(in srgb, var(--dexta-academy-4-admissions-process-step-card-bg-color, #f7fafc) var(--dexta-academy-4-admissions-process-step-card-bg-opacity, 100%), transparent) !important;
+}
+.admissions-step-number {
+  color: var(--dexta-academy-4-admissions-process-step-number-color, #ffffff) !important;
+  background: color-mix(in srgb, var(--dexta-academy-4-admissions-process-step-number-bg-color, #102542) var(--dexta-academy-4-admissions-process-step-number-bg-opacity, 100%), transparent) !important;
+}
 .admissions-form-section {
   background-color: color-mix(in srgb, var(--dexta-academy-4-admissions-form-section-bg-color, #fff) var(--dexta-academy-4-admissions-form-section-bg-opacity, 100%), transparent) !important;
-  background-image: var(--dexta-academy-4-admissions-form-section-bg-image, none) !important;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--dexta-academy-4-admissions-form-section-bg-color, #fff) var(--dexta-academy-4-admissions-form-section-bg-opacity, 100%), transparent),
+      color-mix(in srgb, var(--dexta-academy-4-admissions-form-section-bg-color, #fff) var(--dexta-academy-4-admissions-form-section-bg-opacity, 100%), transparent)
+    ),
+    var(--dexta-academy-4-admissions-form-section-bg-image, none) !important;
   background-position: var(--dexta-academy-4-admissions-form-section-bg-position, center center) !important;
   background-size: var(--dexta-academy-4-admissions-form-section-bg-size, cover) !important;
   background-repeat: no-repeat !important;
 }
+.admissions-form-link {
+  background: color-mix(in srgb, var(--dexta-academy-4-admissions-form-button-bg-color, #102542) var(--dexta-academy-4-admissions-form-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-4-admissions-form-button-text-color, #ffffff) !important;
+  border: var(--dexta-academy-4-admissions-form-button-border-width, 0px) solid var(--dexta-academy-4-admissions-form-button-border-color, #102542) !important;
+}
 .contact-form-section {
   background-color: color-mix(in srgb, var(--dexta-academy-4-contact-form-section-bg-color, #fff) var(--dexta-academy-4-contact-form-section-bg-opacity, 100%), transparent) !important;
-  background-image: var(--dexta-academy-4-contact-form-section-bg-image, none) !important;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--dexta-academy-4-contact-form-section-bg-color, #fff) var(--dexta-academy-4-contact-form-section-bg-opacity, 100%), transparent),
+      color-mix(in srgb, var(--dexta-academy-4-contact-form-section-bg-color, #fff) var(--dexta-academy-4-contact-form-section-bg-opacity, 100%), transparent)
+    ),
+    var(--dexta-academy-4-contact-form-section-bg-image, none) !important;
   background-position: var(--dexta-academy-4-contact-form-section-bg-position, center center) !important;
   background-size: var(--dexta-academy-4-contact-form-section-bg-size, cover) !important;
   background-repeat: no-repeat !important;
 }
+.contact-form-link {
+  background: color-mix(in srgb, var(--dexta-academy-4-contact-form-button-bg-color, #102542) var(--dexta-academy-4-contact-form-button-bg-opacity, 100%), transparent) !important;
+  color: var(--dexta-academy-4-contact-form-button-text-color, #ffffff) !important;
+  border: var(--dexta-academy-4-contact-form-button-border-width, 0px) solid var(--dexta-academy-4-contact-form-button-border-color, #102542) !important;
+}
+.contact-side-panel {
+  background: color-mix(in srgb, var(--dexta-academy-4-contact-form-side-panel-bg-color, #102542) var(--dexta-academy-4-contact-form-side-panel-bg-opacity, 100%), transparent) !important;
+}
+.contact-panel-kicker {
+  color: var(--dexta-academy-4-contact-form-side-panel-kicker-text-color, rgba(255, 255, 255, 0.72)) !important;
+}
+.contact-side-panel h2 {
+  color: var(--dexta-academy-4-contact-form-side-panel-title-text-color, #ffffff) !important;
+}
+.contact-side-panel > p {
+  color: var(--dexta-academy-4-contact-form-side-panel-body-text-color, rgba(255, 255, 255, 0.78)) !important;
+}
+.contact-focus-list li {
+  color: var(--dexta-academy-4-contact-form-side-panel-list-text-color, rgba(255, 255, 255, 0.8)) !important;
+}
+.contact-side-links a {
+  color: var(--dexta-academy-4-contact-form-side-panel-link-text-color, #ffffff) !important;
+}
 .admissions-page-cta {
   background-color: color-mix(in srgb, var(--dexta-academy-4-admissions-admissions-cta-section-bg-color, #f0f4f8) var(--dexta-academy-4-admissions-admissions-cta-section-bg-opacity, 100%), transparent) !important;
-  background-image: var(--dexta-academy-4-admissions-admissions-cta-section-bg-image, none) !important;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--dexta-academy-4-admissions-admissions-cta-section-bg-color, #f0f4f8) var(--dexta-academy-4-admissions-admissions-cta-section-bg-opacity, 100%), transparent),
+      color-mix(in srgb, var(--dexta-academy-4-admissions-admissions-cta-section-bg-color, #f0f4f8) var(--dexta-academy-4-admissions-admissions-cta-section-bg-opacity, 100%), transparent)
+    ),
+    var(--dexta-academy-4-admissions-admissions-cta-section-bg-image, none) !important;
   background-position: var(--dexta-academy-4-admissions-admissions-cta-section-bg-position, center center) !important;
   background-size: var(--dexta-academy-4-admissions-admissions-cta-section-bg-size, cover) !important;
   background-repeat: no-repeat !important;
+}
+.admissions-page-cta .cta-panel {
+  background: color-mix(in srgb, var(--dexta-academy-4-admissions-admissions-cta-panel-bg-color, #102542) var(--dexta-academy-4-admissions-admissions-cta-panel-bg-opacity, 100%), transparent) !important;
 }
 .admissions-page-cta .btn {
   background: color-mix(in srgb, var(--dexta-academy-4-admissions-admissions-cta-button-bg-color, #4a8fff) var(--dexta-academy-4-admissions-admissions-cta-button-bg-opacity, 100%), transparent) !important;
@@ -5049,13 +5144,18 @@ body:not(.home-page) .site-header {
 }
 .gallery-page-cta {
   background-color: color-mix(in srgb, var(--dexta-academy-4-gallery-gallery-cta-section-bg-color, #f0f4f8) var(--dexta-academy-4-gallery-gallery-cta-section-bg-opacity, 100%), transparent) !important;
-  background-image: var(--dexta-academy-4-gallery-gallery-cta-section-bg-image, none) !important;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--dexta-academy-4-gallery-gallery-cta-section-bg-color, #f0f4f8) var(--dexta-academy-4-gallery-gallery-cta-section-bg-opacity, 100%), transparent),
+      color-mix(in srgb, var(--dexta-academy-4-gallery-gallery-cta-section-bg-color, #f0f4f8) var(--dexta-academy-4-gallery-gallery-cta-section-bg-opacity, 100%), transparent)
+    ),
+    var(--dexta-academy-4-gallery-gallery-cta-section-bg-image, none) !important;
   background-position: var(--dexta-academy-4-gallery-gallery-cta-section-bg-position, center center) !important;
   background-size: var(--dexta-academy-4-gallery-gallery-cta-section-bg-size, cover) !important;
   background-repeat: no-repeat !important;
 }
 .gallery-page-cta .cta-panel {
-  background: var(--dexta-academy-4-gallery-gallery-cta-panel-bg-color, linear-gradient(135deg, #102542 0%, #0f766e 100%)) !important;
+  background: color-mix(in srgb, var(--dexta-academy-4-gallery-gallery-cta-panel-bg-color, #102542) var(--dexta-academy-4-gallery-gallery-cta-panel-bg-opacity, 100%), transparent) !important;
 }
 .gallery-page-cta .btn-primary {
   background: color-mix(in srgb, var(--dexta-academy-4-gallery-gallery-cta-primary-button-bg-color, #4a8fff) var(--dexta-academy-4-gallery-gallery-cta-primary-button-bg-opacity, 100%), transparent) !important;
@@ -5070,20 +5170,41 @@ body:not(.home-page) .site-header {
 /* Contact sections */
 .contact-details-section {
   background-color: color-mix(in srgb, var(--dexta-academy-4-contact-contact-details-section-bg-color, #ffffff) var(--dexta-academy-4-contact-contact-details-section-bg-opacity, 100%), transparent) !important;
-  background-image: var(--dexta-academy-4-contact-contact-details-section-bg-image, none) !important;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--dexta-academy-4-contact-contact-details-section-bg-color, #ffffff) var(--dexta-academy-4-contact-contact-details-section-bg-opacity, 100%), transparent),
+      color-mix(in srgb, var(--dexta-academy-4-contact-contact-details-section-bg-color, #ffffff) var(--dexta-academy-4-contact-contact-details-section-bg-opacity, 100%), transparent)
+    ),
+    var(--dexta-academy-4-contact-contact-details-section-bg-image, none) !important;
   background-position: var(--dexta-academy-4-contact-contact-details-section-bg-position, center center) !important;
   background-size: var(--dexta-academy-4-contact-contact-details-section-bg-size, cover) !important;
   background-repeat: no-repeat !important;
 }
+.contact-detail-card {
+  background: color-mix(in srgb, var(--dexta-academy-4-contact-contact-details-card-bg-color, #f7fafc) var(--dexta-academy-4-contact-contact-details-card-bg-opacity, 100%), transparent) !important;
+  border-color: var(--dexta-academy-4-contact-contact-details-card-border-color, rgba(15, 23, 42, 0.06)) !important;
+}
+.contact-detail-card strong {
+  color: var(--dexta-academy-4-contact-contact-details-card-title-text-color, #102542) !important;
+}
+.contact-detail-card span,
+.contact-detail-card a {
+  color: var(--dexta-academy-4-contact-contact-details-card-body-text-color, #5f6f81) !important;
+}
 .contact-page-cta {
   background-color: color-mix(in srgb, var(--dexta-academy-4-contact-contact-cta-section-bg-color, #f0f4f8) var(--dexta-academy-4-contact-contact-cta-section-bg-opacity, 100%), transparent) !important;
-  background-image: var(--dexta-academy-4-contact-contact-cta-section-bg-image, none) !important;
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--dexta-academy-4-contact-contact-cta-section-bg-color, #f0f4f8) var(--dexta-academy-4-contact-contact-cta-section-bg-opacity, 100%), transparent),
+      color-mix(in srgb, var(--dexta-academy-4-contact-contact-cta-section-bg-color, #f0f4f8) var(--dexta-academy-4-contact-contact-cta-section-bg-opacity, 100%), transparent)
+    ),
+    var(--dexta-academy-4-contact-contact-cta-section-bg-image, none) !important;
   background-position: var(--dexta-academy-4-contact-contact-cta-section-bg-position, center center) !important;
   background-size: var(--dexta-academy-4-contact-contact-cta-section-bg-size, cover) !important;
   background-repeat: no-repeat !important;
 }
 .contact-page-cta .cta-panel {
-  background: var(--dexta-academy-4-contact-contact-cta-panel-bg-color, #102542) !important;
+  background: color-mix(in srgb, var(--dexta-academy-4-contact-contact-cta-panel-bg-color, #102542) var(--dexta-academy-4-contact-contact-cta-panel-bg-opacity, 100%), transparent) !important;
 }
 .contact-page-cta .btn-primary {
   background: color-mix(in srgb, var(--dexta-academy-4-contact-contact-cta-primary-button-bg-color, #4a8fff) var(--dexta-academy-4-contact-contact-cta-primary-button-bg-opacity, 100%), transparent) !important;
