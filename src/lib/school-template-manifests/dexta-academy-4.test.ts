@@ -29,6 +29,25 @@ function getHomeGalleryPreviewSection(
     ?.sections.find((section) => section.id === "gallery-preview");
 }
 
+function getHomeAboutPreviewManifestSection() {
+  return dextaAcademy4Manifest.pages
+    .find((page) => page.slug === "home")
+    ?.sections.find((section) => section.id === "about-preview");
+}
+
+function getAboutManifestSection(sectionId: string) {
+  return dextaAcademy4Manifest.pages
+    .find((page) => page.slug === "about")
+    ?.sections.find((section) => section.id === sectionId);
+}
+
+function getTemplateFourAboutSourceHtml() {
+  return readFileSync(
+    path.resolve(process.cwd(), dextaAcademy4Manifest.sourceDir, "about.html"),
+    "utf8",
+  );
+}
+
 describe("Dexta Academy 4 manifest", () => {
   it("normalizes entity-quoted background image URLs from source markup", () => {
     const content = buildSchoolTemplateProjectContent(dextaAcademy4Manifest);
@@ -115,6 +134,181 @@ describe("Dexta Academy 4 manifest", () => {
         (field) => field.key !== "label" && field.key !== "caption",
       ),
       "Home gallery snapshot should not expose per-image title or caption fields.",
+    );
+  });
+
+  it("keeps About Preview title and stat fields targeted to the correct nodes", () => {
+    const aboutPreviewSection = getHomeAboutPreviewManifestSection();
+    const sourceHtml = readFileSync(
+      path.resolve(
+        process.cwd(),
+        dextaAcademy4Manifest.sourceDir,
+        dextaAcademy4Manifest.entryFile,
+      ),
+      "utf8",
+    );
+    const titleField = aboutPreviewSection?.fields.find(
+      (field) => field.key === "title",
+    );
+    const statValueField = aboutPreviewSection?.fields.find(
+      (field) => field.key === "statValue",
+    );
+    const statLabelField = aboutPreviewSection?.fields.find(
+      (field) => field.key === "statLabel",
+    );
+
+    assert.equal(aboutPreviewSection?.repeatable?.itemSelector, ".stat-card");
+    assert.equal(titleField?.selector, ".section-copy > h2");
+    assert.equal(statValueField?.selector, ".stat-card__value");
+    assert.equal(statLabelField?.selector, ".stat-card__body");
+    assert.equal(statLabelField?.label, "Stat body");
+    assert.match(sourceHtml, /class="stat-card__value"/);
+    assert.match(sourceHtml, /class="stat-card__body"/);
+    assert.doesNotMatch(sourceHtml, /View All Programs/);
+  });
+
+  it("keeps About Facts section title and card value/label fields targeted correctly", () => {
+    const factsSection = getAboutManifestSection("facts");
+    const sourceHtml = getTemplateFourAboutSourceHtml();
+    const sectionTitleField = factsSection?.fields.find(
+      (field) => field.key === "title",
+    );
+    const factValueField = factsSection?.fields.find(
+      (field) => field.key === "factValue",
+    );
+    const factLabelField = factsSection?.fields.find(
+      (field) => field.key === "factLabel",
+    );
+
+    assert.equal(factsSection?.repeatable?.itemSelector, ".about-fact-card");
+    assert.equal(sectionTitleField?.selector, ".about-facts-section h2");
+    assert.equal(sectionTitleField?.label, "Title");
+    assert.equal(factValueField?.selector, ".about-fact-card__value");
+    assert.equal(factLabelField?.selector, ".about-fact-card__label");
+    assert.equal(factLabelField?.label, "Fact label");
+    assert.match(sourceHtml, /class="about-fact-card__value"/);
+    assert.match(sourceHtml, /class="about-fact-card__label"/);
+  });
+
+  it("exposes the About Mission, Vision & Core Values cards for per-item editing", () => {
+    const principlesSection = getAboutManifestSection("principles");
+    const sourceHtml = getTemplateFourAboutSourceHtml();
+    const itemFieldSelectors = new Map(
+      (principlesSection?.fields ?? []).map((field) => [
+        field.key,
+        field.selector,
+      ]),
+    );
+
+    assert.equal(principlesSection?.label, "Mission, Vision & Core Values");
+    assert.equal(
+      principlesSection?.repeatable?.itemSelector,
+      ".principle-card",
+    );
+    assert.equal(itemFieldSelectors.get("eyebrow"), ".section-kicker");
+    assert.equal(
+      itemFieldSelectors.get("title"),
+      ".about-principles-section h2",
+    );
+    assert.equal(itemFieldSelectors.get("intro"), ".section-intro");
+    assert.equal(
+      itemFieldSelectors.get("principleLabel"),
+      ".principle-card__label",
+    );
+    assert.equal(
+      itemFieldSelectors.get("principleTitle"),
+      ".principle-card__title",
+    );
+    assert.equal(
+      itemFieldSelectors.get("principleBody"),
+      ".principle-card__body",
+    );
+    assert.match(sourceHtml, /class="principle-label principle-card__label"/);
+    assert.match(sourceHtml, /class="principle-card__title"/);
+    assert.match(sourceHtml, /class="value-tags principle-card__body"/);
+  });
+
+  it("targets the About Student Experience title without exposing a missing body field", () => {
+    const studentExperienceSection =
+      getAboutManifestSection("student-experience");
+    const sourceHtml = getTemplateFourAboutSourceHtml();
+    const titleField = studentExperienceSection?.fields.find(
+      (field) => field.key === "title",
+    );
+    const bodyField = studentExperienceSection?.fields.find(
+      (field) => field.key === "body",
+    );
+
+    assert.equal(titleField?.selector, ".student-experience-section__title");
+    assert.equal(bodyField, undefined);
+    assert.match(sourceHtml, /class="student-experience-section__title"/);
+  });
+
+  it("exposes Principal Note section, panel, and signoff background controls", () => {
+    const principalNoteSection = getAboutManifestSection("principal-note");
+    const fields = new Map(
+      (principalNoteSection?.fields ?? []).map((field) => [field.key, field]),
+    );
+
+    assert.equal(
+      fields.get("sectionBgColor")?.cssVariable,
+      "--dexta-academy-4-about-principal-note-section-bg-color",
+    );
+    assert.equal(
+      fields.get("sectionBgImage")?.cssVariable,
+      "--dexta-academy-4-about-principal-note-section-bg-image",
+    );
+    assert.equal(
+      fields.get("panelBgColor")?.cssVariable,
+      "--dexta-academy-4-about-principal-note-panel-bg-color",
+    );
+    assert.equal(
+      fields.get("panelBgOpacity")?.cssVariable,
+      "--dexta-academy-4-about-principal-note-panel-bg-opacity",
+    );
+    assert.equal(
+      fields.get("signoffBgColor")?.cssVariable,
+      "--dexta-academy-4-about-principal-note-signoff-bg-color",
+    );
+    assert.equal(
+      fields.get("signoffBgOpacity")?.cssVariable,
+      "--dexta-academy-4-about-principal-note-signoff-bg-opacity",
+    );
+  });
+
+  it("wires Template 4 About section backgrounds into preview and export CSS", () => {
+    const previewRenderer = readFileSync(
+      path.resolve(
+        process.cwd(),
+        "src/lib/school-template-preview-renderer.ts",
+      ),
+      "utf8",
+    );
+    const exporter = readFileSync(
+      path.resolve(process.cwd(), "src/lib/school-template-exporter.ts"),
+      "utf8",
+    );
+    const expectedTokens = [
+      "--dexta-academy-4-about-story-section-bg-image",
+      "--dexta-academy-4-about-principles-section-bg-image",
+      "--dexta-academy-4-about-principal-note-section-bg-image",
+      "--dexta-academy-4-about-student-experience-section-bg-image",
+      "--dexta-academy-4-about-facts-section-bg-image",
+      "--dexta-academy-4-about-principal-note-panel-bg-color",
+      "--dexta-academy-4-about-principal-note-signoff-bg-color",
+    ];
+
+    for (const token of expectedTokens) {
+      assert.match(previewRenderer, new RegExp(token));
+      assert.match(exporter, new RegExp(token));
+    }
+    assert.match(
+      previewRenderer,
+      /about-principles-section\{[^}]*background-image:linear-gradient\([^}]*--dexta-academy-4-about-principles-section-bg-opacity/s,
+    );
+    assert.match(
+      exporter,
+      /\.about-principles-section\s*\{[^}]*background-image:[^}]*linear-gradient\([^}]*--dexta-academy-4-about-principles-section-bg-opacity/s,
     );
   });
 });

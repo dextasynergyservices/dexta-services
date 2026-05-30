@@ -978,13 +978,13 @@ export const dextaAcademy4Manifest = {
           fields: [
             imageField("image", "Image", ".about-media img"),
             richTextField("eyebrow", "Eyebrow", ".section-kicker"),
-            richTextField("title", "Title", "h2"),
+            richTextField("title", "Title", ".section-copy > h2"),
             richTextField("body", "Body", ".section-copy > p"),
             textField("ctaText", "CTA text", ".btn-primary"),
             linkField("ctaHref", "CTA link", ".btn-primary"),
             // Per-item stat card fields
-            richTextField("statValue", "Stat value", ".stat-card > strong"),
-            richTextField("statLabel", "Stat label", ".stat-card > span"),
+            richTextField("statValue", "Stat value", ".stat-card__value"),
+            richTextField("statLabel", "Stat body", ".stat-card__body"),
             // Section-level styling
             ...homeSectionStyle({
               sectionKey: "about-preview",
@@ -1181,20 +1181,28 @@ export const dextaAcademy4Manifest = {
         },
         {
           id: "principles",
-          label: "Principles",
+          label: "Mission, Vision & Core Values",
           selector: ".about-principles-section",
           fields: [
             richTextField("eyebrow", "Eyebrow", ".section-kicker"),
-            richTextField("title", "Title", "h2"),
+            richTextField("title", "Title", ".about-principles-section h2"),
             richTextField("intro", "Section intro", ".section-intro"),
             // Per-item principle card fields
             richTextField(
               "principleLabel",
               "Principle label",
-              ".principle-label",
+              ".principle-card__label",
             ),
-            richTextField("principleTitle", "Principle title", "h3"),
-            richTextField("principleBody", "Principle body", "p"),
+            richTextField(
+              "principleTitle",
+              "Principle title",
+              ".principle-card__title",
+            ),
+            richTextField(
+              "principleBody",
+              "Principle body",
+              ".principle-card__body",
+            ),
             ...aboutSectionStyle({
               sectionKey: "principles",
               selector: ".about-principles-section",
@@ -1244,6 +1252,78 @@ export const dextaAcademy4Manifest = {
               "Principal bio",
               ".principal-note-signoff p",
             ),
+            colorField(
+              "panelBgColor",
+              "Main note container background color",
+              ".principal-note-panel",
+              {
+                target: "cssVariable",
+                cssVariable: t4CssVar(
+                  "about",
+                  "principal-note",
+                  "panel-bg-color",
+                ),
+                defaultValue: "#102542",
+                uiGroup: "Principal note containers",
+                uiOrder: 130,
+              },
+            ),
+            numberField(
+              "panelBgOpacity",
+              "Main note container background opacity",
+              ".principal-note-panel",
+              {
+                target: "cssVariable",
+                cssVariable: t4CssVar(
+                  "about",
+                  "principal-note",
+                  "panel-bg-opacity",
+                ),
+                defaultValue: 100,
+                min: 0,
+                max: 100,
+                step: 1,
+                unit: "%",
+                uiGroup: "Principal note containers",
+                uiOrder: 131,
+              },
+            ),
+            colorField(
+              "signoffBgColor",
+              "Principal name container background color",
+              ".principal-note-signoff",
+              {
+                target: "cssVariable",
+                cssVariable: t4CssVar(
+                  "about",
+                  "principal-note",
+                  "signoff-bg-color",
+                ),
+                defaultValue: "#ffffff",
+                uiGroup: "Principal note containers",
+                uiOrder: 132,
+              },
+            ),
+            numberField(
+              "signoffBgOpacity",
+              "Principal name container background opacity",
+              ".principal-note-signoff",
+              {
+                target: "cssVariable",
+                cssVariable: t4CssVar(
+                  "about",
+                  "principal-note",
+                  "signoff-bg-opacity",
+                ),
+                defaultValue: 8,
+                min: 0,
+                max: 100,
+                step: 1,
+                unit: "%",
+                uiGroup: "Principal note containers",
+                uiOrder: 133,
+              },
+            ),
             ...aboutSectionStyle({
               sectionKey: "principal-note",
               selector: ".principal-note-section",
@@ -1258,8 +1338,7 @@ export const dextaAcademy4Manifest = {
           selector: ".student-experience-section",
           fields: [
             textField("eyebrow", "Eyebrow", ".section-kicker"),
-            textField("title", "Title", "h2"),
-            textareaField("body", "Body", ".section-copy, p"),
+            textField("title", "Title", ".student-experience-section__title"),
             imageField(
               "image",
               "Experience image",
@@ -1270,7 +1349,7 @@ export const dextaAcademy4Manifest = {
             ...aboutSectionStyle({
               sectionKey: "student-experience",
               selector: ".student-experience-section",
-              defaultBackgroundColor: "#ffffff",
+              defaultBackgroundColor: "#f7fafc",
             }),
             ...aboutTypography({ selector: ".student-experience-section" }),
           ],
@@ -1286,13 +1365,13 @@ export const dextaAcademy4Manifest = {
           selector: ".about-facts-section",
           fields: [
             textField("eyebrow", "Eyebrow", ".section-kicker"),
-            textField("title", "Title", "h2"),
-            textField("factValue", "Fact value", "strong"),
-            textField("factLabel", "Fact label", "span, p"),
+            textField("title", "Title", ".about-facts-section h2"),
+            textField("factValue", "Fact value", ".about-fact-card__value"),
+            textField("factLabel", "Fact label", ".about-fact-card__label"),
             ...aboutSectionStyle({
               sectionKey: "facts",
               selector: ".about-facts-section",
-              defaultBackgroundColor: "#102542",
+              defaultBackgroundColor: "#ffffff",
             }),
             ...aboutTypography({ selector: ".about-facts-section" }),
           ],
