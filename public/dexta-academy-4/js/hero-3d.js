@@ -8,6 +8,12 @@ const canvas = document.getElementById("hero-3d-canvas");
 const status = document.getElementById("hero-3d-status");
 const pagePreloader = document.getElementById("site-preloader");
 const pagePreloaderStatus = document.getElementById("site-preloader-status");
+const heroVisual = heroSection
+  ? heroSection.querySelector(".hero-visual")
+  : null;
+const heroDisplay = heroVisual
+  ? heroVisual.querySelector(".hero-display")
+  : null;
 const headlineLines = heroSection
   ? Array.from(heroSection.querySelectorAll(".hero-display span"))
   : [];
@@ -25,6 +31,11 @@ if (!heroSection || !stage || !canvas || !status) {
   const RESPONSIVE_CONFIG = HERO_3D_CONFIG.responsive || {};
   const MOBILE_TRANSFORM_CONFIG = TRANSFORM_CONFIG.mobile || {};
   const MOBILE_RESPONSIVE_CONFIG = RESPONSIVE_CONFIG.mobile || {};
+  const mobileViewportQuery =
+    typeof window.matchMedia === "function"
+      ? window.matchMedia("(max-width: 767.98px)")
+      : null;
+  const headlineFontSizeOverrides = new WeakMap();
 
   function numberFromConfig(value, fallback) {
     const numberValue = Number(value);
@@ -37,6 +48,95 @@ if (!heroSection || !stage || !canvas || !status) {
 
   function stringFromConfig(value, fallback) {
     return typeof value === "string" && value.trim() ? value.trim() : fallback;
+  }
+
+  function isMobileViewport() {
+    return mobileViewportQuery ? mobileViewportQuery.matches : false;
+  }
+
+  function placementFromConfig(value) {
+    const placement = stringFromConfig(value, "overlay");
+    return placement === "modelTop" || placement === "modelBottom"
+      ? placement
+      : "overlay";
+  }
+
+  function getActivePlacementConfig() {
+    const latestConfig = window.schoolHero3dConfig || HERO_3D_CONFIG;
+    const responsiveConfig = latestConfig.responsive || {};
+    return isMobileViewport()
+      ? responsiveConfig.mobile || {}
+      : responsiveConfig.desktop || {};
+  }
+
+  function getMobileHeadlineFontSize(value) {
+    const numberValue = Number(value);
+    if (!Number.isFinite(numberValue)) return null;
+    return Math.min(Math.max(numberValue, 28), 120);
+  }
+
+  function setInlineOverride(node, property, value) {
+    if (!node || !node.style) return;
+    if (!headlineFontSizeOverrides.has(node)) {
+      headlineFontSizeOverrides.set(node, {
+        value: node.style.getPropertyValue(property),
+        priority: node.style.getPropertyPriority(property),
+      });
+    }
+    node.style.setProperty(property, value, "important");
+  }
+
+  function restoreInlineOverride(node, property) {
+    if (!node || !node.style || !headlineFontSizeOverrides.has(node)) return;
+    const original = headlineFontSizeOverrides.get(node);
+    if (original.value) {
+      node.style.setProperty(property, original.value, original.priority);
+    } else {
+      node.style.removeProperty(property);
+    }
+    headlineFontSizeOverrides.delete(node);
+  }
+
+  function applyMobileHeadlineFontSize(activeConfig) {
+    if (!heroDisplay) return;
+
+    const nodes = [heroDisplay, ...heroDisplay.querySelectorAll("*")];
+    const fontSize = isMobileViewport()
+      ? getMobileHeadlineFontSize(activeConfig.headlineFontSize)
+      : null;
+
+    if (fontSize) {
+      nodes.forEach((node) => {
+        setInlineOverride(node, "font-size", `${fontSize}px`);
+      });
+      return;
+    }
+
+    nodes.forEach((node) => {
+      restoreInlineOverride(node, "font-size");
+    });
+  }
+
+  function ensureResponsiveHeroLayoutStyles() {
+    if (document.getElementById("school-hero-3d-responsive-layout")) return;
+
+    const style = document.createElement("style");
+    style.id = "school-hero-3d-responsive-layout";
+    style.textContent = `
+.school-homepage .school-hero.hero-model-stack-enabled .hero-visual{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:var(--hero-model-text-gap,18px)!important;}
+.school-homepage .school-hero.hero-model-stack-enabled .hero-display{position:relative!important;inset:auto!important;order:2!important;width:100%!important;padding-top:0!important;transform:none;}
+.school-homepage .school-hero.hero-model-stack-enabled:not(.hero-intro-enabled) .hero-display span:first-child,.school-homepage .school-hero.hero-model-stack-enabled:not(.hero-intro-enabled) .hero-display span:last-child,.school-homepage .school-hero.hero-model-stack-enabled.hero-intro-complete .hero-display span:first-child,.school-homepage .school-hero.hero-model-stack-enabled.hero-intro-complete .hero-display span:last-child{transform:none;}
+.school-homepage .school-hero.hero-model-stack-enabled .hero-3d-stage{position:relative!important;left:auto!important;top:auto!important;flex:0 0 auto!important;margin-top:0!important;margin-bottom:0!important;transform:translate3d(calc(var(--cap-center-x,50%) - 50% + var(--cap-side-offset,0px)),0,0) scale(1);}
+.school-homepage .school-hero.hero-model-stack-top .hero-3d-stage{order:1!important;margin-bottom:var(--hero-model-text-overlap,0px)!important;}
+.school-homepage .school-hero.hero-model-stack-bottom .hero-3d-stage{order:3!important;margin-top:var(--hero-model-text-overlap,0px)!important;}
+.school-homepage .school-hero.hero-model-stack-enabled.hero-intro-enabled .hero-3d-stage{transform:translate3d(calc(var(--cap-center-x,50%) - 50% + var(--cap-side-offset,0px)),calc(-68vh),0) scale(.92);}
+.school-homepage .school-hero.hero-model-stack-enabled.hero-cap-drop-in .hero-3d-stage{animation-name:hero-cap-drop-stacked;}
+.school-homepage .school-hero.hero-model-stack-enabled.hero-intro-complete .hero-3d-stage{transform:translate3d(calc(var(--cap-center-x,50%) - 50% + var(--cap-side-offset,0px)),0,0) scale(1);}
+@keyframes hero-cap-drop-stacked{0%{opacity:0;transform:translate3d(calc(var(--cap-center-x,50%) - 50% + var(--cap-side-offset,0px)),calc(-68vh),0) scale(.92);}14%{opacity:1;}62%{opacity:1;transform:translate3d(calc(var(--cap-center-x,50%) - 50% + var(--cap-side-offset,0px)),18px,0) scale(1.012);}80%{transform:translate3d(calc(var(--cap-center-x,50%) - 50% + var(--cap-side-offset,0px)),-9px,0) scale(.997);}100%{opacity:1;transform:translate3d(calc(var(--cap-center-x,50%) - 50% + var(--cap-side-offset,0px)),0,0) scale(1);}}
+@media (prefers-reduced-motion:reduce){.school-homepage .school-hero.hero-model-stack-enabled.hero-intro-enabled .hero-3d-stage{transform:translate3d(calc(var(--cap-center-x,50%) - 50% + var(--cap-side-offset,0px)),0,0) scale(1)!important;}}
+@media (max-width:767.98px){.school-homepage .school-hero.hero-model-stack-enabled .hero-display{line-height:.82!important;transform:none;}}
+`;
+    document.head.appendChild(style);
   }
 
   function resolveModelUrl(value) {
@@ -55,9 +155,6 @@ if (!heroSection || !stage || !canvas || !status) {
   const HERO_IMAGE_URL =
     "https://res.cloudinary.com/dxoorukfj/image/upload/v1777041124/ChatGPT_Image_Apr_24_2026_03_31_43_PM_ssnnin.png";
   const PRELOAD_TIMEOUT_MS = 10000;
-  const IS_MOBILE_VIEW =
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(max-width: 767.98px)").matches;
   const MODEL_VISIBLE =
     stringFromConfig(VISIBILITY_CONFIG.mode, "show") !== "hide";
   const MOBILE_LAYER_ORDER = stringFromConfig(
@@ -98,10 +195,21 @@ if (!heroSection || !stage || !canvas || !status) {
     TRANSFORM_CONFIG.scale,
     4.5,
   );
-  const MODEL_SCALE_TARGET = numberFromConfig(
-    IS_MOBILE_VIEW ? MOBILE_TRANSFORM_CONFIG.scale : DESKTOP_MODEL_SCALE_TARGET,
-    DESKTOP_MODEL_SCALE_TARGET,
-  );
+  function getActiveModelScaleTarget() {
+    const latestConfig = window.schoolHero3dConfig || HERO_3D_CONFIG;
+    const transformConfig = latestConfig.transform || {};
+    const mobileTransformConfig =
+      transformConfig.mobile || MOBILE_TRANSFORM_CONFIG;
+    const desktopScale = numberFromConfig(
+      transformConfig.scale,
+      DESKTOP_MODEL_SCALE_TARGET,
+    );
+    const mobileScale = numberFromConfig(
+      mobileTransformConfig.scale,
+      numberFromConfig(MOBILE_TRANSFORM_CONFIG.scale, desktopScale),
+    );
+    return isMobileViewport() ? mobileScale : desktopScale;
+  }
   const MODEL_FRAME_REFERENCE_SIZE = 4.5;
   const MODEL_VISIBLE_SCALE_LIMIT = 1.45;
   const MODEL_FRAME_PADDING = 1.22;
@@ -139,6 +247,27 @@ if (!heroSection || !stage || !canvas || !status) {
     "hero-mobile-text-front",
     MOBILE_LAYER_ORDER === "textFront",
   );
+  function applyResponsiveHeroState() {
+    applyResponsiveHeroLayout();
+    if (typeof window.reapplySchoolHero3dModelScale === "function") {
+      window.reapplySchoolHero3dModelScale();
+    }
+  }
+
+  applyResponsiveHeroLayout();
+  window.applySchoolHero3dLayout = applyResponsiveHeroState;
+  window.addEventListener(
+    "schoolHero3dConfigChanged",
+    applyResponsiveHeroState,
+  );
+  if (mobileViewportQuery) {
+    const handleViewportChange = () => applyResponsiveHeroState();
+    if (typeof mobileViewportQuery.addEventListener === "function") {
+      mobileViewportQuery.addEventListener("change", handleViewportChange);
+    } else if (typeof mobileViewportQuery.addListener === "function") {
+      mobileViewportQuery.addListener(handleViewportChange);
+    }
+  }
 
   // Intro timings
   const CAP_DROP_DURATION_MS = 1280;
@@ -248,6 +377,55 @@ if (!heroSection || !stage || !canvas || !status) {
     if (pagePreloaderStatus) pagePreloaderStatus.textContent = message;
   }
 
+  function applyResponsiveHeroLayout() {
+    ensureResponsiveHeroLayoutStyles();
+    const activeConfig = getActivePlacementConfig();
+    const placement = placementFromConfig(activeConfig.placement);
+    const isStacked = placement !== "overlay";
+    const gap = clampedNumberFromConfig(
+      activeConfig.gap,
+      isMobileViewport() ? 12 : 18,
+      -120,
+      220,
+    );
+    const layoutGap = Math.max(0, gap);
+    const overlapGap = Math.min(0, gap);
+
+    heroSection.classList.toggle(
+      "hero-model-stack-top",
+      placement === "modelTop",
+    );
+    heroSection.classList.toggle(
+      "hero-model-stack-bottom",
+      placement === "modelBottom",
+    );
+    heroSection.classList.toggle("hero-model-stack-enabled", isStacked);
+
+    if (isStacked) {
+      heroSection.style.setProperty("--hero-model-text-gap", `${layoutGap}px`);
+      heroSection.style.setProperty(
+        "--hero-model-text-overlap",
+        `${overlapGap}px`,
+      );
+    } else {
+      heroSection.style.removeProperty("--hero-model-text-gap");
+      heroSection.style.removeProperty("--hero-model-text-overlap");
+    }
+
+    if (heroVisual && isStacked) {
+      heroVisual.style.setProperty("--hero-model-text-gap", `${layoutGap}px`);
+      heroVisual.style.setProperty(
+        "--hero-model-text-overlap",
+        `${overlapGap}px`,
+      );
+    } else if (heroVisual) {
+      heroVisual.style.removeProperty("--hero-model-text-gap");
+      heroVisual.style.removeProperty("--hero-model-text-overlap");
+    }
+
+    applyMobileHeadlineFontSize(activeConfig);
+  }
+
   // ── Scene / renderer ────────────────────────────────────────
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
@@ -298,6 +476,7 @@ if (!heroSection || !stage || !canvas || !status) {
     let modelRoot = null;
     let modelLoaded = false;
     let neutralModelBounds = null;
+    let modelSourceMaxDim = 1;
 
     scene.add(modelPivot);
     modelPivot.add(spinAxis);
@@ -563,9 +742,13 @@ if (!heroSection || !stage || !canvas || !status) {
       const center = bb.getCenter(new THREE.Vector3());
       const size = bb.getSize(new THREE.Vector3());
       const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const scale = MODEL_SCALE_TARGET / maxDim;
-
+      modelSourceMaxDim = maxDim;
       obj.position.sub(center);
+      return applyActiveModelScale(obj);
+    }
+
+    function applyActiveModelScale(obj) {
+      const scale = getActiveModelScaleTarget() / modelSourceMaxDim;
       obj.scale.setScalar(scale);
 
       // Slight re-centre after scale
@@ -581,6 +764,15 @@ if (!heroSection || !stage || !canvas || !status) {
 
       return new THREE.Box3().setFromObject(obj);
     }
+
+    function reapplyActiveModelScale() {
+      if (!modelLoaded || !modelRoot) return;
+      updateRendererSize();
+      neutralModelBounds = applyActiveModelScale(modelRoot);
+      positionCameraToFit(neutralModelBounds);
+    }
+
+    window.reapplySchoolHero3dModelScale = reapplyActiveModelScale;
 
     function cloneFlatOriginalMaterial(material) {
       if (Array.isArray(material)) {

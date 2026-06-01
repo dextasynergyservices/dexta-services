@@ -558,6 +558,24 @@ export const dextaAcademy4Manifest = {
           fields: [
             richTextField("eyebrow", "Eyebrow", ".hero-eyebrow"),
             richTextField("headline", "Headline", ".hero-display"),
+            numberField(
+              "mobileHeadlineFontSize",
+              "Mobile headline text size",
+              ".school-hero",
+              {
+                target: "threeConfig",
+                configPath: "responsive.mobile.headlineFontSize",
+                defaultValue: 64,
+                min: 28,
+                max: 120,
+                step: 1,
+                unit: "px",
+                uiGroup: "Hero text style",
+                uiOrder: 17,
+                helpText:
+                  "Mobile only. Adjusts the large hero headline size on phones without changing desktop.",
+              },
+            ),
             colorField(
               "eyebrowDashColor",
               "Eyebrow dash color",
@@ -793,6 +811,80 @@ export const dextaAcademy4Manifest = {
               },
             ),
             selectField(
+              "desktopModelPlacement",
+              "Desktop model/text position",
+              "#hero-3d-stage",
+              [
+                { label: "Manual overlay", value: "overlay" },
+                { label: "3D model above text", value: "modelTop" },
+                { label: "3D model below text", value: "modelBottom" },
+              ],
+              {
+                target: "threeConfig",
+                configPath: "responsive.desktop.placement",
+                defaultValue: "overlay",
+                uiGroup: "Desktop placement",
+                uiOrder: 10,
+                helpText:
+                  "Use Manual overlay to keep the current free-positioned hero. Choose above or below to stack the 3D model with the hero text.",
+              },
+            ),
+            numberField(
+              "desktopModelTextGap",
+              "Desktop model/text gap",
+              "#hero-3d-stage",
+              {
+                target: "threeConfig",
+                configPath: "responsive.desktop.gap",
+                defaultValue: 18,
+                min: -120,
+                max: 180,
+                step: 2,
+                unit: "px",
+                uiGroup: "Desktop placement",
+                uiOrder: 11,
+                helpText:
+                  "Adjusts the space between the 3D model and hero text when desktop position is above or below. Use negative values to bring them closer.",
+              },
+            ),
+            selectField(
+              "mobileModelPlacement",
+              "Mobile model/text position",
+              "#hero-3d-stage",
+              [
+                { label: "Manual overlay", value: "overlay" },
+                { label: "3D model above text", value: "modelTop" },
+                { label: "3D model below text", value: "modelBottom" },
+              ],
+              {
+                target: "threeConfig",
+                configPath: "responsive.mobile.placement",
+                defaultValue: "overlay",
+                uiGroup: "Mobile placement",
+                uiOrder: 20,
+                helpText:
+                  "Use Manual overlay to keep the current mobile hero. Choose above or below to stack the 3D model with the hero text on phones.",
+              },
+            ),
+            numberField(
+              "mobileModelTextGap",
+              "Mobile model/text gap",
+              "#hero-3d-stage",
+              {
+                target: "threeConfig",
+                configPath: "responsive.mobile.gap",
+                defaultValue: 12,
+                min: -100,
+                max: 140,
+                step: 2,
+                unit: "px",
+                uiGroup: "Mobile placement",
+                uiOrder: 21,
+                helpText:
+                  "Adjusts the space between the 3D model and hero text when mobile position is above or below. Use negative values to bring them closer.",
+              },
+            ),
+            selectField(
               "modelLightingMode",
               "Model color mode",
               "#hero-3d-stage",
@@ -865,6 +957,23 @@ export const dextaAcademy4Manifest = {
               },
             ),
             numberField(
+              "desktopModelSideOffset",
+              "Desktop left/right offset",
+              "#hero-3d-stage",
+              {
+                target: "cssVariable",
+                cssVariable: "--cap-side-offset",
+                scope: "desktop",
+                defaultValue: 0,
+                min: -520,
+                max: 520,
+                step: 5,
+                unit: "px",
+                helpText:
+                  "Moves the whole 3D model left or right on larger screens without changing its size.",
+              },
+            ),
+            numberField(
               "desktopStageY",
               "Desktop vertical position",
               "#hero-3d-stage",
@@ -922,6 +1031,23 @@ export const dextaAcademy4Manifest = {
                 max: 100,
                 step: 1,
                 unit: "%",
+              },
+            ),
+            numberField(
+              "mobileModelSideOffset",
+              "Mobile left/right offset",
+              "#hero-3d-stage",
+              {
+                target: "cssVariable",
+                cssVariable: "--cap-side-offset",
+                scope: "mobile",
+                defaultValue: 0,
+                min: -260,
+                max: 260,
+                step: 5,
+                unit: "px",
+                helpText:
+                  "Moves the whole 3D model left or right on phones without changing its size.",
               },
             ),
             numberField(
