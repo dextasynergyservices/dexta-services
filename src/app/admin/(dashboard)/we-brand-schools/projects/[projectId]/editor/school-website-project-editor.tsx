@@ -195,6 +195,10 @@ const DEXTA_ACADEMY_4_NAVBAR_FIELD_KEYS = new Set([
   "applyButtonBorderColor",
   "applyButtonBorderWidth",
 ]);
+const DEXTA_ACADEMY_4_HIDDEN_EDITOR_FIELD_KEYS = new Set([
+  "mobileStageWidth",
+  "mobileStageHeight",
+]);
 const ORIGINAL_THEME_COLORS: Record<
   string,
   Partial<Record<keyof SchoolTemplateProjectContent["theme"], string>>
@@ -324,6 +328,16 @@ function isIframeEmbedEditorField(field: SchoolTemplateProjectFieldSnapshot) {
     field.type === "textarea" &&
     field.target === "attribute" &&
     ["formIframe", "formEmbedCode", "iframeEmbedCode"].includes(field.key)
+  );
+}
+
+function isHiddenEditorField(
+  templateSlug: string,
+  field: SchoolTemplateProjectFieldSnapshot,
+) {
+  return (
+    templateSlug === DEXTA_ACADEMY_4_SLUG &&
+    DEXTA_ACADEMY_4_HIDDEN_EDITOR_FIELD_KEYS.has(field.key)
   );
 }
 
@@ -1609,6 +1623,10 @@ export function SchoolWebsiteProjectEditor({
       : new Set<string>();
 
     for (const field of activeSection?.snapshot?.fields ?? []) {
+      if (isHiddenEditorField(draft.templateSlug, field)) {
+        continue;
+      }
+
       if (
         activeSection?.content.repeatable &&
         repeatableItemFields.has(field.key)
@@ -1630,6 +1648,7 @@ export function SchoolWebsiteProjectEditor({
     }));
   }, [
     activeSection?.snapshot?.fields,
+    draft.templateSlug,
     isDextaAcademy3Template,
     selectedPage?.slug,
   ]);

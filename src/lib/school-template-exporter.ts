@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import { createHash, createHmac } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { prepareDextaAcademyThreeContactRenderingContent } from "@/lib/dexta-academy-3-contact-rendering";
@@ -99,6 +100,11 @@ const CLOUDINARY_URL_PATTERN =
   /https:\/\/res\.cloudinary\.com\/(?:(?!&quot;|&#34;|&apos;|&#39;)[^\s"'()<>\\])+/gi;
 const MAX_BUNDLED_REMOTE_ASSET_BYTES = 2 * 1024 * 1024;
 const MAX_BUNDLED_REMOTE_ASSETS_TOTAL_BYTES = 5 * 1024 * 1024;
+const R2_MODEL_PROXY_URL_PATTERN =
+  /\/api\/r2\/models\?key=(?:(?!&quot;|&#34;|&apos;|&#39;)[^\s"'()<>\\])+/gi;
+const MAX_BUNDLED_MODEL_BYTES = 25_000_000;
+const R2_REGION = "auto";
+const R2_SERVICE = "s3";
 
 function escapeHtml(value: string) {
   return value
@@ -122,6 +128,17 @@ function decodeUrlHtmlEntities(value: string) {
     .replace(/&apos;|&#39;/gi, "'")
     .replace(/&#x2f;|&#47;/gi, "/")
     .replace(/&#x3a;|&#58;/gi, ":");
+}
+
+function encodePathSegment(value: string) {
+  return encodeURIComponent(value).replace(
+    /[!'()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+}
+
+function encodeObjectKey(key: string) {
+  return key.split("/").map(encodePathSegment).join("/");
 }
 
 function normalizeRemoteAssetUrl(url: string) {
@@ -6443,6 +6460,8 @@ function getThemeRuntimeMarkup(
 	        cssValue = withUnit(value, field.unit);
 	      }
 	      node.style.setProperty(field.cssVariable, cssValue);
+	      if (field.cssVariable === "--cap-center-x") node.style.left = cssValue;
+	      if (field.cssVariable === "--cap-center-y") node.style.top = cssValue;
 	      if (
 	        ${escapeScriptJson(content.templateSlug === "dexta-academy-1")} &&
 	        String(field.cssVariable).indexOf("-icon-image") !== -1
@@ -7074,7 +7093,39 @@ function getThemeRuntimeMarkup(
 		    applyTemplateOneSuccessStoryVideo();
 		  }
 
+		  var exportResponsiveUpdateQueued = false;
+		  function queueResponsiveRuntimeUpdates() {
+		    if (exportResponsiveUpdateQueued) return;
+		    exportResponsiveUpdateQueued = true;
+		    var schedule =
+		      typeof window.requestAnimationFrame === "function"
+		        ? window.requestAnimationFrame
+		        : function (callback) { return window.setTimeout(callback, 16); };
+		    schedule(function () {
+		      exportResponsiveUpdateQueued = false;
+		      applyRuntimeUpdates();
+		    });
+		  }
+
+		  function bindResponsiveRuntimeUpdates() {
+		    if (typeof window.matchMedia !== "function") return;
+		    [
+		      "(min-width: 992px)",
+		      "(min-width: 768px) and (max-width: 991.98px)",
+		      "(max-width: 767.98px)"
+		    ].forEach(function (query) {
+		      var mediaQuery = window.matchMedia(query);
+		      if (typeof mediaQuery.addEventListener === "function") {
+		        mediaQuery.addEventListener("change", queueResponsiveRuntimeUpdates);
+		      } else if (typeof mediaQuery.addListener === "function") {
+		        mediaQuery.addListener(queueResponsiveRuntimeUpdates);
+		      }
+		    });
+		    window.addEventListener("orientationchange", queueResponsiveRuntimeUpdates, { passive: true });
+		  }
+
 		  applyRuntimeUpdates();
+		  bindResponsiveRuntimeUpdates();
 		  document.body.className = document.body.className.replace(/\bis-preloading\b/g, "").trim();
 		  if (document.readyState === "loading") {
 		    document.addEventListener("DOMContentLoaded", function() { document.body.className = document.body.className.replace(/\bis-preloading\b/g, "").trim(); applyRuntimeUpdates(); }, { once: true });
@@ -7624,6 +7675,214 @@ function getRemoteAssetPath(url: string, index: number) {
   return `assets/${kind}/exported-${String(index + 1).padStart(3, "0")}${extension}`;
 }
 
+function getExportedModelAssetPath(modelKey: string, index: number) {
+  const cleanPath = modelKey.split("/").filter(Boolean).pop() ?? "model.glb";
+  const extension = path.extname(cleanPath).split("?")[0] || ".glb";
+  return `assets/models/exported-${String(index + 1).padStart(3, "0")}${extension}`;
+}
+
+function getR2ModelKeyFromProxyUrl(value: string) {
+  try {
+    const url = new URL(decodeUrlHtmlEntities(value), "https://dexta.local");
+    const key = url.searchParams.get("key")?.trim() ?? "";
+    if (
+      url.pathname !== "/api/r2/models" ||
+      !key ||
+      key.startsWith("/") ||
+      key.includes("..") ||
+      !/\.glb$/i.test(key)
+    ) {
+      return null;
+    }
+    return key;
+  } catch {
+    return null;
+  }
+}
+
+function getR2ExportConfig() {
+  const accountId = process.env.CLOUDFLARE_R2_ACCOUNT_ID?.trim() ?? "";
+  const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID?.trim() ?? "";
+  const secretAccessKey =
+    process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY?.trim() ?? "";
+  const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME?.trim() ?? "";
+  const publicBaseUrl =
+    process.env.CLOUDFLARE_R2_PUBLIC_BASE_URL?.trim().replace(/\/+$/, "") ?? "";
+
+  return {
+    accountId,
+    accessKeyId,
+    secretAccessKey,
+    bucket,
+    publicBaseUrl,
+  };
+}
+
+function hashHex(value: Buffer | string) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function hmac(key: Buffer | string, value: string) {
+  return createHmac("sha256", key).update(value).digest();
+}
+
+function getR2SigningKey(secretAccessKey: string, dateStamp: string) {
+  const dateKey = hmac(`AWS4${secretAccessKey}`, dateStamp);
+  const regionKey = hmac(dateKey, R2_REGION);
+  const serviceKey = hmac(regionKey, R2_SERVICE);
+  return hmac(serviceKey, "aws4_request");
+}
+
+function getR2AmzDateParts(date = new Date()) {
+  const isoDate = date.toISOString().replace(/[:-]|\.\d{3}/g, "");
+  return {
+    amzDate: isoDate,
+    dateStamp: isoDate.slice(0, 8),
+  };
+}
+
+function createR2ExportRequestHeaders({
+  accessKeyId,
+  secretAccessKey,
+  host,
+  path: objectPath,
+}: {
+  accessKeyId: string;
+  secretAccessKey: string;
+  host: string;
+  path: string;
+}) {
+  const { amzDate, dateStamp } = getR2AmzDateParts();
+  const payloadHash = hashHex("");
+  const credentialScope = `${dateStamp}/${R2_REGION}/${R2_SERVICE}/aws4_request`;
+  const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+  const canonicalHeaders =
+    `host:${host}\n` +
+    `x-amz-content-sha256:${payloadHash}\n` +
+    `x-amz-date:${amzDate}\n`;
+  const canonicalRequest = [
+    "GET",
+    objectPath,
+    "",
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash,
+  ].join("\n");
+  const stringToSign = [
+    "AWS4-HMAC-SHA256",
+    amzDate,
+    credentialScope,
+    hashHex(canonicalRequest),
+  ].join("\n");
+  const signature = createHmac(
+    "sha256",
+    getR2SigningKey(secretAccessKey, dateStamp),
+  )
+    .update(stringToSign)
+    .digest("hex");
+
+  return {
+    Authorization: `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`,
+    "X-Amz-Content-Sha256": payloadHash,
+    "X-Amz-Date": amzDate,
+  };
+}
+
+function getR2SignedObjectRequest(
+  config: ReturnType<typeof getR2ExportConfig>,
+  key: string,
+) {
+  if (
+    !config.accountId ||
+    !config.accessKeyId ||
+    !config.secretAccessKey ||
+    !config.bucket
+  ) {
+    return null;
+  }
+
+  const host = `${config.accountId}.r2.cloudflarestorage.com`;
+  const objectPath = `/${encodePathSegment(config.bucket)}/${encodeObjectKey(key)}`;
+  return {
+    url: `https://${host}${objectPath}`,
+    headers: createR2ExportRequestHeaders({
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+      host,
+      path: objectPath,
+    }),
+  };
+}
+
+async function readDownloadedAsset(
+  // eslint-disable-next-line no-undef
+  response: Response,
+  sourceUrl: string,
+  maxBytes: number,
+) {
+  if (!response.ok) {
+    throw new Error(
+      `Failed to download export asset: ${sourceUrl} (${response.status})`,
+    );
+  }
+
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
+    return null;
+  }
+
+  const data = Buffer.from(await response.arrayBuffer());
+  return data.length > maxBytes ? null : data;
+}
+
+async function downloadR2ModelAsset(key: string) {
+  const config = getR2ExportConfig();
+  const encodedKey = encodeObjectKey(key);
+  // eslint-disable-next-line no-undef
+  const candidates: Array<{ url: string; headers?: HeadersInit }> = [];
+
+  if (config.publicBaseUrl) {
+    candidates.push({ url: `${config.publicBaseUrl}/${encodedKey}` });
+  }
+
+  const signedRequest = getR2SignedObjectRequest(config, key);
+  if (signedRequest) {
+    candidates.push(signedRequest);
+  }
+
+  if (!candidates.length) {
+    throw new Error(
+      "Cannot bundle exported 3D model because Cloudflare R2 export settings are missing.",
+    );
+  }
+
+  let lastError: unknown;
+  for (const candidate of candidates) {
+    try {
+      const response = await fetch(candidate.url, {
+        headers: candidate.headers,
+      });
+      const data = await readDownloadedAsset(
+        response,
+        candidate.url,
+        MAX_BUNDLED_MODEL_BYTES,
+      );
+      if (!data) {
+        throw new Error(
+          `Exported 3D model is larger than ${MAX_BUNDLED_MODEL_BYTES} bytes.`,
+        );
+      }
+      return data;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Failed to bundle exported 3D model.");
+}
+
 async function downloadRemoteAsset(url: string, remainingBytes: number) {
   const cleanUrl = normalizeRemoteAssetUrl(url);
   if (remainingBytes <= 0) {
@@ -7705,6 +7964,55 @@ async function rewriteRemoteAssets(files: Map<string, ExportFile>) {
   }
 
   for (const [assetPath, data] of remoteAssetBuffers) {
+    files.set(assetPath, { path: assetPath, data });
+  }
+}
+
+async function rewriteExportedModelAssets(files: Map<string, ExportFile>) {
+  const modelAssetPaths = new Map<string, string>();
+  const modelAssetBuffers = new Map<string, Buffer>();
+
+  for (const file of Array.from(files.values())) {
+    if (!isTextFile(file.path)) {
+      continue;
+    }
+
+    let text = await readExportFileAsText(file);
+    const modelUrls = Array.from(
+      new Set(text.match(R2_MODEL_PROXY_URL_PATTERN) ?? []),
+    );
+
+    for (const rawUrl of modelUrls) {
+      const key = getR2ModelKeyFromProxyUrl(rawUrl);
+      if (!key) {
+        continue;
+      }
+
+      if (!modelAssetPaths.has(rawUrl)) {
+        const assetPath = getExportedModelAssetPath(key, modelAssetPaths.size);
+        const data = await downloadR2ModelAsset(key);
+        modelAssetPaths.set(rawUrl, assetPath);
+        modelAssetBuffers.set(assetPath, data);
+      }
+
+      const assetPath = modelAssetPaths.get(rawUrl);
+      if (!assetPath) {
+        continue;
+      }
+
+      const relativePath = path.posix.relative(
+        path.posix.dirname(file.path),
+        assetPath,
+      );
+      text = text
+        .split(rawUrl)
+        .join(relativePath || path.posix.basename(assetPath));
+    }
+
+    file.data = text;
+  }
+
+  for (const [assetPath, data] of modelAssetBuffers) {
     files.set(assetPath, { path: assetPath, data });
   }
 }
@@ -7846,6 +8154,7 @@ export async function buildSchoolWebsiteProjectExportZip({
   }
 
   await rewriteTextAssets(files, renderSourceSnapshot, content);
+  await rewriteExportedModelAssets(files);
   await rewriteRemoteAssets(files);
 
   // Include .htaccess for security on cPanel/Apache hosting

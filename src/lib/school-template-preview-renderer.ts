@@ -1454,7 +1454,7 @@ function assertSafeTemplatePath(sourceDir: string, fileName: string) {
 }
 
 function getPreviewHero3dModuleMarkup() {
-  return '<script type="module" src="js/hero-3d.js?dextaPreview=3d-config-v17" data-dexta-preview-hero-3d="external"></script>';
+  return '<script type="module" src="js/hero-3d.js?dextaPreview=3d-config-v23" data-dexta-preview-hero-3d="external"></script>';
 }
 
 function isFilled(value: unknown) {
@@ -1879,21 +1879,51 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		    );
 		  }
 		
-			  function setDeep(target, path, value) {
-	    if (!path) return;
-	    var parts = path.split(".");
-	    var cursor = target;
-    parts.forEach(function (part, index) {
+		  function setDeep(target, path, value) {
+		    if (!path) return;
+		    var parts = path.split(".");
+		    var cursor = target;
+	    parts.forEach(function (part, index) {
       if (index === parts.length - 1) {
         cursor[part] = value;
         return;
       }
       cursor[part] = cursor[part] || {};
-	      cursor = cursor[part];
-	    });
-	  }
+		      cursor = cursor[part];
+		    });
+		  }
 
-	  function getPreviewRouteBase() {
+		  function notifyThreeConfigChanged() {
+		    if (preview.content.templateSlug !== "dexta-academy-4") return;
+		    if (typeof window.applySchoolHero3dLayout === "function") {
+		      window.applySchoolHero3dLayout();
+		    }
+		    try {
+		      window.dispatchEvent(
+		        new CustomEvent("schoolHero3dConfigChanged", {
+		          detail: { config: window.schoolHero3dConfig || {} }
+		        })
+		      );
+		    } catch (error) {
+		      window.dispatchEvent(new Event("schoolHero3dConfigChanged"));
+		    }
+		  }
+
+		  function applyThreeConfigField(field, value) {
+		    if (!field || field.target !== "threeConfig" || !field.configPath) {
+		      return false;
+		    }
+		    window.schoolHero3dConfig = window.schoolHero3dConfig || {};
+		    setDeep(
+		      window.schoolHero3dConfig,
+		      field.configPath,
+		      field.type === "model3d" ? resolveAsset(value, field) : value
+		    );
+		    notifyThreeConfigChanged();
+		    return true;
+		  }
+
+		  function getPreviewRouteBase() {
 	    var match = window.location.pathname.match(/^(.*\\/admin\\/we-brand-schools\\/projects\\/[^/]+\\/preview)\\/[^/]+$/);
 	    if (!match) {
 	      match = window.location.pathname.match(/^(.*\\/webrandschools\\/project-preview\\/[^/]+)\\/[^/]+$/);
@@ -2693,10 +2723,11 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 			    }
 			  }
 		
-				  function applyField(node, field, value) {
-			    if (field.target === "threeConfig") {
-			      return;
-		    }
+					  function applyField(node, field, value) {
+				    if (field.target === "threeConfig") {
+				      applyThreeConfigField(field, value);
+				      return;
+			    }
 
 		    if (preview.content.templateSlug === "dexta-academy-3") {
 		      var isAcademyThreeHeroHeadline =
@@ -2866,9 +2897,10 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	        return;
 	      }
 
-      if (field.target === "threeConfig") {
-        return;
-      }
+	      if (field.target === "threeConfig") {
+	        applyThreeConfigField(field, value);
+	        return;
+	      }
 
       // Skip item-level fields at section level for repeatable sections
       if (isRepeatableSection && itemLevelKeys[field.key]) return;
@@ -5318,10 +5350,43 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	    document.documentElement.setAttribute("data-dexta-project-preview", "ready");
 	  }
 
-  applyPreviewContent();
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", applyPreviewContent, { once: true });
-  }
+	  applyPreviewContent();
+
+	  var previewResponsiveUpdateQueued = false;
+	  function queueResponsivePreviewContent() {
+	    if (previewResponsiveUpdateQueued) return;
+	    previewResponsiveUpdateQueued = true;
+	    var schedule =
+	      typeof window.requestAnimationFrame === "function"
+	        ? window.requestAnimationFrame
+	        : function (callback) { return window.setTimeout(callback, 16); };
+	    schedule(function () {
+	      previewResponsiveUpdateQueued = false;
+	      applyPreviewContent();
+	    });
+	  }
+
+	  function bindResponsivePreviewUpdates() {
+	    if (typeof window.matchMedia !== "function") return;
+	    [
+	      "(min-width: 992px)",
+	      "(min-width: 768px) and (max-width: 991.98px)",
+	      "(max-width: 767.98px)"
+	    ].forEach(function (query) {
+	      var mediaQuery = window.matchMedia(query);
+	      if (typeof mediaQuery.addEventListener === "function") {
+	        mediaQuery.addEventListener("change", queueResponsivePreviewContent);
+	      } else if (typeof mediaQuery.addListener === "function") {
+	        mediaQuery.addListener(queueResponsivePreviewContent);
+	      }
+	    });
+	    window.addEventListener("orientationchange", queueResponsivePreviewContent, { passive: true });
+	  }
+
+	  bindResponsivePreviewUpdates();
+	  if (document.readyState === "loading") {
+	    document.addEventListener("DOMContentLoaded", applyPreviewContent, { once: true });
+	  }
 
 	  // Ensure hamburger toggle works without Bootstrap jQuery plugin
 	  document.querySelectorAll(".hero-menu-toggle, .navbar-toggler").forEach(function (btn) {

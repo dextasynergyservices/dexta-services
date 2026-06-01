@@ -554,12 +554,12 @@
 /* 3-D stage */
 .hero-3d-stage {
   position: absolute;
-  left: 50%;
+  left: var(--cap-center-x, 50%);
   top: var(--cap-center-y);
   z-index: 3;
   width: var(--cap-width);
   height: var(--cap-height);
-  transform: translate(-50%, -50%);
+  transform: translate(calc(-50% + var(--cap-side-offset, 0px)), -50%);
   overflow: visible;
   pointer-events: none;
   will-change: transform, opacity;
@@ -588,11 +588,70 @@
   filter: blur(28px);
   pointer-events: none;
 }
+.school-homepage .school-hero.hero-model-stack-enabled .hero-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hero-model-text-gap, 18px);
+}
+.school-homepage .school-hero.hero-model-stack-enabled .hero-display {
+  position: relative;
+  inset: auto;
+  order: 2;
+  width: 100%;
+  padding-top: 0;
+  transform: none;
+}
+.school-homepage
+  .school-hero.hero-model-stack-enabled
+  .hero-display
+  span:first-child,
+.school-homepage
+  .school-hero.hero-model-stack-enabled
+  .hero-display
+  span:last-child,
+.school-homepage
+  .school-hero.hero-model-stack-enabled.hero-intro-complete
+  .hero-display
+  span:first-child,
+.school-homepage
+  .school-hero.hero-model-stack-enabled.hero-intro-complete
+  .hero-display
+  span:last-child {
+  transform: none;
+}
+.school-homepage .school-hero.hero-model-stack-enabled .hero-3d-stage {
+  position: relative;
+  left: auto !important;
+  top: auto !important;
+  flex: 0 0 auto;
+  margin-top: 0;
+  margin-bottom: 0;
+  transform: translate3d(
+    calc(var(--cap-center-x, 50%) - 50% + var(--cap-side-offset, 0px)),
+    0,
+    0
+  );
+}
+.school-homepage .school-hero.hero-model-stack-top .hero-3d-stage {
+  order: 1;
+  margin-bottom: var(--hero-model-text-overlap, 0px);
+}
+.school-homepage .school-hero.hero-model-stack-bottom .hero-3d-stage {
+  order: 3;
+  margin-top: var(--hero-model-text-overlap, 0px);
+}
 
 /* ── Intro animation states ─────────────────────────────────── */
 .school-homepage .school-hero.hero-intro-enabled .hero-3d-stage {
   opacity: 0;
-  transform: translate3d(-50%, calc(-50% - 68vh), 0) scale(0.92);
+  transform: translate3d(
+      calc(-50% + var(--cap-side-offset, 0px)),
+      calc(-50% - 68vh),
+      0
+    )
+    scale(0.92);
 }
 .school-homepage .school-hero.hero-intro-enabled .hero-cap-glow,
 .school-homepage .school-hero.hero-intro-enabled .hero-3d-stage::before,
@@ -613,6 +672,11 @@
 
 .school-homepage .school-hero.hero-cap-drop-in .hero-3d-stage {
   animation: hero-cap-drop 1320ms cubic-bezier(0.18, 0.92, 0.2, 1) forwards;
+}
+.school-homepage
+  .school-hero.hero-model-stack-enabled.hero-cap-drop-in
+  .hero-3d-stage {
+  animation-name: hero-cap-drop-stacked;
 }
 .school-homepage .school-hero.hero-cap-drop-in .hero-cap-glow {
   animation: hero-glow-rise 920ms 270ms cubic-bezier(0.22, 0.82, 0.24, 1)
@@ -637,11 +701,33 @@
 
 .school-homepage .school-hero.hero-intro-complete .hero-3d-stage {
   opacity: 1;
-  transform: translate3d(-50%, -50%, 0) scale(1);
+  transform: translate3d(calc(-50% + var(--cap-side-offset, 0px)), -50%, 0)
+    scale(1);
+}
+.school-homepage
+  .school-hero.hero-model-stack-enabled.hero-intro-enabled
+  .hero-3d-stage {
+  transform: translate3d(
+      calc(var(--cap-center-x, 50%) - 50% + var(--cap-side-offset, 0px)),
+      calc(-68vh),
+      0
+    )
+    scale(0.92);
+}
+.school-homepage
+  .school-hero.hero-model-stack-enabled.hero-intro-complete
+  .hero-3d-stage {
+  transform: translate3d(
+      calc(var(--cap-center-x, 50%) - 50% + var(--cap-side-offset, 0px)),
+      0,
+      0
+    )
+    scale(1);
 }
 .school-homepage .school-hero.hero-intro-complete .hero-cap-glow {
   opacity: 0.7;
-  transform: translate3d(-50%, -50%, 0) scale(1);
+  transform: translate3d(calc(-50% + var(--cap-side-offset, 0px)), -50%, 0)
+    scale(1);
 }
 .school-homepage .school-hero.hero-intro-complete .hero-3d-stage::before,
 .school-homepage .school-hero.hero-intro-complete .hero-3d-stage::after {
@@ -666,21 +752,77 @@
 @keyframes hero-cap-drop {
   0% {
     opacity: 0;
-    transform: translate3d(-50%, calc(-50% - 68vh), 0) scale(0.92);
+    transform: translate3d(
+        calc(-50% + var(--cap-side-offset, 0px)),
+        calc(-50% - 68vh),
+        0
+      )
+      scale(0.92);
   }
   14% {
     opacity: 1;
   }
   62% {
     opacity: 1;
-    transform: translate3d(-50%, calc(-50% + 18px), 0) scale(1.012);
+    transform: translate3d(
+        calc(-50% + var(--cap-side-offset, 0px)),
+        calc(-50% + 18px),
+        0
+      )
+      scale(1.012);
   }
   80% {
-    transform: translate3d(-50%, calc(-50% - 9px), 0) scale(0.997);
+    transform: translate3d(
+        calc(-50% + var(--cap-side-offset, 0px)),
+        calc(-50% - 9px),
+        0
+      )
+      scale(0.997);
   }
   100% {
     opacity: 1;
-    transform: translate3d(-50%, -50%, 0) scale(1);
+    transform: translate3d(calc(-50% + var(--cap-side-offset, 0px)), -50%, 0)
+      scale(1);
+  }
+}
+@keyframes hero-cap-drop-stacked {
+  0% {
+    opacity: 0;
+    transform: translate3d(
+        calc(var(--cap-center-x, 50%) - 50% + var(--cap-side-offset, 0px)),
+        calc(-68vh),
+        0
+      )
+      scale(0.92);
+  }
+  14% {
+    opacity: 1;
+  }
+  62% {
+    opacity: 1;
+    transform: translate3d(
+        calc(var(--cap-center-x, 50%) - 50% + var(--cap-side-offset, 0px)),
+        18px,
+        0
+      )
+      scale(1.012);
+  }
+  80% {
+    transform: translate3d(
+        calc(var(--cap-center-x, 50%) - 50% + var(--cap-side-offset, 0px)),
+        -9px,
+        0
+      )
+      scale(0.997);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(
+        calc(var(--cap-center-x, 50%) - 50% + var(--cap-side-offset, 0px)),
+        0,
+        0
+      )
+      scale(1);
   }
 }
 @keyframes hero-line-from-right {
@@ -829,11 +971,23 @@
     transform: translate3d(0, -0.03em, 0) !important;
   }
   .school-homepage .school-hero.hero-intro-enabled .hero-3d-stage {
-    transform: translate3d(-50%, -50%, 0) scale(1) !important;
+    transform: translate3d(calc(-50% + var(--cap-side-offset, 0px)), -50%, 0)
+      scale(1) !important;
   }
   .school-homepage .school-hero.hero-intro-enabled .hero-cap-glow {
-    transform: translate3d(-50%, -50%, 0) scale(1) !important;
+    transform: translate3d(calc(-50% + var(--cap-side-offset, 0px)), -50%, 0)
+      scale(1) !important;
     opacity: 0.7 !important;
+  }
+  .school-homepage
+    .school-hero.hero-model-stack-enabled.hero-intro-enabled
+    .hero-3d-stage {
+    transform: translate3d(
+        calc(var(--cap-center-x, 50%) - 50% + var(--cap-side-offset, 0px)),
+        0,
+        0
+      )
+      scale(1) !important;
   }
 }
 
@@ -1086,10 +1240,17 @@
     --cap-center-y: 73%;
   }
   .hero-display {
-    font-size: clamp(2.8rem, 12.8vw, 4.8rem);
+    font-size: var(
+      --dexta-academy-4-home-hero-headline-mobile-font-size,
+      clamp(2.8rem, 12.8vw, 4.8rem)
+    );
     line-height: 0.42;
     letter-spacing: -0.05em;
     transform: translateY(clamp(58px, 13vw, 88px));
+  }
+  .school-homepage .school-hero.hero-model-stack-enabled .hero-display {
+    line-height: 0.82;
+    transform: none;
   }
   .hero-display span:first-child {
     transform: translateY(-0.05em);
@@ -1163,9 +1324,16 @@
     min-width: 18px;
   }
   .hero-display {
-    font-size: clamp(2.35rem, 13vw, 3.4rem);
+    font-size: var(
+      --dexta-academy-4-home-hero-headline-mobile-font-size,
+      clamp(2.35rem, 13vw, 3.4rem)
+    );
     line-height: 0.7;
     transform: translateY(clamp(64px, 17vw, 94px));
+  }
+  .school-homepage .school-hero.hero-model-stack-enabled .hero-display {
+    line-height: 0.82;
+    transform: none;
   }
   .hero-visual {
     min-height: clamp(300px, 86vw, 360px);

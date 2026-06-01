@@ -139,8 +139,14 @@ function getHero3dConfig(html: string) {
       mode?: string;
     };
     responsive?: {
+      desktop?: {
+        placement?: string;
+        gap?: number;
+      };
       mobile?: {
         layer?: string;
+        placement?: string;
+        gap?: number;
       };
     };
   };
@@ -320,6 +326,10 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
       sourceBaseCss,
       /--dexta-academy-4-home-gallery-preview-eyebrow-text-color/,
     );
+    assert.match(
+      sourceCss,
+      /--dexta-academy-4-home-hero-headline-mobile-font-size/,
+    );
     assert.match(sourceCss, /\.hero-menu-toggle \.oi \{\s*display: none;/);
     assert.match(sourceCss, /\.hero-menu-toggle::before/);
     assert.match(
@@ -346,10 +356,13 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
     );
     assert.match(sourceModule, /neutralModelBounds = centerAndScaleModel/);
     assert.match(sourceModule, /positionCameraToFit\(neutralModelBounds\)/);
-    assert.match(sourceModule, /MODEL_VISIBLE_SCALE_LIMIT/);
+    assert.match(sourceModule, /const MODEL_VISIBLE_SCALE_LIMIT = 1\.45/);
     assert.match(sourceModule, /MODEL_FRAME_PADDING/);
     assert.match(sourceModule, /fitWidthDist/);
     assert.match(sourceModule, /modelPivot\.position\.set/);
+    assert.match(sourceModule, /getActiveModelScaleTarget/);
+    assert.match(sourceModule, /reapplySchoolHero3dModelScale/);
+    assert.match(sourceModule, /reapplyActiveModelScale/);
     assert.match(
       sourceModule,
       /frameSize\.x \+= Math\.abs\(modelOffset\.x\) \* 2/,
@@ -364,8 +377,31 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
     assert.doesNotMatch(sourceModule, /MOBILE_TRANSFORM_CONFIG\.rotation\?\.z/);
     assert.match(sourceModule, /VISIBILITY_CONFIG\.mode/);
     assert.match(sourceModule, /MOBILE_RESPONSIVE_CONFIG\.layer/);
+    assert.match(sourceModule, /applyResponsiveHeroLayout/);
+    assert.match(sourceModule, /window\.applySchoolHero3dLayout/);
+    assert.match(sourceModule, /schoolHero3dConfigChanged/);
+    assert.match(sourceModule, /ensureResponsiveHeroLayoutStyles/);
+    assert.match(sourceModule, /applyMobileHeadlineFontSize/);
+    assert.match(sourceModule, /headlineFontSizeOverrides/);
+    assert.match(sourceModule, /school-hero-3d-responsive-layout/);
+    assert.match(sourceModule, /hero-cap-drop-stacked/);
+    assert.match(sourceModule, /hero-model-text-overlap/);
+    assert.match(sourceModule, /--cap-side-offset/);
+    assert.match(sourceModule, /const layoutGap = Math\.max\(0, gap\)/);
+    assert.match(sourceModule, /const overlapGap = Math\.min\(0, gap\)/);
+    assert.match(sourceCss, /hero-model-text-overlap/);
+    assert.match(sourceCss, /--cap-side-offset/);
+    assert.match(sourceCss, /left: var\(--cap-center-x, 50%\)/);
+    assert.doesNotMatch(
+      sourceModule,
+      /stage\.style\.setProperty\("transform",[\s\S]*?"important"\)/,
+      "Stacked placement must not lock the stage transform inline because it blocks the drop animation.",
+    );
     assert.match(sourceModule, /hero-3d-hidden/);
     assert.match(sourceModule, /hero-mobile-text-front/);
+    assert.match(sourceModule, /hero-model-stack-enabled/);
+    assert.match(sourceCss, /hero-model-stack-enabled/);
+    assert.match(sourceCss, /hero-cap-drop-stacked/);
     assert.match(sourceModule, /MODEL_ROTATION_Y/);
     assert.match(sourceModule, /spinAxisQuaternion/);
     assert.match(sourceModule, /inverseSpinAxisQuaternion/);
@@ -401,7 +437,7 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
 
     assert.match(
       html,
-      /<script type="module" src="js\/hero-3d\.js\?dextaPreview=3d-config-v17" data-dexta-preview-hero-3d="external"><\/script>/,
+      /<script type="module" src="js\/hero-3d\.js\?dextaPreview=3d-config-v23" data-dexta-preview-hero-3d="external"><\/script>/,
     );
     assert.equal(html.match(/src="js\/hero-3d\.js/g)?.length, 1);
     assert.ok(
@@ -543,11 +579,16 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
     const { content, sourceSnapshot } =
       buildDextaAcademy4PreviewInput("assets/3d/gr.glb");
     const homePage = content.pages.find((page) => page.slug === "home");
+    const heroSection = homePage?.sections.find(
+      (section) => section.id === "hero",
+    );
     const modelSection = homePage?.sections.find(
       (section) => section.id === "hero-3d-model",
     );
+    assert.ok(heroSection);
     assert.ok(modelSection);
 
+    heroSection.fields.mobileHeadlineFontSize = 52;
     modelSection.fields.modelScale = 8.2;
     modelSection.fields.mobileModelScale = 5.6;
     modelSection.fields.modelOffsetX = -0.44;
@@ -559,6 +600,10 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
     modelSection.fields.spinRotationY = -0.48;
     modelSection.fields.modelVisibility = "hide";
     modelSection.fields.mobileLayerOrder = "textFront";
+    modelSection.fields.desktopModelPlacement = "modelBottom";
+    modelSection.fields.desktopModelTextGap = -32;
+    modelSection.fields.mobileModelPlacement = "modelTop";
+    modelSection.fields.mobileModelTextGap = -14;
 
     const html = assertRenderedHtml(
       await renderSchoolTemplatePreview({
@@ -580,9 +625,18 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
     assert.equal(config.transform?.spinRotation?.y, -0.48);
     assert.equal(config.visibility?.mode, "hide");
     assert.equal(config.responsive?.mobile?.layer, "textFront");
+    assert.equal(config.responsive?.desktop?.placement, "modelBottom");
+    assert.equal(config.responsive?.desktop?.gap, -32);
+    assert.equal(config.responsive?.mobile?.placement, "modelTop");
+    assert.equal(config.responsive?.mobile?.gap, -14);
+    assert.equal(config.responsive?.mobile?.headlineFontSize, 52);
     assert.equal(config.materials, undefined);
     assert.match(html, /function isResponsiveScopeActive/);
     assert.match(html, /if \(!isResponsiveScopeActive\(field\)\) return;/);
+    assert.match(html, /function applyThreeConfigField/);
+    assert.match(html, /notifyThreeConfigChanged/);
+    assert.match(html, /window\.schoolHero3dConfig/);
+    assert.match(html, /bindResponsivePreviewUpdates/);
   });
 
   it("keeps Template 4 inner page hero opacity tied to the visible overlay", async () => {
@@ -635,6 +689,9 @@ describe("Dexta Academy 4 export 3D rendering", () => {
     const heroSection = homePage?.sections.find(
       (section) => section.id === "hero",
     );
+    const modelSection = homePage?.sections.find(
+      (section) => section.id === "hero-3d-model",
+    );
     const footerSection = content.sharedSections.find(
       (section) => section.id === "footer",
     );
@@ -648,6 +705,7 @@ describe("Dexta Academy 4 export 3D rendering", () => {
       (section) => section.id === "gallery-preview",
     );
     assert.ok(heroSection);
+    assert.ok(modelSection);
     assert.ok(footerSection);
     assert.ok(aboutSection);
     assert.ok(programsSection);
@@ -657,8 +715,19 @@ describe("Dexta Academy 4 export 3D rendering", () => {
     heroSection.fields.eyebrowDashColor = "#ff44aa";
     heroSection.fields.sectionBgColor = "#123456";
     heroSection.fields.sectionBgOpacity = 37;
+    heroSection.fields.mobileHeadlineFontSize = 58;
     heroSection.fields.headline =
       '<p style="font-family: \'Playfair Display\', Georgia, serif; font-size: 88px;"><strong><span style="color: #ffcc00;">Nurturing</span> <em><span style="color: #66ff99;">Excellence</span></em></strong></p>';
+    modelSection.fields.desktopModelPlacement = "modelBottom";
+    modelSection.fields.desktopModelTextGap = -30;
+    modelSection.fields.desktopModelSideOffset = -85;
+    modelSection.fields.mobileModelPlacement = "modelTop";
+    modelSection.fields.mobileModelTextGap = -16;
+    modelSection.fields.mobileModelScale = 3.4;
+    modelSection.fields.mobileModelSideOffset = 45;
+    modelSection.fields.desktopStageWidth = 777;
+    modelSection.fields.mobileStageWidth = 333;
+    modelSection.fields.mobileStageHeight = 222;
     aboutSection.fields.eyebrowTextColor = "#cc3366";
     aboutSection.fields.title =
       '<span style="color: #f97316;">Inspiring</span> <span style="color: #2563eb;">curious minds</span>';
@@ -700,6 +769,7 @@ describe("Dexta Academy 4 export 3D rendering", () => {
       const entries = readZipEntries(buffer);
       const indexHtml = entries.get("index.html")?.toString("utf8") ?? "";
       const heroScript = entries.get("js/hero-3d.js")?.toString("utf8") ?? "";
+      const heroCss = entries.get("css/hero-3d.css")?.toString("utf8") ?? "";
       for (const pageCase of TEMPLATE_FOUR_INNER_PAGE_HERO_CASES) {
         const pageHtml = entries.get(pageCase.fileName)?.toString("utf8") ?? "";
         assert.match(pageHtml, pageCase.overlaySelector);
@@ -709,12 +779,48 @@ describe("Dexta Academy 4 export 3D rendering", () => {
       }
 
       assert.match(indexHtml, /window\.schoolHero3dConfig = /);
+      const exportedHeroConfig = getHero3dConfig(indexHtml);
+      assert.equal(
+        exportedHeroConfig.responsive?.desktop?.placement,
+        "modelBottom",
+      );
+      assert.equal(exportedHeroConfig.responsive?.desktop?.gap, -30);
+      assert.equal(
+        exportedHeroConfig.responsive?.mobile?.placement,
+        "modelTop",
+      );
+      assert.equal(exportedHeroConfig.responsive?.mobile?.gap, -16);
+      assert.equal(exportedHeroConfig.responsive?.mobile?.headlineFontSize, 58);
+      assert.equal(exportedHeroConfig.transform?.mobile?.scale, 3.4);
       assert.ok(
         indexHtml.indexOf("window.schoolHero3dConfig = ") <
           indexHtml.indexOf('src="js/hero-3d.js"'),
         "Expected the exported 3D config to load before the hero module.",
       );
       assert.equal(indexHtml.match(/src="js\/hero-3d\.js"/g)?.length, 1);
+      assert.match(indexHtml, /bindResponsiveRuntimeUpdates/);
+      assert.match(indexHtml, /queueResponsiveRuntimeUpdates/);
+      assert.match(indexHtml, /node\.style\.left = cssValue/);
+      assert.match(indexHtml, /node\.style\.top = cssValue/);
+      assert.match(heroScript, /school-hero-3d-responsive-layout/);
+      assert.match(heroScript, /hero-cap-drop-stacked/);
+      assert.match(heroScript, /hero-model-text-overlap/);
+      assert.match(heroScript, /--cap-side-offset/);
+      assert.match(heroCss, /--cap-side-offset/);
+      assert.match(heroCss, /left: var\(--cap-center-x, 50%\)/);
+      assert.match(heroScript, /applyMobileHeadlineFontSize/);
+      assert.match(heroScript, /getActiveModelScaleTarget/);
+      assert.match(heroScript, /reapplySchoolHero3dModelScale/);
+      assert.match(heroScript, /reapplyActiveModelScale/);
+      assert.match(heroScript, /MOBILE_TRANSFORM_CONFIG\.scale/);
+      assert.doesNotMatch(
+        heroScript,
+        /window\.schoolHero3dConfig\?\.transform\?\.scale \?\? 4\.5/,
+      );
+      assert.doesNotMatch(
+        heroScript,
+        /stage\.style\.setProperty\("transform",[\s\S]*?"important"\)/,
+      );
       assert.ok(indexHtml.includes(rawModelUrl));
       assert.ok(indexHtml.includes(uploadedLogoUrl));
       assert.match(
@@ -824,7 +930,7 @@ describe("Dexta Academy 4 export 3D rendering", () => {
       );
       assert.match(heroScript, /neutralModelBounds = centerAndScaleModel/);
       assert.match(heroScript, /positionCameraToFit\(neutralModelBounds\)/);
-      assert.match(heroScript, /MODEL_VISIBLE_SCALE_LIMIT/);
+      assert.match(heroScript, /const MODEL_VISIBLE_SCALE_LIMIT = 1\.45/);
       assert.match(heroScript, /fitWidthDist/);
       assert.match(heroScript, /MOBILE_TRANSFORM_CONFIG\.scale/);
       assert.match(heroScript, /hero-mobile-text-front/);
@@ -840,6 +946,62 @@ describe("Dexta Academy 4 export 3D rendering", () => {
       assert.doesNotMatch(heroScript, /modelStage|intro\.spin/);
     } finally {
       globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("bundles R2 model proxy URLs into the exported static site", async () => {
+    const r2ModelProxyUrl =
+      "/api/r2/models?key=school-models%2Fexported-cap.glb";
+    const { content, sourceSnapshot } =
+      buildDextaAcademy4PreviewInput(r2ModelProxyUrl);
+    const modelData = Buffer.from("glTF bundled model");
+    const originalFetch = globalThis.fetch;
+    const originalPublicBaseUrl = process.env.CLOUDFLARE_R2_PUBLIC_BASE_URL;
+
+    process.env.CLOUDFLARE_R2_PUBLIC_BASE_URL = "https://r2.example.test";
+    globalThis.fetch = async (input) => {
+      const url = String(input);
+      if (url === "https://r2.example.test/school-models/exported-cap.glb") {
+        return new globalThis.Response(modelData, {
+          status: 200,
+          headers: {
+            "content-length": String(modelData.length),
+            "content-type": "model/gltf-binary",
+          },
+        });
+      }
+
+      return new globalThis.Response(null, {
+        status: 200,
+        headers: {
+          "content-length": String(3_000_000),
+          "content-type": "image/png",
+        },
+      });
+    };
+
+    try {
+      const { buffer } = await buildSchoolWebsiteProjectExportZip({
+        content,
+        sourceSnapshot,
+      });
+      const entries = readZipEntries(buffer);
+      const indexHtml = entries.get("index.html")?.toString("utf8") ?? "";
+      const heroConfig = getHero3dConfig(indexHtml);
+
+      assert.equal(heroConfig.model?.url, "assets/models/exported-001.glb");
+      assert.doesNotMatch(indexHtml, /\/api\/r2\/models/);
+      assert.deepEqual(
+        entries.get("assets/models/exported-001.glb"),
+        modelData,
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+      if (originalPublicBaseUrl === undefined) {
+        delete process.env.CLOUDFLARE_R2_PUBLIC_BASE_URL;
+      } else {
+        process.env.CLOUDFLARE_R2_PUBLIC_BASE_URL = originalPublicBaseUrl;
+      }
     }
   });
 });
