@@ -210,6 +210,82 @@ function shouldApplyStaticResponsiveScope(
   return !field.scope || field.scope === "base" || field.scope === "desktop";
 }
 
+function shouldEmitDextaAcademy4Hero3dResponsiveField(
+  templateSlug: string,
+  sectionId: string,
+  field: SchoolTemplateProjectSectionSnapshot["fields"][number],
+) {
+  return (
+    templateSlug === "dexta-academy-4" &&
+    sectionId === "hero-3d-model" &&
+    field.target === "cssVariable" &&
+    Boolean(field.cssVariable && field.scope)
+  );
+}
+
+function getDextaAcademy4Hero3dResponsiveStageMarkup(
+  content: SchoolTemplateProjectContent,
+  page: SchoolTemplateProjectPageContent,
+  pageSnapshot: SchoolTemplateSourceSnapshot["pages"][number] | undefined,
+) {
+  if (content.templateSlug !== "dexta-academy-4" || page.slug !== "home") {
+    return "";
+  }
+
+  const sectionContent = page.sections.find(
+    (section) => section.id === "hero-3d-model",
+  );
+  const sectionSnapshot = pageSnapshot?.sections.find(
+    (section) => section.id === "hero-3d-model",
+  );
+  if (!sectionContent || !sectionSnapshot) return "";
+
+  const declarationsByScope = new Map<string, string[]>();
+  for (const field of sectionSnapshot.fields) {
+    if (
+      !shouldEmitDextaAcademy4Hero3dResponsiveField(
+        content.templateSlug,
+        sectionContent.id,
+        field,
+      )
+    ) {
+      continue;
+    }
+
+    const value = sectionContent.fields[field.key];
+    if (!shouldApplyFieldValue(value, field)) continue;
+    const cssValue = getCssVariableValue(value, field);
+    const declarations = declarationsByScope.get(field.scope!) ?? [];
+    declarations.push(`${field.cssVariable}:${cssValue}`);
+    if (field.cssVariable === "--cap-center-x") {
+      declarations.push(`left:${cssValue}`);
+    }
+    if (field.cssVariable === "--cap-center-y") {
+      declarations.push(`top:${cssValue}`);
+    }
+    declarationsByScope.set(field.scope!, declarations);
+  }
+
+  const mediaQueries: Record<string, string> = {
+    desktop: "(min-width: 992px)",
+    tablet: "(min-width: 768px) and (max-width: 991.98px)",
+    mobile: "(max-width: 767.98px)",
+  };
+  const css = Array.from(declarationsByScope.entries())
+    .map(([scope, declarations]) => {
+      const query = mediaQueries[scope];
+      return query
+        ? `@media ${query}{#hero-3d-stage{${declarations.join(";")}}}`
+        : "";
+    })
+    .filter(Boolean)
+    .join("");
+
+  return css
+    ? `<style data-dexta-academy-4-hero-3d-responsive="true">${css}</style>`
+    : "";
+}
+
 function normalizeZipPath(filePath: string) {
   return filePath.replace(/\\/g, "/").replace(/^\/+/, "");
 }
@@ -1694,6 +1770,15 @@ function applySection(
             applyDextaAcademyThreeInlineFontFamily(node, value);
           }
         } else if (field.target === "cssVariable" && field.cssVariable) {
+          if (
+            shouldEmitDextaAcademy4Hero3dResponsiveField(
+              templateSlug,
+              sectionContent.id,
+              field,
+            )
+          ) {
+            continue;
+          }
           if (!shouldApplyStaticResponsiveScope(field)) {
             continue;
           }
@@ -7716,6 +7801,10 @@ async function renderPage({
   }
 
   injectIntoHead(root, getThemeMarkup(content));
+  injectIntoHead(
+    root,
+    getDextaAcademy4Hero3dResponsiveStageMarkup(content, page, pageSnapshot),
+  );
 
   if (hasThreeConfig(threeConfig)) {
     injectBeforeBodyClose(root, renderThreeConfigMarkup(threeConfig));

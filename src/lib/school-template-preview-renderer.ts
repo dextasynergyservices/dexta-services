@@ -1454,7 +1454,7 @@ function assertSafeTemplatePath(sourceDir: string, fileName: string) {
 }
 
 function getPreviewHero3dModuleMarkup() {
-  return '<script type="module" src="js/hero-3d.js?dextaPreview=3d-config-v23" data-dexta-preview-hero-3d="external"></script>';
+  return '<script type="module" src="js/hero-3d.js?dextaPreview=3d-config-v28" data-dexta-preview-hero-3d="external"></script>';
 }
 
 function isFilled(value: unknown) {
