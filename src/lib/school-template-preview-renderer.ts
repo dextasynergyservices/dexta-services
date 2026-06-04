@@ -1701,6 +1701,69 @@ window.__DEXTA_SCHOOL_PREVIEW__ = {
 	    });
 	  }
 
+	  function cascadeInlineRichTextStyles(root) {
+	    if (!root || !root.children) return;
+	    var properties = [
+	      "color",
+	      "font-family",
+	      "font-size",
+	      "font-style",
+	      "font-weight",
+	      "text-align",
+	      "text-decoration",
+	      "text-transform",
+	      "letter-spacing"
+	    ];
+
+	    function visit(node, inheritedStyles) {
+	      var styles = Object.assign({}, inheritedStyles);
+	      properties.forEach(function (property) {
+	        var ownValue = node.style && node.style.getPropertyValue(property);
+	        if (ownValue) {
+	          styles[property] = ownValue;
+	        } else if (styles[property] && node.style) {
+	          node.style.setProperty(property, styles[property], "important");
+	        }
+	      });
+	      Array.from(node.children || []).forEach(function (child) {
+	        visit(child, styles);
+	      });
+	    }
+
+	    visit(root, {});
+	  }
+
+		  function promoteSemanticRichTextStyles(root) {
+		    if (!root || !root.children) return;
+
+		    function visit(node, inheritedStyles) {
+		      var styles = Object.assign({}, inheritedStyles);
+		      var tagName = String(node.tagName || "").toLowerCase();
+		      if (tagName === "strong" || tagName === "b") {
+		        styles["font-weight"] = "700";
+		      }
+		      if (tagName === "em" || tagName === "i") {
+		        styles["font-style"] = "italic";
+		      }
+		      if (tagName === "u") {
+		        styles["text-decoration"] = "underline";
+		      }
+		      if (tagName === "s" || tagName === "strike" || tagName === "del") {
+		        styles["text-decoration"] = "line-through";
+		      }
+		      Object.keys(styles).forEach(function (property) {
+		        if (node.style) node.style.setProperty(property, styles[property], "important");
+		      });
+		      Array.from(node.children || []).forEach(function (child) {
+		        visit(child, styles);
+		      });
+		    }
+
+		    Array.from(root.children || []).forEach(function (child) {
+		      visit(child, {});
+		    });
+		  }
+
 	  function withUnit(value, unit) {
 	    if (value === null || value === undefined || value === "") return "";
 	    var text = String(value);
@@ -2563,6 +2626,32 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 		    return true;
 		  }
 
+		  function applyAcademyFourAboutPreviewStat(node, field, value) {
+		    if (
+		      preview.content.templateSlug !== "dexta-academy-4" ||
+		      !node.classList ||
+		      !node.closest ||
+		      !node.closest(".school-about-preview") ||
+		      !field ||
+		      (field.key !== "statValue" && field.key !== "statLabel")
+		    ) {
+		      return false;
+		    }
+
+		    if (
+		      (field.key === "statValue" && !node.classList.contains("stat-card__value")) ||
+		      (field.key === "statLabel" && !node.classList.contains("stat-card__body"))
+		    ) {
+		      return false;
+		    }
+
+		    node.innerHTML = toInlineHtml(value);
+		    promoteInlineRichTextColorStyles(node);
+		    cascadeInlineRichTextStyles(node);
+		    promoteSemanticRichTextStyles(node);
+		    return true;
+		  }
+
 			  function sanitizeAcademyThreeHeroFontSize(value) {
 		    var text = String(value || "").trim();
 		    return /^\\d+(?:\\.\\d+)?(?:px|rem|em|%)$/i.test(text) ? text : "";
@@ -2779,6 +2868,9 @@ ${getSchoolTemplateAssetResolverBrowserScript()}
 	        return;
 	      }
 	      if (field.key === "headline" && applyAcademyThreeHeroTitle(node, value)) {
+	        return;
+	      }
+	      if (applyAcademyFourAboutPreviewStat(node, field, value)) {
 	        return;
 	      }
       setElementHtml(node, value);

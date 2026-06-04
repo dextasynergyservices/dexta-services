@@ -1143,7 +1143,11 @@ export const dextaAcademy4Manifest = {
           selector: ".school-programs",
           fields: [
             richTextField("eyebrow", "Eyebrow", ".section-kicker"),
-            richTextField("title", "Title", "h2"),
+            richTextField(
+              "title",
+              "Title",
+              ".school-programs .text-center > h2",
+            ),
             richTextField("body", "Intro", ".section-intro"),
             // Per-item program card fields
             backgroundImageField(

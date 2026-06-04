@@ -599,6 +599,99 @@ function promoteRichTextColorStyles(
   });
 }
 
+const RICH_TEXT_INHERITED_STYLE_PROPERTIES = [
+  "color",
+  "font-family",
+  "font-size",
+  "font-style",
+  "font-weight",
+  "text-align",
+  "text-decoration",
+  "text-transform",
+  "letter-spacing",
+] as const;
+
+function getInlineStyleDeclarations(node: ElementNode) {
+  return new Map(
+    (getAttr(node, "style") ?? "")
+      .split(";")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map((item) => {
+        const separatorIndex = item.indexOf(":");
+        if (separatorIndex < 0) return ["", ""] as const;
+        return [
+          item.slice(0, separatorIndex).trim().toLowerCase(),
+          item.slice(separatorIndex + 1).trim(),
+        ] as const;
+      })
+      .filter(([property]) => Boolean(property)),
+  );
+}
+
+function cascadeRichTextStylesToChildren(
+  node: ElementNode,
+  inheritedStyles = new Map<string, string>(),
+) {
+  const styles = new Map(inheritedStyles);
+  const ownStyles = getInlineStyleDeclarations(node);
+
+  for (const property of RICH_TEXT_INHERITED_STYLE_PROPERTIES) {
+    const ownValue = ownStyles.get(property);
+    if (ownValue) {
+      styles.set(property, ownValue);
+    } else {
+      const inheritedValue = styles.get(property);
+      if (inheritedValue) {
+        setStyleDeclaration(
+          node,
+          property,
+          withImportantStyleValue(inheritedValue),
+        );
+      }
+    }
+  }
+
+  node.children.forEach((child) => {
+    if (child.type === "element") {
+      cascadeRichTextStylesToChildren(child, styles);
+    }
+  });
+}
+
+function promoteSemanticRichTextStyles(node: ElementNode) {
+  const visit = (child: ElementNode, inheritedStyles: Map<string, string>) => {
+    const styles = new Map(inheritedStyles);
+    if (child.tagName === "strong" || child.tagName === "b") {
+      styles.set("font-weight", "700 !important");
+    }
+    if (child.tagName === "em" || child.tagName === "i") {
+      styles.set("font-style", "italic !important");
+    }
+    if (child.tagName === "u") {
+      styles.set("text-decoration", "underline !important");
+    }
+    if (["s", "strike", "del"].includes(child.tagName)) {
+      styles.set("text-decoration", "line-through !important");
+    }
+    styles.forEach((value, property) => {
+      setStyleDeclaration(child, property, value);
+    });
+
+    child.children.forEach((descendant) => {
+      if (descendant.type === "element") {
+        visit(descendant, styles);
+      }
+    });
+  };
+
+  node.children.forEach((child) => {
+    if (child.type === "element") {
+      visit(child, new Map());
+    }
+  });
+}
+
 function setRichTextHtml(
   node: ElementNode,
   value: string,
@@ -992,6 +1085,36 @@ function setDextaAcademy4EyebrowHtml(
   );
   const style = getDextaAcademy4HeroStyle(value);
   if (style) setAttr(node, "style", style);
+  return true;
+}
+
+function setDextaAcademy4AboutPreviewStatHtml(
+  node: ElementNode,
+  templateSlug: string,
+  sectionId: string,
+  fieldKey: string,
+  value: string,
+) {
+  if (
+    templateSlug !== "dexta-academy-4" ||
+    sectionId !== "about-preview" ||
+    (fieldKey !== "statValue" && fieldKey !== "statLabel")
+  ) {
+    return false;
+  }
+
+  const classes = getClassList(node);
+  if (
+    (fieldKey === "statValue" && !classes.includes("stat-card__value")) ||
+    (fieldKey === "statLabel" && !classes.includes("stat-card__body"))
+  ) {
+    return false;
+  }
+
+  setInnerHtml(node, toInlineHtml(value));
+  promoteRichTextColorStyles(node);
+  cascadeRichTextStylesToChildren(node);
+  promoteSemanticRichTextStyles(node);
   return true;
 }
 
@@ -1728,6 +1851,17 @@ function applySection(
 
         for (const node of queryAll(itemRoot, field.selector)) {
           if (field.target === "innerHTML") {
+            if (
+              setDextaAcademy4AboutPreviewStatHtml(
+                node,
+                templateSlug,
+                sectionContent.id,
+                field.key,
+                toText(value),
+              )
+            ) {
+              continue;
+            }
             setRichTextHtml(node, toText(value));
           } else if (field.target === "attribute") {
             const attribute =
@@ -5967,6 +6101,7 @@ function getThemeRuntimeMarkup(
 (function () {
 	  var logoUrl = ${escapeScriptJson(logoUrl)};
 	  var isTemplateThreeExport = ${escapeScriptJson(content.templateSlug === "dexta-academy-3")};
+	  var isTemplateFourExport = ${escapeScriptJson(content.templateSlug === "dexta-academy-4")};
 		  var brandName = ${escapeScriptJson(brandName)};
 		  var brandTagline = ${escapeScriptJson(brandTagline)};
 		  var documentTitle = ${escapeScriptJson(documentTitle)};
@@ -6094,7 +6229,7 @@ function getThemeRuntimeMarkup(
   }
 
   function promoteInlineRichTextColorStylesExport(root) {
-    if (!isTemplateThreeExport || !root || !root.querySelectorAll) return;
+    if (!(isTemplateThreeExport || isTemplateFourExport) || !root || !root.querySelectorAll) return;
     var styledNodes = [];
     if (root.getAttribute && root.getAttribute("style")) {
       styledNodes.push(root);
@@ -6119,6 +6254,69 @@ function getThemeRuntimeMarkup(
         if (value) node.style.setProperty(property, value, "important");
       });
     });
+  }
+
+  function cascadeInlineRichTextStylesExport(root) {
+    if (!root || !root.children) return;
+    var properties = [
+      "color",
+      "font-family",
+      "font-size",
+      "font-style",
+      "font-weight",
+      "text-align",
+      "text-decoration",
+      "text-transform",
+      "letter-spacing"
+    ];
+
+    function visit(node, inheritedStyles) {
+      var styles = Object.assign({}, inheritedStyles);
+      properties.forEach(function (property) {
+        var ownValue = node.style && node.style.getPropertyValue(property);
+        if (ownValue) {
+          styles[property] = ownValue;
+        } else if (styles[property] && node.style) {
+          node.style.setProperty(property, styles[property], "important");
+        }
+      });
+      Array.from(node.children || []).forEach(function (child) {
+        visit(child, styles);
+      });
+    }
+
+    Array.from(root.children || []).forEach(function (child) {
+      visit(child, {});
+    });
+  }
+
+  function promoteSemanticRichTextStylesExport(root) {
+    if (!root || !root.children) return;
+
+    function visit(node, inheritedStyles) {
+      var styles = Object.assign({}, inheritedStyles);
+      var tagName = String(node.tagName || "").toLowerCase();
+      if (tagName === "strong" || tagName === "b") {
+        styles["font-weight"] = "700";
+      }
+      if (tagName === "em" || tagName === "i") {
+        styles["font-style"] = "italic";
+      }
+      if (tagName === "u") {
+        styles["text-decoration"] = "underline";
+      }
+      if (tagName === "s" || tagName === "strike" || tagName === "del") {
+        styles["text-decoration"] = "line-through";
+      }
+      Object.keys(styles).forEach(function (property) {
+        if (node.style) node.style.setProperty(property, styles[property], "important");
+      });
+      Array.from(node.children || []).forEach(function (child) {
+        visit(child, styles);
+      });
+    }
+
+    visit(root, {});
   }
 
   function getGoogleFontFamilyNameExport(value) {
@@ -6411,6 +6609,32 @@ function getThemeRuntimeMarkup(
     return true;
   }
 
+  function applyAcademyFourAboutPreviewStatExport(node, field, value) {
+    if (
+      !isTemplateFourExport ||
+      !field ||
+      (field.key !== "statValue" && field.key !== "statLabel") ||
+      !node.classList ||
+      !node.closest ||
+      !node.closest(".school-about-preview")
+    ) {
+      return false;
+    }
+
+    if (
+      (field.key === "statValue" && !node.classList.contains("stat-card__value")) ||
+      (field.key === "statLabel" && !node.classList.contains("stat-card__body"))
+    ) {
+      return false;
+    }
+
+    node.innerHTML = toInlineHtmlExport(value);
+    promoteInlineRichTextColorStylesExport(node);
+    cascadeInlineRichTextStylesExport(node);
+    promoteSemanticRichTextStylesExport(node);
+    return true;
+  }
+
   function isIframeEmbedFieldExport(field) {
     return field && field.type === "textarea" && field.target === "attribute" && (
       field.key === "formIframe" || field.key === "formEmbedCode" || field.key === "iframeEmbedCode"
@@ -6476,6 +6700,7 @@ function getThemeRuntimeMarkup(
     if (field.target === "innerHTML") {
       if (applyAcademyFourHeroDisplayExport(node, field, value)) return;
       if (applyAcademyFourHeroEyebrowExport(node, field, value)) return;
+      if (applyAcademyFourAboutPreviewStatExport(node, field, value)) return;
       setElementHtmlExport(node, value);
       return;
     }
