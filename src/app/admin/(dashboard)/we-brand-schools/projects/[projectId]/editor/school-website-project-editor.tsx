@@ -850,6 +850,47 @@ function getOriginalThemeColor(
   );
 }
 
+function ensureDextaAcademy4HomeAboutPreviewStats(
+  content: SchoolTemplateProjectContent,
+): SchoolTemplateProjectContent {
+  if (content.templateSlug !== DEXTA_ACADEMY_4_SLUG) {
+    return content;
+  }
+
+  let changed = false;
+  const pages = content.pages.map((page) => {
+    if (page.slug !== "home") return page;
+
+    const sections = page.sections.map((section) => {
+      if (section.id !== "about-preview" || !section.repeatable) {
+        return section;
+      }
+
+      if (section.repeatable.items.length >= 3) {
+        return section;
+      }
+
+      changed = true;
+      const items = [...section.repeatable.items];
+      while (items.length < 3) {
+        items.push({});
+      }
+
+      return {
+        ...section,
+        repeatable: {
+          ...section.repeatable,
+          items,
+        },
+      };
+    });
+
+    return sections === page.sections ? page : { ...page, sections };
+  });
+
+  return changed ? { ...content, pages } : content;
+}
+
 function getRepeatableItemFields(
   section: SectionBinding,
 ): SchoolTemplateProjectFieldSnapshot[] {
@@ -2198,22 +2239,25 @@ export function SchoolWebsiteProjectEditor({
 
     const updateSection = (
       section: SchoolTemplateProjectSectionContent,
-    ): SchoolTemplateProjectSectionContent =>
-      section.id === sectionId
-        ? {
-            ...section,
-            repeatable: {
-              items: (section.repeatable?.items ?? []).map((item, index) =>
-                index === itemIndex
-                  ? {
-                      ...item,
-                      [fieldKey]: value,
-                    }
-                  : item,
-              ),
-            },
-          }
-        : section;
+    ): SchoolTemplateProjectSectionContent => {
+      if (section.id !== sectionId) return section;
+
+      const items = [...(section.repeatable?.items ?? [])];
+      while (items.length <= itemIndex) {
+        items.push({});
+      }
+      items[itemIndex] = {
+        ...items[itemIndex],
+        [fieldKey]: value,
+      };
+
+      return {
+        ...section,
+        repeatable: {
+          items,
+        },
+      };
+    };
 
     if (selectedScope === "shared") {
       updateDraft((currentDraft) => ({
@@ -2373,7 +2417,13 @@ export function SchoolWebsiteProjectEditor({
       }
 
       const versionAtSaveStart = dirtyVersionRef.current;
-      const contentToSave = draftRef.current;
+      const contentToSave = ensureDextaAcademy4HomeAboutPreviewStats(
+        draftRef.current,
+      );
+      if (contentToSave !== draftRef.current) {
+        draftRef.current = contentToSave;
+        setDraft(contentToSave);
+      }
 
       isSavingRef.current = true;
       if (autosave) {

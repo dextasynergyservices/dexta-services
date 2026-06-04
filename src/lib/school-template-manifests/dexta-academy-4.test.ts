@@ -185,6 +185,60 @@ describe("Dexta Academy 4 manifest", () => {
     assert.doesNotMatch(sourceHtml, /View All Programs/);
   });
 
+  it("keeps the home Programs title editable as a section-level field", () => {
+    const content = buildSchoolTemplateProjectContent(dextaAcademy4Manifest);
+    const programsManifest = dextaAcademy4Manifest.pages
+      .find((page) => page.slug === "home")
+      ?.sections.find((section) => section.id === "programs");
+    const programsContent = content.pages
+      .find((page) => page.slug === "home")
+      ?.sections.find((section) => section.id === "programs");
+    const titleField = programsManifest?.fields.find(
+      (field) => field.key === "title",
+    );
+
+    assert.equal(titleField?.selector, ".school-programs .text-center > h2");
+    assert.match(
+      String(programsContent?.fields.title),
+      /Academic pathways built for every stage of learning\./,
+    );
+    assert.ok(
+      programsContent?.repeatable?.items.every((item) => !("title" in item)),
+      "Programs title must remain a section-level editor field.",
+    );
+  });
+
+  it("preserves About Preview stat rich-text typography during sanitization", () => {
+    const content = buildSchoolTemplateProjectContent(dextaAcademy4Manifest);
+    const sourceSnapshot = buildSchoolTemplateSourceSnapshot(
+      dextaAcademy4Manifest,
+    );
+    const aboutPreview = content.pages
+      .find((page) => page.slug === "home")
+      ?.sections.find((section) => section.id === "about-preview");
+    const richText =
+      '<h2><span style="font-family: Montserrat, sans-serif; color: #e03e2d; font-size: 24px;"><strong>98%</strong></span></h2>';
+
+    assert.ok(aboutPreview?.repeatable?.items[0]);
+    aboutPreview.repeatable.items[0].statValue = richText;
+
+    const sanitized = sanitizeSchoolTemplateProjectContent(
+      content,
+      sourceSnapshot,
+    );
+    const sanitizedStatValue = sanitized.pages
+      .find((page) => page.slug === "home")
+      ?.sections.find((section) => section.id === "about-preview")?.repeatable
+      ?.items[0]?.statValue;
+
+    assert.equal(typeof sanitizedStatValue, "string");
+    assert.match(sanitizedStatValue, /^<h2><span style="/);
+    assert.match(sanitizedStatValue, /font-family:Montserrat, sans-serif/);
+    assert.match(sanitizedStatValue, /color:#e03e2d/);
+    assert.match(sanitizedStatValue, /font-size:24px/);
+    assert.match(sanitizedStatValue, /<strong>98%<\/strong>/);
+  });
+
   it("keeps About Facts section title and card value/label fields targeted correctly", () => {
     const factsSection = getAboutManifestSection("facts");
     const sourceHtml = getTemplateFourAboutSourceHtml();

@@ -263,6 +263,19 @@ body {
     margin-top: 15px;
     border-top: 1px solid #eeeeee;
   }
+
+  .navbar .navbar-collapse {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #ffffff;
+    padding: 0 20px 20px 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    z-index: 999;
+    border-bottom: 3px solid var(--primary);
+    border-radius: 0 0 12px 12px;
+  }
 }
 
 @media (min-width: 992px) {

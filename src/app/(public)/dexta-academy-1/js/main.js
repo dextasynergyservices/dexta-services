@@ -314,4 +314,26 @@
     window.addEventListener("scroll", requestAboutParallax, { passive: true });
     window.addEventListener("resize", requestAboutParallax);
   }
+
+  // Close mobile navbar on clicking outside or clicking nav links
+  $(document).on("click", function (event) {
+    var clickTarget = $(event.target);
+    var navbarCollapse = $("#navbarCollapse");
+    var navbarToggler = $(".navbar-toggler");
+
+    if (navbarCollapse.hasClass("show")) {
+      var isClickInsideNavbar =
+        clickTarget.closest("#navbarCollapse").length ||
+        clickTarget.closest(".navbar-toggler").length;
+      var isNavLinkClick =
+        clickTarget.closest(".navbar-nav a").length ||
+        clickTarget.closest(".btn-portal").length ||
+        clickTarget.closest(".btn-primary").length;
+
+      if (!isClickInsideNavbar || isNavLinkClick) {
+        navbarCollapse.removeClass("show");
+        navbarToggler.attr("aria-expanded", "false");
+      }
+    }
+  });
 })(jQuery);

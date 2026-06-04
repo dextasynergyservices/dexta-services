@@ -485,9 +485,13 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
       '<span style="font-family: Inter, sans-serif; color: #0f766e;">About body text</span>';
     if (aboutSection.repeatable?.items[0]) {
       aboutSection.repeatable.items[0].statValue =
-        '<span style="color: #dc2626;">98%</span>';
+        '<h2><span style="font-family: Montserrat, sans-serif; color: #dc2626; font-size: 24px;"><strong>98%</strong></span></h2>';
       aboutSection.repeatable.items[0].statLabel =
         '<span style="color: #7c3aed;">Exam Pass Rate</span>';
+    }
+    if (aboutSection.repeatable?.items[2]) {
+      aboutSection.repeatable.items[2].statValue =
+        "<h2><strong><span><span><span>150+</span></span></span></strong></h2>";
     }
     programsSection.fields.eyebrowTextColor = "#1188ff";
     programsSection.fields.title =
@@ -513,6 +517,9 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
     assert.match(html, /function applyAcademyFourHeroEyebrow/);
     assert.match(html, /function applyAcademyFourHeroTextStyles/);
     assert.match(html, /function getAcademyFourHeroLineTextStyles/);
+    assert.match(html, /function applyAcademyFourAboutPreviewStat/);
+    assert.match(html, /function cascadeInlineRichTextStyles/);
+    assert.match(html, /function promoteSemanticRichTextStyles/);
     assert.match(html, /Playfair\+Display/);
     assert.match(html, /Inter/);
     assert.match(html, /--dexta-academy-4-home-hero-eyebrow-dash-color/);
@@ -735,9 +742,18 @@ describe("Dexta Academy 4 export 3D rendering", () => {
       '<span style="font-family: Inter, sans-serif; color: #0f766e;">About body text</span>';
     if (aboutSection.repeatable?.items[0]) {
       aboutSection.repeatable.items[0].statValue =
-        '<span style="color: #dc2626;">98%</span>';
+        '<h2><span style="font-family: Montserrat, sans-serif; color: #dc2626; font-size: 24px;"><strong>98%</strong></span></h2>';
       aboutSection.repeatable.items[0].statLabel =
         '<span style="color: #7c3aed;">Exam Pass Rate</span>';
+    }
+    if (aboutSection.repeatable) {
+      while (aboutSection.repeatable.items.length < 3) {
+        aboutSection.repeatable.items.push({});
+      }
+      aboutSection.repeatable.items[2].statValue =
+        "<h2><strong><span><span><span>150+</span></span></span></strong></h2>";
+      aboutSection.repeatable.items[2].statLabel =
+        '<p>Private School <u><span style="color: #ea580c;">Ranking</span></u></p>';
     }
     programsSection.fields.eyebrowTextColor = "#1188ff";
     programsSection.fields.title =
@@ -886,8 +902,26 @@ describe("Dexta Academy 4 export 3D rendering", () => {
         indexHtml,
         /<p><span style="font-family: Inter, sans-serif !important; color: #0f766e !important;">About body text<\/span><\/p>/,
       );
-      assert.match(indexHtml, /#dc2626/);
+      assert.match(
+        indexHtml,
+        /<strong class="stat-card__value"><span style="(?=[^"]*font-family: Montserrat, sans-serif !important)(?=[^"]*color: #dc2626 !important)(?=[^"]*font-size: 24px !important)[^"]*"><strong style="(?=[^"]*font-weight: 700 !important)[^"]*">98%<\/strong><\/span><\/strong>/,
+      );
       assert.match(indexHtml, /#7c3aed/);
+      assert.match(
+        indexHtml,
+        /<strong class="stat-card__value"><strong style="font-weight: 700 !important;"><span style="font-weight: 700 !important;"><span style="font-weight: 700 !important;"><span style="font-weight: 700 !important;">150\+<\/span><\/span><\/span><\/strong><\/strong>/,
+      );
+      assert.match(
+        indexHtml,
+        /<strong class="stat-card__value">25\+<\/strong>/,
+      );
+      assert.match(
+        indexHtml,
+        /<span class="stat-card__body">Private School <u style="text-decoration: underline !important;"><span style="color: #ea580c !important; text-decoration: underline !important;">Ranking<\/span><\/u><\/span>/,
+      );
+      assert.match(indexHtml, /applyAcademyFourAboutPreviewStatExport/);
+      assert.match(indexHtml, /cascadeInlineRichTextStylesExport/);
+      assert.match(indexHtml, /promoteSemanticRichTextStylesExport/);
       assert.match(indexHtml, /class="stat-card__value"/);
       assert.match(indexHtml, /class="stat-card__body"/);
       assert.doesNotMatch(indexHtml, /View All Programs/);
