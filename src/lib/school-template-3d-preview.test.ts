@@ -357,6 +357,15 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
     assert.match(sourceModule, /neutralModelBounds = centerAndScaleModel/);
     assert.match(sourceModule, /positionCameraToFit\(neutralModelBounds\)/);
     assert.match(sourceModule, /const MODEL_VISIBLE_SCALE_LIMIT = 1\.45/);
+    assert.match(
+      sourceModule,
+      /const frameMaxDim = isMobileViewport\(\)\s*\?\s*MODEL_FRAME_REFERENCE_SIZE\s*:\s*Math\.max\(\s*MODEL_FRAME_REFERENCE_SIZE,\s*actualMaxDim \/ MODEL_VISIBLE_SCALE_LIMIT/,
+    );
+    assert.doesNotMatch(sourceModule, /MOBILE_MODEL_VISIBLE_SCALE_LIMIT/);
+    assert.match(
+      sourceModule,
+      /const verticalLookOffset = isMobileViewport\(\) \? -0\.16 : -0\.08/,
+    );
     assert.match(sourceModule, /MODEL_FRAME_PADDING/);
     assert.match(sourceModule, /fitWidthDist/);
     assert.match(sourceModule, /modelPivot\.position\.set/);
@@ -437,7 +446,7 @@ describe("Dexta Academy 4 preview 3D rendering", () => {
 
     assert.match(
       html,
-      /<script type="module" src="js\/hero-3d\.js\?dextaPreview=3d-config-v23" data-dexta-preview-hero-3d="external"><\/script>/,
+      /<script type="module" src="js\/hero-3d\.js\?dextaPreview=3d-config-v28" data-dexta-preview-hero-3d="external"><\/script>/,
     );
     assert.equal(html.match(/src="js\/hero-3d\.js/g)?.length, 1);
     assert.ok(
@@ -826,9 +835,34 @@ describe("Dexta Academy 4 export 3D rendering", () => {
       assert.match(heroCss, /left: var\(--cap-center-x, 50%\)/);
       assert.match(heroScript, /applyMobileHeadlineFontSize/);
       assert.match(heroScript, /getActiveModelScaleTarget/);
+      assert.match(
+        heroScript,
+        /const frameMaxDim = isMobileViewport\(\)\s*\?\s*MODEL_FRAME_REFERENCE_SIZE\s*:\s*Math\.max\(\s*MODEL_FRAME_REFERENCE_SIZE,\s*actualMaxDim \/ MODEL_VISIBLE_SCALE_LIMIT/,
+      );
+      assert.doesNotMatch(heroScript, /MOBILE_MODEL_VISIBLE_SCALE_LIMIT/);
+      assert.match(
+        heroScript,
+        /const verticalLookOffset = isMobileViewport\(\) \? -0\.16 : -0\.08/,
+      );
       assert.match(heroScript, /reapplySchoolHero3dModelScale/);
       assert.match(heroScript, /reapplyActiveModelScale/);
       assert.match(heroScript, /MOBILE_TRANSFORM_CONFIG\.scale/);
+      assert.match(
+        indexHtml,
+        /<style data-dexta-academy-4-hero-3d-responsive="true">/,
+      );
+      assert.match(
+        indexHtml,
+        /@media \(min-width: 992px\)\{#hero-3d-stage\{[^}]*--cap-width:777px/,
+      );
+      assert.match(
+        indexHtml,
+        /@media \(max-width: 767\.98px\)\{#hero-3d-stage\{[^}]*--cap-width:333px[^}]*--cap-height:222px/,
+      );
+      assert.doesNotMatch(
+        indexHtml,
+        /id="hero-3d-stage"[^>]*style="[^"]*--cap-width:777px/,
+      );
       assert.doesNotMatch(
         heroScript,
         /window\.schoolHero3dConfig\?\.transform\?\.scale \?\? 4\.5/,

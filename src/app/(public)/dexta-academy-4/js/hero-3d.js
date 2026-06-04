@@ -702,10 +702,12 @@ if (!heroSection || !stage || !canvas || !status) {
       const center = bounds.getCenter(new THREE.Vector3());
       const modelOffset = modelPivot.position;
       const actualMaxDim = Math.max(size.x, size.y, size.z) || 1;
-      const frameMaxDim = Math.max(
-        MODEL_FRAME_REFERENCE_SIZE,
-        actualMaxDim / MODEL_VISIBLE_SCALE_LIMIT,
-      );
+      const frameMaxDim = isMobileViewport()
+        ? MODEL_FRAME_REFERENCE_SIZE
+        : Math.max(
+            MODEL_FRAME_REFERENCE_SIZE,
+            actualMaxDim / MODEL_VISIBLE_SCALE_LIMIT,
+          );
       const frameScale = frameMaxDim / actualMaxDim;
       const frameSize = size.clone().multiplyScalar(frameScale);
       frameSize.x += Math.abs(modelOffset.x) * 2;
@@ -724,9 +726,10 @@ if (!heroSection || !stage || !canvas || !status) {
       camera.far = Math.max(dist * 20, dist + size.z * 4);
 
       camera.position.set(dist * 0.1, dist * 0.48, dist * 0.75);
+      const verticalLookOffset = isMobileViewport() ? -0.16 : -0.08;
       camera.lookAt(
         center.x + size.x * 0.04,
-        center.y - size.y * 0.08,
+        center.y + size.y * verticalLookOffset,
         center.z,
       );
       camera.updateProjectionMatrix();
