@@ -388,7 +388,7 @@ body[data-page="home"] .site-header__bar {
   color: var(--text-white);
   overflow: hidden;
   background-color: var(--bg);
-  background: url("https://res.cloudinary.com/dxoorukfj/image/upload/v1776872764/Dexta_4_gxj3vr.png")
+  background: url("https://res.cloudinary.com/djyarsuk6/image/upload/v1780936433/home-hero_tree_ommeu1.png")
     center center / cover no-repeat;
 }
 
@@ -397,7 +397,7 @@ body[data-page="home"] .site-header__bar {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: url("https://res.cloudinary.com/dxoorukfj/image/upload/v1776872761/Dexta_3_adxpsg.png")
+  background: url("https://res.cloudinary.com/djyarsuk6/image/upload/v1780936525/home-hero-building_qwt6io.png")
     center bottom / 100% auto no-repeat;
   transform-origin: center bottom;
   will-change: transform, opacity;
@@ -928,7 +928,7 @@ body[data-page="home"] .hero-home__actions .button--primary:hover {
   padding: calc(var(--header-height) + 64px) 0 64px;
   color: var(--text-white);
   overflow: hidden;
-  background: url("https://res.cloudinary.com/dxoorukfj/image/upload/v1776872764/Dexta_4_gxj3vr.png")
+  background: url("https://res.cloudinary.com/djyarsuk6/image/upload/v1780936433/home-hero_tree_ommeu1.png")
     center center / cover no-repeat;
 }
 
@@ -938,7 +938,7 @@ body[data-page="home"] .hero-home__actions .button--primary:hover {
   inset: 0;
   z-index: 0;
   opacity: 0.6;
-  background: url("https://res.cloudinary.com/dxoorukfj/image/upload/v1776872761/Dexta_3_adxpsg.png")
+  background: url("https://res.cloudinary.com/djyarsuk6/image/upload/v1780936525/home-hero-building_qwt6io.png")
     center bottom / 100% auto no-repeat;
   opacity: 0.95;
 }
@@ -1172,7 +1172,7 @@ body[data-page="home"] .hero-home__actions .button--primary:hover {
 }
 
 .image-stack__block {
-  background: url("https://res.cloudinary.com/dxoorukfj/image/upload/v1777041228/ChatGPT_Image_Apr_24_2026_03_33_32_PM_mbqpse.png")
+  background: url("https://res.cloudinary.com/djyarsuk6/image/upload/v1780936853/sch1_yoii7u.png")
     center top / cover no-repeat;
 }
 
@@ -1945,7 +1945,7 @@ body[data-page="home"] .hero-home__actions .button--primary:hover {
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    background: url("https://res.cloudinary.com/dxoorukfj/image/upload/v1776960442/ChatGPT_Image_Apr_23_2026_05_07_07_PM_spaysy.png")
+    background: url("https://res.cloudinary.com/djyarsuk6/image/upload/v1780936941/hero-mobile_ksuxlp.png")
       center top / cover no-repeat;
     transform-origin: center top;
     will-change: transform, opacity;
@@ -2298,7 +2298,7 @@ body[data-page="home"] .hero-home__actions .button--primary:hover {
 
   .page-hero {
     padding-bottom: 48px;
-    background: url("https://res.cloudinary.com/dxoorukfj/image/upload/v1776872764/Dexta_4_gxj3vr.png")
+    background: url("https://res.cloudinary.com/djyarsuk6/image/upload/v1780936433/home-hero_tree_ommeu1.png")
       center center / cover no-repeat;
   }
 

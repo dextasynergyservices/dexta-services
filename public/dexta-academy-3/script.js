@@ -60,6 +60,101 @@ function createPageLoader() {
 
 const body = document.body;
 
+function getCurrentPageKey() {
+  if (body?.classList.contains("about-page")) {
+    return "about";
+  }
+
+  if (body?.classList.contains("gallery-page")) {
+    return "gallery";
+  }
+
+  if (body?.classList.contains("contact-page")) {
+    return "contact";
+  }
+
+  return "home";
+}
+
+function createHomeAnchorHref(anchorId, currentPage) {
+  return currentPage === "home" ? `#${anchorId}` : `index.html#${anchorId}`;
+}
+
+function createNavLink({ href, label, page }, currentPage) {
+  const currentAttribute = page === currentPage ? ' aria-current="page"' : "";
+
+  return `<a href="${href}"${currentAttribute}>${label}</a>`;
+}
+
+function renderSiteNavbar() {
+  const navbarMounts = document.querySelectorAll("[data-site-navbar]");
+
+  if (!navbarMounts.length) {
+    return;
+  }
+
+  const currentPage = getCurrentPageKey();
+  const hasAdmissionModal = Boolean(document.getElementById("admission-modal"));
+  const programmesHref = createHomeAnchorHref("programmes", currentPage);
+  const applyHref = createHomeAnchorHref("how-to-apply", currentPage);
+  const applyAttributes = hasAdmissionModal
+    ? 'href="#admission" data-admission-modal-open aria-controls="admission-modal"'
+    : `href="${applyHref}"`;
+  const links = [
+    { href: "index.html", label: "Home", page: "home" },
+    { href: "about.html", label: "About", page: "about" },
+    { href: programmesHref, label: "Programmes" },
+    { href: "gallery.html", label: "Gallery", page: "gallery" },
+    { href: applyHref, label: "How To Apply" },
+    { href: "contact.html", label: "Contact", page: "contact" },
+  ];
+
+  const navbarMarkup = `
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="DXT Academy home">
+        <span class="brand__crest" aria-hidden="true">
+          <span class="brand__crest-inner"></span>
+        </span>
+        <span class="brand__name">
+          <strong>DXT</strong>
+          <span>Academy</span>
+        </span>
+      </a>
+
+      <button
+        class="nav-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="site-nav"
+      >
+        Menu
+      </button>
+
+      <nav class="site-nav" id="site-nav" aria-label="Primary navigation">
+        ${links.map((link) => createNavLink(link, currentPage)).join("")}
+      </nav>
+
+      <div class="header-actions">
+        <a class="portal-link" href="#">Portal</a>
+        <a class="button button--gold" ${applyAttributes}>Apply Now</a>
+      </div>
+    </header>
+  `;
+
+  const navbarTemplate = document.createElement("template");
+  navbarTemplate.innerHTML = navbarMarkup.trim();
+
+  const navbar = navbarTemplate.content.firstElementChild;
+
+  if (navbar && body) {
+    body.insertBefore(navbar, body.firstChild);
+  }
+
+  navbarMounts.forEach((mount) => {
+    mount.remove();
+  });
+}
+
 function keepHeaderFixedToViewport() {
   const existingHeader = document.querySelector(".site-header");
 
@@ -70,6 +165,7 @@ function keepHeaderFixedToViewport() {
   body.insertBefore(existingHeader, body.firstChild);
 }
 
+renderSiteNavbar();
 keepHeaderFixedToViewport();
 
 const isHomePage = body?.classList.contains("home-page");
