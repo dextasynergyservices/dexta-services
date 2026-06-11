@@ -2,6 +2,7 @@
 
 import { updateTag } from "next/cache";
 import { auth } from "@/lib/auth";
+import { getCloudinaryPublicId } from "@/lib/cloudinary";
 import prisma from "@/lib/prisma";
 import { expressionSchema, type ExpressionInput } from "@/lib/validators";
 
@@ -29,6 +30,23 @@ async function requireAuth() {
 
 function revalidateExpressions() {
   updateTag("expressions-content");
+}
+
+function normalizeCloudinaryValue(value: string | null | undefined) {
+  const trimmedValue = value?.trim();
+
+  if (!trimmedValue) {
+    return null;
+  }
+
+  return getCloudinaryPublicId(trimmedValue) ?? trimmedValue;
+}
+
+function normalizeExpressionLogo(data: ExpressionInput) {
+  return {
+    ...data,
+    logoPublicId: normalizeCloudinaryValue(data.logoPublicId),
+  };
 }
 
 // ─── Read ─────────────────────────────────────────────────────────────────────
@@ -76,7 +94,7 @@ export async function createExpression(
     const position = last ? last.position + 1 : 0;
 
     await prisma.expression.create({
-      data: { ...parsed.data, position },
+      data: { ...normalizeExpressionLogo(parsed.data), position },
     });
 
     revalidateExpressions();
@@ -104,7 +122,10 @@ export async function updateExpression(
       };
     }
 
-    await prisma.expression.update({ where: { id }, data: parsed.data });
+    await prisma.expression.update({
+      where: { id },
+      data: normalizeExpressionLogo(parsed.data),
+    });
 
     revalidateExpressions();
     return { success: true, message: "Expression updated successfully" };

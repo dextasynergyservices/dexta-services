@@ -2,6 +2,7 @@
 
 import { updateTag } from "next/cache";
 import { auth } from "@/lib/auth";
+import { getCloudinaryPublicId } from "@/lib/cloudinary";
 import { sanitizeHeroContentInput } from "@/lib/hero-rich-text.server";
 import type { HeroContent, HeroCard } from "@/lib/hero-types";
 import prisma from "@/lib/prisma";
@@ -34,6 +35,35 @@ async function requireAuth() {
 
 function revalidateHero() {
   updateTag("hero-content");
+}
+
+function normalizeCloudinaryValue(value: string | null | undefined) {
+  const trimmedValue = value?.trim();
+
+  if (!trimmedValue) {
+    return null;
+  }
+
+  return getCloudinaryPublicId(trimmedValue) ?? trimmedValue;
+}
+
+function normalizeHeroContentImages(data: HeroContentInput) {
+  return {
+    ...data,
+    backgroundImagePublicId: normalizeCloudinaryValue(
+      data.backgroundImagePublicId,
+    ),
+    cardFallbackImagePublicId: normalizeCloudinaryValue(
+      data.cardFallbackImagePublicId,
+    ),
+  };
+}
+
+function normalizeHeroCardImage(data: HeroCardInput) {
+  return {
+    ...data,
+    imagePublicId: normalizeCloudinaryValue(data.imagePublicId),
+  };
 }
 
 // ─── Get Hero Content ─────────────────────────────────────────────────────────
@@ -80,7 +110,9 @@ export async function updateHeroContent(
       };
     }
 
-    const sanitizedData = sanitizeHeroContentInput(parsed.data);
+    const sanitizedData = normalizeHeroContentImages(
+      sanitizeHeroContentInput(parsed.data),
+    );
 
     await prisma.heroContent.upsert({
       where: { id: 1 },
@@ -135,7 +167,9 @@ export async function createHeroCard(
     });
     const position = lastCard ? lastCard.position + 1 : 0;
 
-    await prisma.heroCard.create({ data: { ...parsed.data, position } });
+    await prisma.heroCard.create({
+      data: { ...normalizeHeroCardImage(parsed.data), position },
+    });
 
     revalidateHero();
     return { success: true, message: "Card created successfully" };
@@ -162,7 +196,10 @@ export async function updateHeroCard(
       };
     }
 
-    await prisma.heroCard.update({ where: { id }, data: parsed.data });
+    await prisma.heroCard.update({
+      where: { id },
+      data: normalizeHeroCardImage(parsed.data),
+    });
 
     revalidateHero();
     return { success: true, message: "Card updated successfully" };

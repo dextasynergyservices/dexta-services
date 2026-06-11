@@ -6,6 +6,7 @@ import { DynamicRegistrationForm } from "@/components/events/dynamic-registratio
 import { RecaptchaProvider } from "@/components/layout/recaptcha-provider";
 import { registerForEvent } from "./actions";
 import prisma from "@/lib/prisma";
+import { getCloudinaryUrl } from "@/lib/cloudinary";
 import { formatDateInTimezone } from "@/lib/timezone";
 
 interface Props {
@@ -22,7 +23,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!event) return {};
 
   const ogImage = event.imagePublicId
-    ? `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/w_1200,h_630,c_fill,q_auto,f_auto/${event.imagePublicId}`
+    ? getCloudinaryUrl(event.imagePublicId, {
+        w: 1200,
+        h: 630,
+        c: "fill",
+        f: "auto",
+        q: "auto",
+      })
     : undefined;
 
   return {
@@ -56,6 +63,13 @@ export default async function EventRegistrationPage({ params }: Props) {
   const spotsLeft = event.attendeeLimit
     ? event.attendeeLimit - acceptedCount
     : null;
+  const eventImageSrc = event.imagePublicId
+    ? getCloudinaryUrl(event.imagePublicId, {
+        w: 800,
+        f: "auto",
+        q: "auto",
+      })
+    : null;
 
   const boundRegister = async (formData: Record<string, string>) => {
     "use server";
@@ -68,10 +82,10 @@ export default async function EventRegistrationPage({ params }: Props) {
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
           {/* Left — Event Info */}
           <div>
-            {event.imagePublicId && (
+            {eventImageSrc && (
               <div className="mb-6 overflow-hidden rounded-2xl border border-[#222]">
                 <Image
-                  src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/w_800,q_auto,f_auto/${event.imagePublicId}`}
+                  src={eventImageSrc}
                   alt={event.title}
                   width={800}
                   height={400}

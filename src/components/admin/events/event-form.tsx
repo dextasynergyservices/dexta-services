@@ -289,8 +289,18 @@ export function EventForm({
         <h2 className="mb-4 text-sm font-semibold text-white">Event Image</h2>
         <ImageUpload
           value={watch("imagePublicId") || undefined}
-          onChange={(publicId) => setValue("imagePublicId", publicId)}
-          onRemove={() => setValue("imagePublicId", "")}
+          onChange={(publicId) =>
+            setValue("imagePublicId", publicId, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+          }
+          onRemove={() =>
+            setValue("imagePublicId", "", {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+          }
           emptyLabel="Click to upload event image"
           previewAlt="Event image preview"
         />

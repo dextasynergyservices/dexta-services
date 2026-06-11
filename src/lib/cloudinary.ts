@@ -34,13 +34,23 @@ function serializeTransforms(options?: TransformOptions) {
 }
 
 export function getCloudinaryUrl(publicId: string, options?: TransformOptions) {
+  const normalizedPublicId = getCloudinaryPublicId(publicId) ?? publicId;
+
+  if (
+    normalizedPublicId.startsWith("/") ||
+    normalizedPublicId.startsWith("http://") ||
+    normalizedPublicId.startsWith("https://")
+  ) {
+    return normalizedPublicId;
+  }
+
   const defaultOptions = {
     f: "auto",
     q: "auto",
     ...options,
   };
 
-  return `${getCloudinaryImageUploadBaseUrl()}${serializeTransforms(defaultOptions)}${publicId}`;
+  return `${getCloudinaryImageUploadBaseUrl()}${serializeTransforms(defaultOptions)}${normalizedPublicId}`;
 }
 
 export function isCloudinaryUrl(src: string) {

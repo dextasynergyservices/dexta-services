@@ -103,8 +103,18 @@ function ExpressionForm({
         <Label className="mb-1.5 block text-xs text-[#888]">Logo</Label>
         <ImageUpload
           value={watch("logoPublicId") ?? undefined}
-          onChange={(id) => setValue("logoPublicId", id)}
-          onRemove={() => setValue("logoPublicId", null)}
+          onChange={(id) =>
+            setValue("logoPublicId", id, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+          }
+          onRemove={() =>
+            setValue("logoPublicId", null, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+          }
           emptyLabel="Click to upload logo"
           previewAlt={`${initialData?.name ?? "Expression"} logo`}
         />

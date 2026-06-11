@@ -122,8 +122,18 @@ function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
         <Label className="mb-1.5 block text-xs text-[#888]">Card Image</Label>
         <ImageUpload
           value={watch("imagePublicId") ?? undefined}
-          onChange={(id) => setValue("imagePublicId", id)}
-          onRemove={() => setValue("imagePublicId", null)}
+          onChange={(id) =>
+            setValue("imagePublicId", id, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+          }
+          onRemove={() =>
+            setValue("imagePublicId", null, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
+          }
           emptyLabel="Click to upload card image"
           previewAlt={`${initialData?.title ?? "Hero card"} image preview`}
         />

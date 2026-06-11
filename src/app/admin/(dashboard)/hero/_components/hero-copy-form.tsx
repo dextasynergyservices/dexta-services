@@ -90,8 +90,18 @@ export function HeroCopyForm({ content }: HeroCopyFormProps) {
             </Label>
             <ImageUpload
               value={watch("backgroundImagePublicId") ?? undefined}
-              onChange={(id) => setValue("backgroundImagePublicId", id)}
-              onRemove={() => setValue("backgroundImagePublicId", null)}
+              onChange={(id) =>
+                setValue("backgroundImagePublicId", id, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+              onRemove={() =>
+                setValue("backgroundImagePublicId", null, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
               emptyLabel="Click to upload hero background"
               previewAlt="Hero background preview"
               fallbackSrc="/images/services.png"
@@ -107,8 +117,18 @@ export function HeroCopyForm({ content }: HeroCopyFormProps) {
             </Label>
             <ImageUpload
               value={watch("cardFallbackImagePublicId") ?? undefined}
-              onChange={(id) => setValue("cardFallbackImagePublicId", id)}
-              onRemove={() => setValue("cardFallbackImagePublicId", null)}
+              onChange={(id) =>
+                setValue("cardFallbackImagePublicId", id, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+              onRemove={() =>
+                setValue("cardFallbackImagePublicId", null, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
               emptyLabel="Click to upload hero foreground image"
               previewAlt="Hero foreground preview"
               fallbackSrc="/images/fprint.png"

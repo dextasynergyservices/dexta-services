@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
-import { getCloudinaryPublicId, isCloudinaryUrl } from "@/lib/cloudinary";
+import {
+  getCloudinaryPublicId,
+  getCloudinaryUrl,
+  isCloudinaryUrl,
+} from "@/lib/cloudinary";
 
 const originalCloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 
@@ -50,5 +54,26 @@ describe("Cloudinary helpers", () => {
       ),
       "folder/campus.png",
     );
+  });
+
+  it("does not double-prefix configured Cloudinary URLs when building image URLs", () => {
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME = "school-admin-cloud";
+
+    assert.equal(
+      getCloudinaryUrl(
+        "https://res.cloudinary.com/school-admin-cloud/image/upload/v1776872764/folder/campus.png",
+        { w: 1400, c: "fill" },
+      ),
+      "https://res.cloudinary.com/school-admin-cloud/image/upload/f_auto,q_auto,w_1400,c_fill/folder/campus.png",
+    );
+  });
+
+  it("keeps external URLs intact when building image URLs", () => {
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME = "school-admin-cloud";
+
+    const externalUrl =
+      "https://res.cloudinary.com/another-cloud/image/upload/v1776872764/folder/campus.png";
+
+    assert.equal(getCloudinaryUrl(externalUrl, { w: 1400 }), externalUrl);
   });
 });

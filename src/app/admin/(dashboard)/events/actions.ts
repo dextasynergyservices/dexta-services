@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { getCloudinaryPublicId } from "@/lib/cloudinary";
 import prisma from "@/lib/prisma";
 import { eventFormSchema, type EventFormData } from "@/lib/validators";
 import {
@@ -16,6 +17,23 @@ async function requireAuth() {
   const session = await auth();
   if (!session) throw new Error("Unauthorized");
   return session;
+}
+
+function normalizeCloudinaryValue(value: string | null | undefined) {
+  const trimmedValue = value?.trim();
+
+  if (!trimmedValue) {
+    return "";
+  }
+
+  return getCloudinaryPublicId(trimmedValue) ?? trimmedValue;
+}
+
+function normalizeEventImage(data: Omit<EventFormData, "formFields" | "slug">) {
+  return {
+    ...data,
+    imagePublicId: normalizeCloudinaryValue(data.imagePublicId),
+  };
 }
 
 // ─── Create Event ────────────────────────────────────────────────────────────
@@ -35,6 +53,7 @@ export async function createEvent(
     }
 
     const { formFields, slug, ...eventData } = parsed.data;
+    const normalizedEventData = normalizeEventImage(eventData);
 
     // Check slug uniqueness
     const existing = await prisma.event.findUnique({ where: { slug } });
@@ -47,9 +66,9 @@ export async function createEvent(
 
     const event = await prisma.event.create({
       data: {
-        ...eventData,
+        ...normalizedEventData,
         slug,
-        dateTime: new Date(eventData.dateTime),
+        dateTime: new Date(normalizedEventData.dateTime),
         formFields: {
           create: formFields.map((field, i) => ({
             name: field.name,
@@ -95,6 +114,7 @@ export async function updateEvent(
     }
 
     const { formFields, slug, ...eventData } = parsed.data;
+    const normalizedEventData = normalizeEventImage(eventData);
 
     // Check slug uniqueness (exclude current event)
     const slugConflict = await prisma.event.findFirst({
@@ -111,9 +131,9 @@ export async function updateEvent(
       await tx.event.update({
         where: { id },
         data: {
-          ...eventData,
+          ...normalizedEventData,
           slug,
-          dateTime: new Date(eventData.dateTime),
+          dateTime: new Date(normalizedEventData.dateTime),
         },
       });
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { CalendarDays, MapPin, Users } from "lucide-react";
+import { getCloudinaryUrl } from "@/lib/cloudinary";
 import { formatDateShort } from "@/lib/timezone";
 
 interface EventCardProps {
@@ -31,6 +32,13 @@ export function EventCard({
   const formattedDate = formatDateShort(new Date(dateTime), timezone);
 
   const spotsLeft = attendeeLimit ? attendeeLimit - acceptedCount : null;
+  const imageSrc = imagePublicId
+    ? getCloudinaryUrl(imagePublicId, {
+        w: 600,
+        f: "auto",
+        q: "auto",
+      })
+    : null;
 
   return (
     <Link
@@ -39,9 +47,9 @@ export function EventCard({
     >
       {/* Image */}
       <div className="relative h-48 overflow-hidden bg-[#0d0d0d]">
-        {imagePublicId ? (
+        {imageSrc ? (
           <Image
-            src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/w_600,q_auto,f_auto/${imagePublicId}`}
+            src={imageSrc}
             alt={title}
             fill
             className={`object-cover transition-transform duration-300 group-hover:scale-105 ${isPast ? "grayscale-[40%]" : ""}`}
